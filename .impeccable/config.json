@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          "landing/index.html"
+        ],
+        "createdAt": "2026-10-15T06:08:28.747Z",
+        "reason": "remaining hits are miniature text inside illustrated phone/app mockups (napovtor.ru uses the same pattern)"
+      },
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          "landing/index.html"
+        ],
+        "createdAt": "2026-10-15T06:08:28.764Z",
+        "reason": "remaining hits are inside illustrated phone/app mockups"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          "landing/index.html"
+        ],
+        "createdAt": "2026-10-15T06:08:28.781Z",
+        "reason": "white cards on grey #F8F8F7 panels and KPI tiles inside the product mockup mirror napovtor.ru, the style source the user named"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "landing/index.html"
+        ],
+        "createdAt": "2026-10-15T06:08:28.796Z",
+        "reason": "false positive: stats row uses border dividers as rules, padding is on the cells"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "landing/index.html"
+        ],
+        "createdAt": "2026-10-15T06:08:47.680Z",
+        "reason": "remaining hit is the keyboard focus ring on inputs in the dark final form (accessibility), decorative glows removed"
+      }
+    ]
+  }
+}

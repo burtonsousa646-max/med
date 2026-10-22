@@ -1,0 +1,315 @@
+/*
+ * МЁД · дизайн-система на основе b2c билайна
+ * Токены сняты с moskva.beeline.ru/customers/products и smvno.beeline.ru (октябрь 2026).
+ * Имена семантических токенов совпадают с продом, чтобы разработчики их узнавали.
+ *
+ * Три слоя:
+ *   1. color-static-*    базовая палитра, напрямую в вёрстке не используем
+ *   2. color-* , font-*, space-*, radius-*   семантика, ей пользуемся везде
+ *   3. --bl-*            токены компонентов (components.css)
+ */
+
+/* Шрифт BeelineSans (Contrast Foundry) лицензионный: только для проектов билайна.
+   В ./fonts пока есть только Regular. Medium и Bold нужно запросить у бренд-команды
+   и раскомментировать блок ниже, иначе 500 рисуется как 400, а 700 браузер утолщает сам. */
+@font-face { font-family: "BeelineSans"; font-weight: 400; font-style: normal; font-display: swap;
+  src: local("BeelineSans-Regular"), url("./fonts/beelinesans-regular.woff2") format("woff2"), url("./fonts/beelinesans-regular.ttf") format("truetype"); }
+/*
+@font-face { font-family: "BeelineSans"; font-weight: 500; font-display: swap;
+  src: local("BeelineSans-Medium"), url("./fonts/beelinesans-medium.woff2") format("woff2"); }
+@font-face { font-family: "BeelineSans"; font-weight: 700; font-display: swap;
+  src: local("BeelineSans-Bold"), url("./fonts/beelinesans-bold.woff2") format("woff2"); }
+*/
+
+:root {
+  /* ───────── 1. Палитра ───────── */
+  --color-static-white: #fff;
+  --color-static-black: #000;
+  /* серый (холодный) */
+  --color-static-grey-25: #f0f3f5;
+  --color-static-grey-50: #e2e6ed;
+  --color-static-grey-100: #c8ced9;
+  --color-static-grey-200: #afb7c4;
+  --color-static-grey-300: #98a0b0;
+  --color-static-grey-400: #838c9e;
+  --color-static-grey-500: #6e788a;
+  --color-static-grey-600: #555d6d;
+  --color-static-grey-700: #323c4d;
+  --color-static-grey-800: #28303f;
+  --color-static-grey-900: #222731;
+  --color-static-grey-1000: #191c22;
+  /* жёлтый, фирменный на 300 */
+  --color-static-yellow-25: #fff5c5;
+  --color-static-yellow-50: #ffebbb;
+  --color-static-yellow-100: #ffde8c;
+  --color-static-yellow-200: #ffd546;
+  --color-static-yellow-300: #ffc800;
+  --color-static-yellow-400: #f4b807;
+  --color-static-yellow-500: #e7a500;
+  --color-static-yellow-600: #c88000;
+  --color-static-yellow-700: #a25a00;
+  --color-static-yellow-800: #7a3a00;
+  --color-static-yellow-900: #572300;
+  --color-static-yellow-1000: #331500;
+  /* зелёный, успех */
+  --color-static-green-25: #e9fbf3;
+  --color-static-green-50: #cbf6e3;
+  --color-static-green-100: #a0eecc;
+  --color-static-green-200: #63e3ac;
+  --color-static-green-300: #2bda8e;
+  --color-static-green-400: #00c06d;
+  --color-static-green-500: #00a55e;
+  --color-static-green-600: #008f51;
+  --color-static-green-700: #005933;
+  --color-static-green-800: #004a2a;
+  --color-static-green-900: #003b21;
+  --color-static-green-1000: #002917;
+  /* оранжевый, ошибка */
+  --color-static-orange-25: #ffede5;
+  --color-static-orange-50: #ffd8c7;
+  --color-static-orange-100: #ffbea3;
+  --color-static-orange-200: #ffa27a;
+  --color-static-orange-300: #ff7e47;
+  --color-static-orange-400: #ff6524;
+  --color-static-orange-500: #f84a00;
+  --color-static-orange-600: #b83700;
+  --color-static-orange-700: #7a2500;
+  --color-static-orange-800: #661e00;
+  --color-static-orange-900: #4d1700;
+  --color-static-orange-1000: #381100;
+  /* синий, ссылки */
+  --color-static-blue-25: #ebf5fe;
+  --color-static-blue-50: #d7ebfe;
+  --color-static-blue-100: #b9dbfd;
+  --color-static-blue-200: #88c2fc;
+  --color-static-blue-300: #60adfb;
+  --color-static-blue-400: #2e94fa;
+  --color-static-blue-500: #1086f9;
+  --color-static-blue-600: #0670db;
+  --color-static-blue-700: #04478b;
+  --color-static-blue-800: #03386d;
+  --color-static-blue-900: #022e5a;
+  --color-static-blue-1000: #022141;
+  /* бирюзовый */
+  --color-static-teal-25: #e3fcf9;
+  --color-static-teal-50: #bff8f1;
+  --color-static-teal-100: #8cf2e6;
+  --color-static-teal-200: #47ebd7;
+  --color-static-teal-300: #17d3bd;
+  --color-static-teal-400: #00b8a2;
+  --color-static-teal-500: #00a894;
+  --color-static-teal-600: #008575;
+  --color-static-teal-700: #00574d;
+  --color-static-teal-800: #00473f;
+  --color-static-teal-900: #003d36;
+  --color-static-teal-1000: #002924;
+  /* фиолетовый */
+  --color-static-violet-25: #f5f1fd;
+  --color-static-violet-50: #e7dffb;
+  --color-static-violet-100: #d5c8f9;
+  --color-static-violet-200: #c0adf5;
+  --color-static-violet-300: #a488f1;
+  --color-static-violet-400: #8561ec;
+  --color-static-violet-500: #7e56eb;
+  --color-static-violet-600: #623bce;
+  --color-static-violet-700: #422593;
+  --color-static-violet-800: #371f7a;
+  --color-static-violet-900: #301b6a;
+  --color-static-violet-1000: #211249;
+  /* пурпурный */
+  --color-static-magenta-25: #fdedf5;
+  --color-static-magenta-50: #fbdbec;
+  --color-static-magenta-100: #f7bfdd;
+  --color-static-magenta-200: #f39bca;
+  --color-static-magenta-300: #ed6eb2;
+  --color-static-magenta-400: #e7409a;
+  --color-static-magenta-500: #e52e90;
+  --color-static-magenta-600: #c81976;
+  --color-static-magenta-700: #7f104b;
+  --color-static-magenta-800: #6d0d41;
+  --color-static-magenta-900: #5b0b36;
+  --color-static-magenta-1000: #400826;
+  /* красный */
+  --color-static-red-25: #feecec;
+  --color-static-red-50: #fdd8d8;
+  --color-static-red-100: #fcc0c0;
+  --color-static-red-200: #fa9e9e;
+  --color-static-red-300: #f87777;
+  --color-static-red-400: #f54747;
+  --color-static-red-500: #f43434;
+  --color-static-red-600: #d02525;
+  --color-static-red-700: #821717;
+  --color-static-red-800: #791515;
+  --color-static-red-900: #641212;
+  --color-static-red-1000: #450c0c;
+
+  /* ───────── 2. Семантика: цвет ───────── */
+  --color-brand-primary: var(--color-static-yellow-300);    /* #FFC800 главные кнопки, акцент */
+  --color-brand-secondary: var(--color-static-yellow-200);
+  --color-brand-tertiary: var(--color-static-yellow-400);   /* hover/pressed */
+
+  --color-background-primary: var(--color-static-grey-25);   /* #F0F3F5 фон страницы */
+  --color-background-secondary: var(--color-static-white);   /* белые карточки и секции */
+  --color-background-tertiary: var(--color-static-grey-50);  /* #E2E6ED поля, вторичные кнопки на белом */
+  --color-background-overlay: color-mix(in srgb, var(--color-static-grey-1000) 90%, transparent);
+  --color-background-error: var(--color-static-orange-100);
+  --color-background-primary-invert: var(--color-static-grey-1000);   /* #191C22 */
+  --color-background-secondary-invert: var(--color-static-grey-900);  /* #222731 тёмные карточки */
+  --color-background-tertiary-invert: var(--color-static-grey-800);   /* #28303F */
+
+  --color-text-primary: var(--color-static-grey-800);    /* #28303F основной текст */
+  /* В проде вторичный текст grey-500 #6E788A: 4.45:1 на белом и 4.0:1 на сером, ниже AA.
+     У нас на шаг темнее, разница на глаз почти не видна. */
+  --color-text-secondary: var(--color-static-grey-600);  /* #555D6D подписи */
+  --color-text-tertiary: var(--color-static-grey-300);   /* #98A0B0 плейсхолдеры, неактивное */
+  --color-text-primary-invert: var(--color-static-white);
+  --color-text-secondary-invert: var(--color-static-grey-100);
+  --color-text-tertiary-invert: var(--color-static-grey-500);
+  --color-text-link: var(--color-static-blue-500);        /* #1086F9 */
+  --color-text-success: var(--color-static-green-500);    /* #00A55E */
+  --color-text-error: var(--color-static-orange-500);     /* #F84A00 ошибки у билайна оранжевые */
+
+  --color-icon-primary: var(--color-static-grey-800);
+  --color-icon-secondary: var(--color-static-grey-500);
+  --color-icon-tertiary: var(--color-static-grey-300);
+  --color-icon-disabled: var(--color-static-grey-200);
+
+  --color-border-primary: var(--color-static-grey-1000);
+  --color-border-secondary: var(--color-static-grey-50);
+  --color-border-error: var(--color-static-orange-500);
+
+  --color-success-primary: var(--color-static-green-500);
+  --color-error-primary: var(--color-static-orange-500);
+  --color-link-primary: var(--color-static-blue-500);
+  --color-link-tertiary: var(--color-static-blue-600);
+
+  --color-constant-01: var(--color-static-grey-800);  /* текст на жёлтом, всегда тёмный */
+  --color-constant-02: var(--color-static-white);
+
+  /* Акценты и подложки для категорий, графиков, иллюстраций */
+  --color-accent-01: var(--color-static-green-500);
+  --color-accent-02: var(--color-static-teal-500);
+  --color-accent-03: var(--color-static-blue-500);
+  --color-accent-04: var(--color-static-violet-500);
+  --color-accent-05: var(--color-static-magenta-500);
+  --color-accent-06: var(--color-static-red-500);
+  --color-accent-07: var(--color-static-orange-500);
+  --color-accent-08: var(--color-static-yellow-500);
+  --color-surface-01: var(--color-static-green-50);
+  --color-surface-02: var(--color-static-teal-50);
+  --color-surface-03: var(--color-static-blue-50);
+  --color-surface-04: var(--color-static-violet-50);
+  --color-surface-05: var(--color-static-magenta-50);
+  --color-surface-06: var(--color-static-red-50);
+  --color-surface-07: var(--color-static-orange-50);
+  --color-surface-08: var(--color-static-yellow-50);
+
+  /* ───────── Типографика ───────── */
+  --font-primary: "BeelineSans", "Onest", arial, sans-serif;
+  --font-weight-regular: 400;   /* заголовки тоже Regular */
+  --font-weight-medium: 500;    /* кнопки, акценты в тексте */
+  --font-weight-bold: 700;      /* только цифры-герои и редкие выделения */
+
+  /* Шкала: размер / интерлиньяж. Десктоп. */
+  --type-display-xl: 400 80px/80px var(--font-primary);   /* герой лендинга (smvno h1) */
+  --type-display-l: 400 56px/66px var(--font-primary);    /* заголовок блока лендинга */
+  --type-h1: 400 40px/48px var(--font-primary);           /* заголовок раздела */
+  --type-h2: 400 32px/36px var(--font-primary);
+  --type-h3: 400 24px/28px var(--font-primary);
+  --type-h4: 500 20px/26px var(--font-primary);
+  --type-lead: 400 24px/36px var(--font-primary);         /* подзаголовок героя */
+  --type-body-l: 400 20px/26px var(--font-primary);
+  --type-body: 400 16px/24px var(--font-primary);
+  --type-body-tight: 400 16px/20px var(--font-primary);
+  --type-label: 500 16px/20px var(--font-primary);        /* кнопки, табы, чипсы */
+  --type-caption: 400 13px/18px var(--font-primary);
+  --type-micro: 400 12px/16px var(--font-primary);
+  --type-number-xl: 400 56px/64px var(--font-primary);    /* итог калькулятора */
+
+  /* ───────── Отступы: шаг 4 px ───────── */
+  --base-x: 4px;
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-s: 12px;
+  --space-m: 16px;
+  --space-l: 24px;
+  --space-xl: 28px;
+  --space-2xl: 32px;
+  --space-3xl: 40px;
+  --space-4xl: 48px;
+  --space-5xl: 64px;
+  --space-6xl: 80px;
+  --space-7xl: 120px;
+
+  /* ───────── Скругления ───────── */
+  --radius-200: 8px;
+  --radius-300: 12px;
+  --radius-400: 16px;    /* поля, мелкие плитки */
+  --radius-500: 20px;    /* карточки тарифов */
+  --radius-600: 24px;    /* промо-карточки */
+  --radius-800: 32px;
+  --radius-1000: 40px;   /* большие белые секции */
+  --radius-circle: 999px; /* кнопки, чипсы, табы */
+
+  /* ───────── Тени: почти невидимые ───────── */
+  --shadow-float: 0 0 40px rgba(0, 0, 0, .05);       /* плавающие панели */
+  --shadow-raised: 0 24px 40px rgba(0, 0, 0, .05);   /* карточка над фоном */
+  --shadow-hero: 0 24px 80px rgba(0, 0, 0, .05);     /* иллюстрация в герое */
+  --shadow-popover: 0 0 14px rgba(40, 48, 63, .15);  /* поповеры, тултипы */
+
+  /* ───────── Сетка и раскладка ───────── */
+  --page-max: 1440px;
+  --page-content: 1312px;   /* ширина контента на десктопе */
+  --section-max: 1200px;
+  --text-max: 760px;
+  --gutter: 24px;
+  --page-side: 64px;
+  --section-pad: 80px 80px 120px;
+
+  /* ───────── Движение ───────── */
+  --transition: .3s ease-in-out;
+  --transition-fast: .15s ease-out;
+}
+
+/* Планшет */
+@media (max-width: 1279px) {
+  :root {
+    --type-display-xl: 400 64px/68px var(--font-primary);
+    --type-display-l: 400 48px/56px var(--font-primary);
+    --type-h1: 400 36px/44px var(--font-primary);
+    --page-side: 32px;
+    --section-pad: 56px 40px 72px;
+  }
+}
+
+/* Телефон */
+@media (max-width: 767px) {
+  :root {
+    --type-display-xl: 400 48px/56px var(--font-primary);
+    --type-display-l: 400 40px/48px var(--font-primary);
+    --type-h1: 400 32px/36px var(--font-primary);
+    --type-h2: 400 24px/28px var(--font-primary);
+    --type-h3: 400 20px/26px var(--font-primary);
+    --type-lead: 400 18px/26px var(--font-primary);
+    --type-number-xl: 400 40px/48px var(--font-primary);
+    --page-side: 16px;
+    --section-pad: 32px 20px 40px;
+    --radius-1000: 24px;
+  }
+}
+
+/* Тёмные блоки: те же роли, инвертированные значения.
+   Вешаем на секцию или карточку: <section data-theme="invert"> */
+[data-theme="invert"] {
+  --color-background-primary: var(--color-static-grey-1000);
+  --color-background-secondary: var(--color-static-grey-900);
+  --color-background-tertiary: var(--color-static-grey-800);
+  --color-text-primary: var(--color-static-white);
+  --color-text-secondary: var(--color-static-grey-100);
+  --color-text-tertiary: var(--color-static-grey-500);
+  --color-icon-primary: var(--color-static-white);
+  --color-icon-secondary: var(--color-static-grey-100);
+  --color-border-secondary: var(--color-static-grey-700);
+  color: var(--color-text-primary);
+}

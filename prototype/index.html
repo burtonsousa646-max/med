@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>МЁД: прототип кабинета</title>
+<link rel="stylesheet" href="../design-system/tokens.css">
+<link rel="stylesheet" href="../design-system/components.css">
+<style>
+  /* Только раскладка прототипа. Цвета, шрифты, формы — из дизайн-системы. */
+  .wrap { padding-bottom: 120px; }
+  .bl-btn svg { width: 20px; height: 20px; flex: none; }
+  .brand { display: flex; align-items: center; gap: var(--space-s); color: var(--color-text-primary); }
+  .brand__name { font: var(--type-label); }
+  .brand__sub { font: var(--type-caption); color: var(--color-text-secondary); }
+
+  /* лендинг */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: var(--space-3xl); align-items: center; padding: var(--space-5xl) 0 var(--space-6xl); }
+  .hero__visual { aspect-ratio: 1; border-radius: var(--radius-1000); background: var(--color-background-secondary); box-shadow: var(--shadow-hero); display: grid; place-items: center; }
+  .hero__moments { display: flex; flex-direction: column; gap: var(--space-s); width: 72%; }
+  .moment { display: flex; justify-content: space-between; align-items: center; gap: var(--space-s); padding: var(--space-m) var(--space-l); border-radius: var(--radius-500); background: var(--color-background-primary); }
+  .moment--hit { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
+  .section-head { display: flex; justify-content: space-between; align-items: end; gap: var(--space-l); flex-wrap: wrap; margin-bottom: var(--space-3xl); }
+  .calc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4xl); align-items: center; }
+  .footer { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0; }
+
+  /* вход */
+  .center { min-height: calc(100vh - 90px); display: grid; place-items: center; padding: var(--space-3xl) 0; }
+  .center .bl-modal { max-width: 560px; }
+  .id-btn { justify-content: flex-start; gap: var(--space-m); }
+  .id-badge { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; font: 500 15px/1 var(--font-primary); color: var(--color-constant-02); flex: none; }
+  .id-badge--gos { background: var(--color-static-blue-600); }
+  .id-badge--sber { background: var(--color-static-green-600); }
+  .id-badge--alfa { background: var(--color-static-red-600); }
+  .suggest { border-radius: var(--radius-400); background: var(--color-background-primary); overflow: hidden; }
+  .suggest button { display: block; width: 100%; text-align: left; padding: var(--space-m); border: 0; background: none; font: var(--type-body); color: var(--color-text-primary); cursor: pointer; }
+  .suggest button:hover { background: var(--color-background-tertiary); }
+
+  /* шаги сценария */
+  .flow-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-m); padding: var(--space-m) 0; }
+  .flow-head > :last-child { justify-self: end; }
+  .page-title { display: flex; justify-content: space-between; align-items: end; gap: var(--space-l); flex-wrap: wrap; margin: var(--space-2xl) 0 var(--space-l); }
+  .two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-l); align-items: start; }
+  .two--even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pad { padding: var(--space-3xl); max-width: none; margin: 0; }
+  .sticky { position: sticky; top: var(--space-m); }
+  .kv { display: grid; grid-template-columns: 160px 1fr; gap: var(--space-xs) var(--space-m); font: var(--type-body-tight); }
+  .kv dt { color: var(--color-text-secondary); }
+  .kv dd { margin: 0; }
+
+  /* карта охвата */
+  .map { position: relative; aspect-ratio: 4/3; border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-primary); }
+  .map svg { width: 100%; height: 100%; }
+  .map__legend { position: absolute; left: var(--space-m); bottom: var(--space-m); }
+
+  /* выбор карточкой */
+  .choice { text-align: left; border: 2px solid transparent; cursor: pointer; font: inherit; transition: border-color var(--transition-fast); }
+  .choice:hover { border-color: var(--color-background-tertiary); }
+  .choice[aria-pressed="true"] { border-color: var(--color-border-primary); background: var(--color-background-secondary); }
+  .choice[aria-pressed="true"] .choice__mark { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
+  .choice__mark { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--color-background-tertiary); color: transparent; flex: none; }
+  .choice__mark svg { width: 16px; height: 16px; }
+
+  /* превью креатива */
+  .previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-m); }
+  .phone-mini { border-radius: var(--radius-500); background: var(--color-background-primary); padding: var(--space-s); display: flex; flex-direction: column; gap: var(--space-xs); min-height: 260px; }
+  .phone-mini__bar { height: 6px; width: 40%; border-radius: 3px; background: var(--color-background-tertiary); margin: 2px auto 6px; }
+  .ad-img { border-radius: var(--radius-300); aspect-ratio: 16/10; display: grid; place-items: center; text-align: center; padding: var(--space-xs); font: var(--type-micro); color: var(--color-text-secondary); }
+  .ad-img--0 { background: var(--color-surface-07); }
+  .ad-img--1 { background: var(--color-surface-01); }
+  .ad-img--2 { background: var(--color-surface-04); }
+  .ad-card { border-radius: var(--radius-300); background: var(--color-background-secondary); padding: var(--space-s); display: flex; flex-direction: column; gap: 6px; font: var(--type-caption); }
+  .ad-card b { font: var(--type-body-tight); font-weight: var(--font-weight-medium); }
+  .paid-ok { display: flex; align-items: center; gap: var(--space-xs); font: var(--type-caption); padding: var(--space-xs) 0; }
+  .paid-ok i { width: 24px; height: 24px; border-radius: 50%; background: var(--color-success-primary); color: var(--color-constant-02); display: grid; place-items: center; font-style: normal; }
+  mark.stop { background: var(--color-background-error); color: var(--color-text-primary); border-radius: 4px; padding: 0 2px; text-decoration: underline wavy var(--color-error-primary); text-underline-offset: 3px; }
+
+  /* сигналы */
+  .sig-group { padding: var(--space-m) 0; border-top: 1px solid var(--color-border-secondary); }
+  .sig-group:first-child { border-top: 0; padding-top: 0; }
+  .sig { display: flex; align-items: center; gap: var(--space-s); padding: var(--space-xs) 0; }
+  .sig__name { flex: 1; min-width: 0; }
+  .sig.is-off { color: var(--color-text-tertiary); }
+  .bucket { border-radius: var(--radius-400); background: var(--color-background-primary); padding: var(--space-m); display: flex; flex-direction: column; gap: var(--space-xs); }
+  .bucket__chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); min-height: 40px; align-items: center; }
+  .bucket .bl-chip { background: var(--color-background-secondary); }
+  .bucket.is-target { outline: 2px solid var(--color-border-primary); }
+
+  /* нижняя панель сценария */
+  .bottombar { position: sticky; bottom: var(--space-m); z-index: 10; margin-top: var(--space-l); display: flex; justify-content: space-between; align-items: center; gap: var(--space-m); flex-wrap: wrap; padding: var(--space-s) var(--space-s) var(--space-s) var(--space-l); border-radius: var(--radius-circle); background: var(--color-background-secondary); box-shadow: var(--shadow-float); }
+
+  /* кабинет */
+  .cab { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: var(--space-l); padding: var(--space-m) 0 120px; }
+  .cab-nav { position: sticky; top: var(--space-m); align-self: start; display: flex; flex-direction: column; gap: var(--space-m); padding: var(--space-l); border-radius: var(--radius-600); background: var(--color-background-secondary); --bl-contrast: var(--color-background-primary); }
+  .cab-nav nav { display: flex; flex-direction: column; gap: 2px; }
+  .cab-nav nav a { display: flex; align-items: center; gap: var(--space-s); padding: 10px var(--space-s); border-radius: var(--radius-circle); color: var(--color-text-primary); font: var(--type-body-tight); }
+  .cab-nav nav a:hover { background: var(--color-background-primary); }
+  .cab-nav nav a.is-active { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
+  .cab-nav nav svg { width: 20px; height: 20px; flex: none; }
+  .cab-main { display: flex; flex-direction: column; gap: var(--space-l); min-width: 0; }
+  .kpis { --bl-cols: 4; }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 180px; padding-top: 32px; position: relative; }
+  .bars > span:not(.bl-pill-dark) { flex: 1; border-radius: 6px 6px 3px 3px; background: var(--color-background-tertiary); transition: height var(--transition); }
+  .bars span.is-hi { background: var(--color-background-secondary-invert); }
+  .bars .bl-pill-dark { position: absolute; top: 0; right: 0; }
+  .bl-table td + td { white-space: nowrap; }
+  .axis { display: flex; justify-content: space-between; margin-top: var(--space-xs); }
+  .live { display: inline-flex; align-items: center; gap: 6px; }
+  .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--color-success-primary); animation: bl-pulse 1.4s ease-in-out infinite; }
+
+  /* статус модерации */
+  .status-list { display: flex; flex-direction: column; }
+  .status { display: flex; gap: var(--space-m); align-items: flex-start; padding: var(--space-m) 0; }
+  .status + .status { border-top: 1px solid var(--color-border-secondary); }
+  .status__dot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--color-background-tertiary); color: var(--color-text-tertiary); flex: none; }
+  .status__dot svg { width: 16px; height: 16px; }
+  .status.is-done .status__dot { background: var(--color-success-primary); color: var(--color-constant-02); }
+  .status.is-wait .status__dot { animation: bl-pulse 1.4s ease-in-out infinite; }
+
+  /* телефон для подписанта */
+  .phone { width: 390px; max-width: 100%; margin: var(--space-3xl) auto; border-radius: 44px; background: var(--color-background-primary); box-shadow: var(--shadow-hero); border: 10px solid var(--color-background-secondary-invert); overflow: hidden; }
+  .phone__in { min-height: 760px; padding: var(--space-l) var(--space-m); display: flex; flex-direction: column; gap: var(--space-m); }
+
+  /* QR-заглушка */
+  .qr { width: 180px; height: 180px; margin: 0 auto; border-radius: var(--radius-400); background: var(--color-background-primary); padding: 14px; }
+  .qr svg { width: 100%; height: 100%; }
+
+  /* служебная навигация по прототипу */
+  .demo-fab { position: fixed; left: var(--space-m); bottom: 104px; z-index: 40; }
+  .demo-map { max-width: 720px; max-height: calc(100vh - 32px); overflow: auto; }
+  .demo-map h3 { margin: var(--space-l) 0 var(--space-xs); }
+  .demo-map a { display: block; padding: 6px 0; }
+  .demo-note { font: var(--type-micro); color: var(--color-text-secondary); display: inline-flex; gap: 6px; align-items: center; }
+  .demo-note::before { content: "демо"; padding: 1px 6px; border-radius: var(--radius-circle); background: var(--color-surface-04); color: var(--color-static-violet-700); }
+  .toast-host { position: fixed; left: 50%; bottom: var(--space-l); transform: translateX(-50%); z-index: 60; }
+
+  @media (max-width: 1023px) {
+    .hero, .calc, .two, .two--even { grid-template-columns: minmax(0, 1fr); }
+    .hero__visual { max-width: 520px; }
+    .sticky { position: static; }
+    .previews { grid-template-columns: 1fr 1fr; }
+    .cab { grid-template-columns: minmax(0, 1fr); }
+    .cab-nav { position: static; padding: var(--space-s); min-width: 0; }
+    .cab-nav nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+    .cab-nav nav a { flex: none; }
+    .cab-nav .cab-nav__extra { display: none; }
+  }
+  @media (max-width: 767px) {
+    .hero { padding: var(--space-l) 0 var(--space-3xl); }
+    .flow-head { grid-template-columns: auto 1fr; }
+    .flow-head .bl-steps { grid-column: 1 / -1; grid-row: 2; }
+    .bl-steps { gap: var(--space-s); }
+    .pad { padding: var(--space-l); }
+    .previews { grid-template-columns: 1fr; }
+    .kpis.bl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kv { grid-template-columns: 1fr; gap: 2px; }
+    .kv dd { margin-bottom: var(--space-xs); }
+    .bottombar { border-radius: var(--radius-600); padding: var(--space-s); }
+    .phone { border: 0; border-radius: 0; margin: 0 calc(-1 * var(--page-side)); width: auto; box-shadow: none; }
+  }
+  @media print {
+    .demo-fab, .bottombar, .flow-head, .no-print { display: none !important; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast-host" id="toast" aria-live="polite"></div>
+
+<script>
+/* ───────── иконки ───────── */
+const I = {
+  check: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg>',
+  x: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="14" height="14"><path d="m5 5 10 10M15 5 5 15"/></svg>',
+  plus: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>',
+  back: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4-6 6 6 6"/></svg>',
+  camp: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 8v4h3l6 4V4L6 8H3Z"/><path d="M15 7.5a3.5 3.5 0 0 1 0 5"/></svg>',
+  stats: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 16V9M10 16V4M16 16v-5"/></svg>',
+  wallet: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="14" height="11" rx="2"/><path d="M13 10.5h4M5 5l7-2 1 2"/></svg>',
+  doc: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M5 2.5h6.5L15 6v11.5H5z"/><path d="M11 2.5V6h4M7.5 10h5M7.5 13h5"/></svg>',
+  company: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 17V6l6-3v14M9 8h8v9M3 17h14M6 8v.01M6 11v.01M6 14v.01M12 11h2M12 14h2"/></svg>',
+  help: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2v.5M10 14v.01"/></svg>',
+  pin: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" width="18" height="18"><path d="M10 18s6-5.5 6-10a6 6 0 0 0-12 0c0 4.5 6 10 6 10Z"/><circle cx="10" cy="8" r="2"/></svg>',
+};
+
+/* ───────── данные-заглушки ───────── */
+const CO = {
+  name: 'ООО «Зерно»', brand: 'кофейня «Зерно»', inn: '7701234567', kpp: '770101001', ogrn: '1227700123456',
+  bank: 'АО «Альфа-Банк»', acc: '40702 810 0 0000 0012345',
+  signer: 'Иванова Анна Сергеевна', signerShort: 'Иванова А. С.', role: 'генеральный директор',
+  employee: 'Петров Илья', site: 'mycoffee.ru',
+  points: [{ id: 'p1', addr: 'ул. Покровка, 12', x: 205, y: 160 }, { id: 'p2', addr: 'Ленинский пр-т, 45', x: 470, y: 290 }],
+};
+const PROVIDERS = { gos: { name: 'Госуслуги', cls: 'gos', l: 'Г' }, sber: { name: 'СберБизнес ID', cls: 'sber', l: 'С' }, alfa: { name: 'Альфа ID для бизнеса', cls: 'alfa', l: 'А' } };
+const SEGMENTS = { small: 'малый бизнес', medium: 'средний бизнес', large: 'крупный бизнес' };
+const GOALS = {
+  near: { t: 'привести соседей в точку', d: 'покажем тем, кто живёт и работает в 1 км', reach: 12400, cpc: 9, conv: .26, text: 'Лучший кофе в городе — в двух шагах от дома. −20% на всё до 10:00', fixed: 'Свежая обжарка каждый день — в двух шагах от дома. −20% на всё до 10:00' },
+  rivals: { t: 'перехватить клиентов конкурентов', d: 'тем, кто ходит в кофейни рядом с вами', reach: 6800, cpc: 12, conv: .22, text: 'Самый вкусный капучино района. Второй кофе в подарок', fixed: 'Попробуйте наш капучино: второй кофе в подарок' },
+  showcase: { t: 'оффер в Витрине выгод с бонусом гигабайтами', d: 'купон в приложении билайна, гостю +5 ГБ', reach: 21500, cpc: 7, conv: .3, text: 'Капучино за 1 ₽ при первом визите + 5 ГБ от билайна', fixed: 'Капучино за 1 ₽ при первом визите + 5 ГБ от билайна' },
+};
+const STOP = [
+  { re: /лучший[^.,—]*?в городе|лучший/i, why: 'превосходная степень без подтверждения: п. 1 ч. 3 ст. 5 закона «О рекламе»' },
+  { re: /самый [а-яё]+/i, why: '«самый» без подтверждения данными: п. 1 ч. 3 ст. 5 закона «О рекламе»' },
+];
+const IMAGES = ['фото с Яндекс Карт: зал на Покровке', 'фото с сайта: латте-арт', 'логотип на фирменном фоне'];
+const VALUE = { hot: ['горячий спрос 24 ч', 'bl-tag--soft-green'], week: ['событие недели', 'bl-tag--soft-violet'], wide: ['широкий интерес', 'bl-tag--soft-blue'] };
+const SIGNALS = [
+  { g: 'жизненные события', items: [['moved', 'переехали в район', 'week', 1900, 14], ['phone', 'купили новый смартфон', 'hot', 800, 16], ['trip', 'поездка через 7–30 дней', 'week', 1200, 12], ['policy', 'полис ОСАГО истекает через 14 дней', 'week', 600, 15], ['home', 'новоселье после ипотеки', 'week', 300, 14]] },
+  { g: 'деньги', items: [['salary', 'день зарплаты', 'hot', 3100, 11], ['up', 'стали тратить больше', 'wide', 2600, 8], ['stress', 'денежные трудности', 'off', 0, 0]] },
+  { g: 'момент на экране', items: [['paid', 'платёж прошёл', 'hot', 4200, 10], ['traffic', 'трафик заканчивается', 'hot', 1500, 9], ['showcase', 'открыл Витрину выгод', 'hot', 5200, 8]] },
+  { g: 'место и маршруты', items: [['live', 'живут рядом, 1 км', 'wide', 7400, 7], ['work', 'работают рядом, 1 км', 'wide', 5000, 7], ['route', 'каждый день проезжают мимо', 'wide', 6100, 6], ['rival', 'ходят в кофейни рядом', 'week', 2900, 12], ['tourist', 'приезжие в городе', 'week', 1700, 10]] },
+  { g: 'образ жизни', items: [['car', 'автовладельцы', 'wide', 4400, 6], ['kids', 'семьи с детьми', 'wide', 3600, 6], ['pets', 'владельцы питомцев', 'wide', 2100, 6]] },
+  { g: 'ваши клиенты', items: [['base', 'ваша база гостей (загрузить файл)', 'wide', 900, 5], ['look', 'похожие на лучших гостей', 'wide', 3300, 8]] },
+];
+const SIG = Object.fromEntries(SIGNALS.flatMap(g => g.items.map(([id, t, v, reach, cpc]) => [id, { id, t, v, reach, cpc }])));
+const PLACES = [
+  ['showcase', 'Витрина выгод', 'нативная карточка', '2–4 %', 'за клик'],
+  ['main', 'Главная приложения', 'баннер', '0,3–0,6 %', 'за клик'],
+  ['paid', '«Платёж прошёл»', 'карточка', '1–2 %', 'за клик'],
+  ['rest', 'Экран остатков', 'награда гигабайтами', '1–3 %', 'за клик'],
+  ['shop', 'Магазин в приложении', 'продвигаемый товар', '[1–2] %', 'за клик'],
+  ['push', 'Пуш', 'только тем, кто согласился на рекламу', '[3–5] %', 'за клик'],
+  ['tv', 'Меню ТВ', 'баннер с QR', '—', 'за показы'],
+];
+
+/* ───────── состояние ───────── */
+const INIT = {
+  provider: null, segment: 'small', segEdit: false, consents: { company: true, signer: true, profile: false },
+  points: { p1: true, p2: true }, budget: 10000,
+  tab: null, goal: 'near', adText: null, editText: false, img: 0, fixed: false,
+  target: 'any', aud: { live: 'any', work: 'any', rival: 'and' }, places: { showcase: true, main: true, paid: true, rest: false, shop: false, push: false, tv: false },
+  special: { type: 'game', task: '', budget: '300 000 – 1 млн ₽', sent: false },
+  amount: 10000, customAmount: '', pay: 'sbp', offer: false, role: 'boss', sentToBoss: false, approved: false, paid: false,
+  launch: 0, notify: { sms: true, mail: true, tg: false }, statsView: 'h48', edo: false, edoOp: 'Диадок', period: 'month',
+};
+const KEY = 'med-proto-v1';
+let S = (() => { try { return { ...structuredClone(INIT), ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return structuredClone(INIT); } })();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+
+/* ───────── расчёты ───────── */
+const n = v => Math.round(v).toLocaleString('ru-RU');
+const b = v => `[${n(v)}]`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const tabNow = () => S.tab || { small: 'auto', medium: 'manual', large: 'plan' }[S.segment];
+const mode = () => (tabNow() === 'manual' ? 'manual' : 'auto');
+const pointsK = () => Object.values(S.points).filter(Boolean).length / 2;
+const amt = () => S.amount || +String(S.customAmount).replace(/\D/g, '') || 0;
+const campName = () => (mode() === 'manual' ? 'своя аудитория' : GOALS[S.goal].t);
+const adText = () => S.adText ?? (S.fixed ? GOALS[S.goal].fixed : GOALS[S.goal].text);
+const stopHit = t => STOP.map(s => ({ ...s, m: t.match(s.re) })).find(s => s.m);
+function manual() {
+  const ids = k => Object.entries(S.aud).filter(([, v]) => v === k).map(([id]) => SIG[id]);
+  const any = ids('any'), and = ids('and'), not = ids('not');
+  let reach = any.reduce((a, s) => a + s.reach, 0) * .8;
+  and.forEach(s => (reach *= Math.min(.6, s.reach / 6000 + .2)));
+  reach *= 1 - not.length * .08;
+  const all = [...any, ...and];
+  const cpc = all.length ? all.reduce((a, s) => a + s.cpc, 0) / all.length + and.length * 1.5 : 0;
+  return { reach: Math.max(0, reach), cpc };
+}
+function D() {
+  const g = GOALS[S.goal], m = manual(), isM = mode() === 'manual';
+  const cpc = isM ? m.cpc || 9 : g.cpc;
+  const reach = (isM ? m.reach : g.reach) * pointsK();
+  const conv = isM ? .24 : g.conv;
+  const amount = amt();
+  const clicks = S.budget / cpc, visits = clicks * conv;
+  return {
+    reach, cpc, budget: S.budget, clicks, visits, guest: visits ? S.budget / visits : 0,
+    aClicks: amount / cpc, aVisits: (amount / cpc) * conv, amount, bonus: 3000,
+    calcClicks: S.budget / 9, calcVisits: (S.budget / 9) * .26,
+  };
+}
+function refresh() {
+  const d = D();
+  document.querySelectorAll('[data-k]').forEach(el => {
+    const k = el.dataset.k, v = d[k];
+    el.textContent = k === 'cpc' ? `[${Math.round(v)}] ₽` : k === 'guest' ? `[${n(v)}] ₽` : k === 'budget' || k === 'amount' ? `${n(v)} ₽` : b(v);
+  });
+}
+
+/* ───────── общие куски ───────── */
+const logo = (href = '#/') => `<a class="brand" href="${href}"><img class="bl-logo" src="../design-system/assets/beeline-logo.svg" alt="билайн" width="44" height="44"><span class="bl-hide-mobile"><span class="brand__name" style="display:block">МЁД</span><span class="brand__sub">рекламная платформа</span></span></a>`;
+const STEPS = ['охват', 'кампания', 'оплата', 'запуск'];
+const steps = cur => `<ol class="bl-steps" aria-label="Шаги">${STEPS.map((s, i) => `<li class="${i < cur ? 'is-done' : i === cur ? 'is-current' : ''}" ${i === cur ? 'aria-current="step"' : ''}>${s}</li>`).join('')}</ol>`;
+const flowHead = cur => `<header class="flow-head">${logo()}${steps(cur)}<a class="bl-btn bl-btn--s" href="#/cab/campaigns">сохранить и выйти</a></header>`;
+const idBtn = (p, act = 'login') => `<button class="bl-btn bl-btn--l bl-btn--block id-btn" data-act="${act}" data-v="${p}"><span class="id-badge id-badge--${PROVIDERS[p].cls}" aria-hidden="true">${PROVIDERS[p].l}</span>${p === 'gos' ? 'войти через Госуслуги' : PROVIDERS[p].name}</button>`;
+const check = (key, label, sub = '', dis = false) => `<label class="bl-check"><input type="checkbox" data-model="${key}" ${get(key) ? 'checked' : ''} ${dis ? 'disabled' : ''}><span class="bl-check__box"></span><span>${label}${sub ? `<span class="bl-caption" style="display:block">${sub}</span>` : ''}</span></label>`;
+const radio = (key, val, label, sub = '', dis = false) => `<label class="bl-radio" style="${dis ? 'opacity:.5;cursor:not-allowed' : ''}"><input type="radio" name="${key}" value="${val}" data-model="${key}" ${get(key) === val ? 'checked' : ''} ${dis ? 'disabled' : ''}><span class="bl-radio__dot"></span><span>${label}${sub ? `<span class="bl-caption" style="display:block">${sub}</span>` : ''}</span></label>`;
+const sw = (key, label) => `<label class="bl-switch"><input type="checkbox" data-model="${key}" ${get(key) ? 'checked' : ''}><span class="bl-switch__track"></span><span>${label}</span></label>`;
+const seg = (key, opts) => `<div class="bl-segmented" role="tablist">${opts.map(([v, l]) => `<button role="tab" aria-selected="${get(key) === v}" data-set="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
+function get(path) { return path.split('.').reduce((o, k) => o?.[k], S); }
+function set(path, v) { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; save(); }
+
+function mapSvg() {
+  const dots = [];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  CO.points.forEach(p => { if (!S.points[p.id]) return; for (let i = 0; i < 38; i++) { const a = rnd() * 6.28, r = Math.sqrt(rnd()) * 105; dots.push(`<circle cx="${(p.x + Math.cos(a) * r).toFixed(1)}" cy="${(p.y + Math.sin(a) * r).toFixed(1)}" r="3" fill="var(--color-static-blue-500)" opacity=".55"/>`); } });
+  return `<svg viewBox="0 0 640 480" role="img" aria-label="Карта: ${CO.points.filter(p => S.points[p.id]).length} точки и радиус 1 км">
+    <g stroke="var(--color-background-secondary)" stroke-width="10" fill="none" stroke-linecap="round">
+      <path d="M-10 120 Q 200 100 320 210 T 660 260"/><path d="M80 -10 L 160 500"/><path d="M380 -10 Q 360 200 420 500"/><path d="M-10 380 L 660 330"/><path d="M540 -10 L 600 500"/>
+    </g>
+    <path d="M-10 60 Q 120 30 250 70 T 520 40 L 660 50" stroke="var(--color-surface-03)" stroke-width="22" fill="none"/>
+    ${CO.points.map(p => S.points[p.id] ? `<circle cx="${p.x}" cy="${p.y}" r="110" fill="var(--color-static-blue-500)" fill-opacity=".08" stroke="var(--color-static-blue-500)" stroke-dasharray="6 6" stroke-width="2"/>` : '').join('')}
+    ${dots.join('')}
+    ${CO.points.map(p => `<g opacity="${S.points[p.id] ? 1 : .35}"><circle cx="${p.x}" cy="${p.y}" r="16" fill="var(--color-background-secondary-invert)"/><circle cx="${p.x}" cy="${p.y}" r="6" fill="var(--color-static-white)"/><text x="${p.x}" y="${p.y - 26}" text-anchor="middle" font-size="15" fill="var(--color-text-primary)" font-family="var(--font-primary)">${p.addr}</text></g>`).join('')}
+  </svg>`;
+}
+function qrSvg() {
+  let s = 3, out = ''; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
+    const finder = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
+    const on = finder ? (x % 20 === 0 || y % 20 === 0 || x === 6 || y === 6 || x === 14 || y === 14 || ((x % 14 >= 2 && x % 14 <= 4) && (y % 14 >= 2 && y % 14 <= 4))) : r() > .5;
+    if (on) out += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  return `<svg viewBox="0 0 21 21" fill="var(--color-text-primary)" aria-label="QR-код для оплаты по СБП (заглушка)" role="img">${out}</svg>`;
+}
+
+/* ───────── экраны ───────── */
+const R = {};
+
+/* 1. Лендинг */
+R['/'] = { name: '1 · лендинг', phase: 1, view: () => `
+<div class="bl-topbar">первая кампания с бонусом [3 000] ₽ на баланс</div>
+<div class="bl-page wrap">
+  <header class="bl-header">
+    <div class="bl-header__side">${logo()}</div>
+    <div class="bl-header__side bl-header__side--end">
+      <a class="bl-hide-mobile bl-btn" href="#how">как это работает</a>
+      <a class="bl-hide-mobile bl-btn" href="#calc">расчёт</a>
+      <a class="bl-btn bl-btn--dark" href="#/login">войти</a>
+    </div>
+  </header>
+  <main class="bl-stack" style="--bl-gap: 24px">
+    <section class="hero">
+      <div class="bl-stack" style="--bl-gap: 24px">
+        <h1 class="bl-display-xl">реклама в&nbsp;момент, когда клиенту это нужно</h1>
+        <p class="bl-lead">Переехал, купил новый телефон, собирается в поездку, получил зарплату. Покажем ваш оффер именно тогда. Платите только за клики.</p>
+        <div class="bl-row" style="--bl-gap: 20px; margin-top: 8px">
+          <a class="bl-btn bl-btn--primary bl-btn--xl" href="#/login">узнать охват</a>
+          <a class="bl-btn bl-btn--ghost" href="#/inn">без входа: ввести ИНН или сайт</a>
+        </div>
+        <p class="bl-caption">вход через Госуслуги, СберБизнес ID или Альфа ID, реквизиты заполним сами</p>
+      </div>
+      <div class="hero__visual" aria-hidden="true">
+        <div class="hero__moments">
+          <div class="moment"><span>переехал в ваш район</span><span class="bl-tag bl-tag--soft-violet">30 дней</span></div>
+          <div class="moment moment--hit"><span class="bl-medium">рядом с вашей точкой</span><span class="bl-tag">[12 400]</span></div>
+          <div class="moment"><span>платёж прошёл</span><span class="bl-tag bl-tag--soft-blue">сейчас</span></div>
+          <div class="moment"><span>день зарплаты</span><span class="bl-tag bl-tag--soft-green">сегодня</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bl-section bl-section--wide" id="how">
+      <div class="section-head"><h2 class="bl-display-l">кого найдём</h2><p class="bl-body bl-secondary" style="max-width:360px">Данные абонентов не передаём. Вы выбираете момент, мы показываем оффер.</p></div>
+      <div class="bl-grid" style="--bl-cols: 4">
+        <article class="bl-card"><span class="bl-tag bl-tag--soft-violet" style="align-self:flex-start">событие</span><h3 class="bl-h3">жизненные моменты</h3><p class="bl-body bl-secondary">переезд, новый смартфон, поездка, полис истекает</p></article>
+        <article class="bl-card"><span class="bl-tag bl-tag--soft-blue" style="align-self:flex-start">контекст</span><h3 class="bl-h3">момент на экране</h3><p class="bl-body bl-secondary">платёж прошёл, трафик кончается, день зарплаты</p></article>
+        <article class="bl-card"><span class="bl-tag bl-tag--soft-green" style="align-self:flex-start">место</span><h3 class="bl-h3">образ жизни и место</h3><p class="bl-body bl-secondary">живут, работают или каждый день проезжают мимо</p></article>
+        <article class="bl-card"><span class="bl-tag" style="align-self:flex-start;background:var(--color-background-secondary)">ваша база</span><h3 class="bl-h3">ваши клиенты</h3><p class="bl-body bl-secondary">вернуть ушедших и найти похожих на лучших</p></article>
+      </div>
+      <h3 class="bl-h2" style="margin: var(--space-5xl) 0 var(--space-l)">где увидят</h3>
+      <div class="bl-row">${PLACES.map(p => `<span class="bl-chip">${p[1]}</span>`).join('')}</div>
+    </section>
+
+    <section class="bl-section bl-section--wide" id="calc">
+      <div class="calc">
+        <div class="bl-stack" style="--bl-gap: 32px">
+          <h2 class="bl-display-l">рассчитайте охват</h2>
+          <label class="bl-field"><span class="bl-field__label">бюджет в месяц: <span data-k="budget"></span></span><input class="bl-range" type="range" min="3000" max="100000" step="1000" value="${S.budget}" data-model="budget" aria-label="Бюджет в месяц"></label>
+          <div class="bl-row" style="--bl-gap: 48px">
+            <div class="bl-stat"><span class="bl-stat__value" data-k="calcClicks"></span><span class="bl-stat__label">кликов</span></div>
+            <div class="bl-stat"><span class="bl-stat__value">[9] ₽</span><span class="bl-stat__label">цена клика</span></div>
+          </div>
+        </div>
+        <div class="bl-card" data-theme="invert" style="padding: 40px; gap: 16px; border-radius: var(--radius-600)">
+          <span class="bl-caption">придут к вам за месяц</span>
+          <span class="bl-number-xl"><span data-k="calcVisits"></span> гостей</span>
+          <span class="bl-caption">Расчёт по средним ставкам кофеен. Точный охват по вашим точкам покажем после входа.</span>
+          <div><a class="bl-btn bl-btn--dark bl-btn--l" href="#/login" style="margin-top: 16px">узнать точный охват</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bl-grid" style="--bl-cols: 3">
+      <article class="bl-card bl-card--promo bl-card--white"><span class="bl-caption">кофейня</span><h3 class="bl-h2">[280] гостей за [10 000] ₽</h3><p class="bl-body bl-secondary">показ тем, кто живёт и работает в 1 км</p></article>
+      <article class="bl-card bl-card--promo" data-theme="invert"><span class="bl-caption">автосервис</span><h3 class="bl-h2">[72] записи в первые холода</h3><p class="bl-body bl-secondary">водители рядом, сезон смены шин</p></article>
+      <article class="bl-card bl-card--promo bl-card--white"><span class="bl-caption">застройщик</span><h3 class="bl-h2">[178] визитов в офис продаж</h3><p class="bl-body bl-secondary">те, кто уже выбирает квартиру</p></article>
+    </section>
+
+    <section class="bl-section" id="faq">
+      <h2 class="bl-display-l" style="text-align:center; margin-bottom: var(--space-4xl)">можно спросить</h2>
+      <div class="bl-accordion">
+        <details open><summary>нужен ли договор и ЭДО?</summary><div class="bl-accordion__body">Нет. Оферту принимаете галочкой при оплате. ЭДО подключите позже, для закрывающих документов.</div></details>
+        <details><summary>как оплатить?</summary><div class="bl-accordion__body">СБП для бизнеса или бизнес-картой за секунды. Средний и крупный бизнес может платить по счёту.</div></details>
+        <details><summary>зачем входить через Госуслуги или банк?</summary><div class="bl-accordion__body">Так мы сразу узнаём вашу компанию и точки, показываем точный охват и заполняем реквизиты сами.</div></details>
+        <details><summary>какие данные я увижу?</summary><div class="bl-accordion__body">Клики, визиты в точку, повторные визиты и цену гостя. Данные абонентов не передаём.</div></details>
+      </div>
+    </section>
+  </main>
+  <footer class="footer bl-caption"><span>© [2026] МЁД · рекламная платформа билайна</span><span class="bl-row" style="--bl-gap:24px"><a href="#/offer">оферта</a><a href="#/offer">обработка данных</a></span></footer>
+</div>` };
+
+/* 2.1 Вход по бизнес-ID */
+R['/login'] = { name: '2.1 · вход по бизнес-ID', phase: 1, view: () => `
+<div class="bl-page">
+  <header class="bl-header"><div class="bl-header__side">${logo()}</div><a class="bl-btn" href="#/">${I.back}назад</a></header>
+  <main class="center">
+    <div class="bl-modal bl-stack" style="--bl-gap: 16px" id="login-box">
+      <h1 class="bl-h2">войдите, и мы покажем охват по вашим точкам</h1>
+      <p class="bl-body bl-secondary">Компанию, адреса и подписанта узнаем из профиля. Реквизиты заполним сами, ИНН вводить не нужно.</p>
+      <div class="bl-stack" style="--bl-gap: 8px; margin-top: 8px">${idBtn('gos')}${idBtn('sber')}${idBtn('alfa')}</div>
+      <hr class="bl-divider" style="margin: 8px 0">
+      <a href="#/inn">ввести ИНН или сайт без входа</a>
+      <p class="bl-micro">Договор и ЭДО не нужны. Оферту примете галочкой при оплате.</p>
+    </div>
+  </main>
+</div>` };
+
+/* 2.1б ИНН или сайт */
+R['/inn'] = { name: '2.1 · без входа: ИНН или сайт', phase: 1, view: () => `
+<div class="bl-page">
+  <header class="bl-header"><div class="bl-header__side">${logo()}</div><a class="bl-btn" href="#/login">войти по бизнес-ID</a></header>
+  <main class="center">
+    <div class="bl-modal bl-stack" style="--bl-gap: 16px">
+      <h1 class="bl-h2">найдём компанию по ИНН или сайту</h1>
+      <label class="bl-field"><span class="bl-field__label">ИНН, название или сайт</span><input class="bl-input" id="inn-q" placeholder="7701234567 или mycoffee.ru" autocomplete="off" autofocus></label>
+      <div class="suggest" id="inn-s" hidden><button data-act="pickInn"><span class="bl-medium">${CO.name}</span><span class="bl-caption" style="display:block">ИНН ${CO.inn} · ${CO.site} · 2 точки в Москве</span></button></div>
+      <p class="bl-caption">Покажем охват по открытым данным. Для оплаты всё равно понадобится вход по бизнес-ID.</p>
+    </div>
+  </main>
+</div>`, mount() {
+  const q = document.getElementById('inn-q'), s = document.getElementById('inn-s');
+  q.addEventListener('input', () => (s.hidden = q.value.trim().length < 3));
+} };
+
+/* 2.2 Согласия */
+R['/consent'] = { name: '2.2 · согласия', phase: 1, view: () => {
+  const p = PROVIDERS[S.provider] || PROVIDERS.sber;
+  const ok = S.consents.company && S.consents.signer;
+  return `
+<div class="bl-page wrap">
+  ${flowHead(0)}
+  <div class="page-title"><div class="bl-stack" style="--bl-gap:8px"><span class="bl-tag bl-tag--soft-green" style="align-self:flex-start">${I.check.replace('aria-hidden', 'width="14" height="14" aria-hidden')} компания найдена в ${p.name}</span><h1 class="bl-h1">проверьте, что это вы</h1></div></div>
+  <div class="two">
+    <section class="bl-section pad bl-stack" style="--bl-gap: 24px">
+      <div><h2 class="bl-h3">${CO.name}</h2><p class="bl-caption" style="margin-top:4px">${CO.brand} · ${CO.site}</p></div>
+      <dl class="kv"><dt>ИНН / КПП</dt><dd>${CO.inn} / ${CO.kpp}</dd><dt>ОГРН</dt><dd>${CO.ogrn}</dd><dt>подписант</dt><dd>${CO.signer}, ${CO.role}</dd><dt>расчётный счёт</dt><dd>${CO.bank}</dd></dl>
+      <div><div class="bl-field__label" style="margin-bottom:8px">точки продаж</div>${CO.points.map(pt => `<div class="bl-cell"><span class="bl-cell__icon">${I.pin}</span><span class="bl-cell__main"><span class="bl-cell__title">${pt.addr}</span><span class="bl-cell__sub" style="display:block">Москва · из Яндекс Карт и DaData</span></span></div>`).join('')}</div>
+      <a href="#/consent" data-act="toast" data-v="Добавление точки: адрес + радиус. В прототипе не реализовано">добавить точку</a>
+    </section>
+    <section class="bl-section pad bl-stack sticky" style="--bl-gap: 20px">
+      <h2 class="bl-h3">что возьмём и зачем</h2>
+      ${check('consents.company', 'данные компании', 'реквизиты и адреса: заполнить оферту и посчитать охват по точкам')}
+      ${check('consents.signer', 'данные подписанта', 'ФИО и должность: чтобы оферту принял тот, кто вправе')}
+      ${check('consents.profile', 'профиль абонента билайна', 'по желанию: подскажем аудиторию по вашим же интересам и районам')}
+      <p class="bl-micro">Согласие можно отозвать в разделе «Компания». Данные не передаём третьим лицам.</p>
+      <button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-go="#/reach" ${ok ? '' : 'disabled'}>показать охват</button>
+    </section>
+  </div>
+</div>`; } };
+
+/* 2.3 Охват и прогноз */
+R['/reach'] = { name: '2.3 · охват и прогноз', phase: 1, view: () => `
+<div class="bl-page wrap">
+  ${flowHead(0)}
+  ${S.provider === 'inn' ? `<div class="bl-notice bl-notice--info" style="margin-top:16px">Вы без входа: охват по открытым данным. Точнее посчитаем после входа по бизнес-ID, он же понадобится для оплаты.</div>` : ''}
+  <div class="page-title">
+    <div class="bl-stack" style="--bl-gap: 12px">
+      <div class="bl-row"><span class="bl-tag bl-tag--dark">${SEGMENTS[S.segment]}</span><button class="bl-btn bl-btn--ghost" data-act="segEdit" style="font:var(--type-caption)">неверно? изменить</button></div>
+      ${S.segEdit ? seg('segment', Object.entries(SEGMENTS)) : ''}
+      <h1 class="bl-h1" style="max-width:820px">рядом с вашими точками <span data-k="reach"></span> подходящих людей</h1>
+    </div>
+  </div>
+  <div class="two">
+    <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+      <div class="map">${mapSvg()}<span class="bl-pill-dark map__legend">радиус 1 км · живут и работают рядом</span></div>
+      <div class="bl-row">${CO.points.map(p => `<button class="bl-chip ${S.points[p.id] ? 'is-active' : ''}" aria-pressed="${S.points[p.id]}" data-toggle="points.${p.id}">${p.addr}</button>`).join('')}</div>
+      <p class="bl-caption">Считаем по обезличенным данным базовых станций: сколько людей живут, работают или каждый день бывают рядом.</p>
+    </section>
+    <section class="bl-section pad bl-stack sticky" style="--bl-gap: 24px">
+      <h2 class="bl-h3">прогноз на месяц</h2>
+      <label class="bl-field"><span class="bl-field__label">бюджет: <span data-k="budget"></span></span><input class="bl-range" type="range" min="3000" max="100000" step="1000" value="${S.budget}" data-model="budget" aria-label="Бюджет в месяц"></label>
+      <div class="bl-grid" style="--bl-cols: 2; gap: 24px">
+        <div class="bl-stat"><span class="bl-stat__label">клики</span><span class="bl-stat__value" data-k="clicks"></span></div>
+        <div class="bl-stat"><span class="bl-stat__label">придут к вам</span><span class="bl-stat__value" data-k="visits"></span></div>
+        <div class="bl-stat"><span class="bl-stat__label">цена клика</span><span class="bl-stat__value" data-k="cpc"></span></div>
+        <div class="bl-stat"><span class="bl-stat__label">один гость</span><span class="bl-stat__value" data-k="guest"></span></div>
+      </div>
+      <p class="bl-micro">Прогноз по ставкам кофеен в вашем районе. Списываем только за клики, остановить можно в любой момент.</p>
+      <button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-go="#/build">собрать кампанию</button>
+    </section>
+  </div>
+</div>` };
+
+/* 3. Сборка кампании: четыре вкладки */
+const TABS = [['auto', 'автопилот'], ['manual', 'вручную'], ['plan', 'медиаплан'], ['special', 'спецпроект']];
+function autoTab() {
+  const t = adText(), hit = stopHit(t);
+  const shown = hit ? esc(t).replace(esc(hit.m[0]), `<mark class="stop">${esc(hit.m[0])}</mark>`) : esc(t);
+  return `
+  <div class="two">
+    <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+      <h2 class="bl-h2">чего хотите?</h2>
+      ${Object.entries(GOALS).map(([k, g]) => `<button class="bl-card choice" aria-pressed="${S.goal === k}" data-set="goal" data-v="${k}"><span class="bl-row" style="justify-content:space-between;flex-wrap:nowrap"><span class="bl-h3">${g.t}</span><span class="choice__mark">${I.check}</span></span><span class="bl-body bl-secondary">${g.d}</span><span class="bl-caption">≈ ${b(g.reach * pointsK())} человек · клик от [${g.cpc}] ₽</span></button>`).join('')}
+    </section>
+    <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+      <div class="bl-row" style="justify-content:space-between"><h2 class="bl-h3">объявление готово</h2><span class="bl-tag bl-tag--soft-violet">ИИ · с ${CO.site} и Карт</span></div>
+      ${S.editText ? `<label class="bl-field"><span class="bl-field__label">текст объявления</span><textarea class="bl-input" rows="3" data-model="adText" data-live>${esc(t)}</textarea></label>` : `<p class="bl-body-l">${shown}</p>`}
+      ${hit ? `<div class="bl-notice bl-notice--error"><div class="bl-stack" style="--bl-gap:8px"><span><b class="bl-medium">«${esc(hit.m[0])}»</b> не пройдёт модерацию: ${hit.why}.</span><div class="bl-row"><button class="bl-btn bl-btn--s bl-btn--dark" data-act="fixText">заменить на «свежая обжарка каждый день»</button></div></div></div>` : `<span class="bl-caption bl-success">${I.check.replace('aria-hidden', 'width="14" height="14" style="display:inline;vertical-align:-2px" aria-hidden')} текст пройдёт модерацию</span>`}
+      <div class="bl-row"><button class="bl-btn bl-btn--s" data-act="editText">${S.editText ? 'готово' : 'поменять текст'}</button><button class="bl-btn bl-btn--s" data-act="nextImg">поменять картинку</button></div>
+      <div class="ad-img ad-img--${S.img}" style="aspect-ratio:3">${IMAGES[S.img]}</div>
+    </section>
+  </div>
+  <section class="bl-section bl-section--wide pad" style="margin-top:24px">
+      <div class="bl-row" style="justify-content:space-between;margin-bottom:16px"><h2 class="bl-h3">так его увидят</h2><span class="bl-caption">места подобраны под цель автоматически</span></div>
+      <div class="previews">
+        <div><div class="phone-mini"><div class="phone-mini__bar"></div><span class="bl-micro">главная приложения</span><div class="ad-img ad-img--${S.img}">${IMAGES[S.img]}</div><div class="ad-card"><b>${CO.brand}</b>${esc(t)}</div></div><p class="bl-micro" style="margin-top:6px">баннер на главной</p></div>
+        <div><div class="phone-mini"><div class="phone-mini__bar"></div><span class="bl-micro">витрина выгод</span><div class="ad-card"><div class="ad-img ad-img--${S.img}" style="aspect-ratio:2">${IMAGES[S.img]}</div><b>${S.goal === 'showcase' ? 'капучино за 1 ₽ + 5 ГБ' : '−20% до 10:00'}</b><span class="bl-micro">${CO.points.filter(p => S.points[p.id]).map(p => p.addr).join(' · ')}</span><span class="bl-btn bl-btn--s" style="pointer-events:none">сохранить купон</span></div></div><p class="bl-micro" style="margin-top:6px">карточка в Витрине выгод</p></div>
+        <div><div class="phone-mini"><div class="phone-mini__bar"></div><div class="paid-ok"><i>${I.check.replace('aria-hidden', 'width="14" height="14" aria-hidden')}</i>платёж прошёл</div><span class="bl-micro">500 ₽ · пополнение счёта</span><div class="ad-card" style="margin-top:auto"><span class="bl-micro">вам может пригодиться</span><b>${CO.brand}</b>${esc(t)}</div></div><p class="bl-micro" style="margin-top:6px">экран «Платёж прошёл»</p></div>
+      </div>
+  </section>`;
+}
+function manualTab() {
+  const m = manual();
+  const chips = k => Object.entries(S.aud).filter(([, v]) => v === k).map(([id]) => `<span class="bl-chip" style="cursor:default">${SIG[id].t}<button class="bl-btn--ghost" style="border:0;background:none;cursor:pointer;padding:0;color:inherit" data-act="unsig" data-v="${id}" aria-label="Убрать ${SIG[id].t}">${I.x}</button></span>`).join('') || '<span class="bl-caption">нажмите на сигнал слева</span>';
+  const bucket = (k, t, sub) => `<div class="bucket ${S.target === k ? 'is-target' : ''}"><div class="bl-row" style="justify-content:space-between"><span class="bl-medium">${t}</span><span class="bl-micro">${sub}</span></div><div class="bucket__chips">${chips(k)}</div></div>`;
+  return `
+  <div class="two">
+    <section class="bl-section pad">
+      <div class="bl-row" style="justify-content:space-between;margin-bottom:16px"><h2 class="bl-h3">сигналы</h2><span class="bl-micro">метка — насколько горячий спрос</span></div>
+      ${SIGNALS.map(g => `<div class="sig-group"><div class="bl-field__label" style="margin-bottom:4px">${g.g}</div>${g.items.map(([id, t, v]) => v === 'off'
+        ? `<div class="sig is-off"><span class="sig__name">${t}</span><span class="bl-tag">не продаётся</span><span class="bl-icon-btn bl-icon-btn--s" style="visibility:hidden"></span></div>`
+        : `<div class="sig"><span class="sig__name">${t}</span><span class="bl-tag ${VALUE[v][1]}">${VALUE[v][0]}</span>${S.aud[id] ? `<button class="bl-icon-btn bl-icon-btn--s" style="background:var(--color-background-secondary-invert);color:var(--color-text-primary-invert)" data-act="unsig" data-v="${id}" aria-label="Убрать">${I.check}</button>` : `<button class="bl-icon-btn bl-icon-btn--s" data-act="sig" data-v="${id}" aria-label="Добавить ${t}">${I.plus}</button>`}</div>`).join('')}</div>`).join('')}
+    </section>
+    <div class="bl-stack sticky" style="--bl-gap: 24px">
+      <section class="bl-section pad bl-stack" style="--bl-gap: 12px">
+        <h2 class="bl-h3">аудитория</h2>
+        <div class="bl-row"><span class="bl-caption">добавлять в:</span>${seg('target', [['any', 'любой из'], ['and', 'и'], ['not', 'кроме']])}</div>
+        ${bucket('any', 'любой из', 'расширяет')}${bucket('and', 'и', 'сужает')}${bucket('not', 'кроме', 'исключает')}
+        <div class="bl-row" style="--bl-gap:40px;margin-top:8px"><div class="bl-stat"><span class="bl-stat__label">охват</span><span class="bl-stat__value" data-k="reach"></span></div><div class="bl-stat"><span class="bl-stat__label">средний клик</span><span class="bl-stat__value" data-k="cpc"></span></div></div>
+        ${m.reach < 1500 && m.reach > 0 ? '<div class="bl-notice">Аудитория узкая: показы будут идти медленно. Уберите одно условие «и».</div>' : ''}
+      </section>
+    </div>
+  </div>
+  <section class="bl-section bl-section--wide pad" style="margin-top:24px">
+    <h2 class="bl-h3" style="margin-bottom:16px">где показать</h2>
+    <div class="bl-table-wrap"><table class="bl-table"><thead><tr><th></th><th>место</th><th>формат</th><th>CTR</th><th>оплата</th></tr></thead><tbody>
+      ${PLACES.map(([id, t, f, ctr, pay]) => `<tr><td style="width:40px"><label class="bl-check"><input type="checkbox" data-model="places.${id}" ${S.places[id] ? 'checked' : ''} aria-label="${t}"><span class="bl-check__box"></span></label></td><td>${t}</td><td class="bl-secondary">${f}</td><td>${ctr}</td><td>${pay === 'за показы' ? '<span class="bl-tag bl-tag--soft-blue">за показы</span>' : pay}</td></tr>`).join('')}
+    </tbody></table></div>
+  </section>`;
+}
+function planRows() {
+  const d = D(), k = [1, 1.15, 1.3];
+  return ['[ноябрь]', '[декабрь]', '[январь]'].map((mo, i) => ({ mo, budget: S.budget * k[i], clicks: d.clicks * k[i], visits: d.visits * k[i] }));
+}
+function planTab() {
+  const rows = planRows(), d = D();
+  const aud = mode() === 'manual' ? Object.keys(S.aud).map(id => SIG[id].t).join(', ') : GOALS[S.goal].t;
+  const places = PLACES.filter(p => S.places[p[0]]).map(p => p[1]).join(', ');
+  return `
+  <div class="two">
+    <section class="bl-section pad bl-stack" style="--bl-gap: 24px">
+      <div><h2 class="bl-h2">медиаплан</h2><p class="bl-caption" style="margin-top:4px">собран из текущих настроек, ${mode() === 'manual' ? 'режим «вручную»' : 'режим «автопилот»'}</p></div>
+      <dl class="kv"><dt>аудитории</dt><dd>${aud || '—'}</dd><dt>места показа</dt><dd>${places || '—'}</dd><dt>точки</dt><dd>${CO.points.filter(p => S.points[p.id]).map(p => p.addr).join(', ')}</dd><dt>охват</dt><dd>${b(d.reach)} человек</dd></dl>
+      <div class="bl-table-wrap"><table class="bl-table"><thead><tr><th>месяц</th><th>бюджет</th><th>клики</th><th>визиты</th></tr></thead><tbody>
+        ${rows.map(r => `<tr><td>${r.mo}</td><td>${b(r.budget)} ₽</td><td>${b(r.clicks)}</td><td>${b(r.visits)}</td></tr>`).join('')}
+        <tr><td class="bl-medium">итого</td><td class="bl-medium">${b(rows.reduce((a, r) => a + r.budget, 0))} ₽</td><td class="bl-medium">${b(rows.reduce((a, r) => a + r.clicks, 0))}</td><td class="bl-medium">${b(rows.reduce((a, r) => a + r.visits, 0))}</td></tr>
+      </tbody></table></div>
+      <div class="bl-row no-print"><button class="bl-btn bl-btn--dark" data-act="csv">скачать в Excel</button><button class="bl-btn" data-act="print">скачать PDF для согласования</button></div>
+    </section>
+    <section class="bl-card no-print" data-theme="invert" style="padding:40px;border-radius:var(--radius-1000);gap:16px">
+      <h2 class="bl-h3">нужно больше, чем баннер?</h2>
+      <p class="bl-body bl-secondary">Игра в приложении, свой раздел, розыгрыш, отдельный сегмент. Соберём с менеджером, обычная кампания может идти параллельно.</p>
+      <div class="bl-row">${['игра', 'свой раздел', 'розыгрыш', 'свой сегмент'].map(x => `<span class="bl-tag">${x}</span>`).join('')}</div>
+      <div><button class="bl-btn bl-btn--dark" data-set="tab" data-v="special">обсудить с менеджером</button></div>
+    </section>
+  </div>`;
+}
+function specialTab() {
+  if (S.special.sent) return `<section class="bl-section pad bl-stack" style="--bl-gap:16px;max-width:760px"><span class="bl-tag bl-tag--success" style="align-self:flex-start">заявка отправлена</span><h2 class="bl-h2">менеджер свяжется за [1] рабочий день</h2><p class="bl-body bl-secondary">[Ольга], ваш менеджер спецпроектов, позвонит ${CO.signerShort} и пришлёт бриф. Обычную кампанию можно запустить уже сейчас.</p><div class="bl-row"><button class="bl-btn" data-set="tab" data-v="auto">вернуться к кампании</button><button class="bl-btn bl-btn--ghost" data-act="specialReset">новая заявка</button></div></section>`;
+  const types = [['game', 'игра'], ['section', 'свой раздел'], ['raffle', 'розыгрыш'], ['segment', 'свой сегмент']];
+  return `
+  <section class="bl-section pad bl-stack" style="--bl-gap: 24px; max-width: 760px">
+    <div><h2 class="bl-h2">спецпроект с менеджером</h2><p class="bl-body bl-secondary" style="margin-top:8px">Для любого бизнеса. Одна форма, остальное обсудим голосом.</p></div>
+    <div class="bl-field"><span class="bl-field__label">что хотите</span><div class="bl-row">${types.map(([v, l]) => `<button class="bl-chip ${S.special.type === v ? 'is-active' : ''}" aria-pressed="${S.special.type === v}" data-set="special.type" data-v="${v}">${l}</button>`).join('')}</div></div>
+    <label class="bl-field"><span class="bl-field__label">задача</span><textarea class="bl-input" rows="4" data-model="special.task" data-live placeholder="Например: открываем третью точку на Таганке, хотим, чтобы о ней узнал район">${esc(S.special.task)}</textarea></label>
+    <label class="bl-field"><span class="bl-field__label">бюджет</span><select class="bl-select" data-model="special.budget">${['до 300 000 ₽', '300 000 – 1 млн ₽', '1–5 млн ₽', 'больше 5 млн ₽'].map(o => `<option ${S.special.budget === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
+    <p class="bl-caption">Контакт: ${CO.signer}, [+7 916 000-00-00] — из профиля компании</p>
+    <div><button class="bl-btn bl-btn--primary bl-btn--l" data-act="specialSend">отправить заявку</button></div>
+  </section>`;
+}
+R['/build'] = { name: '3 · сборка кампании', phase: 2, view: () => {
+  const t = tabNow();
+  const body = { auto: autoTab, manual: manualTab, plan: planTab, special: specialTab }[t]();
+  const canPay = !(mode() === 'manual' && !Object.values(S.aud).some(v => v !== 'not'));
+  return `
+<div class="bl-page wrap">
+  ${flowHead(1)}
+  <div class="page-title"><h1 class="bl-h1">соберите кампанию</h1><div class="bl-segmented" role="tablist">${TABS.map(([v, l]) => `<button role="tab" aria-selected="${t === v}" data-set="tab" data-v="${v}">${l}</button>`).join('')}</div></div>
+  ${body}
+  <div class="bottombar">
+    <div class="bl-row" style="--bl-gap:24px"><span><span class="bl-caption">бюджет</span> <span class="bl-medium" data-k="budget"></span></span><span><span class="bl-caption">клики</span> <span class="bl-medium" data-k="clicks"></span></span><span class="bl-hide-mobile"><span class="bl-caption">придут</span> <span class="bl-medium" data-k="visits"></span></span></div>
+    <div class="bl-row"><a class="bl-btn bl-hide-mobile" href="#/reach">назад</a><button class="bl-btn ${t === 'special' ? 'bl-btn--dark' : 'bl-btn--primary'} bl-btn--l" data-go="#/checkout" ${canPay ? '' : 'disabled'}>к оплате</button></div>
+  </div>
+</div>`; } };
+
+/* 4.1 Чекаут */
+R['/checkout'] = { name: '4.1 · чекаут', phase: 3, view: () => {
+  const p = PROVIDERS[S.provider], noId = !p;
+  const amounts = [3000, 10000, 30000];
+  const boss = S.role === 'boss';
+  const canAct = S.offer && !noId && amt() >= 3000;
+  const action = boss
+    ? `<button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-act="pay" ${canAct ? '' : 'disabled'}>${S.pay === 'invoice' ? 'выставить счёт и запустить' : S.pay === 'post' ? 'запустить с постоплатой' : 'оплатить и запустить'}</button>`
+    : S.sentToBoss
+      ? `<div class="bl-notice bl-notice--success">Ссылка ушла ${CO.signerShort} в SMS и на почту. Как только подтвердит, кампания запустится, вам придёт уведомление.</div><a class="bl-btn bl-btn--block" href="#/approve">открыть как руководитель</a>`
+      : `<button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-act="sendBoss" ${canAct ? '' : 'disabled'}>отправить на подтверждение</button>`;
+  return `
+<div class="bl-page wrap">
+  ${flowHead(2)}
+  <div class="page-title"><h1 class="bl-h1">оплата и запуск</h1><div class="bl-stack" style="--bl-gap:6px;align-items:flex-end"><span class="demo-note">кто вошёл</span>${seg('role', [['boss', 'руководитель'], ['staff', 'сотрудник']])}</div></div>
+  <div class="two">
+    <div class="bl-stack" style="--bl-gap:24px">
+      <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+        <div class="bl-row" style="justify-content:space-between"><h2 class="bl-h3">реквизиты</h2>${p ? `<span class="bl-tag bl-tag--soft-green">из ${p.name}</span>` : ''}</div>
+        ${noId ? `<p class="bl-body bl-secondary">Чтобы принять оферту и оплатить, войдите по бизнес-ID. Реквизиты заполнятся сами.</p><div class="bl-stack" style="--bl-gap:8px">${idBtn('gos', 'idAtCheckout')}${idBtn('sber', 'idAtCheckout')}${idBtn('alfa', 'idAtCheckout')}</div>`
+        : `<dl class="kv"><dt>компания</dt><dd>${CO.name}, ИНН ${CO.inn}</dd><dt>счёт</dt><dd>${CO.bank}, ${CO.acc}</dd><dt>подписант</dt><dd>${CO.signer}</dd>${boss ? '' : `<dt>вы</dt><dd>${CO.employee}, маркетолог</dd>`}</dl>`}
+      </section>
+      <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+        <h2 class="bl-h3">сумма на баланс</h2>
+        <div class="bl-row">${amounts.map(a => `<button class="bl-chip ${S.amount === a ? 'is-active' : ''}" aria-pressed="${S.amount === a}" data-set="amount" data-v="${a}" data-num>${n(a)} ₽</button>`).join('')}<button class="bl-chip ${!S.amount ? 'is-active' : ''}" aria-pressed="${!S.amount}" data-set="amount" data-v="0" data-num>другая</button></div>
+        ${!S.amount ? `<label class="bl-field" style="max-width:280px"><span class="bl-field__label">сумма, от 3 000 ₽</span><input class="bl-input" inputmode="numeric" data-model="customAmount" data-live value="${esc(S.customAmount)}" placeholder="15 000"></label>` : ''}
+        <p class="bl-body">≈ <span data-k="aClicks"></span> кликов, <span data-k="aVisits"></span> гостей · <span class="bl-success">+[3 000] ₽ бонус на первую кампанию</span></p>
+      </section>
+      <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+        <h2 class="bl-h3">способ оплаты</h2>
+        ${radio('pay', 'sbp', 'СБП для бизнеса', 'зачисление за [10] секунд, без комиссии')}
+        ${radio('pay', 'card', 'бизнес-карта', 'любая карта юрлица')}
+        ${radio('pay', 'invoice', 'счёт-оферта', 'зачисление 1–3 дня, запуск после оплаты')}
+        ${radio('pay', 'post', 'постоплата', S.segment === 'large' ? 'лимит [500 000] ₽, счёт в конце месяца' : 'для крупного бизнеса по договору', S.segment !== 'large')}
+      </section>
+    </div>
+    <section class="bl-section pad bl-stack sticky" style="--bl-gap: 16px">
+      <h2 class="bl-h3">кампания</h2>
+      <dl class="kv" style="grid-template-columns:110px 1fr"><dt>цель</dt><dd>${campName()}</dd><dt>точки</dt><dd>${CO.points.filter(x => S.points[x.id]).length} из 2</dd><dt>места</dt><dd>${mode() === 'manual' ? PLACES.filter(x => S.places[x[0]]).length : 3}</dd><dt>к оплате</dt><dd class="bl-medium" data-k="amount"></dd></dl>
+      <hr class="bl-divider">
+      ${boss ? check('offer', `принимаю <a href="#/offer" target="_blank">оферту</a>`, 'договор и ЭДО не нужны. Закрывающие документы — когда подключите ЭДО') : `<div class="bl-notice">Оферту принимает руководитель: ${CO.signerShort}. Отправим ссылку, подтвердит с телефона через бизнес-ID.</div>${check('offer', 'с условиями оферты ознакомлен', '')}`}
+      ${action}
+      <a class="bl-btn bl-btn--ghost" href="#/build" style="align-self:center">изменить кампанию</a>
+    </section>
+  </div>
+</div>`; } };
+
+/* 4.2 Подтверждение подписантом */
+R['/approve'] = { name: '4.2 · подтверждение подписантом', phase: 3, view: () => `
+<div class="bl-page">
+  <div class="phone"><div class="phone__in">
+    <div class="bl-row" style="justify-content:space-between"><img class="bl-logo bl-logo--s" src="../design-system/assets/beeline-logo.svg" alt="билайн" width="32" height="32"><span class="bl-caption">МЁД · рекламная платформа</span></div>
+    ${S.approved ? `
+      <div class="bl-card bl-card--white" style="margin-top:40px;gap:16px"><span class="bl-tag bl-tag--success" style="align-self:flex-start">подтверждено</span><h1 class="bl-h2">кампания запущена в проверку</h1><p class="bl-body bl-secondary">${S.pay === 'sbp' ? 'Оплата по СБП прошла.' : 'Счёт отправлен на почту.'} ${CO.employee} получит уведомление.</p></div>
+      <a class="bl-btn bl-btn--block bl-btn--l" href="#/launch" style="margin-top:auto">открыть кабинет</a>`
+    : `
+      <h1 class="bl-h2" style="margin-top:16px">${CO.employee} просит подтвердить запуск рекламы</h1>
+      <div class="bl-card bl-card--white">
+        <dl class="kv" style="grid-template-columns:1fr"><dt>компания</dt><dd>${CO.name}</dd><dt>кампания</dt><dd>${campName()}</dd><dt>сумма</dt><dd class="bl-h3">${n(D().amount)} ₽</dd><dt>оплата</dt><dd>${{ sbp: 'СБП для бизнеса', card: 'бизнес-карта', invoice: 'счёт-оферта', post: 'постоплата' }[S.pay]}</dd></dl>
+        <a href="#/offer" target="_blank" class="bl-caption" style="color:var(--color-text-link)">текст оферты</a>
+      </div>
+      <p class="bl-caption">Подтверждая, вы принимаете оферту от имени ${CO.name}.</p>
+      <div class="bl-stack" style="--bl-gap:8px;margin-top:auto">
+        <button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-act="approve">подтвердить через Госуслуги</button>
+        <button class="bl-btn bl-btn--block" data-act="approve">СберБизнес ID</button>
+        <button class="bl-btn bl-btn--block" data-act="approve">Альфа ID для бизнеса</button>
+        <button class="bl-btn bl-btn--ghost" style="align-self:center" data-act="toast" data-v="${CO.employee} получит отказ с комментарием">отклонить</button>
+      </div>`}
+  </div></div>
+</div>` };
+
+/* 5. ИИ-модерация и запуск */
+R['/launch'] = { name: '5 · ИИ-модерация и запуск', phase: 4, view: () => {
+  const t = adText(), hit = stopHit(t);
+  const st = (on, wait, title, sub) => `<div class="status ${on ? 'is-done' : wait ? 'is-wait' : ''}"><span class="status__dot">${I.check}</span><span><span class="bl-body" style="display:block">${title}</span><span class="bl-caption">${sub}</span></span></div>`;
+  const L = hit ? 0 : S.launch;
+  return `
+<div class="bl-page wrap">
+  ${flowHead(3)}
+  <div class="page-title"><h1 class="bl-h1">${L >= 3 ? 'кампания показывается' : hit ? 'одна правка, и запускаем' : 'проверяем и запускаем'}</h1>${L >= 3 ? '<span class="bl-tag bl-tag--success">показывается</span>' : ''}</div>
+  <div class="two">
+    <section class="bl-section pad bl-stack" style="--bl-gap: 16px">
+      <h2 class="bl-h3">текст объявления</h2>
+      <p class="bl-body-l">${hit ? esc(t).replace(esc(hit.m[0]), `<mark class="stop">${esc(hit.m[0])}</mark>`) : esc(t)}</p>
+      ${hit ? `<div class="bl-notice bl-notice--error"><div class="bl-stack" style="--bl-gap:8px"><span><b class="bl-medium">«${esc(hit.m[0])}»</b>: ${hit.why}.</span><span>Предлагаем: <b class="bl-medium">«свежая обжарка каждый день»</b></span><div class="bl-row"><button class="bl-btn bl-btn--primary" data-act="fixText">заменить и отправить</button><button class="bl-btn" data-act="toast" data-v="Отправим на ручную проверку, ответ до 24 часов">оставить, проверить вручную</button></div></div></div>`
+      : `<div class="bl-notice bl-notice--success">${S.fixed ? 'Стоп-слово заменено.' : 'Замечаний нет.'} Картинка и текст соответствуют закону «О рекламе».</div>`}
+      <hr class="bl-divider">
+      <h2 class="bl-h3">уведомления</h2>
+      <div class="bl-row" style="--bl-gap:24px">${sw('notify.sms', 'SMS')}${sw('notify.mail', 'почта')}${sw('notify.tg', 'Telegram')}</div>
+      <p class="bl-caption">Напишем, когда пойдут показы, когда появятся первые визиты и когда баланс будет заканчиваться.</p>
+    </section>
+    <section class="bl-section pad sticky bl-stack" style="--bl-gap: 8px">
+      <h2 class="bl-h3">статус</h2>
+      <div class="status-list">
+        ${st(L >= 1, !hit && L === 0, L >= 1 ? 'проверено за [2] минуты' : 'ИИ-проверка текста и картинки', 'закон «О рекламе», правила площадок')}
+        ${st(L >= 2, L === 1, 'маркировка', L >= 2 ? 'erid [2SDnjc7Xy3M] присвоен автоматически, данные в ОРД переданы' : 'присвоим erid и передадим данные в ОРД')}
+        ${st(L >= 3, L === 2, 'показывается', L >= 3 ? 'первые показы в Витрине выгод и на главной' : 'старт в аукционе сразу после маркировки')}
+      </div>
+      <button class="bl-btn ${L >= 3 ? 'bl-btn--primary' : ''} bl-btn--l bl-btn--block" data-go="#/cab/stats" ${L >= 3 ? '' : 'disabled'}>смотреть статистику</button>
+    </section>
+  </div>
+</div>`; }, mount() { runLaunch(); } };
+
+let launchTimer;
+function runLaunch() {
+  clearTimeout(launchTimer);
+  if (stopHit(adText()) || S.launch >= 3) return;
+  launchTimer = setTimeout(() => { S.launch++; save(); rerender(); }, S.launch === 0 ? 1600 : 1200);
+}
+
+/* 6. Кабинет */
+const NAV = [['campaigns', 'кампании', I.camp], ['stats', 'статистика', I.stats], ['balance', 'баланс', I.wallet], ['docs', 'документы', I.doc], ['company', 'компания', I.company], ['help', 'помощь', I.help]];
+const balance = () => (S.paid ? D().amount + 3000 - (S.statsView === 'd14' ? 6450 : 380) : 0);
+const cab = (cur, body) => `
+<div class="bl-page">
+  <div class="cab">
+    <aside class="cab-nav">
+      <div class="bl-row" style="justify-content:space-between">${logo('#/cab/campaigns')}<a class="bl-btn bl-btn--s bl-show-mobile" href="#/cab/balance">${n(balance())} ₽</a></div>
+      <div class="cab-nav__extra bl-stack" style="--bl-gap:4px"><span class="bl-medium">${CO.brand}</span><span class="bl-caption">${CO.name}</span></div>
+      <nav aria-label="Разделы кабинета">${NAV.map(([id, t, ic]) => `<a href="#/cab/${id}" class="${cur === id ? 'is-active' : ''}" ${cur === id ? 'aria-current="page"' : ''}>${ic}${t}</a>`).join('')}</nav>
+      <div class="cab-nav__extra bl-card" style="gap:4px;padding:16px"><span class="bl-caption">баланс</span><span class="bl-h3">${n(balance())} ₽</span><a href="#/cab/balance" class="bl-caption" style="color:var(--color-text-link)">пополнить</a></div>
+    </aside>
+    <main class="cab-main">${body}</main>
+  </div>
+</div>`;
+
+function stats48() {
+  return `
+  <div class="bl-notice bl-notice--info">Гости ещё идут до вас. Визиты в точку появятся [завтра к 18:00], пока смотрите, как люди реагируют на объявление.</div>
+  <section class="bl-grid" style="--bl-cols:3">
+    <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label live">охват вокруг точек</span><span class="bl-stat__value" id="lv-reach">[4 120]</span><span class="bl-stat__label">из ${b(D().reach)} подходящих</span></div></div>
+    <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label live">клики</span><span class="bl-stat__value" id="lv-clicks">[42]</span><span class="bl-stat__label">CTR [1,0] %</span></div></div>
+    <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label live">сохранили купон</span><span class="bl-stat__value" id="lv-saves">[17]</span><span class="bl-stat__label">в Витрине выгод</span></div></div>
+  </section>
+  <section class="bl-section pad" style="max-width:none">
+    <div class="bl-row" style="justify-content:space-between"><h2 class="bl-h3">клики по часам</h2><span class="bl-caption">с запуска, [6] часов</span></div>
+    <div class="bars" role="img" aria-label="Клики по часам с запуска">${[2, 4, 3, 7, 9, 6, 5, 8, 11, 9, 14, 12].map((h, i, a) => `<span class="${i === a.length - 1 ? 'is-hi' : ''}" style="height:${h * 7}%"></span>`).join('')}<span class="bl-pill-dark">[12] за последний час</span></div>
+    <div class="axis bl-micro"><span>[08:00]</span><span>[11:00]</span><span>[14:00]</span></div>
+  </section>
+  <section class="bl-section pad bl-stack" style="max-width:none;--bl-gap:8px">
+    <h2 class="bl-h3">что дальше</h2>
+    <div class="bl-cell"><span class="bl-cell__icon">1</span><span class="bl-cell__main"><span class="bl-cell__title">через 1–2 дня</span><span class="bl-cell__sub" style="display:block">первые визиты: кто увидел рекламу и дошёл до точки</span></span></div>
+    <div class="bl-cell"><span class="bl-cell__icon">2</span><span class="bl-cell__main"><span class="bl-cell__title">через неделю</span><span class="bl-cell__sub" style="display:block">цена гостя и советы, как её снизить</span></span></div>
+    <div class="bl-cell"><span class="bl-cell__icon">3</span><span class="bl-cell__main"><span class="bl-cell__title">через 2 недели</span><span class="bl-cell__sub" style="display:block">повторные визиты: кто вернулся</span></span></div>
+  </section>`;
+}
+function stats14() {
+  return `
+  <section class="bl-grid kpis">
+    <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label">показы</span><span class="bl-stat__value">[40 100]</span><span class="bl-stat__label">охват [9 800]</span></div></div>
+    <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label">клики</span><span class="bl-stat__value">[716]</span><span class="bl-stat__delta">+12% к прошлой неделе</span></div></div>
+    <div class="bl-card" data-theme="invert"><div class="bl-stat"><span class="bl-stat__label">пришли к вам</span><span class="bl-stat__value">[184]</span><span class="bl-stat__label">из них [41] пришли снова</span></div></div>
+    <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label">потрачено</span><span class="bl-stat__value">[6 450] ₽</span><span class="bl-stat__label">клик [9] ₽ · гость [35] ₽</span></div></div>
+  </section>
+  <div class="two">
+    <section class="bl-section pad" style="max-width:none">
+      <div class="bl-row" style="justify-content:space-between;margin-bottom:8px"><h2 class="bl-h3">визиты по дням</h2>${seg('period', [['week', '7 дней'], ['month', '14 дней']])}</div>
+      <div class="bars" role="img" aria-label="Визиты по дням">${(S.period === 'week' ? [50, 65, 75, 60, 80, 90, 100] : [8, 20, 30, 45, 40, 60, 55, 50, 65, 75, 60, 80, 90, 100]).map((h, i, a) => `<span class="${i === a.length - 1 ? 'is-hi' : ''}" style="height:${h}%"></span>`).join('')}<span class="bl-pill-dark">[22] сегодня</span></div>
+      <div class="axis bl-micro"><span>${S.period === 'week' ? '[8 ноя]' : '[1 ноя]'}</span><span>[14 ноя]</span></div>
+      <h3 class="bl-h3" style="margin:40px 0 16px">${mode() === 'manual' ? 'по сигналам' : 'по местам показа'}</h3>
+      <div class="bl-table-wrap"><table class="bl-table"><thead><tr><th>${mode() === 'manual' ? 'сигнал' : 'место'}</th><th>клики</th><th>CTR</th><th>пришли</th><th>один гость</th></tr></thead><tbody>
+        ${(mode() === 'manual' ? [['живут рядом, 1 км', 402, '2,4', 96, 37], ['работают рядом, 1 км', 214, '3,8', 58, 27], ['ходят в кофейни рядом', 100, '6,1', 30, 41]] : [['Витрина выгод', 398, '3,1', 112, 31], ['«Платёж прошёл»', 201, '1,6', 48, 38], ['Главная приложения', 117, '0,5', 24, 44]]).map(r => `<tr><td>${r[0]}</td><td>[${r[1]}]</td><td>[${r[2]}] %</td><td>[${r[3]}]</td><td>[${r[4]}] ₽</td></tr>`).join('')}
+      </tbody></table></div>
+    </section>
+    <aside class="bl-stack" style="--bl-gap:24px">
+      <section class="bl-section pad" style="max-width:none">
+        <h2 class="bl-h3" style="margin-bottom:8px">что улучшить</h2>
+        <button class="bl-cell" style="width:100%;border:0;background:none;text-align:left;cursor:pointer" data-act="toast" data-v="Ставка утром поднята до [14] ₽"><span class="bl-cell__icon">↗</span><span class="bl-cell__main"><span class="bl-cell__title">поднять ставку утром</span><span class="bl-cell__sub" style="display:block">ещё ≈ [60] гостей за [14] ₽ клик</span></span><span class="bl-cell__end">›</span></button>
+        <button class="bl-cell" style="width:100%;border:0;background:none;text-align:left;cursor:pointer" data-act="toast" data-v="Добавили экран остатков: награда 1 ГБ за визит"><span class="bl-cell__icon">+</span><span class="bl-cell__main"><span class="bl-cell__title">добавить экран остатков</span><span class="bl-cell__sub" style="display:block">у кофеен рядом гость дешевле на [20] %</span></span><span class="bl-cell__end">›</span></button>
+      </section>
+      <p class="bl-caption">Визиты считаем по обезличенным данным базовых станций. Данные абонентов не передаём, вы видите только итоги.</p>
+    </aside>
+  </div>
+  ${S.edo ? '' : `<div class="bl-card bl-card--white" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between"><span class="bl-body">Подключите ЭДО, чтобы получать закрывающие документы</span><span class="bl-row"><a class="bl-btn bl-btn--s" href="#/cab/docs">подключить ЭДО</a><a class="bl-btn bl-btn--s bl-btn--ghost" href="#/cab/docs">пригласить бухгалтера</a></span></div>`}`;
+}
+R['/cab/stats'] = { name: '6 · статистика', phase: 4, view: () => cab('stats', `
+  <div class="page-title" style="margin:16px 0 0"><div class="bl-stack" style="--bl-gap:8px"><span class="bl-tag bl-tag--success" style="align-self:flex-start">показывается</span><h1 class="bl-display-l">${campName()}</h1></div><div class="bl-stack" style="--bl-gap:6px;align-items:flex-end"><span class="demo-note">время с запуска</span>${seg('statsView', [['h48', 'первые 48 часов'], ['d14', 'через 2 недели']])}</div></div>
+  ${S.statsView === 'h48' ? stats48() : stats14()}`), mount() {
+  if (S.statsView !== 'h48') return;
+  const el = id => document.getElementById(id);
+  const v = { reach: 4120, clicks: 42, saves: 17 };
+  live = setInterval(() => {
+    v.reach += 3 + Math.round(Math.random() * 9); if (Math.random() > .5) v.clicks++; if (Math.random() > .75) v.saves++;
+    if (!el('lv-reach')) return;
+    el('lv-reach').textContent = b(v.reach); el('lv-clicks').textContent = b(v.clicks); el('lv-saves').textContent = b(v.saves);
+  }, 2000);
+} };
+let live;
+
+R['/cab/campaigns'] = { name: 'кабинет · кампании', phase: 4, view: () => cab('campaigns', `
+  <div class="page-title" style="margin:16px 0 0"><h1 class="bl-display-l">кампании</h1><a class="bl-btn bl-btn--primary bl-btn--l" href="#/build" data-act="newCamp">${I.plus}новая кампания</a></div>
+  <section class="bl-section pad" style="max-width:none"><div class="bl-table-wrap"><table class="bl-table">
+    <thead><tr><th>кампания</th><th>статус</th><th>бюджет</th><th>клики</th><th>пришли</th><th></th></tr></thead>
+    <tbody>
+      ${S.paid ? `<tr><td><a href="#/cab/stats">${campName()}</a></td><td><span class="bl-tag bl-tag--success">показывается</span></td><td>${n(S.budget)} ₽/мес</td><td>${S.statsView === 'd14' ? '[716]' : '[42]'}</td><td>${S.statsView === 'd14' ? '[184]' : '—'}</td><td><a href="#/cab/stats">статистика</a></td></tr>` : ''}
+      <tr><td>[утренний кофе на вынос]</td><td><span class="bl-tag">черновик</span></td><td>[5 000] ₽/мес</td><td>—</td><td>—</td><td><a href="#/build">продолжить</a></td></tr>
+    </tbody></table></div>
+    ${S.paid ? '' : '<p class="bl-caption" style="margin-top:16px">Оплаченных кампаний пока нет. Пройдите сценарий до оплаты, и кампания появится здесь.</p>'}
+  </section>`) };
+
+R['/cab/balance'] = { name: 'кабинет · баланс', phase: 4, view: () => cab('balance', `
+  <div class="page-title" style="margin:16px 0 0"><h1 class="bl-display-l">баланс</h1></div>
+  <div class="two">
+    <section class="bl-section pad bl-stack" style="max-width:none;--bl-gap:16px">
+      <span class="bl-caption">на счёте</span><span class="bl-number-xl">${n(balance())} ₽</span>
+      <span class="bl-caption">хватит примерно на [${Math.max(0, Math.round(balance() / (S.budget / 30)))}] дней при текущем бюджете</span>
+      <div class="bl-row" style="margin-top:8px">${[3000, 10000, 30000].map(a => `<button class="bl-chip" data-act="topup" data-v="${a}">+${n(a)} ₽</button>`).join('')}</div>
+      <div><button class="bl-btn bl-btn--primary bl-btn--l" data-act="topup" data-v="10000">пополнить через СБП</button></div>
+      ${check('autoTopup', 'автопополнение', 'когда останется меньше [1 000] ₽, пополним на [5 000] ₽')}
+    </section>
+    <section class="bl-section pad" style="max-width:none">
+      <h2 class="bl-h3" style="margin-bottom:16px">операции</h2>
+      <div class="bl-table-wrap"><table class="bl-table"><tbody>
+        ${S.paid ? `<tr><td>[сегодня]</td><td>списано за клики</td><td class="bl-nums">−${S.statsView === 'd14' ? '6 450' : '380'} ₽</td></tr><tr><td>[сегодня]</td><td>бонус за первую кампанию</td><td class="bl-success">+3 000 ₽</td></tr><tr><td>[сегодня]</td><td>пополнение, ${{ sbp: 'СБП', card: 'карта', invoice: 'счёт', post: 'постоплата' }[S.pay]}</td><td class="bl-success">+${n(D().amount)} ₽</td></tr>` : '<tr><td class="bl-secondary">операций пока нет</td></tr>'}
+      </tbody></table></div>
+    </section>
+  </div>`) };
+
+R['/cab/docs'] = { name: 'кабинет · документы и ЭДО', phase: 4, view: () => cab('docs', `
+  <div class="page-title" style="margin:16px 0 0"><h1 class="bl-display-l">документы</h1></div>
+  <div class="two">
+    <section class="bl-section pad" style="max-width:none">
+      <div class="bl-table-wrap"><table class="bl-table"><thead><tr><th>документ</th><th>дата</th><th>статус</th></tr></thead><tbody>
+        <tr><td><a href="#/offer" target="_blank">оферта</a></td><td>[сегодня]</td><td><span class="bl-tag bl-tag--soft-green">принята ${S.role === 'boss' ? 'галочкой' : 'через бизнес-ID'}</span></td></tr>
+        ${S.pay === 'invoice' ? '<tr><td>счёт-оферта № [1042]</td><td>[сегодня]</td><td><span class="bl-tag">ждём оплату</span></td></tr>' : ''}
+        <tr><td>акт за [ноябрь]</td><td>[1 декабря]</td><td><span class="bl-tag">${S.edo ? 'придёт в ЭДО' : 'нужен ЭДО'}</span></td></tr>
+        <tr><td>счёт-фактура за [ноябрь]</td><td>[1 декабря]</td><td><span class="bl-tag">${S.edo ? 'придёт в ЭДО' : 'нужен ЭДО'}</span></td></tr>
+      </tbody></table></div>
+    </section>
+    <aside class="bl-stack" style="--bl-gap:24px">
+      <section class="bl-card" data-theme="invert" style="padding:32px;border-radius:var(--radius-1000);gap:16px">
+        ${S.edo ? `<span class="bl-tag bl-tag--success" style="align-self:flex-start">ЭДО подключён</span><h2 class="bl-h3">акты будут приходить в ${S.edoOp}</h2><p class="bl-body bl-secondary">Первый — [1 декабря]. Запуск рекламы от ЭДО не зависит.</p>`
+        : `<h2 class="bl-h3">закрывающие документы</h2><p class="bl-body bl-secondary">Подключите ЭДО, и акты будут приходить сами. Запуск рекламы от этого не зависит.</p>
+        <div class="bl-row">${['Диадок', 'СБИС', 'Контур', 'Калуга Астрал'].map(o => `<button class="bl-chip ${S.edoOp === o ? 'is-active' : ''}" aria-pressed="${S.edoOp === o}" data-set="edoOp" data-v="${o}">${o}</button>`).join('')}</div>
+        <div><button class="bl-btn bl-btn--dark" data-act="edo">подключить ЭДО</button></div>`}
+      </section>
+      <section class="bl-section pad bl-stack" style="max-width:none;--bl-gap:12px">
+        <h2 class="bl-h3">пригласить бухгалтера</h2>
+        <p class="bl-caption">Бухгалтер увидит документы и баланс, но не сможет менять кампании.</p>
+        <label class="bl-field"><span class="bl-field__label">почта</span><input class="bl-input" type="email" id="acc-mail" placeholder="buh@mycoffee.ru"></label>
+        <div><button class="bl-btn" data-act="invite">отправить приглашение</button></div>
+      </section>
+    </aside>
+  </div>`) };
+
+R['/cab/company'] = { name: 'кабинет · компания', phase: 4, view: () => cab('company', `
+  <div class="page-title" style="margin:16px 0 0"><h1 class="bl-display-l">компания</h1></div>
+  <div class="two--even two">
+    <section class="bl-section pad bl-stack" style="max-width:none;--bl-gap:16px">
+      <div class="bl-row" style="justify-content:space-between"><h2 class="bl-h3">${CO.name}</h2><span class="bl-tag bl-tag--soft-green">из ${(PROVIDERS[S.provider] || PROVIDERS.sber).name}</span></div>
+      <dl class="kv"><dt>ИНН / КПП</dt><dd>${CO.inn} / ${CO.kpp}</dd><dt>ОГРН</dt><dd>${CO.ogrn}</dd><dt>счёт</dt><dd>${CO.bank}, ${CO.acc}</dd><dt>сайт</dt><dd>${CO.site}</dd><dt>сегмент</dt><dd>${SEGMENTS[S.segment]}</dd></dl>
+      <h3 class="bl-h4" style="margin-top:8px">точки</h3>
+      ${CO.points.map(pt => `<div class="bl-cell"><span class="bl-cell__icon">${I.pin}</span><span class="bl-cell__main"><span class="bl-cell__title">${pt.addr}</span></span></div>`).join('')}
+    </section>
+    <section class="bl-section pad bl-stack" style="max-width:none;--bl-gap:16px">
+      <h2 class="bl-h3">люди и доступ</h2>
+      <div class="bl-cell"><span class="bl-cell__main"><span class="bl-cell__title">${CO.signer}</span><span class="bl-cell__sub" style="display:block">${CO.role} · подписант, принимает оферту</span></span><span class="bl-tag">владелец</span></div>
+      <div class="bl-cell"><span class="bl-cell__main"><span class="bl-cell__title">${CO.employee}</span><span class="bl-cell__sub" style="display:block">маркетолог · кампании и статистика</span></span><span class="bl-tag">сотрудник</span></div>
+      <h3 class="bl-h4" style="margin-top:8px">согласия</h3>
+      ${check('consents.company', 'данные компании', '', true)}${check('consents.signer', 'данные подписанта', '', true)}${check('consents.profile', 'профиль абонента билайна', 'можно отозвать в любой момент')}
+    </section>
+  </div>`) };
+
+R['/cab/help'] = { name: 'кабинет · помощь', phase: 4, view: () => cab('help', `
+  <div class="page-title" style="margin:16px 0 0"><h1 class="bl-display-l">помощь</h1><button class="bl-btn bl-btn--dark" data-act="toast" data-v="Чат с поддержкой откроется здесь. Отвечаем за [5] минут">написать в чат</button></div>
+  <section class="bl-section pad" style="max-width:none"><div class="bl-accordion">
+    <details open><summary>когда появятся визиты?</summary><div class="bl-accordion__body">Через 1–2 дня после запуска: человеку нужно дойти до точки. До этого видны охват, клики и сохранения купона.</div></details>
+    <details><summary>как считается визит?</summary><div class="bl-accordion__body">Человек кликнул по объявлению и в течение 7 дней побывал в радиусе [100] м от вашей точки. Считаем по обезличенным данным базовых станций.</div></details>
+    <details><summary>почему объявление не прошло проверку?</summary><div class="bl-accordion__body">Мы подсвечиваем причину и предлагаем замену прямо в тексте. Если не согласны, отправьте на ручную проверку.</div></details>
+    <details><summary>как получить акты?</summary><div class="bl-accordion__body">Подключите ЭДО в разделе «Документы» или пригласите бухгалтера.</div></details>
+  </div></section>`) };
+
+R['/offer'] = { name: 'оферта', phase: 0, view: () => `<div class="bl-page wrap"><header class="bl-header"><div class="bl-header__side">${logo()}</div></header><section class="bl-section"><h1 class="bl-h1" style="margin-bottom:24px">оферта на размещение рекламы</h1><p class="bl-body bl-secondary" style="max-width:var(--text-max)">[Текст оферты готовят юристы. Здесь заглушка: предмет — размещение рекламных материалов на поверхностях билайна с оплатой за клики; акцепт — отметка в кабинете или подтверждение через бизнес-ID; закрывающие документы — через ЭДО.]</p></section></div>` };
+
+/* ───────── роутер ───────── */
+const path = () => (location.hash.replace(/^#/, '').split('?')[0] || '/');
+function rerender() { const y = scrollY; render(); scrollTo(0, y); }
+function render() {
+  clearInterval(live); clearTimeout(launchTimer);
+  const r = R[path()] || R['/'];
+  document.getElementById('app').innerHTML = r.view() + demo();
+  document.title = `МЁД: ${r.name.replace(/^[\d.]+ · /, '')}`;
+  refresh();
+  r.mount?.();
+}
+addEventListener('hashchange', () => { if (!location.hash.startsWith('#/')) return; render(); scrollTo(0, 0); });
+
+/* служебная карта экранов */
+let demoOpen = false;
+function demo() {
+  const phases = [[1, 'вход и ага-момент'], [2, 'сборка кампании'], [3, 'оплата'], [4, 'кампания и рост']];
+  return `<button class="bl-pill-dark demo-fab" style="border:0;cursor:pointer" data-act="demo" aria-expanded="${demoOpen}">экраны прототипа</button>
+  ${demoOpen ? `<div class="bl-overlay" data-act="demoClose"><div class="bl-modal demo-map" role="dialog" aria-label="Карта экранов" onclick="event.stopPropagation()">
+    <div class="bl-row" style="justify-content:space-between"><h2 class="bl-h2">карта экранов</h2><button class="bl-icon-btn" data-act="demo" aria-label="Закрыть">${I.x}</button></div>
+    ${phases.map(([p, t]) => `<h3 class="bl-h4">${t}</h3>${Object.entries(R).filter(([, r]) => r.phase === p).map(([k, r]) => `<a href="#${k}" data-act="demoGo">${r.name}</a>`).join('')}`).join('')}
+    <hr class="bl-divider" style="margin:24px 0 16px">
+    <div class="bl-row"><span class="bl-caption" style="flex:1">Сегмент: ${seg('segment', [['small', 'малый'], ['medium', 'средний'], ['large', 'крупный']])}</span><button class="bl-btn bl-btn--s" data-act="reset">сбросить демо</button></div>
+  </div></div>` : ''}`;
+}
+
+/* ───────── действия ───────── */
+function toast(msg) {
+  const host = document.getElementById('toast');
+  host.innerHTML = `<div class="bl-toast">${esc(msg)}</div>`;
+  clearTimeout(toast.t); toast.t = setTimeout(() => (host.innerHTML = ''), 3200);
+}
+function modal(html) {
+  const el = document.createElement('div');
+  el.className = 'bl-overlay'; el.innerHTML = `<div class="bl-modal bl-stack" style="--bl-gap:16px;text-align:center" role="dialog">${html}</div>`;
+  document.body.append(el); return el;
+}
+const A = {
+  login(p) {
+    const box = document.getElementById('login-box');
+    box.innerHTML = `<h1 class="bl-h2">переходим в ${PROVIDERS[p].name}…</h1><div class="bl-skeleton" style="height:56px"></div><div class="bl-skeleton" style="height:56px;width:70%"></div><p class="bl-caption">Подтвердите вход в приложении. Обычно это 10 секунд.</p>`;
+    setTimeout(() => { S.provider = p; save(); location.hash = '#/consent'; }, 1300);
+  },
+  pickInn() { S.provider = 'inn'; save(); location.hash = '#/reach'; },
+  idAtCheckout(p) { S.provider = p; save(); toast(`Вход через ${PROVIDERS[p].name}: реквизиты заполнены`); rerender(); },
+  segEdit() { S.segEdit = !S.segEdit; rerender(); },
+  editText() { S.editText = !S.editText; save(); rerender(); },
+  nextImg() { S.img = (S.img + 1) % IMAGES.length; save(); rerender(); },
+  fixText() { S.adText = adText().replace(stopHit(adText()).m[0], 'Свежая обжарка каждый день'); S.fixed = true; S.editText = false; save(); toast('Текст исправлен, модерацию пройдёт'); rerender(); },
+  sig(id) { S.aud[id] = S.target; save(); rerender(); },
+  unsig(id) { delete S.aud[id]; save(); rerender(); },
+  specialSend() { S.special.sent = true; save(); rerender(); },
+  specialReset() { S.special = structuredClone(INIT.special); save(); rerender(); },
+  csv() {
+    const rows = [['месяц', 'бюджет, ₽', 'клики', 'визиты'], ...planRows().map(r => [r.mo, Math.round(r.budget), Math.round(r.clicks), Math.round(r.visits)])];
+    const blob = new Blob(['﻿' + rows.map(r => r.join(';')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'медиаплан-зерно.csv' });
+    a.click(); URL.revokeObjectURL(a.href); toast('Медиаплан скачан, открывается в Excel');
+  },
+  print() { print(); },
+  sendBoss() { S.sentToBoss = true; save(); rerender(); },
+  pay() {
+    if (S.pay === 'sbp') {
+      const m = modal(`<h2 class="bl-h2">оплата по СБП</h2><div class="qr">${qrSvg()}</div><p class="bl-body">${n(D().amount)} ₽ · ${CO.name}</p><p class="bl-caption">Отсканируйте в приложении банка или откройте ссылку на телефоне</p><div class="bl-skeleton" style="height:4px"></div>`);
+      setTimeout(() => { m.querySelector('.bl-modal').innerHTML = `<span class="bl-tag bl-tag--success" style="align-self:center">оплачено</span><h2 class="bl-h2">деньги на балансе</h2><p class="bl-caption">зачислено за [8] секунд, +[3 000] ₽ бонус</p>`; }, 2200);
+      setTimeout(() => { m.remove(); paid(); }, 3600);
+    } else if (S.pay === 'card') {
+      const m = modal(`<h2 class="bl-h2">переходим на страницу банка</h2><div class="bl-skeleton" style="height:56px"></div><p class="bl-caption">Данные карты вводятся на стороне банка, мы их не видим</p>`);
+      setTimeout(() => { m.remove(); paid(); }, 2000);
+    } else { toast(S.pay === 'invoice' ? 'Счёт-оферта отправлен на почту. Запустим после зачисления' : 'Запускаем, счёт придёт в конце месяца'); paid(); }
+  },
+  approve() { S.approved = true; S.paid = true; S.launch = 0; save(); rerender(); },
+  edo() { S.edo = true; save(); toast(`Приглашение отправлено в ${S.edoOp}. Примите его там`); rerender(); },
+  invite() { const v = document.getElementById('acc-mail').value.trim(); if (!/.+@.+\..+/.test(v)) return toast('Введите почту бухгалтера'); toast(`Приглашение отправлено на ${v}`); },
+  topup(v) { const m = modal(`<h2 class="bl-h2">пополнение на ${n(+v)} ₽</h2><div class="qr">${qrSvg()}</div><p class="bl-caption">СБП для бизнеса</p>`); setTimeout(() => { m.remove(); toast('Баланс пополнен'); }, 1800); },
+  newCamp() { S.tab = null; S.adText = null; S.fixed = false; S.launch = 0; save(); },
+  toast(v) { toast(v); },
+  demo() { demoOpen = !demoOpen; rerender(); },
+  demoClose() { demoOpen = false; rerender(); },
+  demoGo() { demoOpen = false; },
+  reset() { try { localStorage.removeItem(KEY); } catch {} S = structuredClone(INIT); demoOpen = false; location.hash = '#/'; render(); },
+};
+function paid() { S.paid = true; S.launch = 0; save(); location.hash = '#/launch'; }
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-set],[data-toggle],[data-go]');
+  if (!t || t.disabled) return;
+  if (t.dataset.go) { location.hash = t.dataset.go; return; }
+  if (t.dataset.toggle) { set(t.dataset.toggle, !get(t.dataset.toggle)); rerender(); return; }
+  if (t.dataset.set === 'segment') S.tab = null;
+  if (t.dataset.set) { set(t.dataset.set, 'num' in t.dataset ? +t.dataset.v : t.dataset.v); rerender(); return; }
+  if (t.tagName === 'A' && t.dataset.act === 'toast') e.preventDefault();
+  A[t.dataset.act]?.(t.dataset.v, t);
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset.model; if (!k) return;
+  const el = e.target;
+  const v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
+  set(k, v);
+  if (el.type === 'range' || 'live' in el.dataset) refresh(); else rerender();
+});
+document.addEventListener('change', e => { if (e.target.dataset.model && 'live' in e.target.dataset) rerender(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && demoOpen) A.demoClose(); });
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>МЁД: статистика кампании</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  .layout { display: flex; flex-direction: column; gap: var(--space-l); padding-bottom: 140px; }
+  .title-row { display: flex; justify-content: space-between; align-items: end; gap: var(--space-l); flex-wrap: wrap; }
+  .kpis { --bl-cols: 4; }
+  .split { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--space-l); align-items: start; }
+  .bars { display: flex; align-items: flex-end; gap: 8px; height: 200px; padding-top: 32px; position: relative; }
+  .bars > span:not(.bl-pill-dark) { flex: 1; border-radius: 8px 8px 4px 4px; background: var(--color-background-tertiary); }
+  .bars span.is-hi { background: var(--color-brand-primary); }
+  .bars .bl-pill-dark { position: absolute; top: 0; right: 0; }
+  .axis { display: flex; justify-content: space-between; margin-top: var(--space-xs); }
+  @media (max-width: 1023px) { .split { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) { .kpis { --bl-cols: 2; } .kpis.bl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<div class="bl-page">
+  <header class="bl-header">
+    <div class="bl-header__side">
+      <button class="bl-icon-btn" aria-label="Меню"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg></button>
+      <span class="bl-btn bl-btn--s bl-hide-mobile">[Кофейня «Зерно»]</span>
+    </div>
+    <img class="bl-logo" src="../assets/beeline-logo.svg" alt="билайн" width="44" height="44">
+    <div class="bl-header__side bl-header__side--end">
+      <span class="bl-btn bl-hide-mobile">баланс [3 200] ₽</span>
+      <a class="bl-btn bl-btn--primary" href="#topup">пополнить</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div class="title-row">
+      <div class="bl-stack" style="--bl-gap: 8px">
+        <span class="bl-tag bl-tag--success" style="align-self: flex-start">показывается</span>
+        <h1 class="bl-display-l">соседи в точку</h1>
+      </div>
+      <div class="bl-row"><button class="bl-chip">вчера</button><button class="bl-chip">7 дней</button><button class="bl-chip is-active" aria-pressed="true">месяц</button></div>
+    </div>
+
+    <div class="bl-notice bl-notice--info"><span aria-hidden="true">i</span><span>Визиты в точку появятся через 1–2 дня: гости ещё идут до вас. Пока смотрите, как люди реагируют на объявление.</span></div>
+
+    <section class="bl-grid kpis">
+      <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label">показы</span><span class="bl-stat__value">[40 100]</span></div></div>
+      <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label">клики</span><span class="bl-stat__value">[1 284]</span><span class="bl-stat__delta">+12% к прошлой неделе</span></div></div>
+      <div class="bl-card bl-card--yellow"><div class="bl-stat"><span class="bl-stat__label" style="color: inherit">пришли к вам</span><span class="bl-stat__value">[312]</span><span class="bl-stat__label" style="color: inherit">из них [96] снова</span></div></div>
+      <div class="bl-card bl-card--white"><div class="bl-stat"><span class="bl-stat__label">один гость</span><span class="bl-stat__value">[37] ₽</span><span class="bl-stat__label">цена клика [9] ₽</span></div></div>
+    </section>
+
+    <div class="split">
+      <section class="bl-section" style="max-width: none; margin: 0; padding: 40px">
+        <div class="title-row" style="margin-bottom: 8px">
+          <h2 class="bl-h2">визиты по дням</h2>
+          <div class="bl-segmented" role="tablist"><button role="tab" aria-selected="true">визиты</button><button role="tab" aria-selected="false">клики</button></div>
+        </div>
+        <div class="bars" role="img" aria-label="Визиты по дням за две недели, пример данных">
+          <span style="height: 30%"></span><span style="height: 45%"></span><span style="height: 40%"></span><span style="height: 60%"></span><span style="height: 55%"></span><span style="height: 70%"></span><span style="height: 35%"></span>
+          <span style="height: 50%"></span><span style="height: 65%"></span><span style="height: 75%"></span><span style="height: 60%"></span><span style="height: 80%"></span><span style="height: 90%"></span><span class="is-hi" style="height: 100%"></span>
+          <span class="bl-pill-dark">[18] сегодня</span>
+        </div>
+        <div class="axis bl-micro"><span>[1 окт]</span><span>[7 окт]</span><span>[14 окт]</span></div>
+
+        <h3 class="bl-h3" style="margin: 40px 0 16px">по сигналам</h3>
+        <div class="bl-table-wrap">
+          <table class="bl-table">
+            <thead><tr><th>сигнал</th><th>клики</th><th>CTR</th><th>пришли</th><th>один гость</th></tr></thead>
+            <tbody>
+              <tr><td>рядом с точкой, 1 км</td><td>[702]</td><td>[2,4] %</td><td>[150]</td><td>[37] ₽</td></tr>
+              <tr><td>утром мимо на работу</td><td>[394]</td><td>[3,8] %</td><td>[88]</td><td>[27] ₽</td></tr>
+              <tr><td>переехали в район</td><td>[188]</td><td>[6,1] %</td><td>[74]</td><td>[41] ₽</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="bl-stack" style="--bl-gap: 24px">
+        <section class="bl-section" style="max-width: none; padding: 32px">
+          <h2 class="bl-h3" style="margin-bottom: 8px">что улучшить</h2>
+          <a class="bl-cell" href="#tips"><span class="bl-cell__icon">↗</span><span class="bl-cell__main"><span class="bl-cell__title">поднять ставку утром</span><span class="bl-cell__sub" style="display:block">ещё ≈ [60] гостей за [14] ₽ клик</span></span><span class="bl-cell__end">›</span></a>
+          <a class="bl-cell" href="#tips"><span class="bl-cell__icon">+</span><span class="bl-cell__main"><span class="bl-cell__title">добавить «платёж прошёл»</span><span class="bl-cell__sub" style="display:block">у кофеен рядом гость дешевле на [20]%</span></span><span class="bl-cell__end">›</span></a>
+          <a class="bl-cell" href="#tips"><span class="bl-cell__icon">↺</span><span class="bl-cell__main"><span class="bl-cell__title">загрузить базу гостей</span><span class="bl-cell__sub" style="display:block">исключим тех, кто уже ходит</span></span><span class="bl-cell__end">›</span></a>
+        </section>
+        <section class="bl-card" data-theme="invert" style="padding: 32px; border-radius: var(--radius-1000); gap: 16px">
+          <h2 class="bl-h3">закрывающие документы</h2>
+          <p class="bl-body bl-secondary">Подключите ЭДО, и акты будут приходить сами. Запуск рекламы от этого не зависит.</p>
+          <div class="bl-row"><a class="bl-btn bl-btn--primary" href="#edo">подключить ЭДО</a><a class="bl-btn" href="#edo">пригласить бухгалтера</a></div>
+        </section>
+        <p class="bl-caption">Визиты считаем по обезличенным данным базовых станций. Данные абонентов не передаём, вы видите только итоги.</p>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<nav class="bl-tabbar" aria-label="Разделы кабинета">
+  <a class="bl-icon-btn bl-icon-btn--primary bl-icon-btn--s" href="#new" aria-label="Новая кампания"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></a>
+  <a href="#c">кампании</a><a class="is-active" href="#s">статистика</a><a href="#b">баланс</a><a href="#d">документы</a><a href="#co">компания</a>
+</nav>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дизайн-система МЁД</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<style>
+  /* Разметка самой витрины, к системе не относится */
+  .ds { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-3xl); max-width: 1440px; margin: 0 auto; padding: var(--space-l) var(--page-side) 120px; }
+  .ds-nav { position: sticky; top: var(--space-l); align-self: start; display: flex; flex-direction: column; gap: 2px; }
+  .ds-nav a { padding: 8px 14px; border-radius: var(--radius-circle); color: var(--color-text-primary); font: var(--type-body-tight); }
+  .ds-nav a:hover { background: var(--color-background-secondary); }
+  .ds-nav .bl-caption { padding: 16px 14px 6px; }
+  .ds-main { display: flex; flex-direction: column; gap: var(--space-l); min-width: 0; }
+  .ds-block { background: var(--color-background-secondary); border-radius: var(--radius-1000); padding: var(--space-4xl); --bl-contrast: var(--color-background-primary); scroll-margin-top: 24px; }
+  .ds-block > .bl-h1 { margin-bottom: var(--space-xs); }
+  .ds-block > .bl-lead { margin-bottom: var(--space-3xl); max-width: 760px; }
+  .ds-sub { font: var(--type-h3); margin: var(--space-3xl) 0 var(--space-m); }
+  .ds-block > .bl-lead + .ds-sub { margin-top: 0; }
+  .demo { display: flex; flex-wrap: wrap; gap: var(--space-m); align-items: center; padding: var(--space-l); border-radius: var(--radius-600); border: 1px solid var(--color-border-secondary); }
+  .demo--grey { background: var(--color-background-primary); border-color: transparent; --bl-contrast: var(--color-background-secondary); }
+  .demo--col { flex-direction: column; align-items: stretch; }
+  .code { margin-top: var(--space-xs); }
+  .code summary { cursor: pointer; font: var(--type-caption); color: var(--color-text-secondary); padding: 6px 0; }
+  .code pre { margin: 0; padding: var(--space-m); border-radius: var(--radius-400); background: var(--color-static-grey-1000); color: var(--color-static-grey-100); font: 12px/18px ui-monospace, Menlo, monospace; overflow-x: auto; white-space: pre-wrap; }
+  .swatches { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; margin-bottom: var(--space-s); }
+  .sw { height: 56px; border-radius: var(--radius-300); display: flex; align-items: flex-end; padding: 6px; font: 500 10px/12px var(--font-primary); }
+  .sw-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-m); align-items: center; }
+  .roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-s); }
+  .role { display: flex; gap: var(--space-s); align-items: center; padding: var(--space-s); border-radius: var(--radius-400); background: var(--color-background-primary); }
+  .role i { flex: none; width: 40px; height: 40px; border-radius: var(--radius-300); box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+  .role b { display: block; font: 500 13px/16px var(--font-primary); }
+  .role span { font: var(--type-micro); color: var(--color-text-secondary); }
+  .type-row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--space-l); align-items: baseline; padding: var(--space-m) 0; border-top: 1px solid var(--color-border-secondary); }
+  .space-row { display: flex; align-items: center; gap: var(--space-m); font: var(--type-caption); }
+  .space-row i { height: 16px; background: var(--color-brand-primary); border-radius: 4px; }
+  .radius-box { width: 96px; height: 96px; background: var(--color-background-primary); display: grid; place-items: end start; padding: 8px; font: var(--type-micro); color: var(--color-text-secondary); }
+  .shadow-box { width: 180px; height: 110px; border-radius: var(--radius-500); background: #fff; display: grid; place-items: center; font: var(--type-caption); color: var(--color-text-secondary); }
+  .principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-m); }
+  .chart { position: relative; height: 220px; border-radius: var(--radius-600); background: var(--color-background-primary); overflow: hidden; }
+  @media (max-width: 1023px) { .ds { grid-template-columns: 1fr; } .ds-nav { position: static; flex-direction: row; flex-wrap: wrap; } .ds-nav .bl-caption { display: none; } .principles { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) { .ds-block { padding: var(--space-l); border-radius: var(--radius-600); } .type-row, .sw-row { grid-template-columns: 1fr; gap: 4px; } .swatches { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<div class="bl-topbar">дизайн-система МЁД собрана по b2c билайна · токены совпадают с продом</div>
+
+<div class="ds">
+  <nav class="ds-nav" aria-label="Разделы">
+    <div class="bl-row" style="padding: 0 14px 12px; --bl-gap: 10px"><img class="bl-logo" src="assets/beeline-logo.svg" alt="билайн" width="44" height="44"><b class="bl-h4">МЁД · DS</b></div>
+    <span class="bl-caption">Основа</span>
+    <a href="#principles">Принципы</a>
+    <a href="#color">Цвет</a>
+    <a href="#type">Типографика</a>
+    <a href="#space">Отступы и форма</a>
+    <span class="bl-caption">Компоненты</span>
+    <a href="#buttons">Кнопки</a>
+    <a href="#choice">Чипсы и выбор</a>
+    <a href="#fields">Поля ввода</a>
+    <a href="#cards">Карточки</a>
+    <a href="#lists">Списки и FAQ</a>
+    <a href="#nav">Навигация</a>
+    <a href="#feedback">Статусы</a>
+    <a href="#data">Данные</a>
+    <span class="bl-caption">Сборка</span>
+    <a href="#patterns">Паттерны</a>
+    <a href="templates/landing.html">Шаблон: лендинг</a>
+    <a href="templates/cabinet.html">Шаблон: кабинет</a>
+  </nav>
+
+  <main class="ds-main">
+
+    <!-- ───────── Принципы ───────── -->
+    <section class="ds-block" id="principles">
+      <h1 class="bl-display-l">дизайн-система МЁД</h1>
+      <p class="bl-lead" style="margin: var(--space-m) 0 var(--space-3xl)">Визуальный язык b2c билайна, разобранный на токены и компоненты. Из них собираем лендинг и кабинет партнёра так, чтобы они выглядели частью экосистемы.</p>
+      <div class="principles">
+        <div class="bl-card"><span class="bl-tag bl-tag--brand" style="align-self:flex-start">1</span><h2 class="bl-h3">серый фон, белые острова</h2><p class="bl-body bl-secondary">Страница #F0F3F5, контент лежит в белых блоках со скруглением 40. Внутри белого вторичные элементы снова серые.</p></div>
+        <div class="bl-card"><span class="bl-tag bl-tag--brand" style="align-self:flex-start">2</span><h2 class="bl-h3">жёлтый только для действия</h2><p class="bl-body bl-secondary">#FFC800 — главная кнопка и одна точка внимания. Текст на жёлтом всегда тёмный #28303F, не белый.</p></div>
+        <div class="bl-card"><span class="bl-tag bl-tag--brand" style="align-self:flex-start">3</span><h2 class="bl-h3">заголовки строчными</h2><p class="bl-body bl-secondary">Заголовки и кнопки со строчной буквы, начертание Regular, крупно. Голос простой, на «ты» в b2c; для бизнеса МЁД — на «вы».</p></div>
+        <div class="bl-card"><span class="bl-tag bl-tag--brand" style="align-self:flex-start">4</span><h2 class="bl-h3">всё круглое</h2><p class="bl-body bl-secondary">Кнопки, чипсы, табы — пилюли. Карточки 20–24, секции 40. Прямых углов нет.</p></div>
+        <div class="bl-card"><span class="bl-tag bl-tag--brand" style="align-self:flex-start">5</span><h2 class="bl-h3">почти без теней</h2><p class="bl-body bl-secondary">Глубину дают поверхности. Тень 5% только у плавающих панелей и героев.</p></div>
+        <div class="bl-card"><span class="bl-tag bl-tag--brand" style="align-self:flex-start">6</span><h2 class="bl-h3">ошибки оранжевые</h2><p class="bl-body bl-secondary">Статус ошибки #F84A00, успех #00A55E, ссылки #1086F9. Красный — только для счётчиков.</p></div>
+      </div>
+    </section>
+
+    <!-- ───────── Цвет ───────── -->
+    <section class="ds-block" id="color">
+      <h2 class="bl-h1">цвет</h2>
+      <p class="bl-lead">В вёрстке используем только семантические роли. Палитра ниже — для справки и графиков.</p>
+
+      <h3 class="ds-sub">роли</h3>
+      <div class="roles" id="roles"></div>
+
+      <h3 class="ds-sub">палитра</h3>
+      <div id="palette" class="bl-stack" style="--bl-gap: 6px"></div>
+    </section>
+
+    <!-- ───────── Типографика ───────── -->
+    <section class="ds-block" id="type">
+      <h2 class="bl-h1">типографика</h2>
+      <p class="bl-lead">BeelineSans: 400 для заголовков и текста, 500 для кнопок и акцентов. Сейчас в проекте только Regular, поэтому кнопки пока тоже рисуются им.</p>
+      <div id="typescale"></div>
+    </section>
+
+    <!-- ───────── Отступы и форма ───────── -->
+    <section class="ds-block" id="space">
+      <h2 class="bl-h1">отступы и форма</h2>
+      <p class="bl-lead">Шаг сетки 4 px. Ширина контента 1312, белая секция до 1200, колонка текста до 760.</p>
+      <h3 class="ds-sub">отступы</h3>
+      <div class="bl-stack" style="--bl-gap: 8px" id="spaces"></div>
+      <h3 class="ds-sub">скругления</h3>
+      <div class="bl-row" style="--bl-gap: 16px" id="radii"></div>
+      <h3 class="ds-sub">тени</h3>
+      <div class="demo demo--grey" style="gap: 32px">
+        <div class="shadow-box" style="box-shadow: var(--shadow-float)">float</div>
+        <div class="shadow-box" style="box-shadow: var(--shadow-raised)">raised</div>
+        <div class="shadow-box" style="box-shadow: var(--shadow-hero)">hero</div>
+        <div class="shadow-box" style="box-shadow: var(--shadow-popover)">popover</div>
+      </div>
+    </section>
+
+    <!-- ───────── Кнопки ───────── -->
+    <section class="ds-block" id="buttons">
+      <h2 class="bl-h1">кнопки</h2>
+      <p class="bl-lead">Одна жёлтая кнопка на экран. Вторичная берёт цвет, контрастный поверхности: на белом серая, на сером белая.</p>
+      <h3 class="ds-sub">варианты</h3>
+      <div class="demo">
+        <button class="bl-btn bl-btn--primary">подключить</button>
+        <button class="bl-btn">подробнее</button>
+        <button class="bl-btn bl-btn--dark">выбрать</button>
+        <button class="bl-btn bl-btn--ghost">все тарифы <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10m-4-4 4 4-4 4"/></svg></button>
+        <button class="bl-btn bl-btn--primary" disabled>недоступно</button>
+      </div>
+      <div class="demo demo--grey" style="margin-top: 12px">
+        <button class="bl-btn bl-btn--primary">на сером</button>
+        <button class="bl-btn">вторичная становится белой</button>
+      </div>
+      <h3 class="ds-sub">размеры</h3>
+      <div class="demo">
+        <button class="bl-btn bl-btn--primary bl-btn--s">36 · s</button>
+        <button class="bl-btn bl-btn--primary">44 · m</button>
+        <button class="bl-btn bl-btn--primary bl-btn--l">56 · l</button>
+        <button class="bl-btn bl-btn--primary bl-btn--xl">72 · xl, герой</button>
+      </div>
+      <h3 class="ds-sub">кнопки-иконки</h3>
+      <div class="demo">
+        <button class="bl-icon-btn" aria-label="Меню"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg></button>
+        <button class="bl-icon-btn" aria-label="Поиск"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13.5 13.5 3 3"/></svg></button>
+        <button class="bl-icon-btn bl-icon-btn--primary" aria-label="Добавить"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+        <button class="bl-icon-btn bl-icon-btn--l" aria-label="Следующий слайд"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6"/></svg></button>
+      </div>
+      <h3 class="ds-sub">на тёмном</h3>
+      <div class="demo" data-theme="invert" style="background: var(--color-background-secondary); border-color: transparent">
+        <button class="bl-btn bl-btn--primary">подключить</button>
+        <button class="bl-btn">вторичная</button>
+        <button class="bl-btn bl-btn--dark">светлая</button>
+      </div>
+    </section>
+
+    <!-- ───────── Выбор ───────── -->
+    <section class="ds-block" id="choice">
+      <h2 class="bl-h1">чипсы и выбор</h2>
+      <p class="bl-lead">Активный чипс тёмный, сегменты переключают режимы, табы — разделы страницы.</p>
+      <h3 class="ds-sub">чипсы</h3>
+      <div class="demo">
+        <button class="bl-chip is-active">для связи</button>
+        <button class="bl-chip">для дома</button>
+        <button class="bl-chip">для бизнеса</button>
+        <button class="bl-chip">переезд <span class="bl-chip__sub">1 500</span></button>
+      </div>
+      <h3 class="ds-sub">сегменты и табы</h3>
+      <div class="demo demo--col" style="gap: 24px">
+        <div class="bl-segmented" role="tablist"><button role="tab" aria-selected="true">автопилот</button><button role="tab" aria-selected="false">PRO</button><button role="tab" aria-selected="false">медиаплан</button></div>
+        <div class="bl-tabs" role="tablist"><button role="tab" aria-selected="true">тарифы и подписки</button><button role="tab">перенести номер</button><button role="tab">роуминг</button><button role="tab">услуги</button></div>
+      </div>
+      <h3 class="ds-sub">чекбокс, радио, переключатель</h3>
+      <div class="demo" style="gap: 32px">
+        <label class="bl-check"><input type="checkbox" checked><span class="bl-check__box"></span>принимаю оферту</label>
+        <label class="bl-check"><input type="checkbox"><span class="bl-check__box"></span>профиль абонента</label>
+        <label class="bl-radio"><input type="radio" name="pay" checked><span class="bl-radio__dot"></span>СБП</label>
+        <label class="bl-radio"><input type="radio" name="pay"><span class="bl-radio__dot"></span>бизнес-карта</label>
+        <label class="bl-switch"><input type="checkbox" checked><span class="bl-switch__track"></span>автоподбор мест</label>
+        <label class="bl-switch"><input type="checkbox"><span class="bl-switch__track"></span>пуши</label>
+      </div>
+    </section>
+
+    <!-- ───────── Поля ───────── -->
+    <section class="ds-block" id="fields">
+      <h2 class="bl-h1">поля ввода</h2>
+      <p class="bl-lead">Поле без рамки, на контрастной подложке. В фокусе появляется тёмная обводка, курсор жёлтый. Ошибка оранжевая.</p>
+      <div class="demo" style="align-items: flex-start; gap: 24px">
+        <label class="bl-field" style="flex: 1 1 240px"><span class="bl-field__label">ИНН или сайт</span><input class="bl-input" placeholder="mycoffee.ru"></label>
+        <label class="bl-field is-error" style="flex: 1 1 240px"><span class="bl-field__label">телефон</span><input class="bl-input" value="+7 900 12"><span class="bl-field__caption">номер введён не полностью</span></label>
+        <label class="bl-field" style="flex: 1 1 240px"><span class="bl-field__label">способ оплаты</span><select class="bl-select"><option>СБП для бизнеса</option><option>бизнес-карта</option><option>счёт-оферта</option></select></label>
+      </div>
+      <h3 class="ds-sub">поиск и поле-подчёркивание</h3>
+      <div class="demo" style="gap: 32px; align-items: flex-end">
+        <label class="bl-search" style="flex: 1 1 260px"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13.5 13.5 3 3"/></svg><input placeholder="найти сигнал" aria-label="Найти сигнал"></label>
+        <label class="bl-field" style="flex: 1 1 260px"><span class="bl-field__label">бюджет в месяц</span><input class="bl-input-line" placeholder="от 3 000 ₽"></label>
+        <label class="bl-field" style="flex: 1 1 260px"><span class="bl-field__label">10 000 ₽</span><input class="bl-range" type="range" min="3000" max="100000" value="10000" aria-label="Бюджет"></label>
+      </div>
+    </section>
+
+    <!-- ───────── Карточки ───────── -->
+    <section class="ds-block" id="cards">
+      <h2 class="bl-h1">карточки</h2>
+      <p class="bl-lead">Фирменная «рамка» билайна: цветная оболочка с заголовком, внутри белая карточка. Акцентная рамка выделяет рекомендуемый вариант.</p>
+      <h3 class="ds-sub">рамка с тарифом</h3>
+      <div class="demo demo--grey" style="align-items: stretch">
+        <div class="bl-grid" style="--bl-cols: 3; width: 100%">
+          <article class="bl-shell">
+            <div class="bl-shell__head"><div><div class="bl-shell__title">старт</div><div class="bl-shell__sub">первая кампания за 3 000 ₽</div></div></div>
+            <div class="bl-shell__body">
+              <h2 class="bl-h3">до [350] кликов, автопилот</h3>
+              <p class="bl-caption">цель «привести соседей в точку», креатив соберём по сайту</p>
+              <div style="flex: 1"></div>
+              <div class="bl-price">3 000 ₽</div>
+              <button class="bl-btn bl-btn--primary bl-btn--block">запустить</button>
+            </div>
+          </article>
+          <article class="bl-shell bl-shell--accent">
+            <div class="bl-shell__head"><div><div class="bl-shell__title">рост</div><div class="bl-shell__sub">выбирают кофейни и салоны</div></div><span class="bl-tag">хит</span></div>
+            <div class="bl-shell__body">
+              <h2 class="bl-h3">до [1 100] кликов, все места показа</h3>
+              <p class="bl-caption">витрина выгод, главная, экран «платёж прошёл»</p>
+              <div style="flex: 1"></div>
+              <div class="bl-price">10 000 ₽ <s>12 000 ₽</s></div>
+              <button class="bl-btn bl-btn--primary bl-btn--block">запустить</button>
+            </div>
+          </article>
+          <article class="bl-shell">
+            <div class="bl-shell__head"><div><div class="bl-shell__title">PRO</div><div class="bl-shell__sub">для агентств и сетей</div></div></div>
+            <div class="bl-shell__body">
+              <h2 class="bl-h3">19 сигналов, своя аудитория</h3>
+              <p class="bl-caption">«горячий спрос 24 ч», «и / кроме», выбор экранов</p>
+              <div style="flex: 1"></div>
+              <div class="bl-price">от 30 000 ₽</div>
+              <button class="bl-btn bl-btn--primary bl-btn--block">настроить</button>
+            </div>
+          </article>
+        </div>
+      </div>
+      <h3 class="ds-sub">промо и содержательные</h3>
+      <div class="bl-grid" style="--bl-cols: 3">
+        <a class="bl-card bl-card--promo bl-card--link" href="#cards"><h3 class="bl-h2">охват до регистрации</h2><p class="bl-body bl-secondary">войдите через бизнес-ID и увидите людей рядом с вашими точками</p></a>
+        <a class="bl-card bl-card--promo bl-card--link" data-theme="invert" href="#cards"><h3 class="bl-h2">оплата за клики</h2><p class="bl-body bl-secondary">показ бесплатный, деньги списываются только за переход</p></a>
+        <a class="bl-card bl-card--promo bl-card--yellow bl-card--link" href="#cards"><h3 class="bl-h2">поддержка 24/7</h3><p class="bl-body">менеджер для спецпроектов и крупного бизнеса</p></a>
+      </div>
+    </section>
+
+    <!-- ───────── Списки ───────── -->
+    <section class="ds-block" id="lists">
+      <h2 class="bl-h1">списки и FAQ</h2>
+      <p class="bl-lead">Строки разделены тонкой линией, вопросы раскрываются по клику.</p>
+      <div class="bl-grid" style="--bl-cols: 2; align-items: start">
+        <div>
+          <a class="bl-cell" href="#lists"><span class="bl-cell__icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 16V9m6 7V4m6 12v-5"/></svg></span><span class="bl-cell__main"><span class="bl-cell__title">статистика</span><span class="bl-cell__sub" style="display:block">визиты в точку за 7 дней</span></span><span class="bl-cell__end">›</span></a>
+          <a class="bl-cell" href="#lists"><span class="bl-cell__icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="14" height="10" rx="2"/><path d="M3 9h14"/></svg></span><span class="bl-cell__main"><span class="bl-cell__title">баланс</span><span class="bl-cell__sub" style="display:block">хватит примерно на [5] дней</span></span><span class="bl-cell__end">›</span></a>
+          <a class="bl-cell" href="#lists"><span class="bl-cell__icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 3h6l4 4v10H6z"/><path d="M12 3v4h4"/></svg></span><span class="bl-cell__main"><span class="bl-cell__title">документы</span><span class="bl-cell__sub" style="display:block">подключите ЭДО для закрывающих</span></span><span class="bl-counter">1</span></a>
+        </div>
+        <div class="bl-accordion">
+          <details open><summary>нужно ли подписывать договор?</summary><div class="bl-accordion__body">Нет. Вы принимаете оферту галочкой при оплате. ЭДО понадобится позже, для закрывающих документов.</div></details>
+          <details><summary>за что списываются деньги?</summary><div class="bl-accordion__body">Только за клики, после которых открылся ваш сайт. Повторный клик за сутки бесплатный.</div></details>
+          <details><summary>как вы считаете визиты?</summary><div class="bl-accordion__body">По обезличенным данным базовых станций. Вы видите только итоги, данные абонентов не передаются.</div></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Навигация ───────── -->
+    <section class="ds-block" id="nav">
+      <h2 class="bl-h1">навигация</h2>
+      <p class="bl-lead">Шапка с логотипом по центру, плавающий таббар снизу, шаги для мастеров.</p>
+      <h3 class="ds-sub">шапка</h3>
+      <div class="demo demo--grey" style="display: block; padding: 8px 24px">
+        <header class="bl-header">
+          <div class="bl-header__side"><button class="bl-icon-btn" aria-label="Меню"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg></button><button class="bl-btn bl-btn--s">для бизнеса</button></div>
+          <img class="bl-logo" src="assets/beeline-logo.svg" alt="билайн" width="44" height="44">
+          <div class="bl-header__side bl-header__side--end"><button class="bl-btn">помощь</button><button class="bl-btn bl-btn--primary">войти</button></div>
+        </header>
+      </div>
+      <h3 class="ds-sub">таббар и шаги</h3>
+      <div class="demo demo--grey" style="gap: 32px">
+        <nav class="bl-tabbar bl-tabbar--static" aria-label="Разделы"><button class="bl-icon-btn bl-icon-btn--primary bl-icon-btn--s" aria-label="Создать"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button><a class="is-active" href="#nav">кампании</a><a href="#nav">статистика</a><a href="#nav">баланс</a><a href="#nav">документы</a></nav>
+        <ol class="bl-steps"><li class="is-done">охват</li><li class="is-current">кампания</li><li>оплата</li><li>запуск</li></ol>
+        <div style="flex: 1 1 200px"><div class="bl-caption" style="margin-bottom: 8px">собрано 2 из 4</div><div class="bl-progress"><span style="width: 50%"></span></div></div>
+      </div>
+    </section>
+
+    <!-- ───────── Статусы ───────── -->
+    <section class="ds-block" id="feedback">
+      <h2 class="bl-h1">статусы</h2>
+      <p class="bl-lead">Теги на карточках, плашки с пояснением, тост в духе плашки cookies на сайте.</p>
+      <div class="demo">
+        <span class="bl-tag">черновик</span><span class="bl-tag bl-tag--brand">на проверке</span><span class="bl-tag bl-tag--success">показывается</span><span class="bl-tag bl-tag--error">нужна правка</span><span class="bl-tag bl-tag--dark">остановлена</span><span class="bl-tag bl-tag--accent">новое</span>
+        <span class="bl-tag bl-tag--soft-green">событие недели</span><span class="bl-tag bl-tag--soft-blue">широкий интерес</span><span class="bl-tag bl-tag--soft-violet">горячий спрос 24 ч</span><span class="bl-counter">16</span>
+      </div>
+      <div class="bl-grid" style="--bl-cols: 2; margin-top: 16px">
+        <div class="bl-notice"><span aria-hidden="true">⏳</span><span>Гости ещё идут до вас. Пока смотрите, как люди реагируют на объявление.</span></div>
+        <div class="bl-notice bl-notice--error"><span aria-hidden="true">!</span><span>В тексте есть «лучший в городе». Такие обещания требуют подтверждения.</span></div>
+      </div>
+      <div class="demo demo--grey" style="margin-top: 16px">
+        <div class="bl-toast">кампания запущена, первые клики обычно в течение дня <button class="bl-btn bl-btn--s">ок</button></div>
+        <div class="bl-skeleton" style="width: 220px; height: 20px"></div>
+        <div class="bl-skeleton" style="width: 120px; height: 20px"></div>
+      </div>
+    </section>
+
+    <!-- ───────── Данные ───────── -->
+    <section class="ds-block" id="data">
+      <h2 class="bl-h1">данные</h2>
+      <p class="bl-lead">Цифры моноширинные по ширине, подписи серые и мелкие. На графиках подписи в тёмных пилюлях, как в калькуляторе smvno.</p>
+      <div class="bl-grid" style="--bl-cols: 4">
+        <div class="bl-card"><div class="bl-stat"><span class="bl-stat__label">клики</span><span class="bl-stat__value">[1 284]</span><span class="bl-stat__delta">+12% за неделю</span></div></div>
+        <div class="bl-card"><div class="bl-stat"><span class="bl-stat__label">пришли к вам</span><span class="bl-stat__value">[312]</span><span class="bl-stat__delta">+8%</span></div></div>
+        <div class="bl-card"><div class="bl-stat"><span class="bl-stat__label">цена клика</span><span class="bl-stat__value">[9] ₽</span></div></div>
+        <div class="bl-card"><div class="bl-stat"><span class="bl-stat__label">один гость</span><span class="bl-stat__value">[37] ₽</span></div></div>
+      </div>
+      <div class="bl-grid" style="--bl-cols: 2; margin-top: 24px; align-items: start">
+        <div class="chart" role="img" aria-label="Пример графика визитов с подписями в пилюлях">
+          <svg viewBox="0 0 400 220" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%" aria-hidden="true"><path d="M0 190 C60 180 80 150 120 150 S180 120 220 110 S300 60 340 50 S380 20 400 10" fill="none" stroke="#28303F" stroke-width="2"/></svg>
+          <span class="bl-pill-dark" style="position:absolute; left: 24%; top: 54%">61</span>
+          <span class="bl-pill-dark" style="position:absolute; left: 50%; top: 36%">176</span>
+          <span class="bl-pill-dark" style="position:absolute; left: 78%; top: 10%">312</span>
+        </div>
+        <div class="bl-table-wrap">
+          <table class="bl-table">
+            <thead><tr><th>цель</th><th>клики</th><th>пришли</th><th>один гость</th></tr></thead>
+            <tbody>
+              <tr><td>соседи в точку</td><td>[702]</td><td>[150]</td><td>[37] ₽</td></tr>
+              <tr><td>клиенты конкурентов</td><td>[394]</td><td>[88]</td><td>[27] ₽</td></tr>
+              <tr><td>витрина выгод</td><td>[188]</td><td>[74]</td><td>[41] ₽</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Паттерны ───────── -->
+    <section class="ds-block" id="patterns">
+      <h2 class="bl-h1">паттерны</h2>
+      <p class="bl-lead">Готовые блоки из компонентов. Целиком собраны в шаблонах лендинга и кабинета.</p>
+      <h3 class="ds-sub">калькулятор прогноза</h3>
+      <div class="demo demo--grey" style="display: block">
+        <div class="bl-grid" style="--bl-cols: 2; align-items: center">
+          <div class="bl-card bl-card--white" style="padding: 32px; gap: 24px">
+            <h3 class="bl-h2">рассчитайте охват</h3>
+            <label class="bl-field"><span class="bl-field__label">бюджет в месяц</span><input class="bl-input-line" value="10 000 ₽"></label>
+            <div class="bl-row" style="--bl-gap: 40px"><div class="bl-stat"><span class="bl-stat__value">[1 100]</span><span class="bl-stat__label">кликов</span></div><div class="bl-stat"><span class="bl-stat__value">[9] ₽</span><span class="bl-stat__label">цена клика</span></div></div>
+          </div>
+          <div class="bl-stack" style="--bl-gap: 8px; padding: 0 24px">
+            <span class="bl-number-xl">[280] гостей</span>
+            <span class="bl-caption">придут к вам за месяц по прогнозу. Расчёт по средним ставкам вашей сферы.</span>
+            <div><button class="bl-btn bl-btn--primary bl-btn--l" style="margin-top: 16px">узнать точный охват</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+// Роли и палитра рисуются из CSS-переменных, чтобы витрина не расходилась с tokens.css
+const css = getComputedStyle(document.documentElement);
+const v = n => css.getPropertyValue(n).trim();
+const roles = [
+  ['--color-brand-primary','бренд','главная кнопка'], ['--color-brand-tertiary','бренд hover','нажатие'],
+  ['--color-background-primary','фон страницы','#F0F3F5'], ['--color-background-secondary','поверхность','белые блоки'],
+  ['--color-background-tertiary','подложка','поля, чипсы на белом'], ['--color-background-secondary-invert','тёмная поверхность','тёмные карточки'],
+  ['--color-text-primary','текст','основной'], ['--color-text-secondary','текст вторичный','подписи'],
+  ['--color-text-tertiary','текст третичный','плейсхолдеры'], ['--color-text-link','ссылка','#1086F9'],
+  ['--color-success-primary','успех','#00A55E'], ['--color-error-primary','ошибка','оранжевая'],
+];
+document.getElementById('roles').innerHTML = roles.map(([n,t,d]) => `<div class="role"><i style="background:var(${n})"></i><div><b>${t}</b><span>${n.replace('--','')}<br>${v(n) || d}</span></div></div>`).join('');
+const steps = ['25','50','100','200','300','400','500','600','700','800','900','1000'];
+const hues = [['grey','серый'],['yellow','жёлтый'],['green','зелёный'],['orange','оранжевый'],['blue','синий'],['teal','бирюзовый'],['violet','фиолетовый'],['magenta','пурпурный'],['red','красный']];
+document.getElementById('palette').innerHTML = hues.map(([h,name]) => `<div class="sw-row"><span class="bl-caption">${name}</span><div class="swatches">${steps.map((s,i) => `<div class="sw" title="--color-static-${h}-${s} ${v('--color-static-'+h+'-'+s)}" style="background:var(--color-static-${h}-${s}); color:${i>5?'#fff':'#28303F'}">${s}</div>`).join('')}</div></div>`).join('');
+const types = [['display-xl','герой лендинга'],['display-l','заголовок блока'],['h1','раздел'],['h2','подраздел'],['h3','карточка'],['h4','мелкий заголовок'],['lead','подзаголовок'],['body-l','крупный текст'],['body','текст'],['label','кнопки, табы'],['caption','подписи'],['micro','сноски'],['number-xl','цифра-итог']];
+document.getElementById('typescale').innerHTML = types.map(([t,d]) => { const f = v('--type-'+t).split(' '); return `<div class="type-row"><div><b class="bl-medium">${t}</b><div class="bl-micro">${d} · ${f[1]} · ${f[0]}</div></div><div style="font: var(--type-${t}); overflow-wrap: anywhere">реклама в момент, когда клиенту это нужно</div></div>`; }).join('');
+const spaces = ['3xs','2xs','xs','s','m','l','xl','2xl','3xl','4xl','5xl','6xl','7xl'];
+document.getElementById('spaces').innerHTML = spaces.map(s => `<div class="space-row"><span style="width:56px">${s}</span><i style="width:var(--space-${s})"></i><span class="bl-secondary">${v('--space-'+s)}</span></div>`).join('');
+const radii = [['200','8'],['300','12'],['400','16 поля'],['500','20 карточки'],['600','24 промо'],['800','32 модалки'],['1000','40 секции'],['circle','пилюля']];
+document.getElementById('radii').innerHTML = radii.map(([r,d]) => `<div class="radius-box" style="border-radius:var(--radius-${r})">${d}</div>`).join('');
+</script>
+</body>
+</html>

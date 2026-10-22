@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>билайн Рекламная платформа</title>
+<meta name="description" content="Реклама в приложении билайна для тех, кому ваш товар нужен сейчас: рядом с вами, после переезда, перед поездкой. Оплата только за клики, старт от 1 000 ₽.">
+<meta property="og:image" content="img/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff;--s2:#F8F8F7;--fg:#0C0A09;--h:#111113;--p:#4A4A50;--mut:#57534E;--ln:#ECECED;
+  --acc:#FFC800;--acc-h:#F4B807;--acc-t:#8A5A00;--acc-soft:#FFF5C5;--acc-soft2:#FFEBBB;
+  --ok:#15803D;--ok-soft:#ECFDF3;
+  --r:14px;--r-lg:20px;--r-xl:28px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --sh-sm:0 1px 2px rgba(12,10,9,.04),0 1px 3px rgba(12,10,9,.03);
+  --sh-md:0 2px 4px rgba(12,10,9,.04),0 4px 8px rgba(12,10,9,.03),0 12px 24px rgba(12,10,9,.04);
+  --sh-lg:0 4px 8px rgba(12,10,9,.04),0 8px 16px rgba(12,10,9,.04),0 24px 48px rgba(12,10,9,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.5 'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+section{padding:112px 0}
+h1,h2,h3{color:var(--h);font-weight:800}
+h1{font-size:78px;line-height:1.02;letter-spacing:-.045em}
+h2{font-size:54px;line-height:1.05;letter-spacing:-.04em}
+h3{font-size:24px;line-height:1.2;letter-spacing:-.025em}
+.kick{display:block;font-size:14px;font-weight:700;color:var(--acc-t);margin-bottom:16px}
+.lead{font-size:20px;line-height:1.55;color:var(--p)}
+.center{text-align:center}
+.center .lead{max-width:640px;margin:20px auto 0}
+.sec-head{margin-bottom:56px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:56px;padding:0 28px;border-radius:999px;font-weight:700;font-size:16px;transition:transform .24s var(--ease),box-shadow .24s var(--ease),background .18s;white-space:nowrap}
+.btn-p{background:var(--acc);color:var(--fg);box-shadow:0 14px 30px rgba(255,200,0,.35)}
+.btn-p:hover{background:var(--acc-h);transform:translateY(-2px);box-shadow:0 18px 36px rgba(255,200,0,.42)}
+.btn-s{background:#fff;border:1px solid var(--ln);color:var(--fg);box-shadow:var(--sh-sm)}
+.btn-s:hover{border-color:#D6D3D1;transform:translateY(-2px)}
+.btn-sm{height:44px;padding:0 20px;font-size:15px}
+.checks{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px;font-size:14px;color:var(--mut)}
+.checks span::before{content:"✓ ";color:var(--ok);font-weight:800}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--ln)}
+.hdr{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em}
+.logo svg{width:30px;height:30px}
+.logo small{display:block;font-size:12px;font-weight:600;color:var(--mut);letter-spacing:0;margin-top:1px}
+nav{display:flex;gap:30px;font-size:15px;font-weight:600;color:var(--p)}
+nav a:hover{color:var(--fg)}
+
+/* hero */
+.hero{padding:72px 0 0;text-align:center}
+.pill{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border:1px solid var(--ln);border-radius:999px;font-size:14px;font-weight:600;color:var(--p);background:#fff;box-shadow:var(--sh-sm)}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.hero h1{margin:26px auto 22px;max-width:12em}
+.hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--acc) 62%,var(--acc) 92%,transparent 92%)}
+.hero .lead{max-width:700px;margin:0 auto}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+
+/* product mock */
+.mock{margin:64px auto 0;max-width:1120px;border:1px solid var(--ln);border-radius:var(--r-xl);background:#fff;box-shadow:var(--sh-lg);display:grid;grid-template-columns:200px 1fr 260px;overflow:hidden;text-align:left}
+.m-side{background:var(--s2);border-right:1px solid var(--ln);padding:20px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;color:var(--p)}
+.m-side .logo{font-size:15px;margin:0 6px 18px}
+.m-side .logo svg{width:22px;height:22px}
+.m-side span{padding:9px 12px;border-radius:10px}
+.m-side span.on{background:#fff;color:var(--fg);box-shadow:var(--sh-sm)}
+.m-main{padding:24px 26px;display:flex;flex-direction:column;gap:16px}
+.m-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.m-top small{font-size:13px;color:var(--mut)}
+.m-top b{display:block;font-size:22px;letter-spacing:-.02em;margin-top:2px}
+.m-st{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:13px;font-weight:700;white-space:nowrap}
+.m-st::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi{border:1px solid var(--ln);border-radius:var(--r);padding:14px 16px}
+.kpi small{font-size:13px;color:var(--mut)}
+.kpi b{display:block;font-size:28px;letter-spacing:-.03em;margin-top:4px}
+.kpi span{font-size:12.5px;font-weight:700;color:var(--ok)}
+.aud{border:1px solid var(--ln);border-radius:var(--r);padding:16px}
+.aud .h4{font-size:14px;font-weight:700;margin-bottom:10px}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:var(--s2);border:1px solid var(--ln);font-size:13.5px;font-weight:600;color:var(--p)}
+.tag.y{background:var(--acc-soft);border-color:var(--acc-soft2);color:var(--fg)}
+.aud p{font-size:13.5px;color:var(--mut);margin-top:10px}
+.aud p b{color:var(--fg)}
+.toast{display:flex;align-items:center;gap:10px;border-radius:var(--r);background:var(--ok-soft);padding:12px 14px;font-size:14px;font-weight:600;color:#14532D;opacity:0;transform:translateY(8px);transition:.4s var(--ease)}
+.toast.on{opacity:1;transform:none}
+.toast::before{content:"✓";width:24px;height:24px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:13px;flex:none}
+.m-prev{background:var(--s2);border-left:1px solid var(--ln);padding:22px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.m-prev small{font-size:12.5px;font-weight:600;color:var(--mut)}
+
+/* phone */
+.phone{width:212px;border-radius:32px;background:#fff;border:1px solid var(--ln);box-shadow:var(--sh-md);padding:14px 12px;display:flex;flex-direction:column;gap:9px}
+.ph-hd{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:14px}
+.ph-hd span{display:flex;gap:6px;align-items:center}
+.ph-hd svg{width:18px;height:18px}
+.ph-hd i{width:22px;height:22px;border-radius:50%;background:var(--s2)}
+.ph-bal{border-radius:14px;background:var(--s2);padding:10px 12px;font-size:11px;color:var(--mut)}
+.ph-bal b{display:block;font-size:18px;color:var(--fg);letter-spacing:-.02em}
+.ad{border-radius:16px;background:var(--acc);padding:12px;display:flex;flex-direction:column;gap:6px;position:relative}
+.ad small{font-size:9px;font-weight:600;color:rgba(12,10,9,.55)}
+.ad b{font-size:15px;line-height:1.15;letter-spacing:-.02em}
+.ad span{font-size:11px;line-height:1.3;color:rgba(12,10,9,.75)}
+.ad i{font-style:normal;align-self:flex-start;margin-top:4px;height:26px;padding:0 12px;border-radius:999px;background:var(--fg);color:#fff;font-size:11px;font-weight:700;line-height:26px}
+.ph-sk{height:40px;border-radius:12px;background:var(--s2)}
+.ph-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ph-row .ph-sk{height:38px}
+
+/* stats */
+.stats{border-top:1px solid var(--ln);border-bottom:1px solid var(--ln);margin-top:96px}
+.stats .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.stat{padding:34px 24px 34px 0}
+.stat+.stat{padding-left:28px;border-left:1px solid var(--ln)}
+.stat b{display:block;font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.stat span{display:block;margin-top:10px;font-size:15px;color:var(--mut);line-height:1.45}
+
+/* pain */
+.pain{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:#fff;border:1px solid var(--ln);border-radius:var(--r-lg);padding:28px;box-shadow:var(--sh-sm);transition:transform .24s var(--ease),box-shadow .24s var(--ease)}
+.card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.pain .card .n{display:block;font-size:44px;font-weight:800;letter-spacing:-.04em;color:#D6D3D1;line-height:1}
+.pain .card h3{margin:22px 0 10px;font-size:22px}
+.pain .card p{font-size:16px;line-height:1.55;color:var(--p)}
+.fix{margin-top:16px;border-radius:var(--r-lg);background:var(--fg);color:#fff;padding:28px 32px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.fix p{font-size:22px;font-weight:700;letter-spacing:-.02em;max-width:34em}
+.fix p em{font-style:normal;color:var(--acc)}
+
+/* panel section */
+.panel{background:var(--s2);border-radius:var(--r-xl);padding:88px 64px}
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.way{background:#fff;border-radius:var(--r-lg);padding:28px;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:14px}
+.way .tt{display:flex;align-items:center;gap:12px}
+.way .ic{flex:none;display:grid;place-items:center}
+.way .ic svg{width:26px;height:26px;stroke:var(--acc-t);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.way h3{font-size:22px}
+.way p{font-size:16px;color:var(--p);line-height:1.55}
+.way ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:14px;border-top:1px solid var(--ln)}
+.way li{font-size:14.5px;font-weight:600;display:flex;gap:8px}
+.way li::before{content:"→";color:var(--acc-t)}
+
+/* industries */
+.ind-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px}
+.ind-tabs button{height:44px;padding:0 20px;border-radius:999px;border:1px solid var(--ln);background:#fff;font-weight:700;font-size:15px;color:var(--p);transition:.18s}
+.ind-tabs button:hover{border-color:#D6D3D1;color:var(--fg)}
+.ind-tabs button.on{background:var(--fg);border-color:var(--fg);color:#fff}
+.ind{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;animation:up .38s var(--ease)}
+.mo{background:#fff;border:1px solid var(--ln);border-radius:var(--r-lg);padding:26px;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:10px}
+.mo small{font-size:13px;font-weight:700;color:var(--acc-t)}
+.mo h3{font-size:21px}
+.mo p{font-size:15px;color:var(--p);line-height:1.55}
+.mo .ex{margin-top:auto;border-radius:12px;background:var(--acc-soft);padding:12px 14px;font-size:14px;font-weight:600}
+.mo .ex span{display:block;font-size:12px;font-weight:600;color:var(--acc-t);margin-bottom:2px}
+
+/* places */
+.places{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.place{background:#fff;border:1px solid var(--ln);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm)}
+.place .scr{height:230px;background:var(--s2);display:flex;justify-content:center;align-items:flex-end;padding-top:24px;overflow:hidden}
+.place .mini{width:170px;height:220px;border-radius:24px 24px 0 0;background:#fff;border:1px solid var(--ln);border-bottom:0;padding:12px 10px;display:flex;flex-direction:column;gap:7px;box-shadow:var(--sh-md)}
+.mini .sk{height:24px;border-radius:8px;background:var(--s2)}
+.mini .ya{border-radius:12px;background:var(--acc);padding:9px;font-size:11px;font-weight:800;line-height:1.2;letter-spacing:-.01em;box-shadow:0 0 0 4px var(--acc-soft)}
+.mini .ya small{display:block;font-size:8px;font-weight:600;opacity:.6;margin-bottom:3px}
+.mini .ok{text-align:center;font-size:11px;font-weight:700;padding:14px 0 6px}
+.mini .ok::before{content:"✓";display:grid;place-items:center;width:30px;height:30px;margin:0 auto 6px;border-radius:50%;background:var(--ok-soft);color:var(--ok)}
+.mini .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mini .row2 .sk{height:44px}
+.mini .near{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:10px;font-weight:600;border-radius:8px;background:var(--s2);padding:6px}
+.mini .near i{width:16px;height:16px;border-radius:5px;background:#E7E5E4;flex:none}
+.mini .near em{font-style:normal;margin-left:auto;color:var(--acc-t)}
+.mini .near.ya2{background:var(--acc-soft);box-shadow:0 0 0 2px var(--acc)}
+.place .tx{padding:20px 22px 24px}
+.place h3{font-size:19px}
+.place p{font-size:14.5px;color:var(--p);margin-top:6px;line-height:1.5}
+.place .ct{display:inline-block;margin-top:12px;font-size:13px;font-weight:700;background:var(--s2);border-radius:999px;padding:4px 10px}
+.more{margin-top:16px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;font-size:15px;color:var(--mut)}
+.more span{background:#fff;border:1px solid var(--ln);border-radius:999px;padding:8px 14px;font-weight:600;color:var(--p)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;position:relative}
+.steps::before{content:"";position:absolute;top:19px;left:16%;right:16%;height:1px;background:#D6D3D1}
+.step{text-align:center;position:relative}
+.step .num{width:40px;height:40px;border-radius:50%;margin:0 auto;background:#fff;border:1px solid #D6D3D1;display:grid;place-items:center;font-weight:800;font-size:15px}
+.step:first-child .num{background:var(--acc);border-color:var(--acc)}
+.step h3{margin:18px 0 8px;font-size:22px}
+.step p{font-size:16px;color:var(--p);max-width:20em;margin:0 auto}
+.step .ui{margin:24px auto 0;max-width:300px;background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh-md);padding:16px;text-align:left;font-size:13.5px}
+.ui .fld{border:1px solid var(--ln);border-radius:10px;height:40px;display:flex;align-items:center;padding:0 12px;color:var(--mut)}
+.ui .res{margin-top:10px;border-radius:10px;background:var(--acc-soft);padding:10px 12px;font-weight:700}
+.ui .res span{display:block;font-size:12px;font-weight:600;color:var(--acc-t)}
+.ui .opt{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--ln);border-radius:10px;padding:9px 12px;margin-top:6px;font-weight:600}
+.ui .opt.on{border-color:var(--fg)}
+.ui .opt i{width:16px;height:16px;border-radius:50%;border:1.5px solid #D6D3D1}
+.ui .opt.on i{border:5px solid var(--fg)}
+.ui .pay{display:flex;justify-content:space-between;font-weight:700;padding:4px 2px 10px}
+.ui .go{height:40px;border-radius:999px;background:var(--acc);display:grid;place-items:center;font-weight:800}
+
+/* price */
+.price{display:grid;grid-template-columns:1fr 1.05fr;gap:56px;align-items:start}
+.rules{margin-top:28px;display:flex;flex-direction:column;gap:12px}
+.rule{display:flex;gap:14px;align-items:flex-start}
+.rule i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:14px}
+.rule.no i{background:#FEF2F2;color:#DC2626}
+.rule b{display:block;font-size:16px}
+.rule span{font-size:14.5px;color:var(--mut)}
+.calc{background:#fff;border:1px solid var(--ln);border-radius:var(--r-xl);box-shadow:var(--sh-lg);padding:32px;position:sticky;top:96px}
+.calc h3{font-size:22px;margin-bottom:22px}
+.fl{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.fl label{font-size:14px;font-weight:700}
+.fl select{width:100%;height:52px;border:1px solid var(--ln);border-radius:var(--r);padding:0 16px;font-size:16px;font-weight:600;background:#fff;outline:none;transition:border-color .18s,box-shadow .18s}
+.fl select:focus{border-color:var(--acc-h);box-shadow:0 0 0 4px var(--acc-soft)}
+.fl .top{display:flex;justify-content:space-between;align-items:baseline}
+.fl .top b{font-size:26px;font-weight:800;letter-spacing:-.03em}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--acc) var(--v,10%),var(--ln) var(--v,10%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--fg);box-shadow:var(--sh-md);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--fg);cursor:pointer}
+.res3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.res3 div{border-radius:var(--r);background:var(--s2);padding:14px}
+.res3 small{font-size:13px;color:var(--mut);font-weight:600}
+.res3 b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:4px}
+.res3 div.y{background:var(--acc)}
+.res3 div.y small{color:rgba(12,10,9,.7)}
+.note{font-size:13px;color:var(--mut);margin-top:14px;line-height:1.5}
+.vs{margin-top:28px;border-radius:var(--r-lg);background:#fff;border:1px solid var(--ln);padding:22px 24px}
+.vs .h4{font-size:16px;font-weight:800;margin-bottom:12px}
+.vs .r{display:flex;justify-content:space-between;gap:14px;font-size:14.5px;padding:10px 0;border-top:1px solid var(--ln);align-items:center}
+.vs .r:first-of-type{border-top:0}
+.vs .r b{font-weight:800;white-space:nowrap}
+.vs .r.w b{color:var(--ok)}
+.vs p{font-size:14px;color:var(--p);margin-top:10px;line-height:1.55}
+
+/* examples */
+.exs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.exm{background:#fff;border:1px solid var(--ln);border-radius:var(--r-lg);padding:28px;box-shadow:var(--sh-sm);display:flex;flex-direction:column}
+.exm small{font-size:13px;font-weight:700;color:var(--acc-t)}
+.exm h3{font-size:22px;margin:8px 0 10px}
+.exm p{font-size:15px;color:var(--p);line-height:1.55}
+.flow{margin-top:auto;padding-top:22px;display:flex;flex-direction:column;gap:2px}
+.flow div{display:flex;justify-content:space-between;background:var(--s2);padding:11px 14px;font-size:14.5px}
+.flow div:first-child{border-radius:var(--r) var(--r) 0 0}
+.flow div:last-child{border-radius:0 0 var(--r) var(--r)}
+.flow div b{font-weight:800}
+.flow div.y{background:var(--acc)}
+.foot-n{text-align:center;font-size:13px;color:var(--mut);margin-top:18px}
+
+/* report */
+.trust{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center}
+.rep{background:#fff;border-radius:var(--r-xl);box-shadow:var(--sh-lg);padding:26px;border:1px solid var(--ln)}
+.rep .h4{font-size:16px;font-weight:800;display:flex;justify-content:space-between;gap:10px}
+.rep .h4 span{font-size:13px;color:var(--mut);font-weight:600}
+.bars{margin-top:18px;display:flex;flex-direction:column;gap:14px}
+.bar{display:grid;grid-template-columns:130px 1fr 70px;gap:12px;align-items:center;font-size:14px;font-weight:600}
+.bar .t{height:10px;border-radius:10px;background:var(--s2);overflow:hidden}
+.bar .t i{display:block;height:100%;border-radius:10px;background:var(--fg)}
+.bar.y .t i{background:var(--acc)}
+.bar b{text-align:right;font-weight:800}
+.tl{list-style:none;display:flex;flex-direction:column;gap:18px;margin-top:28px}
+.tl li{display:flex;gap:14px}
+.tl li i{flex:none;width:40px;height:40px;border-radius:12px;background:var(--acc-soft);display:grid;place-items:center}
+.tl li i svg{width:20px;height:20px;stroke:var(--fg);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tl b{display:block;font-size:17px}
+.tl span{font-size:15px;color:var(--p)}
+
+/* faq */
+.faq{max-width:820px;margin:0 auto}
+.qa{border-bottom:1px solid var(--ln)}
+.qa button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;text-align:left;padding:24px 0;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.qa button i{flex:none;width:32px;height:32px;border-radius:50%;background:var(--s2);display:grid;place-items:center;font-style:normal;font-size:20px;transition:transform .24s var(--ease),background .18s}
+.qa.on button i{transform:rotate(45deg);background:var(--acc)}
+.qa p{display:none;font-size:16.5px;line-height:1.6;color:var(--p);padding:0 48px 24px 0}
+.qa.on p{display:block;animation:up .3s var(--ease)}
+
+/* final */
+.final{padding:0 0 112px}
+.final .panel{text-align:center;background:var(--fg);color:#fff;padding:88px 48px}
+.final h2{color:#fff;max-width:14em;margin:0 auto}
+.final .lead{color:#A8A29E;max-width:600px;margin:18px auto 0}
+.ff{margin:36px auto 0;max-width:760px;display:grid;grid-template-columns:1fr 1fr auto;gap:10px;text-align:left}
+.ff input,.ff select{height:56px;border-radius:999px;border:0;padding:0 22px;font-size:16px;font-weight:600;background:#fff;color:var(--fg);outline:none;width:100%;min-width:0}
+.ff input:focus,.ff select:focus{box-shadow:0 0 0 4px rgba(255,200,0,.5)}
+.fres{display:none;max-width:760px;margin:20px auto 0;border-radius:var(--r-lg);background:#1C1917;padding:22px;text-align:left;grid-template-columns:repeat(3,1fr);gap:14px}
+.fres.on{display:grid;animation:up .38s var(--ease)}
+.fres small{font-size:13px;color:#A8A29E;font-weight:600}
+.fres b{display:block;font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--acc)}
+.fres p{grid-column:1/-1;font-size:14.5px;color:#D6D3D1;line-height:1.55}
+.final .checks{color:#A8A29E}
+.final .btn-p,.final .btn-p:hover,.fix .btn-p,.fix .btn-p:hover{box-shadow:none}
+
+footer{border-top:1px solid var(--ln);padding:40px 0}
+.ft{display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap;font-size:14px;color:var(--mut)}
+.ft-l{display:flex;gap:24px;flex-wrap:wrap;font-weight:600;color:var(--p)}
+.ft-l a:hover{color:var(--fg)}
+
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@media (max-width:1080px){
+  nav{display:none}
+  h1{font-size:56px}h2{font-size:42px}
+  .mock{grid-template-columns:1fr 240px}.m-side{display:none}
+  .pain,.ways,.ind,.exs{grid-template-columns:1fr 1fr}
+  .places{grid-template-columns:1fr 1fr}
+  .price,.trust{grid-template-columns:1fr;gap:40px}
+  .calc{position:relative;top:0}
+  .panel{padding:64px 32px}
+}
+@media (max-width:720px){
+  .wrap{padding:0 16px}
+  section{padding:72px 0}
+  h1{font-size:40px}h2{font-size:32px}
+  .lead{font-size:17px}
+  .hero{padding-top:44px}
+  .hdr .btn{display:none}
+  .mock{grid-template-columns:1fr;margin-top:44px}.m-prev{border-left:0;border-top:1px solid var(--ln)}
+  .m-top{flex-direction:column;align-items:flex-start}
+  .kpis{grid-template-columns:1fr}
+  .stats{margin-top:64px}
+  .stats .wrap{grid-template-columns:1fr 1fr}
+  .stat,.stat+.stat{padding:22px 12px 22px 0;border-left:0}
+  .stat:nth-child(even){border-left:1px solid var(--ln);padding-left:16px}
+  .stat b{font-size:30px}
+  .pain,.ways,.ind,.exs,.places,.steps{grid-template-columns:1fr}
+  .steps::before{display:none}
+  .panel{padding:48px 16px;border-radius:var(--r-lg)}
+  .final .panel{padding:56px 16px}
+  .ff{grid-template-columns:1fr}
+  .fres,.res3{grid-template-columns:1fr}
+  .bar{grid-template-columns:100px 1fr 56px}
+  .fix{padding:24px}
+  .fix p{font-size:18px}
+  .vs .r{flex-direction:column;align-items:flex-start;gap:4px}
+  .qa button{font-size:17px}
+  .qa p{padding-right:0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="bee" viewBox="0 0 32 32"><clipPath id="bc"><circle cx="16" cy="16" r="15"/></clipPath><circle cx="16" cy="16" r="15" fill="#FFC800"/><g clip-path="url(#bc)" fill="#0C0A09"><rect y="7" width="32" height="2.6" rx="1.3"/><rect y="12.6" width="32" height="2.6" rx="1.3"/><rect y="18.2" width="32" height="2.6" rx="1.3"/><rect y="23.8" width="32" height="2.6" rx="1.3"/></g></symbol>
+</defs></svg>
+
+<header>
+  <div class="wrap hdr">
+    <a class="logo" href="#top"><svg><use href="#bee"/></svg><span>билайн<small>рекламная платформа</small></span></a>
+    <nav><a href="#how">Как находим клиентов</a><a href="#where">Где показываем</a><a href="#price">Цена</a><a href="#examples">Примеры</a><a href="#faq">Вопросы</a></nav>
+    <a class="btn btn-p btn-sm" href="#start">Запустить рекламу</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <span class="pill"><i></i>Оплата только за клики</span>
+    <h1>Реклама для тех, кому вы <em>нужны сейчас</em></h1>
+    <p class="lead">Билайн видит, кто живёт рядом с вашей точкой, кто только переехал и кому скоро продлевать страховку. Покажем им вашу рекламу в приложении билайна. Вы платите, только когда человек нажал на неё.</p>
+    <div class="cta">
+      <a class="btn btn-p" href="#start">Посчитать моих клиентов →</a>
+      <a class="btn btn-s" href="#how">Как это работает</a>
+    </div>
+    <div class="checks"><span>от 1 000 ₽</span><span>запуск за 10 минут</span><span>без агентства</span></div>
+
+    <div class="mock" aria-label="Пример кабинета рекламодателя">
+      <div class="m-side">
+        <span class="logo"><svg><use href="#bee"/></svg>Реклама</span>
+        <span class="on">Обзор</span><span>Кампании</span><span>Аудитории</span><span>Отчёты</span><span>Баланс</span>
+      </div>
+      <div class="m-main">
+        <div class="m-top"><div><small>Кампания · 7 дней</small><b>Кофейня «Зерно», Тверская</b></div><span class="m-st">Идёт показ</span></div>
+        <div class="kpis">
+          <div class="kpi"><small>Клики</small><b data-n="1284">0</b><span>нажимают 3 из 100</span></div>
+          <div class="kpi"><small>Цена клика</small><b>9 ₽</b><span>ставка была 15 ₽</span></div>
+          <div class="kpi"><small>Пришли в кофейню</small><b data-n="312">0</b><span>по геоданным</span></div>
+        </div>
+        <div class="aud">
+          <div class="h4">Кому показываем</div>
+          <div class="tags"><span class="tag y">Живут в 1 км</span><span class="tag y">Работают рядом</span><span class="tag">Ходят мимо в 8–10 утра</span><span class="tag">Новосёлы района</span></div>
+          <p>Подходит <b>12 400 человек</b>. Тех, кто уже ходит к вам, не показываем.</p>
+        </div>
+        <div class="toast" id="toast">+1 гость: пришёл через 2 дня после клика</div>
+      </div>
+      <div class="m-prev">
+        <small>Так увидят вашу рекламу</small>
+        <div class="phone">
+          <div class="ph-hd"><span><svg><use href="#bee"/></svg>билайн</span><i></i></div>
+          <div class="ph-bal">Баланс<b>412,50 ₽</b></div>
+          <div class="ad"><small>Реклама · Кофейня «Зерно»</small><b>Капучино в подарок к первому заказу</b><span>3 минуты от вашего дома</span><i>Забрать</i></div>
+          <div class="ph-row"><div class="ph-sk"></div><div class="ph-sk"></div><div class="ph-sk"></div><div class="ph-sk"></div></div>
+          <div class="ph-sk"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="wrap">
+      <div class="stat"><b>44 млн</b><span>абонентов билайна по всей России</span></div>
+      <div class="stat"><b>от 5 ₽</b><span>за клик. Показы бесплатно</span></div>
+      <div class="stat"><b>в 3 раза</b><span>чаще нажимают рекламу, показанную в нужный момент*</span></div>
+      <div class="stat"><b>1 000 ₽</b><span>достаточно, чтобы начать</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section id="pain">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="kick">Знакомо?</span>
+      <h2>Бюджет уходит,<br>а клиентов больше не становится</h2>
+    </div>
+    <div class="pain">
+      <div class="card"><span class="n">01</span><h3>Рекламу видят не те</h3><p>Ваш баннер показали студенту из другого города. Вы заплатили за показ, клиента нет.</p></div>
+      <div class="card"><span class="n">02</span><h3>Клики есть, покупок нет</h3><p>Человек нажал из любопытства и ушёл. Ему не нужен ремонт квартиры: он её снимает.</p></div>
+      <div class="card"><span class="n">03</span><h3>Непонятно, что сработало</h3><p>Отчёт показывает клики. Пришёл ли кто-то в вашу точку, вы не знаете.</p></div>
+    </div>
+    <div class="fix">
+      <p>Мы показываем рекламу людям, которым ваш товар нужен <em>прямо сейчас</em>, и сообщаем, кто из них пришёл к вам.</p>
+      <a class="btn btn-p" href="#how">Как мы их находим →</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how" style="padding-top:0">
+  <div class="wrap">
+    <div class="panel">
+      <div class="sec-head center">
+        <span class="kick">Как находим клиентов</span>
+        <h2>Три способа найти<br>тех, кто купит</h2>
+        <p class="lead">Оператор знает о своих абонентах то, чего не знают соцсети и поисковики: где человек живёт и работает и что меняется в его жизни.</p>
+      </div>
+      <div class="ways">
+        <div class="way">
+          <div class="tt"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><h3>Рядом с вами</h3></div>
+          <p>Люди, которые живут, работают или каждый день ходят мимо вашей точки. Точность до квартала.</p>
+          <ul><li>Живут в радиусе 1 км</li><li>Ходят мимо по дороге на работу</li><li>Только переехали в район</li></ul>
+        </div>
+        <div class="way">
+          <div class="tt"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><h3>В нужный момент</h3></div>
+          <p>Люди, у которых что-то поменялось: переезд, новая машина, поездка. В эти дни им нужны новые товары и услуги.</p>
+          <ul><li>Заканчивается страховка</li><li>Купили новый телефон</li><li>Летят в отпуск через неделю</li></ul>
+        </div>
+        <div class="way">
+          <div class="tt"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 5.5 5.8"/></svg></span><h3>Похожие на ваших</h3></div>
+          <p>Загрузите базу своих клиентов, и мы найдём похожих людей. Номера останутся у вас: мы получим только зашифрованный список.</p>
+          <ul><li>Напомнить своим клиентам</li><li>Найти похожих на лучших</li><li>Не показывать тем, кто уже купил</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INDUSTRIES -->
+<section id="industries" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="kick">Для вашего бизнеса</span>
+      <h2>Кому показать рекламу</h2>
+      <p class="lead">Выберите свою сферу и посмотрите, каких клиентов мы найдём.</p>
+    </div>
+    <div class="ind-tabs" id="indTabs"></div>
+    <div class="ind" id="ind"></div>
+  </div>
+</section>
+
+<!-- WHERE -->
+<section id="where" style="padding-top:0">
+  <div class="wrap">
+    <div class="panel">
+      <div class="sec-head center">
+        <span class="kick">Где показываем</span>
+        <h2>На самых заметных местах<br>приложения билайна</h2>
+        <p class="lead">Абоненты заходят сюда проверить баланс, пополнить счёт и забрать бонусы. Ваша реклама будет рядом.</p>
+      </div>
+      <div class="places">
+        <div class="place">
+          <div class="scr"><div class="mini"><div class="sk" style="height:34px"></div><div class="ya"><small>Реклама</small>Новый ЖК в 25 минутах от работы</div><div class="row2"><div class="sk"></div><div class="sk"></div></div><div class="sk"></div></div></div>
+          <div class="tx"><h3>Главный экран</h3><p>Первое, что видят при каждом входе в приложение.</p><span class="ct">от 10 ₽ за клик</span></div>
+        </div>
+        <div class="place">
+          <div class="scr"><div class="mini"><div class="sk" style="height:18px;width:60%"></div><div class="row2"><div class="sk"></div><div class="ya" style="height:44px;padding:7px;font-size:9.5px">−20% на первую покупку</div></div><div class="row2"><div class="sk"></div><div class="sk"></div></div></div></div>
+          <div class="tx"><h3>Витрина выгод</h3><p>Сюда приходят за скидками, поэтому нажимают чаще всего.</p><span class="ct">от 8 ₽ за клик</span></div>
+        </div>
+        <div class="place">
+          <div class="scr"><div class="mini"><div class="sk" style="height:18px;width:50%"></div><div class="near"><i></i>Шиномонтаж<em>400 м</em></div><div class="near ya2"><i></i>Кофейня «Зерно»<em>300 м</em></div><div class="near"><i></i>Фитнес-клуб<em>900 м</em></div><div class="near"><i></i>Пекарня<em>1 км</em></div></div></div>
+          <div class="tx"><h3>Раздел «Рядом»</h3><p>Предложения у дома и работы. Лучший выбор для местного бизнеса.</p><span class="ct">от 10 ₽ за клик</span></div>
+        </div>
+        <div class="place">
+          <div class="scr"><div class="mini"><div class="ok">Платёж прошёл</div><div class="sk" style="height:14px;width:70%;margin:0 auto"></div><div class="ya" style="margin-top:auto">Автоплатёж картой: кешбэк 10%</div></div></div>
+          <div class="tx"><h3>После оплаты</h3><p>Человек только что заплатил и смотрит на экран. На нём одна реклама, и она ваша.</p><span class="ct">от 15 ₽ за клик</span></div>
+        </div>
+      </div>
+      <div class="more"><span>Сайт и Магазин билайна</span><span>Кабинет для бизнеса</span><span>Билайн ТВ</span><span>Пуши и SMS</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section id="steps" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="kick">Запуск</span>
+      <h2>Три шага, и реклама работает</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="num">1</span><h3>Укажите ИНН или сайт</h3><p>Покажем, сколько ваших клиентов рядом, ещё до регистрации.</p>
+        <div class="ui"><div class="fld">mycoffee.ru</div><div class="res"><span>Рядом с вами</span>12 400 подходящих людей</div></div></div>
+      <div class="step"><span class="num">2</span><h3>Выберите, кому показать</h3><p>Баннер соберём сами по вашему сайту. Поправите, если нужно.</p>
+        <div class="ui"><div class="opt on">Живут и работают рядом<i></i></div><div class="opt">Только переехали<i></i></div><div class="opt">Мои клиенты<i></i></div></div></div>
+      <div class="step"><span class="num">3</span><h3>Пополните и запустите</h3><p>Деньги списываются только за клики. Остановить можно в любой момент.</p>
+        <div class="ui"><div class="pay"><span>Бюджет</span><span>10 000 ₽</span></div><div class="pay" style="font-weight:600;color:var(--mut);padding-top:0"><span>Примерно кликов</span><span>1 100</span></div><div class="go">Запустить</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE -->
+<section id="price" style="padding-top:0">
+  <div class="wrap">
+    <div class="panel">
+      <div class="price">
+        <div>
+          <span class="kick">Цена</span>
+          <h2>Платите за клики,<br>а не за показы</h2>
+          <p class="lead" style="margin-top:20px">Показ бесплатный. Деньги списываются, только когда человек нажал на рекламу и перешёл к вам.</p>
+          <div class="rules">
+            <div class="rule"><i>✓</i><div><b>Платите за клик, после которого открылся ваш сайт</b><span>Только это мы считаем кликом</span></div></div>
+            <div class="rule no"><i>✕</i><div><b>Повторный клик за сутки бесплатно</b><span>Один человек не съест ваш бюджет</span></div></div>
+            <div class="rule no"><i>✕</i><div><b>Случайное нажатие бесплатно</b><span>Боты и случайные касания отсекаем</span></div></div>
+            <div class="rule"><i>✓</i><div><b>Маркировка рекламы бесплатно</b><span>Регистрируем рекламу по закону за вас</span></div></div>
+          </div>
+          <div class="vs">
+            <div class="h4">Почему точная реклама дешевле</div>
+            <div class="r"><span>Конкурент ставит 50 ₽ и показывает всем подряд</span><b>нажимает 1 из 100</b></div>
+            <div class="r w"><span>Вы ставите 30 ₽ и показываете тем, кто рядом</span><b>нажимают 3 из 100</b></div>
+            <p>Место получает реклама, которую чаще нажимают. Вы платите <b>17 ₽</b> за клик вместо 30 ₽ и всё равно обходите конкурента с бюджетом больше вашего.</p>
+          </div>
+        </div>
+        <div class="calc" id="calc">
+          <h3>Сколько клиентов вы получите</h3>
+          <div class="fl"><label for="cType">Ваш бизнес</label><select id="cType"></select></div>
+          <div class="fl"><div class="top"><label for="cBud">Бюджет в месяц</label><b id="cBudV">10 000 ₽</b></div><input type="range" id="cBud" min="1000" max="300000" step="1000" value="10000"></div>
+          <div class="res3">
+            <div><small>Клики</small><b id="cClicks">—</b></div>
+            <div><small>Цена клика</small><b id="cCpc">—</b></div>
+            <div class="y"><small id="cConvL">Клиенты</small><b id="cClients">—</b></div>
+          </div>
+          <p class="note" id="cNote"></p>
+          <a class="btn btn-p" href="#start" style="width:100%;margin-top:18px">Получить точный расчёт</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXAMPLES -->
+<section id="examples" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="kick">Примеры</span>
+      <h2>Что получит ваш бизнес</h2>
+      <p class="lead">Посчитали по средним ставкам и конверсиям в каждой сфере.</p>
+    </div>
+    <div class="exs">
+      <div class="exm"><small>Кофейня</small><h3>Гости из соседних домов и офисов</h3><p>Показываем тем, кто живёт или работает в 1 км и ходит мимо утром. Своих гостей исключаем.</p>
+        <div class="flow"><div><span>Бюджет</span><b>10 000 ₽</b></div><div><span>Клики</span><b>1 100</b></div><div><span>Пришли в кофейню</span><b>280</b></div><div class="y"><span>Один гость</span><b>36 ₽</b></div></div></div>
+      <div class="exm"><small>Автосервис</small><h3>Водители, которым пора менять шины</h3><p>Показываем тем, кто каждый день ездит на машине и живёт рядом, в первые холода.</p>
+        <div class="flow"><div><span>Бюджет</span><b>15 000 ₽</b></div><div><span>Клики</span><b>600</b></div><div><span>Записались</span><b>72</b></div><div class="y"><span>Один клиент</span><b>208 ₽</b></div></div></div>
+      <div class="exm"><small>Застройщик</small><h3>Покупатели, которые уже выбирают квартиру</h3><p>Показываем тем, кто за месяц дважды ездил в офисы продаж и тратит на дорогу до работы больше часа.</p>
+        <div class="flow"><div><span>Бюджет</span><b>200 000 ₽</b></div><div><span>Клики</span><b>4 400</b></div><div><span>Приехали в офис продаж</span><b>178</b></div><div class="y"><span>Один визит</span><b>1 124 ₽</b></div></div></div>
+    </div>
+    <p class="foot-n">* Прогноз по средним показателям рекламы в нужный момент против обычного баннера. После пилота заменим оценки фактическими данными.</p>
+  </div>
+</section>
+
+<!-- REPORT -->
+<section id="report" style="padding-top:0">
+  <div class="wrap">
+    <div class="panel">
+      <div class="trust">
+        <div>
+          <span class="kick">Отчёт</span>
+          <h2>Видно, кто пришёл,<br>а не только кто нажал</h2>
+          <ul class="tl">
+            <li><i><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></i><div><b>Визиты в вашу точку</b><span>Видим, что человек пришёл к вам после клика. Кассу и промокоды подключать не нужно.</span></div></li>
+            <li><i><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg></i><div><b>Отчёт каждый день</b><span>Клики, цена клика, визиты и заявки. Видно, какое объявление работает.</span></div></li>
+            <li><i><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></i><div><b>Данные абонентов не передаём</b><span>Вы видите итоги кампании. Номера телефонов и имена остаются у билайна.</span></div></li>
+          </ul>
+        </div>
+        <div class="rep">
+          <div class="h4">Кофейня «Зерно» · октябрь<span>пример отчёта</span></div>
+          <div class="bars">
+            <div class="bar"><span>Показы</span><span class="t"><i style="width:100%"></i></span><b>40 100</b></div>
+            <div class="bar"><span>Клики</span><span class="t"><i style="width:42%"></i></span><b>1 284</b></div>
+            <div class="bar y"><span>Пришли к вам</span><span class="t"><i style="width:18%"></i></span><b>312</b></div>
+            <div class="bar"><span>Пришли снова</span><span class="t"><i style="width:8%"></i></span><b>96</b></div>
+          </div>
+          <div class="res3" style="margin-top:22px">
+            <div><small>Потрачено</small><b>11 556 ₽</b></div>
+            <div><small>Цена клика</small><b>9 ₽</b></div>
+            <div class="y"><small>Один гость</small><b>37 ₽</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head center"><span class="kick">Вопросы</span><h2>Спрашивают чаще всего</h2></div>
+    <div class="faq" id="qa"></div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final" id="start">
+  <div class="wrap">
+    <div class="panel">
+      <h2>Узнайте, сколько ваших клиентов рядом</h2>
+      <p class="lead">Укажите сайт или ИНН и сферу. Посчитаем подходящих людей и клики на ваш бюджет.</p>
+      <form class="ff" id="ff" novalidate>
+        <input type="text" id="fSite" placeholder="Сайт или ИНН" aria-label="Сайт или ИНН" autocomplete="off">
+        <select id="fType" aria-label="Сфера бизнеса"></select>
+        <button class="btn btn-p" type="submit">Посчитать →</button>
+      </form>
+      <div class="fres" id="fres"></div>
+      <div class="checks" style="margin-top:22px"><span>без регистрации</span><span>бесплатно</span><span>результат сразу</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap ft">
+    <a class="logo" href="#top"><svg><use href="#bee"/></svg><span>билайн<small>рекламная платформа</small></span></a>
+    <div class="ft-l"><a href="#how">Как находим клиентов</a><a href="#where">Где показываем</a><a href="#price">Цена</a><a href="#faq">Вопросы</a><a href="#">Правила размещения</a><a href="#">Обработка данных</a></div>
+  </div>
+</footer>
+
+<script>
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const num = n => Math.round(n).toLocaleString('ru-RU');
+const nice = n => { const k = n >= 10000 ? 1000 : n >= 1000 ? 100 : 10; return num(Math.round(n / k) * k); };
+
+/* hero counters + toast */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return; io.unobserve(e.target);
+  const b = e.target, to = +b.dataset.n;
+  if (RM) { b.textContent = num(to); return; }
+  const t0 = performance.now();
+  const f = t => { const k = Math.min(1, (t - t0) / 1400); b.textContent = num(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); };
+  requestAnimationFrame(f);
+}), {threshold:.4});
+document.querySelectorAll('[data-n]').forEach(b => io.observe(b));
+setTimeout(() => $('#toast').classList.add('on'), RM ? 0 : 1800);
+
+/* industries */
+const IND = [
+  { n:'Кафе, салоны, фитнес', m:[
+    ['Рядом','Живут или работают в 1 км','Видят вас каждый день, но ещё не заходили.','Капучино в подарок к первому заказу'],
+    ['По дороге','Ходят мимо в 8–10 и 18–20','Покажем рекламу до того, как человек пройдёт мимо вашей двери.','Завтрак с собой за 5 минут'],
+    ['Новосёлы','Только переехали в район','В первые два месяца люди выбирают «свои» места рядом с домом.','Первая стрижка −30% для новых соседей'] ]},
+  { n:'Магазины и доставка', m:[
+    ['Новосёлы','Переехали в ваш район','У них ещё нет любимого магазина рядом с домом.','Скидка 500 ₽ на первый заказ'],
+    ['Конкуренты','Покупают у конкурентов рядом','Ритейл-партнёры подсказывают, где человек покупает сейчас.','Продукты на неделю −20%'],
+    ['Зарплата','Получили зарплату','В первые три дня после зарплаты люди охотнее делают крупные покупки.','Закупка впрок с бесплатной доставкой'] ]},
+  { n:'Авто', m:[
+    ['Страховка','Через 30 дней заканчивается ОСАГО','Человек начинает искать, где продлить. Вы будете первым.','ОСАГО онлайн за 3 минуты'],
+    ['Водители','Ездят на машине каждый день','Видим поездки на машине и оплату парковок.','Замена масла за 40 минут'],
+    ['Сезон','Первые холода в регионе','Показываем водителям рядом с вашим сервисом в нужную неделю.','Шиномонтаж без очереди'] ]},
+  { n:'Недвижимость', m:[
+    ['Выбирают','Ездят по офисам продаж','Два визита за месяц: человек уже выбирает квартиру.','Квартира в 25 минутах от работы'],
+    ['Дорога','Тратят на дорогу больше часа','Покажем, сколько времени сэкономит ваш ЖК.','До работы 25 минут вместо 70'],
+    ['Семья','В семье появился ребёнок','Семье нужна квартира побольше и семейная ипотека.','Трёшка с семейной ипотекой'] ]},
+  { n:'Банки и страхование', m:[
+    ['Поездка','Летят за границу','Видим поездку за неделю до вылета: самое время для страховки и карты.','Страховка в поездку за 2 минуты'],
+    ['Новый телефон','Купили новый смартфон','Первые 14 дней — лучшее время застраховать экран.','Защита экрана для вашей модели'],
+    ['Первый договор','Оформили номер на себя','Молодой человек 18+ впервые всё решает сам.','Первая карта с кешбэком'] ]},
+  { n:'Услуги для бизнеса', m:[
+    ['Тендер','Компания выиграла тендер','Через 10 дней ей нужна гарантия по контракту.','Банковская гарантия за 1 день'],
+    ['Рост','Открыла новую точку','Новому адресу нужны касса, интернет и эквайринг.','Эквайринг 0% первые 3 месяца'],
+    ['Найм','Нанимает сотрудников','Сотрудников за квартал стало на 20% больше.','Зарплатный проект без комиссии'] ]}
+];
+const tabs = $('#indTabs');
+IND.forEach((x, i) => { const b = document.createElement('button'); b.textContent = x.n; b.onclick = () => showInd(i); tabs.appendChild(b); });
+function showInd(i){
+  [...tabs.children].forEach((b, k) => b.classList.toggle('on', k === i));
+  const box = $('#ind'); box.innerHTML = IND[i].m.map(m => `<div class="mo"><small>${m[0]}</small><h3>${m[1]}</h3><p>${m[2]}</p><div class="ex"><span>Пример рекламы</span>${m[3]}</div></div>`).join('');
+  box.style.animation = 'none'; void box.offsetWidth; box.style.animation = '';
+}
+showInd(0);
+
+/* calculator */
+// ponytail: средние CPC и конверсии — допущения до пилота, заменить на данные аукциона
+const CT = [
+  ['Кафе, салон, фитнес', 9, .25, 'Пришли к вам'],
+  ['Магазин или доставка', 12, .20, 'Покупатели'],
+  ['Автосервис или автосалон', 25, .12, 'Записались'],
+  ['Недвижимость', 45, .04, 'Визиты в офис'],
+  ['Банк или страхование', 60, .08, 'Заявки'],
+  ['Услуги для бизнеса', 120, .05, 'Заявки']
+];
+const opts = CT.map((c, i) => `<option value="${i}">${c[0]}</option>`).join('');
+$('#cType').innerHTML = opts; $('#fType').innerHTML = opts;
+const bud = $('#cBud');
+function calc(){
+  const c = CT[+$('#cType').value], b = +bud.value, clicks = b / c[1];
+  bud.style.setProperty('--v', ((b - bud.min) / (bud.max - bud.min) * 100) + '%');
+  $('#cBudV').textContent = num(b) + ' ₽';
+  $('#cClicks').textContent = num(clicks);
+  $('#cCpc').textContent = c[1] + ' ₽';
+  $('#cConvL').textContent = c[3];
+  $('#cClients').textContent = num(clicks * c[2]);
+  $('#cNote').textContent = `Один клиент обойдётся примерно в ${num(c[1] / c[2])} ₽. Это оценка по средним ставкам сферы. Точный расчёт по вашему адресу и конкурентам сделаем бесплатно.`;
+}
+$('#cType').onchange = calc; bud.oninput = calc; calc();
+
+/* faq */
+const FAQ = [
+  ['Чем это лучше рекламы в соцсетях или поиске?','Соцсети знают, что человек лайкает. Поиск знает, что он ищет. Билайн знает, где человек живёт и работает и что у него поменялось: переезд, машина, поездка. Поэтому мы находим тех, кто ещё не начал искать, но скоро начнёт.'],
+  ['Я увижу данные абонентов?','Нет. Вы видите итоги кампании: сколько людей нажали и сколько пришли к вам. Номера, имена и адреса остаются у билайна. Свою базу клиентов вы загружаете в зашифрованном виде, и она тоже никуда не уходит.'],
+  ['Как вы узнаёте, что человек пришёл ко мне?','Видим, что после клика телефон человека побывал в вашей точке. В отчёте это число визитов. Подключать кассу или раздавать промокоды не нужно.'],
+  ['Сколько нужно денег на старт?','1 000 ₽. Минимальная цена клика от 5 ₽, она зависит от места показа и вашей сферы. Маркировку рекламы делаем бесплатно.'],
+  ['Мне нужен дизайнер или агентство?','Нет. Укажите сайт, и мы соберём баннер сами. Его можно поправить в кабинете. Для крупных кампаний подключим персонального менеджера.'],
+  ['Можно остановить рекламу?','Да, в любой момент одной кнопкой. Неизрасходованные деньги остаются на балансе.']
+];
+FAQ.forEach(([q, a], k) => {
+  const d = document.createElement('div'); d.className = 'qa' + (k === 0 ? ' on' : '');
+  d.innerHTML = `<button aria-expanded="${k === 0}"><span>${q}</span><i>+</i></button><p>${a}</p>`;
+  d.querySelector('button').onclick = () => {
+    const open = d.classList.contains('on');
+    document.querySelectorAll('.qa').forEach(x => { x.classList.remove('on'); x.querySelector('button').setAttribute('aria-expanded', 'false'); });
+    if (!open) { d.classList.add('on'); d.querySelector('button').setAttribute('aria-expanded', 'true'); }
+  };
+  $('#qa').appendChild(d);
+});
+
+/* final form */
+// ponytail: оценка от фиксированных 30 000 ₽ и CTR 3%, в проде заменить запросом к API прогноза
+$('#ff').onsubmit = e => {
+  e.preventDefault();
+  const c = CT[+$('#fType').value], clicks = 30000 / c[1];
+  const r = $('#fres');
+  r.innerHTML = `<div><small>Подходящих людей</small><b>≈ ${nice(clicks / 0.03)}</b></div><div><small>Кликов на 30 000 ₽</small><b>≈ ${nice(clicks)}</b></div><div><small>${c[3]}</small><b>≈ ${nice(clicks * c[2])}</b></div>
+    <p>Это предварительная оценка для сферы «${c[0]}». Точный расчёт по вашему адресу и конкурентам — в кабинете после регистрации, она занимает 10 минут.</p>`;
+  r.classList.add('on');
+};
+</script>
+</body>
+</html>

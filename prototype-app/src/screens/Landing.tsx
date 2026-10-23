@@ -1,10 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowRight, BadgeCheck, CalendarDays, ClipboardCheck, Copy, Home, MapPin, Percent, Plane, Repeat, ShieldCheck, Smartphone, Sparkles, Ticket, UserPlus, Wallet } from 'lucide-react'
-import { NICHES, PLACES, n, rub } from '../data'
+import { ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Copy, Home, MapPin, Plane, ShieldCheck, Smartphone, Sparkles, UserPlus, Wallet } from 'lucide-react'
+import { IMAGES, NICHES, PLACES, n, rub } from '../data'
 import { Bars, HBars, Trend } from '../charts'
-import { PhoneSurface, type Surface } from '../mock'
+import { DEMO_AD, PhoneSurface, type Surface } from '../mock'
 import { Brand, Chip, IdBadge, Num, Photo, Reveal } from '../ui'
 import { update, useStore } from '../store'
 
@@ -159,13 +159,27 @@ function Moments() {
   )
 }
 
-// Типы офферов из старого кабинета (купон, CPA, CPS, подписка), пересказанные языком владельца бизнеса.
-// flow: три участника и подписи к двум стрелкам — как идут деньги.
+// Типы офферов. Основной — реклама с оплатой за переход, остальные схемы из старого кабинета
+// (купон, CPA, CPS, подписка), пересказанные языком владельца бизнеса.
 const OFFERS = [
   {
-    icon: Ticket, tag: 'купон', t: 'купон со скидкой',
+    main: true, t: 'реклама с оплатой за переход',
+    d: 'Показываем ваш оффер в приложении билайна в нужный момент. Клиент нажимает и попадает к вам: на сайт, в Карты или звонит.',
+    gets: 'ваше предложение, когда оно нужно', pay: 'за переход, показы бесплатно',
+    fit: 'кофейни, сервисы, магазины, клиники',
+    ui: (
+      <div className="pm-banner">
+        <div className="ad-img ad-img--0">{IMAGES[0]}</div>
+        <div className="pm-banner__text"><b>{DEMO_AD.brand}</b><span>{DEMO_AD.text}</span></div>
+        <span className="pm-btn">перейти</span>
+        <span className="pm-label">реклама</span>
+      </div>
+    ),
+  },
+  {
+    t: 'купон со скидкой',
     d: 'Клиент заранее покупает купон в приложении билайна, а потом приходит к вам и показывает его на кассе.',
-    flow: [['клиент', 'за купон'], ['билайн', 'минус комиссия'], ['вы']],
+    gets: 'скидку по оплаченному купону', pay: 'комиссию с погашенного купона',
     fit: 'кафе, салоны красоты, развлечения',
     ui: (
       <div className="pm-card offer-coupon">
@@ -175,10 +189,10 @@ const OFFERS = [
     ),
   },
   {
-    icon: ClipboardCheck, tag: 'заявка', t: 'оплата за заявку',
-    d: 'Клиент оставляет заявку, регистрируется или ставит ваше приложение. Платите фиксированную сумму только за подтверждённые.',
-    flow: [['клиент', 'заявка'], ['вы', 'фикс за заявку'], ['билайн']],
-    fit: 'банки, страхование, онлайн-школы, приложения',
+    t: 'оплата за заявку',
+    d: 'Клиент оставляет заявку, регистрируется или ставит ваше приложение. Дальше вы работаете с ним сами.',
+    gets: 'продукт или услугу по заявке', pay: 'фикс за подтверждённую заявку',
+    fit: 'банки, страхование, онлайн-школы',
     ui: (
       <div className="pm-card">
         <b>кредитная карта</b><span className="pm-muted">120 дней без процентов</span>
@@ -188,56 +202,70 @@ const OFFERS = [
     ),
   },
   {
-    icon: Percent, tag: 'процент с покупки', t: 'промокод на покупку',
-    d: 'Клиент получает промокод и покупает на вашем сайте. Процент отдаёте только с оплаченных покупок, за возвраты не платите.',
-    flow: [['клиент', 'покупка'], ['вы', 'процент'], ['билайн']],
+    t: 'промокод на покупку',
+    d: 'Клиент получает промокод и покупает на вашем сайте. За возвраты не платите.',
+    gets: 'скидку на вашем сайте', pay: 'процент с оплаченной покупки',
     fit: 'интернет-магазины, доставка, билеты',
     ui: (
       <div className="pm-card">
         <span className="pm-muted">промокод на первый заказ</span>
         <span className="offer-code">BEE15 <Copy size={14} /></span>
         <b>−15% в магазине у дома</b>
-        <span className="pm-btn">перейти в магазин</span>
       </div>
     ),
   },
   {
-    icon: Repeat, tag: 'подписка', t: 'подписка на сервис',
-    d: 'Клиент подключает ваш сервис и платит каждый месяц со счёта телефона. Вы получаете долю, пока подписка активна.',
-    flow: [['клиент', 'каждый месяц'], ['билайн', 'ваша доля'], ['вы']],
+    t: 'подписка на сервис',
+    d: 'Клиент подключает ваш сервис и платит каждый месяц со счёта телефона, пока подписка активна.',
+    gets: 'пробный период и оплату со счёта', pay: 'долю каждого платежа',
     fit: 'кино, музыка, облако, курсы',
     ui: (
       <div className="pm-card">
         <span className="bl-row" style={{ justifyContent: 'space-between' }}><b>онлайн-кинотеатр</b><span className="offer-toggle" /></span>
         <b>30 дней бесплатно</b>
         <span className="pm-muted">потом 299 ₽ в месяц со счёта телефона</span>
-        <span className="pm-btn">подключить</span>
       </div>
     ),
   },
 ]
 
 function Offers() {
+  const track = useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = useState({ start: true, end: false })
+  const onScroll = () => {
+    const el = track.current
+    if (el) setEdge({ start: el.scrollLeft < 8, end: el.scrollLeft + el.clientWidth > el.scrollWidth - 8 })
+  }
+  useEffect(onScroll, [])
+  const step = (dir: number) => {
+    const el = track.current, card = el?.querySelector<HTMLElement>('.offer-card:not(.is-main)')
+    el?.scrollBy({ left: dir * ((card?.offsetWidth ?? 320) + 16), behavior: 'smooth' })
+  }
   return (
     <section className="bl-section bl-section--wide" id="offers">
-      <div className="section-head"><h2 className="bl-display-l">какие бывают офферы</h2><p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Выберите, что получит клиент и как пойдут деньги. От этого зависят подключение и расчёты.</p></div>
-      <div className="bl-grid" style={{ ['--bl-cols' as string]: 2 }}>
-        {OFFERS.map((o, i) => (
-          <Reveal key={o.tag} delay={i * 0.08} as="article" className="bl-card offer">
-            <div className="offer__ui" aria-hidden="true"><span className="bl-micro offer__ui-label">так видит клиент</span>{o.ui}</div>
-            <span className="bl-tag bl-tag--brand offer__tag"><o.icon size={14} /> {o.tag}</span>
+      <div className="section-head">
+        <h2 className="bl-display-l">какие бывают офферы</h2>
+        <div className="bl-row offers-head" style={{ ['--bl-gap' as string]: '24px' }}>
+          <p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Основной — реклама с оплатой за переход. Для купонов, заявок и подписок есть свои схемы.</p>
+          <span className="bl-row bl-hide-mobile" style={{ gap: 8 }}>
+            <button className="bl-icon-btn" aria-label="Предыдущие офферы" disabled={edge.start} onClick={() => step(-1)}><ChevronLeft /></button>
+            <button className="bl-icon-btn" aria-label="Следующие офферы" disabled={edge.end} onClick={() => step(1)}><ChevronRight /></button>
+          </span>
+        </div>
+      </div>
+      <div className="offers-track" ref={track} onScroll={onScroll} tabIndex={0} role="region" aria-label="Типы офферов, прокрутка вбок">
+        {OFFERS.map(o => (
+          <article key={o.t} className={`bl-card offer-card${o.main ? ' bl-card--yellow is-main' : ''}`}>
+            <div className="offer-card__screen" aria-hidden="true">{o.ui}</div>
+            {o.main && <span className="bl-tag bl-tag--dark offer-card__tag">основной</span>}
             <h3 className="bl-h3">{o.t}</h3>
             <p className="bl-body bl-secondary">{o.d}</p>
-            <div className="offer-flow" role="img" aria-label={`Как идут деньги: ${o.flow.map(([who, what]) => what ? `${who}, ${what}` : who).join(' → ')}`}>
-              {o.flow.map(([who, what]) => (
-                <span key={who} className="offer-flow__step">
-                  <span className={`offer-flow__node${who === 'вы' ? ' is-you' : ''}`}>{who}</span>
-                  {what && <span className="offer-flow__arrow"><span className="bl-micro">{what}</span><ArrowRight size={16} /></span>}
-                </span>
-              ))}
-            </div>
+            <dl className="offer-card__terms">
+              <div><dt>клиент получает</dt><dd>{o.gets}</dd></div>
+              <div><dt>вы платите</dt><dd>{o.pay}</dd></div>
+            </dl>
             <p className="bl-caption">подходит: {o.fit}</p>
-          </Reveal>
+          </article>
         ))}
       </div>
     </section>

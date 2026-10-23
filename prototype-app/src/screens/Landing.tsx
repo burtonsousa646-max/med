@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowRight, BadgeCheck, CalendarDays, Home, MapPin, Plane, ShieldCheck, Smartphone, Sparkles, UserPlus, Wallet } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CalendarDays, ClipboardCheck, Copy, Home, MapPin, Percent, Plane, Repeat, ShieldCheck, Smartphone, Sparkles, Ticket, UserPlus, Wallet } from 'lucide-react'
 import { NICHES, PLACES, n, rub } from '../data'
 import { Bars, HBars, Trend } from '../charts'
 import { PhoneSurface, type Surface } from '../mock'
@@ -53,7 +53,7 @@ function Hero() {
           реклама в&nbsp;момент, когда клиенту это нужно
         </motion.h1>
         <motion.p className="bl-lead" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
-          Переехал, купил новый телефон, собирается в поездку, получил зарплату. Покажем ваш оффер именно тогда. Платите только за клики.
+          Переехал, купил новый телефон, собирается в поездку, получил зарплату. Покажем ваш оффер именно тогда. Платите только за результат.
         </motion.p>
         <motion.div className="bl-row" style={{ ['--bl-gap' as string]: '20px', marginTop: 8 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
           <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
@@ -99,7 +99,7 @@ function Facts() {
     { v: 45, s: ' млн', t: 'абонентов билайна: приложение, ТВ, пуши' },
     { v: 19, s: '', t: 'сигналов: события жизни, место, деньги, момент на экране' },
     { v: 2, s: ' мин', t: 'на модерацию: ИИ проверяет текст до оплаты' },
-    { v: 0, s: ' ₽', t: 'за показы: платите только за переходы' },
+    { v: 0, s: ' ₽', t: 'за показы: платите за клики, заявки или продажи' },
   ]
   return (
     <section className="bl-grid facts" style={{ ['--bl-cols' as string]: 4 }}>
@@ -117,7 +117,7 @@ function How() {
   const steps = [
     { t: 'войдите по бизнес-ID', d: 'Госуслуги, СберБизнес или Альфа. Компанию, точки и реквизиты узнаем сами.', ui: <div className="bl-row" style={{ gap: 6 }}>{(['gos', 'sber', 'alfa'] as const).map(id => <IdBadge key={id} id={id} />)}<BadgeCheck size={22} className="bl-success" /></div> },
     { t: 'выберите цель', d: 'Автопилот соберёт объявление с вашего сайта и Карт и подберёт места показа.', ui: <div className="bl-row" style={{ gap: 6 }}><span className="bl-chip is-active">соседи в точку</span><span className="bl-chip">конкуренты</span></div> },
-    { t: 'платите за клики, смотрите визиты', d: 'Клики видно через час. Визиты в точку — через день-два.', ui: <Bars label="Пример: визиты по дням" height={64} fmt={v => `${v} визитов`} data={[4, 7, 6, 9, 12, 11, 15].map((v, i) => ({ label: `${i + 1} день`, value: v }))} /> },
+    { t: 'платите за результат, смотрите визиты', d: 'Клики видно через час. Визиты в точку — через день-два.', ui: <Bars label="Пример: визиты по дням" height={64} fmt={v => `${v} визитов`} data={[4, 7, 6, 9, 12, 11, 15].map((v, i) => ({ label: `${i + 1} день`, value: v }))} /> },
   ]
   return (
     <section className="bl-section bl-section--wide" id="how">
@@ -152,6 +152,91 @@ function Moments() {
             <Photo name={c.photo} label={c.label} ratio="4 / 5"><span className={`bl-tag ${c.cls} moment-card__tag`}>{c.tag}</span></Photo>
             <h3 className="bl-h3">{c.t}</h3>
             <p className="bl-body bl-secondary">{c.d}</p>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// Типы офферов из старого кабинета (купон, CPA, CPS, подписка), пересказанные языком владельца бизнеса.
+// flow: три участника и подписи к двум стрелкам — как идут деньги.
+const OFFERS = [
+  {
+    icon: Ticket, tag: 'купон', t: 'купон со скидкой',
+    d: 'Клиент заранее покупает купон в приложении билайна, а потом приходит к вам и показывает его на кассе.',
+    flow: [['клиент', 'за купон'], ['билайн', 'минус комиссия'], ['вы']],
+    fit: 'кафе, салоны красоты, развлечения',
+    ui: (
+      <div className="pm-card offer-coupon">
+        <span className="offer-coupon__off">−50%</span>
+        <span className="offer-coupon__body"><b>капучино и круассан</b><span className="pm-muted">кофейня у дома · 300 м</span><span><b>350 ₽</b> <s className="pm-muted">700 ₽</s></span></span>
+      </div>
+    ),
+  },
+  {
+    icon: ClipboardCheck, tag: 'заявка', t: 'оплата за заявку',
+    d: 'Клиент оставляет заявку, регистрируется или ставит ваше приложение. Платите фиксированную сумму только за подтверждённые.',
+    flow: [['клиент', 'заявка'], ['вы', 'фикс за заявку'], ['билайн']],
+    fit: 'банки, страхование, онлайн-школы, приложения',
+    ui: (
+      <div className="pm-card">
+        <b>кредитная карта</b><span className="pm-muted">120 дней без процентов</span>
+        <span className="offer-input">+7 900 000-00-00</span>
+        <span className="pm-btn">оставить заявку</span>
+      </div>
+    ),
+  },
+  {
+    icon: Percent, tag: 'процент с покупки', t: 'промокод на покупку',
+    d: 'Клиент получает промокод и покупает на вашем сайте. Процент отдаёте только с оплаченных покупок, за возвраты не платите.',
+    flow: [['клиент', 'покупка'], ['вы', 'процент'], ['билайн']],
+    fit: 'интернет-магазины, доставка, билеты',
+    ui: (
+      <div className="pm-card">
+        <span className="pm-muted">промокод на первый заказ</span>
+        <span className="offer-code">BEE15 <Copy size={14} /></span>
+        <b>−15% в магазине у дома</b>
+        <span className="pm-btn">перейти в магазин</span>
+      </div>
+    ),
+  },
+  {
+    icon: Repeat, tag: 'подписка', t: 'подписка на сервис',
+    d: 'Клиент подключает ваш сервис и платит каждый месяц со счёта телефона. Вы получаете долю, пока подписка активна.',
+    flow: [['клиент', 'каждый месяц'], ['билайн', 'ваша доля'], ['вы']],
+    fit: 'кино, музыка, облако, курсы',
+    ui: (
+      <div className="pm-card">
+        <span className="bl-row" style={{ justifyContent: 'space-between' }}><b>онлайн-кинотеатр</b><span className="offer-toggle" /></span>
+        <b>30 дней бесплатно</b>
+        <span className="pm-muted">потом 299 ₽ в месяц со счёта телефона</span>
+        <span className="pm-btn">подключить</span>
+      </div>
+    ),
+  },
+]
+
+function Offers() {
+  return (
+    <section className="bl-section bl-section--wide" id="offers">
+      <div className="section-head"><h2 className="bl-display-l">какие бывают офферы</h2><p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Выберите, что получит клиент и как пойдут деньги. От этого зависят подключение и расчёты.</p></div>
+      <div className="bl-grid" style={{ ['--bl-cols' as string]: 2 }}>
+        {OFFERS.map((o, i) => (
+          <Reveal key={o.tag} delay={i * 0.08} as="article" className="bl-card offer">
+            <div className="offer__ui" aria-hidden="true"><span className="bl-micro offer__ui-label">так видит клиент</span>{o.ui}</div>
+            <span className="bl-tag bl-tag--brand offer__tag"><o.icon size={14} /> {o.tag}</span>
+            <h3 className="bl-h3">{o.t}</h3>
+            <p className="bl-body bl-secondary">{o.d}</p>
+            <div className="offer-flow" role="img" aria-label={`Как идут деньги: ${o.flow.map(([who, what]) => what ? `${who}, ${what}` : who).join(' → ')}`}>
+              {o.flow.map(([who, what]) => (
+                <span key={who} className="offer-flow__step">
+                  <span className={`offer-flow__node${who === 'вы' ? ' is-you' : ''}`}>{who}</span>
+                  {what && <span className="offer-flow__arrow"><span className="bl-micro">{what}</span><ArrowRight size={16} /></span>}
+                </span>
+              ))}
+            </div>
+            <p className="bl-caption">подходит: {o.fit}</p>
           </Reveal>
         ))}
       </div>
@@ -262,7 +347,7 @@ function Cases() {
 function Plans() {
   return (
     <section className="bl-section bl-section--wide" id="price">
-      <div className="section-head"><h2 className="bl-display-l">начните с малого</h2><p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Показ бесплатный. Деньги списываются только за переход. Остановить можно в любой момент.</p></div>
+      <div className="section-head"><h2 className="bl-display-l">начните с малого</h2><p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Показ бесплатный. Платите за клики, заявки или комиссию с продаж — зависит от типа оффера. Остановить можно в любой момент.</p></div>
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         <article className="bl-shell">
           <div className="bl-shell__head"><div><div className="bl-shell__title">автопилот</div><div className="bl-shell__sub">для кофеен, салонов, сервисов</div></div></div>
@@ -287,7 +372,7 @@ function Faq() {
     ['как оплатить?', 'СБП для бизнеса или бизнес-картой за секунды. Средний и крупный бизнес может платить по счёту.'],
     ['зачем входить через Госуслуги или банк?', 'Так мы сразу узнаём вашу компанию и точки, показываем точный охват и заполняем реквизиты сами.'],
     ['какие данные я увижу?', 'Клики, визиты в точку, повторные визиты и цену гостя. Данные абонентов не передаём.'],
-    ['что, если не сработает?', 'Списываем только за клики. Кампанию можно остановить в один клик, остаток баланса вернём.'],
+    ['что, если не сработает?', 'Без результата не платите: нет кликов, заявок или продаж — нет списаний. Кампанию можно остановить в один клик, остаток баланса вернём.'],
   ]
   return (
     <section className="bl-section" id="faq">
@@ -332,6 +417,7 @@ export default function Landing() {
           <Facts />
           <How />
           <Moments />
+          <Offers />
           <Where />
           <Calc />
           <Cases />

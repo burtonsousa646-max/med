@@ -18,7 +18,7 @@ function Offer() {
       <header className="bl-header"><div className="bl-header__side"><Brand /></div></header>
       <section className="bl-section">
         <h1 className="bl-h1" style={{ marginBottom: 24 }}>оферта на размещение рекламы</h1>
-        <p className="bl-body bl-secondary" style={{ maxWidth: 'var(--text-max)' }}>Текст оферты готовят юристы. Здесь заглушка: предмет — размещение рекламных материалов на поверхностях билайна с оплатой за клики; акцепт — отметка в кабинете или подтверждение через бизнес-ID; закрывающие документы — через ЭДО.</p>
+        <p className="bl-body bl-secondary" style={{ maxWidth: 'var(--text-max)' }}>Текст оферты готовят юристы. Здесь заглушка: предмет — размещение рекламных материалов на поверхностях билайна с оплатой за клики, целевые действия или комиссией с продаж; акцепт — отметка в кабинете или подтверждение через бизнес-ID; закрывающие документы — через ЭДО.</p>
       </section>
     </div>
   )

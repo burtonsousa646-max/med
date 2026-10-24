@@ -1,0 +1,225 @@
+{
+  "snapshot": "2026-09-30",
+  "files": [
+    {
+      "path": "00_README.md",
+      "bytes": 3567,
+      "sha256": "d7af740301181e6eba43943832b18acd310d6a5be7f0f615538f199477bb961e"
+    },
+    {
+      "path": "01_PROJECT_CONTEXT.md",
+      "bytes": 4940,
+      "sha256": "62f4491033e6c5612a111552daa3da5b89ab9a4631683e2f77be9528c169db48"
+    },
+    {
+      "path": "02_PRODUCT_REQUIREMENTS.md",
+      "bytes": 4178,
+      "sha256": "ac37afc9f47dc8fca9d7f4216b7d9840ccacc0f6725475cabd7677aa66b4c292"
+    },
+    {
+      "path": "03_PARTNER_CJM.md",
+      "bytes": 7447,
+      "sha256": "1379aea1a13c34b24528e9f8f850397f82a7a815e0f609a6e3bd34a052bc172b"
+    },
+    {
+      "path": "04_PARTNER_CABINET_SPEC.md",
+      "bytes": 8954,
+      "sha256": "22d2ec602b16f09aedce922f39757b35fb585b416552b69953813d131565112a"
+    },
+    {
+      "path": "05_INTEGRATION_SPEC.md",
+      "bytes": 9431,
+      "sha256": "416d3ad911e5394a4b8d8b30a33d4eaecfe7814f29dd91a174bfe3063c31d23f"
+    },
+    {
+      "path": "06_API_CONTRACTS.md",
+      "bytes": 5683,
+      "sha256": "af8f172280fcc80ebf481ca60509bb22fbaa156c421d5acdbc2d351e40c0421f"
+    },
+    {
+      "path": "07_DATA_MODEL.md",
+      "bytes": 7279,
+      "sha256": "fa7079586341b945c46dc18415bed7e0a5a8966656485202bfb8e5f99728f1aa"
+    },
+    {
+      "path": "08_STATE_MACHINES.md",
+      "bytes": 4804,
+      "sha256": "8cffe3f1501f13a6590e3f46d9caf55b85da60008f8c912ec05ac204b8fa87a9"
+    },
+    {
+      "path": "09_BUSINESS_RULES.md",
+      "bytes": 4900,
+      "sha256": "9076d07d7aa22e2e7404db7856e79e80a53919abde84f187ce4baff93fb76ae1"
+    },
+    {
+      "path": "10_ARCHITECTURE.md",
+      "bytes": 3741,
+      "sha256": "36bb368725db8544808531ccbb2d0952dc09a5b5ea63f71d6adf6e956075dc6d"
+    },
+    {
+      "path": "11_UI_SCREEN_CATALOG.md",
+      "bytes": 5459,
+      "sha256": "10880ac1e9dedadd64c1b3a53a792d97e4288c7bcad66894b4b5e9a0d4e1add4"
+    },
+    {
+      "path": "12_ROLES_PERMISSIONS.md",
+      "bytes": 2752,
+      "sha256": "94e2f422ba84adaaef1bae27c364ae24ad5a06155c38f8af6fa832a96312949a"
+    },
+    {
+      "path": "13_BACKLOG.md",
+      "bytes": 3801,
+      "sha256": "59bd4416b9a0dc0ba51b019bf37ce5d532ed8bcdf40a116d6cd57d6535b1aaa1"
+    },
+    {
+      "path": "14_DECISIONS_AND_OPEN_QUESTIONS.md",
+      "bytes": 5286,
+      "sha256": "0a7758c7f87ca578f2622447ae88a25eb5edbdf93130faf35e1612d9f319bc12"
+    },
+    {
+      "path": "15_AI_CODING_INSTRUCTIONS.md",
+      "bytes": 5234,
+      "sha256": "bfca61fee343d904eb9c04ac65a3792ec8385f27841e7c21ca74d9091a61d1bb"
+    },
+    {
+      "path": "MED_HANDOFF_MASTER.md",
+      "bytes": 87956,
+      "sha256": "0358365d2b3b070ffe703668ee74a866c98692d11a32b6dce2cb2fdc69d21f40"
+    },
+    {
+      "path": "contracts/VALIDATION.json",
+      "bytes": 266,
+      "sha256": "1aaa348374eb97e96d88297b40a507b650df48ec2ee60b5c6ee0385dd45ddff8"
+    },
+    {
+      "path": "contracts/createorder.schema.json",
+      "bytes": 848,
+      "sha256": "ca3877346c3cd5a3e6653825442265505a964ba76b42468b3a358c203e1241ba"
+    },
+    {
+      "path": "contracts/error.schema.json",
+      "bytes": 748,
+      "sha256": "3fcc71b888c48318ba2b1aaa6d261be3761b5be2dba6314c1705a460b22906dd"
+    },
+    {
+      "path": "contracts/event.schema.json",
+      "bytes": 1366,
+      "sha256": "520b032ca174d8f11150e848551186c03e58758b7ae8ab37249baa36dbe40bd8"
+    },
+    {
+      "path": "contracts/openapi.yaml",
+      "bytes": 7427,
+      "sha256": "1a7b1059375030ab890d994230eb5609ef9b3ae38afe024b409a0e5cbfc24c8b"
+    },
+    {
+      "path": "contracts/order.schema.json",
+      "bytes": 1621,
+      "sha256": "6669bf8994c46a8311886d25493bf48e0f79dfba7a1962ef5d6acb9344ae9d48"
+    },
+    {
+      "path": "contracts/transition.schema.json",
+      "bytes": 560,
+      "sha256": "cdfdf341be6c528a76ac232abc9067b45236617b379c0cab102ff2821ccc5c20"
+    },
+    {
+      "path": "diagrams/architecture.mmd",
+      "bytes": 489,
+      "sha256": "f4cef4f5270795589d265ecd3dff3b226eb74fd7df5b35370baaea7f3bdfa4f5"
+    },
+    {
+      "path": "diagrams/data_model.mmd",
+      "bytes": 786,
+      "sha256": "802757bb4a67d0f82410f260be88b583aacddf5e6d21f33f70e4270db9747dd9"
+    },
+    {
+      "path": "diagrams/order_state_machine.mmd",
+      "bytes": 346,
+      "sha256": "07d1b42e65dd253add7e2002c56e9c87c6e3e5ac040b4dae2c1c6e7fceb457e9"
+    },
+    {
+      "path": "diagrams/partner_cjm.mmd",
+      "bytes": 780,
+      "sha256": "1b7c0d7607037bee3123068dbe1f07689b8d81e75fc5972bcd800dd43e4c09e3"
+    },
+    {
+      "path": "prototype/VERIFICATION.md",
+      "bytes": 1298,
+      "sha256": "49c935152d80a52bb4fea88defd6db3ac3bb8404a6470301971986f4f1786af5"
+    },
+    {
+      "path": "prototype/med_partner_cabinet.html",
+      "bytes": 41727,
+      "sha256": "442453c10f90f47d6a8805bcd3963a7160ae3d94c1e8d017183be9c8bf2871df"
+    },
+    {
+      "path": "prototype/node_verification.json",
+      "bytes": 509,
+      "sha256": "592da9ec4420291a17be6c80f87ec84916a70d749204324ce43e8ebeaf6b5259"
+    },
+    {
+      "path": "prototype/screenshots/README.md",
+      "bytes": 323,
+      "sha256": "a9f02bff388c7434ac8248b839ef94adffcc7dd15ba0befeadc29be310efb972"
+    },
+    {
+      "path": "prototype/verify_node.cjs",
+      "bytes": 2566,
+      "sha256": "c59a982678ca6c114169a4822598e8b92ef14464b972a4230845dd43e318bff9"
+    },
+    {
+      "path": "sources/S01_2026-08-24_Партнёрства_в_Билайн_B2C_v15_(купоны)(1).pdf",
+      "bytes": 2777936,
+      "sha256": "e5144807a61446f32ff730753ddc146583d54edbf95569c9c85077bfd96f3ba4"
+    },
+    {
+      "path": "sources/S02_Партнерская_платформа_Gate0.pdf",
+      "bytes": 2900820,
+      "sha256": "d4262e23f4c90ff86bd13004d5ca04d5eeb88631617ff16be1eb9096a66e8832"
+    },
+    {
+      "path": "sources/S03_MЁD_IT_Partner_Conveyor(2).pdf",
+      "bytes": 11426441,
+      "sha256": "253ef027b5e62f122bfcbe088988b1254887aeab0519f2c9a0e45061865bd763"
+    },
+    {
+      "path": "sources/S04_БФТ_Конвейер_1000_партнеров_Партнерская_платформа.pptx",
+      "bytes": 915694,
+      "sha256": "50c8fe33c7e4325d6d853149b877d7e6daa21abaa0f194e2e7de4b74ef895cf9"
+    },
+    {
+      "path": "sources/S05_Beepartners_концепция_23.07(1).pdf",
+      "bytes": 2587775,
+      "sha256": "a264b14fdb30fa28789198b7b7f725566e5044a42218d18f8ef8cb424b614d38"
+    },
+    {
+      "path": "sources/S06_Разработка_ЛК.png",
+      "bytes": 194784,
+      "sha256": "130e621ffd8e07be8d9bd4d56d524d5d21db40949926c768c00fa33452408b7c"
+    },
+    {
+      "path": "sources/S07_med_partner_cabinet.html",
+      "bytes": 41727,
+      "sha256": "442453c10f90f47d6a8805bcd3963a7160ae3d94c1e8d017183be9c8bf2871df"
+    },
+    {
+      "path": "sources/S08_ПП_фин_модель_сен.2026.xlsx",
+      "bytes": 13938,
+      "sha256": "6948a5cba99d9722d718706f40e2edcc285abc6cbab3c656232bbc74f688fc8a"
+    },
+    {
+      "path": "sources/S09_beepartners_model_v6(1).xlsx",
+      "bytes": 223011,
+      "sha256": "6dc06a9f77da21b27c6dd1c2e0a4dcd43c32a1cfe0132d7700211269e232c807"
+    },
+    {
+      "path": "sources/S10_Партнерская_платформа_МЁД.pdf",
+      "bytes": 988219,
+      "sha256": "d79a41f0fa420529bef8d63a743630159d8babd2c5073e8186632899cda954b3"
+    },
+    {
+      "path": "sources/SOURCE_REGISTER.md",
+      "bytes": 3393,
+      "sha256": "491e1193e47cd2c058946e76157d9d0bfd11f5b77d17894793b118819a251e87"
+    }
+  ]
+}

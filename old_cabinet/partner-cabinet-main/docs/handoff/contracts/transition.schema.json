@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "action",
+    "expected_version",
+    "reason"
+  ],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": [
+        "confirm",
+        "fulfil",
+        "cancel"
+      ]
+    },
+    "expected_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_order_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:med:event:1.0",
+  "title": "MED Event Envelope — DRAFT RFC",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "schema_version",
+    "order_id",
+    "aggregate_version",
+    "occurred_at",
+    "environment",
+    "data"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "order.created",
+        "order.confirmed",
+        "order.fulfilled",
+        "order.cancelled",
+        "order.closed",
+        "refund.succeeded",
+        "dispute.opened",
+        "dispute.resolved"
+      ]
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "order_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "aggregate_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "sandbox",
+        "production"
+      ]
+    },
+    "correlation_id": {
+      "type": "string"
+    },
+    "causation_id": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "description": "Per-event payloads must be agreed before production."
+    }
+  }
+}

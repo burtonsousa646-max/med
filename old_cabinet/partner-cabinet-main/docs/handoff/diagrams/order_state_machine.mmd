@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> Created
+  Created --> Confirmed: confirm
+  Created --> Cancelled: cancel
+  Confirmed --> Fulfilled: fulfil
+  Confirmed --> Cancelled: cancel
+  Fulfilled --> Closed: obligations complete
+  Closed --> [*]
+  Cancelled --> [*]
+  note right of Confirmed
+    Payment, refund and dispute
+    have independent states
+  end note

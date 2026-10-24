@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "method": "Node VM + minimal DOM stub; no browser/layout verification",
+  "checks": [
+    "Seven page functions render markup",
+    "Seed counts are demo 4 offers / 4 orders / 2 campaigns",
+    "Create draft mutates only in-memory state",
+    "Known description loss confirmed",
+    "Draft goes to review only",
+    "AS IS new order goes directly to done",
+    "Support submit produces toast without a cases store",
+    "No external network, persistence or dependency scripts"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "order_id",
+    "partner_id",
+    "offer_id",
+    "offer_version",
+    "outlet_id",
+    "status",
+    "payment_status",
+    "dispute_status",
+    "amount_minor",
+    "currency",
+    "version",
+    "environment"
+  ],
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "partner_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "offer_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "outlet_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "offer_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "created",
+        "confirmed",
+        "fulfilled",
+        "closed",
+        "cancelled"
+      ]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "authorised",
+        "captured",
+        "failed",
+        "voided",
+        "partially_refunded",
+        "refunded",
+        "external"
+      ]
+    },
+    "dispute_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "open",
+        "resolved"
+      ]
+    },
+    "amount_minor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "sandbox",
+        "production"
+      ]
+    }
+  }
+}

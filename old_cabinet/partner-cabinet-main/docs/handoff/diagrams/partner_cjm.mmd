@@ -1,0 +1,19 @@
+flowchart TB
+  Lead["Scouting"] --> Profile["Onboarding"]
+  Profile --> Check["Проверки"]
+  Check -->|Уточнения| Profile
+  Check -->|Допуск| Contract["Договоры"]
+  Check -->|Отказ| Reject["Отказ"]
+  Contract --> Offer["Оффер и интеграция"]
+  Offer --> Test["Sandbox"]
+  Test -->|Ошибки| Offer
+  Test --> Review["Модерация"]
+  Review -->|Замечания| Offer
+  Review --> Launch["Публикация и промо"]
+  Launch --> Order["Заказы и исполнение"]
+  Order --> Case["Поддержка и споры"]
+  Order --> Fin["Сверка и выплаты"]
+  Case --> Fin
+  Fin --> BI["Аналитика"]
+  BI --> Change["Изменение или пауза"]
+  Change --> Offer

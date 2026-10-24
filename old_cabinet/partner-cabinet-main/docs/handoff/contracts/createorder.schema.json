@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "offer_id",
+    "offer_version",
+    "outlet_id",
+    "customer_token",
+    "source_channel",
+    "quantity",
+    "environment"
+  ],
+  "properties": {
+    "offer_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "offer_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "outlet_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "customer_token": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_channel": {
+      "type": "string",
+      "minLength": 1
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "sandbox",
+        "production"
+      ]
+    }
+  }
+}

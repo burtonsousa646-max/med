@@ -1,0 +1,117 @@
+/* Демо виджета МЁД (игра «соты») и анимации калькулятора. Перенесено из прототипа коллеги. */
+/* Нативное демо виджета МЁД в калькуляторе */
+    .med-widget-shell{position:fixed;z-index:74;right:30px;bottom:28px;width:158px;height:144px;border:0;background:transparent;filter:drop-shadow(0 18px 24px #0e0a0547);cursor:pointer}
+.med-widget-shell[hidden]{display:none}
+.med-widget-close{position:absolute;z-index:20;right:0;top:0;width:25px;height:25px;display:grid;place-items:center;padding:0;border:1px solid #e4b95873;border-radius:50%;background:linear-gradient(145deg,#292118ed,#110e0bea);color:#f5d98f;box-shadow:0 6px 16px #0805025c,inset 1px 1px #fff1bf1f;font:300 19px/1 Arial,sans-serif}
+.med-widget-close:hover{transform:scale(1.1);color:#fff4c6}
+.med-widget-hint{position:absolute;z-index:8;right:5px;top:126px;padding:7px 9px;border:1px solid #deaa4447;border-radius:999px;background:#12100de8;color:#fff8e6a8;box-shadow:0 8px 22px #100b042e;font-size:7px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.med-widget-hint b{color:#e9b64a;letter-spacing:.14em}
+.med-widget-hive{position:absolute;right:0;bottom:22px;width:122px;height:111px}
+.med-widget-hive:before{content:"";position:absolute;inset:13px 0 0;border-radius:50%;background:radial-gradient(circle,#ca8e2633,#ca8e2600 68%);filter:blur(13px)}
+.med-widget-hex{position:absolute;width:42px;height:37px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:linear-gradient(145deg,#e9bd62,#8b5a14 45%,#3a260f);filter:drop-shadow(0 5px 6px #07050238)}
+.med-widget-hex:before{content:"";position:absolute;inset:3px;clip-path:inherit;background:linear-gradient(145deg,#312617,#15110c 68%);box-shadow:inset 1px 1px 2px #ffe2a033,inset -3px -4px 6px #0000004d}
+.med-widget-hex:after{content:"";position:absolute;z-index:2;left:11px;top:9px;width:14px;height:4px;border-radius:50%;opacity:.14;background:linear-gradient(90deg,#ffffff00,#fff4c7e8 48%,#ffffff00);filter:blur(.25px);transform:translateX(-7px) rotate(-24deg) scale(.72)}
+.med-widget-hex:nth-child(1){left:40px;top:0}
+.med-widget-hex:nth-child(2){left:8px;top:18px}
+.med-widget-hex:nth-child(3){left:71px;top:18px}
+.med-widget-hex:nth-child(4){left:40px;top:37px}
+.med-widget-hex:nth-child(5){left:8px;top:55px}
+.med-widget-hex:nth-child(6){left:71px;top:55px}
+.med-widget-hex:nth-child(7){left:40px;top:74px}
+.med-widget-prize{position:absolute;z-index:4;inset:0;display:grid;place-items:center;color:#ffe09a;text-shadow:0 1px 3px #000,0 0 7px #f6b52b91;font:800 8px/1 Arial,sans-serif;font-style:normal;white-space:nowrap;opacity:0}
+.med-widget-prize.cash{font-size:6.7px;letter-spacing:-.05em}
+.med-snitch{position:absolute;z-index:7;left:-8px;top:24px;width:92px;height:46px;filter:drop-shadow(0 10px 12px #0b070352);transform-style:preserve-3d}
+.med-snitch-orb{position:absolute;z-index:4;left:30px;top:7px;width:34px;height:34px;border:1px solid #e1b957b8;border-radius:50%;background:radial-gradient(circle at 31% 24%,#fff1ae99 0 5%,transparent 22%),repeating-linear-gradient(103deg,#100e0a 0 6px,#c48b22 6px 10px,#f0c858 10px 13px,#17130c 13px 19px);box-shadow:inset 5px 5px 9px #fff3b52e,inset -7px -8px 12px #00000085,0 8px 13px #00000052;transform:rotate(-8deg)}
+.med-snitch-orb:before{content:"";position:absolute;inset:3px;border:1px solid #f4d98238;border-radius:50%;box-shadow:inset 0 0 0 1px #0000002e}
+.med-snitch-orb:after{content:"";position:absolute;left:3px;right:3px;top:15px;height:2px;border-radius:50%;background:linear-gradient(90deg,#6e481100,#f5d36d9c,#70460f00);transform:rotate(8deg)}
+.med-snitch-orb i{position:absolute;z-index:2;left:8px;top:6px;width:6px;height:4px;border-radius:50%;background:#fff4c7b8;filter:blur(.45px);transform:rotate(-28deg)}
+.med-snitch-wing{position:absolute;z-index:2;top:10px;width:38px;height:20px;border:1px solid #c8a55d8f;background:repeating-linear-gradient(168deg,#fffdf0a8 0 1px,#fffdf01a 1px 5px),linear-gradient(145deg,#ffffffe0,#d8c59d24 58%,#9f76252b);box-shadow:inset 0 0 8px #ffffff70,0 5px 8px #00000021;backdrop-filter:blur(1px)}
+.med-snitch-wing:before{content:"";position:absolute;left:7px;right:5px;top:50%;height:1px;background:#8f744257;box-shadow:0 -5px #a88b5142,0 5px #a88b5138}
+.med-snitch-wing:after{content:"";position:absolute;top:7px;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle,#e8c66e,#6d4d18);box-shadow:0 0 0 2px #17130c}
+.med-snitch-wing.left{left:0;border-radius:92% 8% 72% 28%;transform-origin:right center}
+.med-snitch-wing.left:after{right:-4px}
+.med-snitch-wing.right{right:0;border-radius:8% 92% 28% 72%;transform-origin:left center}
+.med-snitch-wing.right:after{left:-4px}
+.med-widget-shell.is-active .med-snitch{animation:medOrbMission 5.6s .35s cubic-bezier(.36,.02,.2,1) both}
+.med-widget-shell.is-active .med-snitch-wing.left{animation:medOrbWingLeft .32s ease-in-out infinite alternate}
+.med-widget-shell.is-active .med-snitch-wing.right{animation:medOrbWingRight .32s ease-in-out infinite alternate}
+.med-widget-shell.is-active .med-snitch-orb{animation:medOrbPolish 3.8s ease-in-out infinite}
+.med-widget-shell.is-active .med-widget-hive{animation:medHiveArrival .58s 5.35s cubic-bezier(.16,1,.3,1) both,medHiveLight 11.8s 8.7s ease-in-out infinite}
+.med-widget-shell.is-active .med-widget-close{animation:medWidgetDetail .34s 5.86s cubic-bezier(.16,1,.3,1) both}
+.med-widget-shell.is-active .med-widget-hint{animation:medWidgetDetail .42s 5.98s cubic-bezier(.16,1,.3,1) both}
+.med-widget-shell.is-active .med-widget-hex:after{animation:medHoneycombGlint 11.8s ease-in-out infinite}
+.med-widget-shell.is-active .med-widget-prize{animation:medPrizeReveal 11.8s ease-in-out infinite}
+.med-widget-shell.is-active .med-widget-hex:nth-child(1):after,.med-widget-shell.is-active .med-widget-hex:nth-child(1) .med-widget-prize{animation-delay:8.7s}
+.med-widget-shell.is-active .med-widget-hex:nth-child(3):after,.med-widget-shell.is-active .med-widget-hex:nth-child(3) .med-widget-prize{animation-delay:8.84s}
+.med-widget-shell.is-active .med-widget-hex:nth-child(6):after,.med-widget-shell.is-active .med-widget-hex:nth-child(6) .med-widget-prize{animation-delay:8.98s}
+.med-widget-shell.is-active .med-widget-hex:nth-child(4):after,.med-widget-shell.is-active .med-widget-hex:nth-child(4) .med-widget-prize{animation-delay:9.12s}
+.med-widget-shell.is-active .med-widget-hex:nth-child(2):after,.med-widget-shell.is-active .med-widget-hex:nth-child(2) .med-widget-prize{animation-delay:9.26s}
+.med-widget-shell.is-active .med-widget-hex:nth-child(7):after,.med-widget-shell.is-active .med-widget-hex:nth-child(7) .med-widget-prize{animation-delay:9.4s}
+.med-widget-shell.is-active .med-widget-hex:nth-child(5):after,.med-widget-shell.is-active .med-widget-hex:nth-child(5) .med-widget-prize{animation-delay:9.54s}
+.med-game-dim{position:fixed;inset:0;z-index:88;background:#1b130c99;backdrop-filter:blur(5px);opacity:0;pointer-events:none;transition:.3s}
+.med-game-dim.on{opacity:1;pointer-events:auto}
+.med-game-modal{position:fixed;z-index:89;left:50%;top:50%;width:min(408px,calc(100vw - 28px));min-height:590px;display:none;overflow:hidden;transform:translate(-50%,-50%);border:1px solid #daad5538;border-radius:24px;background:radial-gradient(circle at 76% 7%,#99631538,#99631500 31%),linear-gradient(160deg,#211c15,#12100d 72%);box-shadow:0 40px 110px #00000075,inset 0 1px #ffffff0d;color:#f7f0df}
+.med-game-modal.on{display:block;animation:medModalEnter .42s cubic-bezier(.16,1,.3,1)}
+.med-game-close{position:absolute;z-index:5;right:17px;top:17px;width:34px;height:34px;border:0;border-radius:50%;background:#ffffff0e;color:#fff8e69e;font-size:24px}
+.med-modal-snitch{position:absolute;left:18px;top:14px;transform:rotate(-5deg) scale(.78)}
+.med-game-view{min-height:590px;padding:47px 34px 27px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.med-game-eyebrow{margin-top:6px;color:#d6a64b;text-transform:uppercase;letter-spacing:.24em;font-size:9px;font-weight:900}
+.med-game-view h2{margin:10px 0 7px;color:#f7f0df;font-size:30px;line-height:1.04;letter-spacing:-.045em}
+.med-game-lead{margin:0;color:#f4ead384;font-size:13px;line-height:1.45}
+.med-game-stage{position:relative;width:290px;height:252px;margin:11px auto 0;transform:scale(.76)}
+.med-game-stage:before{content:"";position:absolute;inset:36px 8px 0;border-radius:50%;background:radial-gradient(circle,#c5861c2b,#c5861c00 70%);filter:blur(18px)}
+.med-game-cell{position:absolute;width:96px;height:84px;display:grid;place-items:center;padding:0;border:0;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:linear-gradient(145deg,#d8a94e,#6c4517 52%,#22170d);filter:drop-shadow(0 11px 10px #0000003d);transition:.38s cubic-bezier(.16,1,.3,1)}
+.med-game-cell:before{content:"";position:absolute;inset:4px;clip-path:inherit;background:linear-gradient(155deg,#292116,#100e0b 70%);box-shadow:inset 2px 2px 3px #ffdf961f,inset -4px -5px 8px #00000052}
+.med-game-cell span{position:relative;z-index:2;width:8px;height:8px;border-radius:50%;background:#e0b45c33;box-shadow:0 0 0 1px #e0b45c26}
+.med-game-cell:nth-child(1){left:97px;top:0}
+.med-game-cell:nth-child(2){left:25px;top:42px}
+.med-game-cell:nth-child(3){left:169px;top:42px}
+.med-game-cell:nth-child(4){left:97px;top:84px}
+.med-game-cell:nth-child(5){left:25px;top:126px}
+.med-game-cell:nth-child(6){left:169px;top:126px}
+.med-game-cell:nth-child(7){left:97px;top:168px}
+.med-game-cell:not(.reveal):hover{z-index:3;transform:scale(1.045) translateY(-3px);filter:drop-shadow(0 15px 14px #00000052) brightness(1.16)}
+.med-game-cell.reveal{z-index:3;transform:scale(1.12) translateY(-5px);animation:medCellReveal .45s}
+.med-game-cell.reveal span{background:#ffffffa8;box-shadow:0 0 14px #ffffff47}
+.med-game-cell.honey{background:linear-gradient(145deg,#f2c85c,#c68116 58%,#63330a)}
+.med-game-cell.berry{background:linear-gradient(145deg,#d66f8d,#803047 60%,#36141f)}
+.med-game-cell.mint{background:linear-gradient(145deg,#74c3ad,#2e7666 60%,#153a33)}
+.med-game-result{min-height:45px;display:flex;flex-direction:column;justify-content:center}
+.med-game-result strong{color:#f3ead6;font-size:15px}
+.med-game-result span{margin-top:4px;color:#f4ead36b;font-size:11px}
+.med-game-primary{width:100%;min-height:50px;margin-top:12px;border:1px solid #ffe09929;border-radius:14px;background:linear-gradient(135deg,#e2b653,#aa711f);color:#17120c;box-shadow:0 13px 28px #00000038;font-size:13px;font-weight:800}
+.med-game-primary:disabled{cursor:default;opacity:.46}
+.med-game-terms{margin-top:12px;color:#f4ead347;font-size:8px;text-transform:uppercase;letter-spacing:.1em}
+.med-game-tabs{width:100%;margin:28px 0 22px;padding:4px;display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:12px;background:#ffffff0e}
+.med-game-tabs button{padding:10px;border:0;border-radius:9px;background:transparent;color:#f4ead36b;font-size:11px;font-weight:700}
+.med-game-tabs button.active{background:#ffffff1a;color:#f4ead2}
+.med-game-form{width:100%;display:flex;flex-direction:column;text-align:left}
+.med-game-form label{margin:0 0 7px 3px;color:#f4ead38c;font-size:10px;font-weight:700}
+.med-game-form input{height:50px;margin-bottom:13px;padding:0 15px;border:1px solid #f4daa329;border-radius:13px;outline:0;background:#ffffff0e;color:#fff6e3}
+.med-game-demo-code{margin:-3px 0 12px;padding:7px;border-radius:8px;background:#c58d2621;color:#deb85e;text-align:center;font-size:10px}
+.med-game-error{min-height:15px;color:#e48192;font-size:10px}
+.med-game-auth-note{margin-top:auto;color:#f4ead347;font-size:8px;line-height:1.5}
+.med-game-yandex{width:100%;padding:26px;display:flex;flex-direction:column;align-items:center;border:1px solid #f4daa324;border-radius:20px;background:#ffffff0d}
+.med-game-yandex-mark{width:46px;height:46px;display:grid;place-items:center;margin-bottom:13px;border-radius:50%;background:#fc0;color:#111;font-size:24px;font-weight:900}
+.med-game-yandex span{margin:6px 0 20px;color:#f4ead36e;font-size:11px}
+.med-game-yandex button{width:100%;height:44px;border:0;border-radius:12px;background:#111;color:#fff;font-weight:700}
+.med-game-badge{width:72px;height:72px;display:grid;place-items:center;margin-bottom:16px;border-radius:50%;background:linear-gradient(145deg,#e2b653,#9a6219);color:#17120c;box-shadow:0 17px 38px #00000040;font-size:32px;font-weight:900}
+.med-game-promo{width:100%;margin:30px 0 6px;padding:16px 17px;display:flex;align-items:center;justify-content:space-between;border:1px dashed #dcac4c8c;border-radius:15px;background:#daa43a17;color:#f0c96d}
+.med-game-promo b{font-size:22px;letter-spacing:.13em}
+.med-game-promo em{color:#f4d79485;font-size:9px;font-style:normal;font-weight:800;text-transform:uppercase}
+.med-game-valid{margin-top:12px;color:#f4ead347;font-size:9px;text-transform:uppercase;letter-spacing:.12em}
+.med-game-modal{max-height:calc(100vh - 18px);min-height:min(590px,calc(100vh - 18px));overflow-y:auto}
+.med-game-view{min-height:560px;padding-left:24px;padding-right:24px}
+@keyframes medOrbMission{0%{opacity:0;transform:translate(250px,-190px) rotate(-15deg) scale(.55)}8%{opacity:1;transform:translate(180px,-145px) rotate(-5deg) scale(.7)}20%{transform:translate(78px,-105px) rotate(18deg) scale(.9)}32%{transform:translate(-28px,-42px) rotate(-62deg) scale(.96)}44%{transform:translate(2px,52px) rotate(-132deg) scale(.94)}56%{transform:translate(112px,57px) rotate(-208deg) scale(.92)}68%{transform:translate(142px,-24px) rotate(-282deg) scale(.9)}80%{transform:translate(66px,-64px) rotate(-342deg) scale(.9)}88%{transform:translate(50px,-8px) rotate(-360deg) scale(.88)}95%{opacity:1;transform:translate(65px,13px) rotate(-374deg) scale(.5)}100%{opacity:0;transform:translate(66px,15px) rotate(-380deg) scale(.06)}}
+@keyframes medOrbWingLeft{from{transform:rotate(-10deg) scaleY(1)}to{transform:rotate(-25deg) translateY(-2px) scaleY(.68);opacity:.7}}
+@keyframes medOrbWingRight{from{transform:rotate(10deg) scaleY(1)}to{transform:rotate(25deg) translateY(-2px) scaleY(.68);opacity:.7}}
+@keyframes medOrbPolish{0%,100%{transform:rotate(-8deg);filter:brightness(.94)}50%{transform:rotate(-4deg);filter:brightness(1.08)}}
+@keyframes medHiveArrival{0%{opacity:0;visibility:hidden;transform:scale(.56);filter:blur(5px) brightness(1.45)}1%{visibility:visible}68%{opacity:1;transform:scale(1.06);filter:blur(0) brightness(1.12)}100%{opacity:1;visibility:visible;transform:scale(1);filter:blur(0) brightness(1)}}
+@keyframes medWidgetDetail{0%{opacity:0;visibility:hidden;transform:translateY(5px) scale(.82)}1%{visibility:visible}100%{opacity:1;visibility:visible;transform:translateY(0) scale(1)}}
+@keyframes medHiveLight{0%,12%,100%{filter:brightness(1)}4%{filter:brightness(1.1) saturate(1.08)}8%{filter:brightness(1.03)}}
+@keyframes medHoneycombGlint{0%{opacity:.08;transform:translateX(-7px) rotate(-24deg) scale(.72)}3.5%{opacity:1;transform:translateX(0) rotate(-24deg) scale(1.34);box-shadow:0 0 12px #ffe6a3ad}7%{opacity:.5;transform:translateX(7px) rotate(-24deg) scale(.92)}11%,100%{opacity:.12;transform:translateX(9px) rotate(-24deg) scale(.72)}}
+@keyframes medPrizeReveal{0%,2%{opacity:0;transform:scale(.72);filter:blur(1.5px)}3.4%{opacity:.35;transform:scale(.84);filter:blur(.6px)}4.6%,7.2%{opacity:1;transform:scale(1);filter:blur(0)}9.4%{opacity:.28;transform:scale(.96);filter:blur(.45px)}11%,100%{opacity:0;transform:scale(.82);filter:blur(1px)}}
+@keyframes medModalEnter{from{opacity:0;transform:translate(-50%,-43%) scale(.78)}to{opacity:1;transform:translate(-50%,-50%)}}
+@keyframes medCellReveal{from{opacity:.3;transform:scale(.62) rotateY(90deg)}to{opacity:1;transform:scale(1.12) translateY(-5px)}}
+@keyframes serviceShine{0%{transform:translateX(-260%) rotate(13deg)}100%{transform:translateX(750%) rotate(13deg)}}
+@keyframes serviceReveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}

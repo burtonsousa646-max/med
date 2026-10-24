@@ -1,0 +1,21 @@
+erDiagram
+  Partner ||--o{ Outlet : owns
+  Partner ||--o{ Offer : supplies
+  Offer ||--|{ OfferVersion : versions
+  OfferVersion ||--o{ OfferOutlet : targets
+  Outlet ||--o{ OfferOutlet : serves
+  OfferVersion ||--o{ Order : snapshots
+  Order ||--|{ StatusHistory : tracks
+  Order ||--o{ PaymentTransaction : pays
+  Order ||--o{ Refund : refunds
+  Order ||--o{ SupportCase : supports
+  Order ||--o{ LedgerEntry : accrues
+  Settlement ||--|{ SettlementLine : groups
+  LedgerEntry ||--o{ SettlementLine : allocates
+  Partner ||--o{ Integration : connects
+  Integration ||--o{ ExternalMapping : maps
+  Partner ||--o{ Membership : permits
+  User ||--o{ Membership : joins
+  Partner ||--o{ Acceptance : accepts
+  DocumentVersion ||--o{ Acceptance : evidences
+  Order ||--o{ EventLog : emits

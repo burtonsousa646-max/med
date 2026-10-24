@@ -1,0 +1,14 @@
+flowchart TB
+  Portal["Partner Cabinet и Admin"] --> PH["Partner Hub"]
+  PH --> Offers["Offer Management"]
+  PH --> Orders["Order Hub"]
+  PH --> Legal["Legal и Checks"]
+  Orders --> Fin["Settlement и Ledger"]
+  Orders --> Support["Support"]
+  Partners["Системы партнёров"] --> IH["Integration Hub"]
+  IH <--> Orders
+  IH <--> Offers
+  Offers --> Channels["CVM и каналы Билайна"]
+  Channels --> Orders
+  Orders --> Events["Inbox и Outbox"]
+  Events --> IH

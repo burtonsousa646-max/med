@@ -1,0 +1,313 @@
+openapi: 3.0.3
+info:
+  title: MED canonical Order API — DRAFT RFC
+  version: 0.1.0
+  description: Proposed vertical slice. No deployed server URL. Scope enforcement
+    and payment capture contracts are OPEN.
+security:
+- bearerAuth: []
+tags:
+- name: Orders
+paths:
+  /v1/orders:
+    post:
+      operationId: createOrder
+      tags:
+      - Orders
+      description: Trusted channel only; server derives price and partner from approved
+        offer version. Sandbox credential must match environment.
+      parameters:
+      - &id010
+        name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400': &id001
+          description: Malformed request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401': &id002
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403': &id003
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404': &id004
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409': &id005
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422': &id006
+          description: Validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429': &id007
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503': &id008
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v1/orders/{order_id}:
+    get:
+      operationId: getOrder
+      tags:
+      - Orders
+      description: Tenant and scopes enforced by server.
+      parameters:
+      - &id009
+        name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '422': *id006
+        '429': *id007
+        '503': *id008
+  /v1/orders/{order_id}/transitions:
+    post:
+      operationId: transitionOrder
+      tags:
+      - Orders
+      description: Controlled partner confirm/fulfil/cancel. Finance refunds and platform
+        close are separate workflows.
+      parameters:
+      - *id009
+      - *id010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '422': *id006
+        '429': *id007
+        '503': *id008
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Abstract scoped machine credential; actual IAM/OAuth issuer OPEN
+  schemas:
+    CreateOrder:
+      type: object
+      additionalProperties: false
+      required:
+      - offer_id
+      - offer_version
+      - outlet_id
+      - customer_token
+      - source_channel
+      - quantity
+      - environment
+      properties:
+        offer_id:
+          type: string
+          format: uuid
+        offer_version:
+          type: integer
+          minimum: 1
+        outlet_id:
+          type: string
+          format: uuid
+        customer_token:
+          type: string
+          minLength: 1
+        source_channel:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+        environment:
+          type: string
+          enum:
+          - sandbox
+          - production
+    Transition:
+      type: object
+      additionalProperties: false
+      required:
+      - action
+      - expected_version
+      - reason
+      properties:
+        action:
+          type: string
+          enum:
+          - confirm
+          - fulfil
+          - cancel
+        expected_version:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          minLength: 1
+        external_order_id:
+          type: string
+          minLength: 1
+    Order:
+      type: object
+      additionalProperties: false
+      required:
+      - order_id
+      - partner_id
+      - offer_id
+      - offer_version
+      - outlet_id
+      - status
+      - payment_status
+      - dispute_status
+      - amount_minor
+      - currency
+      - version
+      - environment
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        partner_id:
+          type: string
+          format: uuid
+        offer_id:
+          type: string
+          format: uuid
+        outlet_id:
+          type: string
+          format: uuid
+        offer_version:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum:
+          - created
+          - confirmed
+          - fulfilled
+          - closed
+          - cancelled
+        payment_status:
+          type: string
+          enum:
+          - pending
+          - authorised
+          - captured
+          - failed
+          - voided
+          - partially_refunded
+          - refunded
+          - external
+        dispute_status:
+          type: string
+          enum:
+          - none
+          - open
+          - resolved
+        amount_minor:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+        version:
+          type: integer
+          minimum: 1
+        environment:
+          type: string
+          enum:
+          - sandbox
+          - production
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - request_id
+      - retryable
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+        retryable:
+          type: boolean
+        field_errors:
+          type: array
+          items:
+            type: object
+            required:
+            - field
+            - message
+            properties:
+              field:
+                type: string
+              message:
+                type: string

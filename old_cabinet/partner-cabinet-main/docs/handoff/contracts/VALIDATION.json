@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "checks": [
+    "OpenAPI YAML parses",
+    "JSON files parse",
+    "Internal schema references resolve",
+    "Operations include responses"
+  ],
+  "limits": "No full OpenAPI/JSON Schema validator, backend or external integration tested."
+}

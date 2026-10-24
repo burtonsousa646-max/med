@@ -1,0 +1,24 @@
+// Source-level smoke checks. This is a minimal DOM stub, not browser rendering.
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const html=fs.readFileSync(__dirname+'/med_partner_cabinet.html','utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const elements=new Map(),handlers={};
+const elem=id=>{if(!elements.has(id))elements.set(id,{innerHTML:'',textContent:'',classList:{remove(){},toggle(){}},focus(){}});return elements.get(id)};
+const ctx={document:{getElementById:elem,querySelector:elem,addEventListener:(n,f)=>handlers[n]=f},window:{scrollTo(){}},setTimeout:()=>1,clearTimeout(){},FormData:class{constructor(f){this.values=f.values}get(k){return this.values[k]??null}},Blob:class{},URL:{},console};
+vm.createContext(ctx);vm.runInContext(script,ctx);
+const run=s=>vm.runInContext(s,ctx), checks=[];
+const check=(name,f)=>{f();checks.push(name)};
+check('Seven page functions render markup',()=>{for(const k of ['home','offers','campaigns','orders','analytics','money','help']){assert(run(`pages['${k}']().length`)>200)}});
+check('Seed counts are demo 4 offers / 4 orders / 2 campaigns',()=>assert.equal(run('state.offers.length+state.orders.length+state.campaigns.length'),10));
+handlers.submit({preventDefault(){},target:{id:'offerForm',values:{name:'Handoff smoke offer',type:'Купон',price:'1000 ₽',desc:'Expected missing in AS IS'}}});
+check('Create draft mutates only in-memory state',()=>{assert.equal(run('state.offers[0].status'),'draft');assert.equal(run('state.offers[0].name'),'Handoff smoke offer')});
+check('Known description loss confirmed',()=>assert.equal(run('state.offers[0].desc'),undefined));
+const click=dataset=>handlers.click({target:{closest:()=>({dataset})}});
+click({publish:run('state.offers[0].id')});
+check('Draft goes to review only',()=>assert.equal(run('state.offers[0].status'),'review'));
+click({complete:'MD-28364'});
+check('AS IS new order goes directly to done',()=>assert.equal(run("state.orders.find(x=>x.id==='MD-28364').status"),'done'));
+handlers.submit({preventDefault(){},target:{id:'supportForm',values:{topic:'Заказы',text:'Test'}}});
+check('Support submit produces toast without a cases store',()=>assert.equal(run('state.cases'),undefined));
+check('No external network, persistence or dependency scripts',()=>{assert(!/\b(fetch\s*\(|XMLHttpRequest|localStorage|indexedDB)\b/.test(script));assert(!/<script[^>]+src=/.test(html))});
+console.log(JSON.stringify({status:'passed',method:'Node VM + minimal DOM stub; no browser/layout verification',checks},null,2));

@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/*
+  Дизайн-токены Carnica (дизайн-система Билайна).
+  Источник: https://github.com/MarcusOrphie/yellow-landos (src/carnica/tokens/*.ts)
+  Цвета/типографика/радиусы перенесены как есть; шрифт BeelineSans проприетарный —
+  используем задокументированный системный fallback без встраивания файла шрифта.
+*/
+@theme {
+  --font-sans: 'BeelineSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Brand */
+  --color-bee-brand-primary: #ffc800;
+  --color-bee-brand-secondary: #ffd546;
+  --color-bee-brand-tertiary: #f4b807;
+
+  /* Content (текст/иконки) */
+  --color-bee-content-primary: #28303f;
+  --color-bee-content-secondary: #77849d;
+  --color-bee-content-tertiary: #8e99af;
+  --color-bee-content-disabled: #a5aec0;
+
+  /* Background */
+  --color-bee-bg-primary: #f0f3f5;
+  --color-bee-bg-secondary: #ffffff;
+  --color-bee-bg-tertiary: #f0f3f5;
+  --color-bee-bg-additional01: #ffffff;
+  --color-bee-bg-additional02: #77849d1f;
+  --color-bee-bg-overlay: #191c22b2;
+
+  /* Elements */
+  --color-bee-el-primary: #ffffff;
+  --color-bee-el-secondary: #f0f3f5;
+  --color-bee-el-tertiary: #e2e6ed;
+  --color-bee-el-disabled: #e2e6ed;
+  --color-bee-el-active: #202632;
+
+  /* Border */
+  --color-bee-border-primary: #c3c9d5;
+  --color-bee-border-secondary: #e2e6ed;
+
+  /* Icon */
+  --color-bee-icon-invert: #ffffff;
+  --color-bee-icon-disabled: #afb7c4;
+
+  /* Error / Success / Link */
+  --color-bee-error-primary: #f84a00;
+  --color-bee-error-secondary: #ff6524;
+  --color-bee-error-tertiary: #b83700;
+  --color-bee-success-primary: #00a55e;
+  --color-bee-success-secondary: #00c06d;
+  --color-bee-success-tertiary: #008f51;
+  --color-bee-link-primary: #1086f9;
+  --color-bee-link-secondary: #2e94fa;
+  --color-bee-link-tertiary: #0670db;
+
+  /* Constant */
+  --color-bee-dark: #28303f;
+  --color-bee-light: #ffffff;
+
+  /* Surface (пастельные подложки для статусов/бейджей) */
+  --color-bee-surface-green: #cbf6e3;
+  --color-bee-surface-teal: #bff8f1;
+  --color-bee-surface-blue: #d7ebfe;
+  --color-bee-surface-violet: #e7dffb;
+  --color-bee-surface-magenta: #fbdbec;
+  --color-bee-surface-red: #fdd8d8;
+  --color-bee-surface-orange: #ffd8c7;
+  --color-bee-surface-yellow: #ffe999;
+
+  /* Радиусы */
+  --radius-bee-sm: 8px;
+  --radius-bee-md: 12px;
+  --radius-bee-lg: 16px;
+  --radius-bee-xl: 24px;
+  --radius-bee-pill: 100px;
+
+  /* Отступы */
+  --spacing-bee-xs: 4px;
+  --spacing-bee-sm: 8px;
+  --spacing-bee-md: 12px;
+  --spacing-bee-lg: 16px;
+  --spacing-bee-xl: 24px;
+  --spacing-bee-xxl: 32px;
+
+  /* Типографика: 17 стилей Carnica. Начертание — только 400/500 (--font-weight-*). */
+  --text-display-lg: 56px;
+  --text-display-lg--line-height: 66px;
+  --text-display-md: 40px;
+  --text-display-md--line-height: 48px;
+  --text-display-sm: 32px;
+  --text-display-sm--line-height: 36px;
+  --text-display-xs: 16px;
+  --text-display-xs--line-height: 22px;
+
+  --text-headline-md: 40px;
+  --text-headline-md--line-height: 40px;
+  --text-headline-sm: 24px;
+  --text-headline-sm--line-height: 24px;
+
+  --text-body-lg: 24px;
+  --text-body-lg--line-height: 28px;
+  --text-body-md: 20px;
+  --text-body-md--line-height: 26px;
+  --text-body-sm: 16px;
+  --text-body-sm--line-height: 20px;
+
+  --text-body-accent-lg: 24px;
+  --text-body-accent-lg--line-height: 28px;
+  --text-body-accent-md: 20px;
+  --text-body-accent-md--line-height: 26px;
+  --text-body-accent-sm: 16px;
+  --text-body-accent-sm--line-height: 20px;
+
+  --text-paragraph-lg: 24px;
+  --text-paragraph-lg--line-height: 36px;
+  --text-paragraph-md: 20px;
+  --text-paragraph-md--line-height: 30px;
+  --text-paragraph-sm: 16px;
+  --text-paragraph-sm--line-height: 24px;
+
+  --text-caption: 13px;
+  --text-caption--line-height: 16px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bee-bg-primary);
+  color: var(--color-bee-content-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}

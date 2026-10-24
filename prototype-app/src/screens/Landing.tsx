@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Copy, Home, MapPin, Plane, ShieldCheck, Smartphone, Sparkles, UserPlus, Wallet } from 'lucide-react'
-import { IMAGES, NICHES, OFFER_TYPES, PLACES, n, rub, type OfferType, type OfferTypeInfo } from '../data'
+import { NICHES, n, rub } from '../data'
 import { Bars, HBars, Trend } from '../charts'
 import { DEMO_AD, PhoneSurface, type Surface } from '../mock'
 import { Brand, Chip, IdBadge, Num, Photo, Reveal } from '../ui'
-import { pickType, update, useStore } from '../store'
+import { useCatalog, type S } from '../api'
 
 const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -160,10 +160,10 @@ function Moments() {
 }
 
 // Как оффер каждого типа выглядит у клиента. Тексты и условия — в OFFER_TYPES.
-const OFFER_UI: Record<OfferType, ReactNode> = {
+const OFFER_UI: Record<S['OfferType'], ReactNode> = {
   click: (
     <div className="pm-banner">
-      <div className="ad-img ad-img--0">{IMAGES[0]}</div>
+      <div className="ad-img ad-img--0">фото зала с Яндекс Карт</div>
       <div className="pm-banner__text"><b>{DEMO_AD.brand}</b><span>{DEMO_AD.text}</span></div>
       <span className="pm-btn">перейти</span>
       <span className="pm-label">реклама</span>
@@ -199,6 +199,7 @@ const OFFER_UI: Record<OfferType, ReactNode> = {
 }
 
 function Offers() {
+  const { offerTypes } = useCatalog()
   const track = useRef<HTMLDivElement>(null)
   const [edge, setEdge] = useState({ start: true, end: false })
   const onScroll = () => {
@@ -223,7 +224,7 @@ function Offers() {
         </div>
       </div>
       <div className="offers-track" ref={track} onScroll={onScroll} tabIndex={0} role="region" aria-label="Типы офферов, прокрутка вбок">
-        {(Object.entries(OFFER_TYPES) as [OfferType, OfferTypeInfo][]).map(([id, o]) => (
+        {offerTypes.map(({ id, ...o }) => (
           <article key={id} className={`bl-card offer-card${id === 'click' ? ' bl-card--yellow is-main' : ''}`}>
             <div className="offer-card__screen" aria-hidden="true">{OFFER_UI[id]}</div>
             {id === 'click' && <span className="bl-tag bl-tag--dark offer-card__tag">основной</span>}
@@ -234,7 +235,7 @@ function Offers() {
               <div><dt>вы платите</dt><dd>{o.pay}</dd></div>
             </dl>
             <p className="bl-caption">подходит: {o.fit}</p>
-            <Link className={`bl-btn bl-btn--l bl-btn--block ${id === 'click' ? 'bl-btn--dark' : 'bl-btn--primary'}`} to="/login" onClick={() => pickType(id)}>{o.cta}</Link>
+            <Link className={`bl-btn bl-btn--l bl-btn--block ${id === 'click' ? 'bl-btn--dark' : 'bl-btn--primary'}`} to={`/login?type=${id}`}>{o.cta}</Link>
           </article>
         ))}
       </div>
@@ -249,10 +250,11 @@ const SURFACES: { id: Surface; t: string; d: string }[] = [
   { id: 'main', t: 'Главная приложения', d: 'широкий охват каждый день' },
 ]
 function Where() {
+  const { places } = useCatalog()
   const [hover, setHover] = useState(false)
   const [i, setI] = useTicker(SURFACES.length, 3600, hover)
   const cur = SURFACES[i]
-  const ctr = PLACES.filter(p => p.ctr !== null).map(p => ({ id: p.id, label: p.t, value: p.ctr! }))
+  const ctr = places.filter(p => p.ctr !== null).map(p => ({ id: p.id, label: p.t, value: p.ctr! }))
   return (
     <section className="bl-section bl-section--wide" id="where" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <div className="section-head"><h2 className="bl-display-l">где увидят</h2><p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Семь мест в приложении билайна, на ТВ и в пушах. Автопилот выберет лучшие под вашу цель.</p></div>
@@ -285,9 +287,9 @@ function Where() {
 }
 
 function Calc() {
-  const s = useStore()
+  const [budget, setBudget] = useState(10000)
   const [niche, setNiche] = useState(NICHES[0])
-  const clicks = s.budget / niche.cpc, visits = clicks * niche.conv
+  const clicks = budget / niche.cpc, visits = clicks * niche.conv
   const curve = [0, 0.18, 0.42, 0.7, 1]
   const data = curve.map((k, i) => ({ label: i === 0 ? 'старт' : `${i} неделя`, value: Math.round(visits * k) }))
   return (
@@ -297,13 +299,13 @@ function Calc() {
           <h2 className="bl-display-l">посчитайте, сколько придёт</h2>
           <div className="bl-field"><span className="bl-field__label">ваша сфера</span><div className="bl-row">{NICHES.map(x => <Chip key={x.id} on={x.id === niche.id} onClick={() => setNiche(x)}>{x.t}</Chip>)}</div></div>
           <label className="bl-field">
-            <span className="bl-field__label">бюджет в месяц: <b className="bl-medium">{rub(s.budget)}</b></span>
-            <input className="bl-range" type="range" min={3000} max={100000} step={1000} value={s.budget} onChange={e => update(x => { x.budget = +e.target.value })} aria-label="Бюджет в месяц" />
+            <span className="bl-field__label">бюджет в месяц: <b className="bl-medium">{rub(budget)}</b></span>
+            <input className="bl-range" type="range" min={3000} max={100000} step={1000} value={budget} onChange={e => setBudget(+e.target.value)} aria-label="Бюджет в месяц" />
           </label>
           <div className="bl-row" style={{ ['--bl-gap' as string]: '48px' }}>
             <div className="bl-stat"><span className="bl-stat__value"><Num value={clicks} /></span><span className="bl-stat__label">кликов</span></div>
             <div className="bl-stat"><span className="bl-stat__value"><Num value={niche.cpc} suffix=" ₽" /></span><span className="bl-stat__label">средний клик</span></div>
-            <div className="bl-stat"><span className="bl-stat__value"><Num value={visits ? s.budget / visits : 0} suffix=" ₽" /></span><span className="bl-stat__label">один {niche.unit === 'гостей' ? 'гость' : 'клиент'}</span></div>
+            <div className="bl-stat"><span className="bl-stat__value"><Num value={visits ? budget / visits : 0} suffix=" ₽" /></span><span className="bl-stat__label">один {niche.unit === 'гостей' ? 'гость' : 'клиент'}</span></div>
           </div>
         </div>
         <div className="bl-card calc__result" data-theme="invert">

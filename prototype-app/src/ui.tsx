@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { animate, motion, useInView, useReducedMotion, AnimatePresence } from 'motion/react'
 import { Check as CheckIcon, X } from 'lucide-react'
 import logoUrl from '../../design-system/assets/beeline-logo.svg'
-import { OFFER_TYPES, type OfferType, type ProviderId } from './data'
-import { pickType, reset, update, useStore, type State } from './store'
+import { $api, act, queryClient, useCampaigns, useCatalog, useCompany, type S } from './api'
 
 /* ───────── бренд и шапка сценария ───────── */
 export function Brand({ to = '/' }: { to?: string }) {
@@ -16,15 +15,15 @@ export function Brand({ to = '/' }: { to?: string }) {
   )
 }
 
-const STEPS = [['охват', '/reach'], ['кампания', '/build'], ['оплата', '/checkout'], ['запуск', '/launch']] as const
-export function FlowHead({ step }: { step: number }) {
+const STEPS = [['охват', 'reach'], ['кампания', 'build'], ['оплата', 'checkout'], ['запуск', 'launch']] as const
+export function FlowHead({ step, id }: { step: number; id: number }) {
   return (
     <header className="flow-head">
       <Brand />
       <ol className="bl-steps" aria-label="Шаги">
         {STEPS.map(([t, to], i) => (
           <li key={t} className={i < step ? 'is-done' : i === step ? 'is-current' : ''} aria-current={i === step ? 'step' : undefined}>
-            {i < step ? <Link to={to} className="step-link">{t}</Link> : t}
+            {i < step ? <Link to={`/c/${id}/${to}`} className="step-link">{t}</Link> : t}
           </li>
         ))}
       </ol>
@@ -33,43 +32,22 @@ export function FlowHead({ step }: { step: number }) {
   )
 }
 
-/* ───────── поля выбора ───────── */
-type Path = string
-function getPath(s: State, path: Path): unknown { return path.split('.').reduce<any>((o, k) => o?.[k], s) }
-export function setPath(path: Path, v: unknown) {
-  update(s => {
-    const ks = path.split('.'); const last = ks.pop()!
-    ks.reduce<any>((o, k) => o[k], s)[last] = v
-  })
-}
-
-export function Check({ path, label, sub, disabled }: { path: Path; label: ReactNode; sub?: ReactNode; disabled?: boolean }) {
-  const s = useStore()
+/* ───────── поля выбора: управляемые, значение и запись — снаружи ───────── */
+type Field = { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; sub?: ReactNode; disabled?: boolean }
+export function Check({ checked, onChange, label, sub, disabled }: Field) {
   return (
     <label className="bl-check" style={disabled ? { cursor: 'default' } : undefined}>
-      <input type="checkbox" checked={!!getPath(s, path)} disabled={disabled} onChange={e => setPath(path, e.target.checked)} />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)} />
       <span className="bl-check__box" />
       <span>{label}{sub && <span className="bl-caption" style={{ display: 'block' }}>{sub}</span>}</span>
     </label>
   )
 }
 
-export function Radio<T extends string>({ path, value, label, sub, disabled }: { path: Path; value: T; label: ReactNode; sub?: ReactNode; disabled?: boolean }) {
-  const s = useStore()
-  return (
-    <label className={`bl-radio${disabled ? ' is-disabled' : ''}`}>
-      <input type="radio" name={path} checked={getPath(s, path) === value} disabled={disabled} onChange={() => setPath(path, value)} />
-      <span className="bl-radio__dot" />
-      <span>{label}{sub && <span className="bl-caption" style={{ display: 'block' }}>{sub}</span>}</span>
-    </label>
-  )
-}
-
-export function Switch({ path, label }: { path: Path; label: ReactNode }) {
-  const s = useStore()
+export function Switch({ checked, onChange, label }: Field) {
   return (
     <label className="bl-switch">
-      <input type="checkbox" checked={!!getPath(s, path)} onChange={e => setPath(path, e.target.checked)} />
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
       <span className="bl-switch__track" />
       <span>{label}</span>
     </label>
@@ -91,12 +69,12 @@ export function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => 
 }
 
 // Значки провайдеров в стиле иконок приложений, по мотивам оригиналов
-const ID_ICONS: Record<ProviderId, ReactNode> = {
+const ID_ICONS: Record<Exclude<S['ProviderId'], 'inn'>, ReactNode> = {
   gos: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#fff" stroke="#E2E6ED" /><path d="M8 7h12v3.6h-8.2V21H8z" fill="#0D4CD3" /><path d="M14.4 13.4H20V21h-5.6z" fill="#EE3F58" /></svg>,
   sber: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#21A038" /><path d="M21.6 11.2a8 8 0 1 1-2.9-4" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /><path d="m9.4 13.6 3.2 3 8.4-8.2" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>,
   alfa: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#EF3124" /><path d="M12.4 6h3.2l5 13h-3.1l-1.1-3.1h-4.9L10.4 19H7.4zm-.1 7.6h3.3L14 8.9z" fill="#fff" /><rect x="7.4" y="20.6" width="13.2" height="2" fill="#fff" /></svg>,
 }
-export function IdBadge({ id }: { id: ProviderId }) {
+export function IdBadge({ id }: { id: Exclude<S['ProviderId'], 'inn'> }) {
   return <span className="id-badge" aria-hidden="true">{ID_ICONS[id]}</span>
 }
 
@@ -187,15 +165,15 @@ export function Modal({ open, onClose, children, label }: { open: boolean; onClo
 }
 
 /* ───────── выбор типа оффера: новая кампания и смена типа в сценарии ───────── */
-export function TypePicker({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick?: (t: OfferType) => void }) {
-  const s = useStore()
+export function TypePicker({ open, value, onClose, onPick }: { open: boolean; value?: S['OfferType']; onClose: () => void; onPick: (t: S['OfferType']) => void }) {
+  const { offerTypes } = useCatalog()
   return (
     <Modal open={open} onClose={onClose} label="Тип оффера">
       <h2 className="bl-h2">какой оффер запускаем?</h2>
       <div className="type-grid" role="radiogroup" aria-label="Тип оффера">
-        {(Object.entries(OFFER_TYPES) as [OfferType, (typeof OFFER_TYPES)[OfferType]][]).map(([id, o]) => (
-          <button key={id} role="radio" aria-checked={s.otype === id} className={`bl-card choice type-opt${id === 'click' ? ' type-opt--main' : ''}`} onClick={() => { pickType(id); onClose(); onPick?.(id) }}>
-            <span className="bl-row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className="bl-h4">{o.t}</span>{id === 'click' && <span className="bl-tag bl-tag--dark">основной</span>}</span>
+        {offerTypes.map(o => (
+          <button key={o.id} role="radio" aria-checked={value === o.id} className={`bl-card choice type-opt${o.id === 'click' ? ' type-opt--main' : ''}`} onClick={() => { onClose(); onPick(o.id) }}>
+            <span className="bl-row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className="bl-h4">{o.t}</span>{o.id === 'click' && <span className="bl-tag bl-tag--dark">основной</span>}</span>
             <span className="bl-caption">{o.d}</span>
             <span className="bl-caption">вы платите: <b className="bl-medium">{o.pay}</b></span>
           </button>
@@ -206,15 +184,16 @@ export function TypePicker({ open, onClose, onPick }: { open: boolean; onClose: 
   )
 }
 
-// Метка типа с кнопкой смены: на охвате, в сборке и в чекауте
-export function TypeTag() {
-  const s = useStore()
+// Метка типа с кнопкой смены: на охвате, в сборке
+export function TypeTag({ c }: { c: S['Campaign'] }) {
   const [open, setOpen] = useState(false)
+  const T = useCatalog().offerTypes.find(t => t.id === c.type)!
+  const patch = $api.useMutation('patch', '/campaigns/{id}', act)
   return (
     <span className="bl-row" style={{ gap: 8 }}>
-      <span className={`bl-tag${s.otype === 'click' ? ' bl-tag--dark' : ' bl-tag--soft-violet'}`}>{OFFER_TYPES[s.otype].t}</span>
-      <button className="bl-btn bl-btn--ghost bl-caption" onClick={() => setOpen(true)}>сменить тип</button>
-      <TypePicker open={open} onClose={() => setOpen(false)} />
+      <span className={`bl-tag${c.type === 'click' ? ' bl-tag--dark' : ' bl-tag--soft-violet'}`}>{T.t}</span>
+      {c.status === 'draft' && <button className="bl-btn bl-btn--ghost bl-caption" onClick={() => setOpen(true)}>сменить тип</button>}
+      <TypePicker open={open} value={c.type} onClose={() => setOpen(false)} onPick={type => patch.mutate({ params: { path: { id: c.id } }, body: { type } })} />
     </span>
   )
 }
@@ -237,42 +216,59 @@ export function Qr() {
 }
 
 /* ───────── карта экранов прототипа ───────── */
+// :id — последняя кампания, :token — её ссылка на подтверждение
 export const SCREENS: [string, string, string][] = [
   ['вход и ага-момент', '/', '1 · лендинг'], ['вход и ага-момент', '/login', '2.1 · вход по бизнес-ID'], ['вход и ага-момент', '/inn', '2.1 · без входа: ИНН или сайт'],
-  ['вход и ага-момент', '/consent', '2.2 · согласия'], ['вход и ага-момент', '/reach', '2.3 · охват и прогноз'],
-  ['сборка кампании', '/build', '3 · автопилот, вручную, медиаплан, спецпроект'],
-  ['оплата', '/checkout', '4.1 · чекаут'], ['оплата', '/approve', '4.2 · подтверждение руководителем'],
-  ['кампания и рост', '/launch', '5 · ИИ-модерация и запуск'], ['кампания и рост', '/cab/stats', '6 · статистика'],
+  ['вход и ага-момент', '/consent', '2.2 · согласия'], ['вход и ага-момент', '/c/:id/reach', '2.3 · охват и прогноз'],
+  ['сборка кампании', '/c/:id/build', '3 · автопилот, вручную, медиаплан, спецпроект'],
+  ['оплата', '/c/:id/checkout', '4.1 · чекаут'], ['оплата', '/approve/:token', '4.2 · подтверждение руководителем'],
+  ['кампания и рост', '/c/:id/launch', '5 · ИИ-модерация и запуск'], ['кампания и рост', '/cab/stats', '6 · статистика'],
   ['кампания и рост', '/cab/campaigns', 'кабинет · кампании'], ['кампания и рост', '/cab/balance', 'кабинет · баланс'],
   ['кампания и рост', '/cab/docs', 'кабинет · документы и ЭДО'], ['кампания и рост', '/cab/company', 'кабинет · компания'], ['кампания и рост', '/cab/help', 'кабинет · помощь'],
 ]
+export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathname.replace(/^\/c\/\d+/, '/c/:id').replace(/^\/approve\/.+/, '/approve/:token'))?.[2]
+
 export function DemoMenu() {
   const [open, setOpen] = useState(false)
-  const s = useStore()
-  const nav = useNavigate()
-  const groups = [...new Set(SCREENS.map(x => x[0]))]
   return (
     <>
       <button className="bl-pill-dark demo-fab" onClick={() => setOpen(true)} aria-haspopup="dialog">экраны прототипа</button>
-      <Modal open={open} onClose={() => setOpen(false)} label="Карта экранов">
-        <h2 className="bl-h2">карта экранов</h2>
-        <div className="demo-map">
-          {groups.map(g => (
-            <div key={g}>
-              <h3 className="bl-h4">{g}</h3>
-              {SCREENS.filter(x => x[0] === g).map(([, to, t]) => <Link key={to} to={to} onClick={() => setOpen(false)}>{t}</Link>)}
-            </div>
-          ))}
-        </div>
-        <hr className="bl-divider" />
-        <label className="bl-field"><span className="bl-field__label">тип оффера</span>
-          <select className="bl-select" value={s.otype} onChange={e => pickType(e.target.value as OfferType)}>{(Object.keys(OFFER_TYPES) as OfferType[]).map(id => <option key={id} value={id}>{OFFER_TYPES[id].t}</option>)}</select>
+      <Modal open={open} onClose={() => setOpen(false)} label="Карта экранов">{open && <DemoMap close={() => setOpen(false)} />}</Modal>
+    </>
+  )
+}
+
+function DemoMap({ close }: { close: () => void }) {
+  const nav = useNavigate()
+  const cat = useCatalog(), co = useCompany(), all = useCampaigns(), last = all[0], token = all.find(c => c.approvalToken)?.approvalToken
+  const patchCo = $api.useMutation('patch', '/company', act)
+  const patchC = $api.useMutation('patch', '/campaigns/{id}', act)
+  const reset = $api.useMutation('post', '/session/reset', { onSuccess: () => { queryClient.clear(); close(); nav('/') } })
+  const groups = [...new Set(SCREENS.map(x => x[0]))]
+  const href = (to: string) => to.replace(':id', String(last?.id ?? '')).replace(':token', token ?? '')
+  return (
+    <>
+      <h2 className="bl-h2">карта экранов</h2>
+      <div className="demo-map">
+        {groups.map(g => (
+          <div key={g}>
+            <h3 className="bl-h4">{g}</h3>
+            {SCREENS.filter(x => x[0] === g).map(([, to, t]) => (to.includes(':id') && !last) || (to.includes(':token') && !token)
+              ? <span key={to} className="bl-secondary" title={to.includes(':token') ? 'появится, когда сотрудник отправит кампанию руководителю' : 'нет кампаний'}>{t}</span>
+              : <Link key={to} to={href(to)} onClick={close}>{t}</Link>)}
+          </div>
+        ))}
+      </div>
+      <hr className="bl-divider" />
+      {last && (
+        <label className="bl-field"><span className="bl-field__label">тип оффера последней кампании</span>
+          <select className="bl-select" value={last.type} onChange={e => patchC.mutate({ params: { path: { id: last.id } }, body: { type: e.target.value as S['OfferType'] } })}>{cat.offerTypes.map(t => <option key={t.id} value={t.id}>{t.t}</option>)}</select>
         </label>
-        <div className="bl-row" style={{ justifyContent: 'space-between' }}>
-          <Segmented label="Сегмент" value={s.segment} options={[['small', 'малый'], ['medium', 'средний'], ['large', 'крупный']]} onChange={v => update(x => { x.segment = v; x.tab = null })} />
-          <button className="bl-btn bl-btn--s" onClick={() => { reset(); setOpen(false); nav('/') }}>сбросить демо</button>
-        </div>
-      </Modal>
+      )}
+      <div className="bl-row" style={{ justifyContent: 'space-between' }}>
+        <Segmented label="Сегмент" value={co.segment} options={[['small', 'малый'], ['medium', 'средний'], ['large', 'крупный']]} onChange={v => patchCo.mutate({ body: { segment: v } })} />
+        <button className="bl-btn bl-btn--s" onClick={() => reset.mutate({})}>сбросить демо</button>
+      </div>
     </>
   )
 }

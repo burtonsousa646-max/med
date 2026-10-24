@@ -1,16 +1,18 @@
-import { StrictMode, useEffect } from 'react'
+import { Component, StrictMode, Suspense, useEffect, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter, Route, Routes, useLocation } from 'react-router'
+import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { MotionConfig } from 'motion/react'
+import { QueryClientProvider } from '@tanstack/react-query'
 import '../../design-system/tokens.css'
 import '../../design-system/components.css'
 import './app.css'
+import { queryClient, useCampaigns } from './api'
 import Landing from './screens/Landing'
 import { Inn, Login } from './screens/Entry'
 import { Approve, Checkout, Consent, Launch, Reach } from './screens/Flow'
 import Build from './screens/Build'
 import { Balance, Campaigns, Company, Docs, Help, Stats } from './screens/Cabinet'
-import { Brand, DemoMenu, SCREENS, Toaster } from './ui'
+import { Brand, DemoMenu, Toaster, screenName } from './ui'
 
 function Offer() {
   return (
@@ -24,44 +26,73 @@ function Offer() {
   )
 }
 
+// «Статистика» в меню кабинета — последняя запущенная кампания
+function LatestStats() {
+  const live = useCampaigns().find(c => c.launchedAt || c.status === 'moderation')
+  return live ? <Navigate to={`/cab/stats/${live.id}`} replace /> : <Stats />
+}
+
 // Новый экран открывается сверху, а заголовок вкладки называет экран
 function OnRoute() {
   const { pathname } = useLocation()
   useEffect(() => {
     scrollTo(0, 0)
-    const name = SCREENS.find(s => s[1] === pathname)?.[2].replace(/^[\d.]+ · /, '')
-    document.title = pathname === '/' ? 'Рекламная платформа билайна' : `${name ?? 'оферта'} · рекламная платформа билайна`
+    const name = screenName(pathname)?.replace(/^[\d.]+ · /, '')
+    document.title = pathname === '/' ? 'Рекламная платформа билайна' : `${name ?? 'кабинет'} · рекламная платформа билайна`
   }, [pathname])
   return null
 }
 
+// Ошибка запроса при отрисовке (кампания не найдена, сервер недоступен) — понятный экран вместо белого
+class Failsafe extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null as string | null }
+  static getDerivedStateFromError(e: unknown) { return { error: (e as { message?: string })?.message ?? 'сервер не ответил' } }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="bl-page wrap"><section className="bl-section pad bl-stack" style={{ marginTop: 48, maxWidth: 640, ['--bl-gap' as string]: '16px' }}>
+        <h1 className="bl-h2">не получилось открыть экран</h1>
+        <p className="bl-body bl-secondary">{this.state.error}</p>
+        <div><Link className="bl-btn bl-btn--primary" to="/cab/campaigns" onClick={() => this.setState({ error: null })}>к кампаниям</Link></div>
+      </section></div>
+    )
+  }
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MotionConfig reducedMotion="user">
-      <HashRouter>
-        <OnRoute />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/inn" element={<Inn />} />
-          <Route path="/consent" element={<Consent />} />
-          <Route path="/reach" element={<Reach />} />
-          <Route path="/build" element={<Build />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/approve" element={<Approve />} />
-          <Route path="/launch" element={<Launch />} />
-          <Route path="/cab/stats" element={<Stats />} />
-          <Route path="/cab/campaigns" element={<Campaigns />} />
-          <Route path="/cab/balance" element={<Balance />} />
-          <Route path="/cab/docs" element={<Docs />} />
-          <Route path="/cab/company" element={<Company />} />
-          <Route path="/cab/help" element={<Help />} />
-          <Route path="/offer" element={<Offer />} />
-          <Route path="*" element={<Landing />} />
-        </Routes>
-        <DemoMenu />
-        <Toaster />
-      </HashRouter>
-    </MotionConfig>
+    <QueryClientProvider client={queryClient}>
+      <MotionConfig reducedMotion="user">
+        <HashRouter>
+          <OnRoute />
+          <Failsafe>
+            <Suspense fallback={<div className="bl-page wrap" aria-busy="true" />}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/inn" element={<Inn />} />
+                <Route path="/consent" element={<Consent />} />
+                <Route path="/c/:id/reach" element={<Reach />} />
+                <Route path="/c/:id/build" element={<Build />} />
+                <Route path="/c/:id/checkout" element={<Checkout />} />
+                <Route path="/c/:id/launch" element={<Launch />} />
+                <Route path="/approve/:token" element={<Approve />} />
+                <Route path="/cab/stats" element={<LatestStats />} />
+                <Route path="/cab/stats/:id" element={<Stats />} />
+                <Route path="/cab/campaigns" element={<Campaigns />} />
+                <Route path="/cab/balance" element={<Balance />} />
+                <Route path="/cab/docs" element={<Docs />} />
+                <Route path="/cab/company" element={<Company />} />
+                <Route path="/cab/help" element={<Help />} />
+                <Route path="/offer" element={<Offer />} />
+                <Route path="*" element={<Landing />} />
+              </Routes>
+              <DemoMenu />
+            </Suspense>
+          </Failsafe>
+          <Toaster />
+        </HashRouter>
+      </MotionConfig>
+    </QueryClientProvider>
   </StrictMode>,
 )

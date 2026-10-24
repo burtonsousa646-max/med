@@ -1,0 +1,602 @@
+openapi: 3.1.0
+info:
+  title: Рекламная платформа билайна — API кабинета партнёра
+  version: 0.1.0
+  description: |
+    Контракт — источник правды. Интерфейс (src/) ходит только по этим запросам,
+    тестовый сервер (server/) их реализует. Настоящий бэкенд реализует этот же файл,
+    после чего server/ удаляется, а интерфейс получает адрес в VITE_API_URL.
+
+    Демо-особенности, которых не будет в бою:
+    - Компания определяется cookie `demo`: каждый посетитель получает свою копию кофейни «Зерно».
+      В бою — авторизация по бизнес-ID.
+    - `Session.clock` двигает время для показа: «первые 48 часов» или «через 2 недели».
+    - Оплата, ЭДО и подтверждение через бизнес-ID — заглушки, отвечают сразу.
+servers:
+  - url: /api
+tags:
+  - { name: справочники }
+  - { name: сессия }
+  - { name: компания }
+  - { name: кампании }
+  - { name: подтверждение }
+  - { name: деньги и документы }
+
+paths:
+  /catalog:
+    get:
+      tags: [справочники]
+      summary: Типы офферов, цели, сигналы, места показа и прочие справочники
+      operationId: getCatalog
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Catalog' } } } }
+
+  /session:
+    get:
+      tags: [сессия]
+      summary: Кто вошёл
+      operationId: getSession
+      responses:
+        '200': { $ref: '#/components/responses/Session' }
+    patch:
+      tags: [сессия]
+      summary: Демо — роль вошедшего и время с запуска
+      operationId: patchSession
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SessionPatch' } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Session' }
+  /session/login:
+    post:
+      tags: [сессия]
+      summary: Вход по бизнес-ID или без входа, по ИНН
+      operationId: login
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [provider], properties: { provider: { $ref: '#/components/schemas/ProviderId' } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Session' }
+  /session/reset:
+    post:
+      tags: [сессия]
+      summary: Демо — начать заново с чистой копией компании
+      operationId: resetDemo
+      responses:
+        '200': { $ref: '#/components/responses/Session' }
+
+  /company:
+    get:
+      tags: [компания]
+      summary: Реквизиты, точки, люди, согласия
+      operationId: getCompany
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+    patch:
+      tags: [компания]
+      operationId: patchCompany
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CompanyPatch' } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+  /company/points:
+    post:
+      tags: [компания]
+      summary: Добавить точку продаж
+      operationId: addPoint
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [addr], properties: { addr: { type: string, minLength: 5 } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '400': { $ref: '#/components/responses/Error' }
+  /company/points/{pointId}:
+    patch:
+      tags: [компания]
+      summary: Включить или исключить точку из рекламы
+      operationId: patchPoint
+      parameters: [{ name: pointId, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [active], properties: { active: { type: boolean } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '409': { $ref: '#/components/responses/Error' }
+  /company/members:
+    post:
+      tags: [компания]
+      summary: Пригласить бухгалтера
+      operationId: inviteMember
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [email], properties: { email: { type: string, format: email } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '400': { $ref: '#/components/responses/Error' }
+
+  /campaigns:
+    get:
+      tags: [кампании]
+      operationId: listCampaigns
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Campaign' } } } } }
+    post:
+      tags: [кампании]
+      summary: Новая кампания выбранного типа, в статусе черновика
+      operationId: createCampaign
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [type], properties: { type: { $ref: '#/components/schemas/OfferType' } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+  /campaigns/{id}:
+    parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+    get:
+      tags: [кампании]
+      summary: Кампания с прогнозом, проверкой текста и шагом запуска
+      operationId: getCampaign
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [кампании]
+      summary: Изменить настройки. Исправленный текст отклонённой кампании сразу уходит на повторную проверку
+      operationId: patchCampaign
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CampaignPatch' } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '404': { $ref: '#/components/responses/Error' }
+  /campaigns/{id}/submit:
+    parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+    post:
+      tags: [кампании]
+      summary: Принять оферту, оплатить и запустить; сотрудник отправляет на подтверждение руководителю
+      description: |
+        Руководитель: нужна `acceptOffer: true`. СБП и карта списываются сразу, счёт ставит статус `invoice`,
+        постоплата и купон с подпиской запускаются без оплаты. Сотрудник: статус `approval` и `approvalToken`.
+      operationId: submitCampaign
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { acceptOffer: { type: boolean } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /campaigns/{id}/invoice-paid:
+    parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+    post:
+      tags: [кампании]
+      summary: Демо — оплата по счёту поступила
+      operationId: markInvoicePaid
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+  /campaigns/{id}/stats:
+    parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+    get:
+      tags: [кампании]
+      summary: Статистика на момент `Session.clock`
+      operationId: getStats
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Stats' } } } }
+        '409': { $ref: '#/components/responses/Error' }
+  /campaigns/{id}/tips/{tipId}:
+    parameters:
+      - { $ref: '#/components/parameters/CampaignId' }
+      - { name: tipId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [кампании]
+      summary: Применить совет из статистики
+      operationId: applyTip
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+  /special-requests:
+    post:
+      tags: [кампании]
+      summary: Заявка на спецпроект менеджеру
+      operationId: createSpecialRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, task, budget]
+              properties:
+                kind: { type: string, enum: [game, section, raffle, segment] }
+                task: { type: string, minLength: 10 }
+                budget: { type: string }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [id], properties: { id: { type: integer } } } } } }
+        '400': { $ref: '#/components/responses/Error' }
+
+  /approvals/{token}:
+    parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [подтверждение]
+      summary: Что просит подтвердить сотрудник. Открывается по ссылке без входа
+      operationId: getApproval
+      responses:
+        '200': { $ref: '#/components/responses/Approval' }
+        '404': { $ref: '#/components/responses/Error' }
+  /approvals/{token}/confirm:
+    parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+    post:
+      tags: [подтверждение]
+      summary: Руководитель принимает оферту через бизнес-ID. Если нужна оплата СБП или картой — следующий шаг pay
+      operationId: confirmApproval
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [provider], properties: { provider: { $ref: '#/components/schemas/ProviderId' } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Approval' }
+  /approvals/{token}/pay:
+    parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+    post:
+      tags: [подтверждение]
+      operationId: payApproval
+      responses:
+        '200': { $ref: '#/components/responses/Approval' }
+        '409': { $ref: '#/components/responses/Error' }
+
+  /balance:
+    get:
+      tags: [деньги и документы]
+      summary: Баланс, выплаты по купонам и подпискам, операции
+      operationId: getBalance
+      responses:
+        '200': { $ref: '#/components/responses/Balance' }
+  /balance/topups:
+    post:
+      tags: [деньги и документы]
+      summary: Пополнить по СБП (в демо зачисляется сразу)
+      operationId: topUp
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [amount], properties: { amount: { type: integer, minimum: 1000 } } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Balance' }
+  /documents:
+    get:
+      tags: [деньги и документы]
+      summary: Оферта, счета, акты, отчёты агента
+      operationId: listDocuments
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Document' } } } } }
+
+components:
+  parameters:
+    CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
+
+  responses:
+    Error: { description: ошибка, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Session: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Session' } } } }
+    Company: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Company' } } } }
+    Campaign: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Campaign' } } } }
+    Approval: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Approval' } } } }
+    Balance: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Balance' } } } }
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties: { message: { type: string } }
+
+    # ───────── справочники ─────────
+    OfferType: { type: string, enum: [click, coupon, lead, promo, sub], description: 'переход, купон, заявка, промокод, подписка' }
+    ProviderId: { type: string, enum: [gos, sber, alfa, inn], description: '«inn» — без входа, по открытым данным' }
+    Segment: { type: string, enum: [small, medium, large] }
+    Mode: { type: string, enum: [auto, manual, plan, special], description: 'автопилот, вручную, медиаплан, спецпроект' }
+    GoalId: { type: string, enum: [near, rivals, showcase] }
+    PayMethod: { type: string, enum: [sbp, card, invoice, post] }
+    Bucket: { type: string, enum: [any, and, not], description: 'любой из, и, кроме' }
+
+    Catalog:
+      type: object
+      required: [offerTypes, goals, signals, places, providers, segments, payMethods, images, bonus]
+      properties:
+        offerTypes: { type: array, items: { $ref: '#/components/schemas/OfferTypeInfo' } }
+        goals: { type: array, items: { $ref: '#/components/schemas/Goal' } }
+        signals:
+          type: array
+          items:
+            type: object
+            required: [g, items]
+            properties:
+              g: { type: string }
+              items:
+                type: array
+                items:
+                  type: object
+                  required: [id, t, v]
+                  properties:
+                    id: { type: string }
+                    t: { type: string }
+                    v: { type: string, enum: [hot, week, wide, off], description: 'off — не продаётся' }
+        places:
+          type: array
+          items:
+            type: object
+            required: [id, t, f, ctr, pay]
+            properties:
+              id: { type: string }
+              t: { type: string }
+              f: { type: string }
+              ctr: { type: [number, 'null'] }
+              pay: { type: string, enum: [клик, показы] }
+        providers:
+          type: array
+          items: { type: object, required: [id, name, short], properties: { id: { $ref: '#/components/schemas/ProviderId' }, name: { type: string }, short: { type: string } } }
+        segments:
+          type: array
+          items: { type: object, required: [id, name, hint], properties: { id: { $ref: '#/components/schemas/Segment' }, name: { type: string }, hint: { type: string } } }
+        payMethods:
+          type: array
+          items: { type: object, required: [id, name, hint, largeOnly], properties: { id: { $ref: '#/components/schemas/PayMethod' }, name: { type: string }, hint: { type: string }, largeOnly: { type: boolean } } }
+        images: { type: array, items: { type: string }, description: подписи вариантов картинки объявления }
+        bonus: { type: integer, description: бонус на первую кампанию, ₽ }
+
+    OfferTypeInfo:
+      type: object
+      required: [id, t, short, cta, d, gets, pay, fit, share, fee, unit, many, per, payFor, live, wait, fields, via]
+      properties:
+        id: { $ref: '#/components/schemas/OfferType' }
+        t: { type: string }
+        short: { type: string }
+        cta: { type: string }
+        d: { type: string }
+        gets: { type: string }
+        pay: { type: string }
+        fit: { type: string }
+        share: { type: boolean, description: 'true — платит клиент, партнёр получает выплаты; false — партнёр пополняет баланс' }
+        fee: { type: number, description: 'доля билайна, % (для share)' }
+        unit: { type: string, description: результат во множественном числе }
+        many: { type: string, description: 'то же в родительном падеже: «заявок»' }
+        per: { type: string }
+        payFor: { type: string }
+        live: { type: string }
+        wait: { type: string }
+        fields:
+          type: array
+          items:
+            type: object
+            required: [k, label]
+            properties: { k: { type: string }, label: { type: string }, num: { type: boolean }, suffix: { type: string }, wide: { type: boolean } }
+        via:
+          type: object
+          required: [label, options, hint]
+          properties: { label: { type: string }, options: { type: array, items: { type: string } }, hint: { type: string } }
+
+    Goal:
+      type: object
+      required: [id, t, d, reach, cpc]
+      properties: { id: { $ref: '#/components/schemas/GoalId' }, t: { type: string }, d: { type: string }, reach: { type: integer }, cpc: { type: number } }
+
+    # ───────── сессия и компания ─────────
+    Session:
+      type: object
+      required: [provider, role, clock]
+      properties:
+        provider: { oneOf: [{ $ref: '#/components/schemas/ProviderId' }, { type: 'null' }] }
+        role: { type: string, enum: [boss, staff], description: руководитель или сотрудник }
+        clock: { type: string, enum: [h48, d14], description: демо-время с запуска }
+    SessionPatch:
+      type: object
+      properties:
+        role: { type: string, enum: [boss, staff] }
+        clock: { type: string, enum: [h48, d14] }
+
+    Point:
+      type: object
+      required: [id, addr, x, y, active]
+      properties: { id: { type: integer }, addr: { type: string }, x: { type: number }, y: { type: number }, active: { type: boolean } }
+    Member:
+      type: object
+      required: [id, name, email, role, title]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: [string, 'null'] }
+        role: { type: string, enum: [owner, staff, accountant] }
+        title: { type: string }
+    Company:
+      type: object
+      required: [name, brand, inn, kpp, ogrn, bank, acc, site, phone, signer, signerShort, signerRole, employee, segment, consents, notify, edo, autoTopup, offerAcceptedAt, points, members]
+      properties:
+        name: { type: string }
+        brand: { type: string }
+        inn: { type: string }
+        kpp: { type: string }
+        ogrn: { type: string }
+        bank: { type: string }
+        acc: { type: string }
+        site: { type: string }
+        phone: { type: string }
+        signer: { type: string }
+        signerShort: { type: string }
+        signerRole: { type: string }
+        employee: { type: string }
+        segment: { $ref: '#/components/schemas/Segment' }
+        consents: { $ref: '#/components/schemas/Consents' }
+        notify: { $ref: '#/components/schemas/Notify' }
+        edo: { type: [string, 'null'], description: оператор ЭДО }
+        autoTopup: { type: boolean }
+        offerAcceptedAt: { type: [string, 'null'], format: date-time }
+        points: { type: array, items: { $ref: '#/components/schemas/Point' } }
+        members: { type: array, items: { $ref: '#/components/schemas/Member' } }
+    Consents:
+      type: object
+      required: [company, signer, profile]
+      properties: { company: { type: boolean }, signer: { type: boolean }, profile: { type: boolean } }
+    Notify:
+      type: object
+      description: куда писать о показах, визитах и балансе
+      required: [sms, mail, tg]
+      properties: { sms: { type: boolean }, mail: { type: boolean }, tg: { type: boolean } }
+    CompanyPatch:
+      type: object
+      properties:
+        segment: { $ref: '#/components/schemas/Segment' }
+        consents: { $ref: '#/components/schemas/Consents' }
+        notify: { $ref: '#/components/schemas/Notify' }
+        autoTopup: { type: boolean }
+        edo: { type: string }
+
+    # ───────── кампании ─────────
+    Campaign:
+      type: object
+      required: [id, type, status, name, mode, goal, adText, img, terms, audience, places, budget, amount, payMethod, tips, approvalToken, createdAt, launchedAt, launchStep, deal, forecast, moderation, totals]
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/OfferType' }
+        status:
+          type: string
+          enum: [draft, approval, invoice, moderation, rejected, live, paused]
+          description: 'черновик, ждёт руководителя, ждёт оплату счёта, проверка, текст не прошёл, показывается, пауза'
+        name: { type: string, readOnly: true }
+        mode: { $ref: '#/components/schemas/Mode' }
+        goal: { $ref: '#/components/schemas/GoalId' }
+        adText: { type: string, description: 'текст объявления; если не задан — собран из цели или условий' }
+        img: { type: integer }
+        terms: { type: object, additionalProperties: { type: string }, description: 'условия оффера, поля — из OfferTypeInfo.fields, плюс via' }
+        audience: { type: object, additionalProperties: { $ref: '#/components/schemas/Bucket' }, description: 'сигнал → блок' }
+        places: { type: object, additionalProperties: { type: boolean } }
+        budget: { type: integer, description: бюджет в месяц, ₽ }
+        amount: { type: [integer, 'null'], description: 'к оплате; null — равна бюджету' }
+        payMethod: { $ref: '#/components/schemas/PayMethod' }
+        tips: { type: array, items: { type: string }, description: применённые советы }
+        approvalToken: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        launchedAt: { type: [string, 'null'], format: date-time }
+        launchStep: { type: integer, minimum: 0, maximum: 3, description: '0 — проверка, 1 — маркировка, 2 — подключение, 3 — показывается' }
+        deal:
+          type: object
+          readOnly: true
+          required: [line, offer, cta]
+          properties: { line: { type: string }, offer: { type: string }, cta: { type: string } }
+        forecast: { $ref: '#/components/schemas/Forecast' }
+        moderation: { oneOf: [{ $ref: '#/components/schemas/StopHit' }, { type: 'null' }] }
+        totals:
+          readOnly: true
+          description: 'итоги на момент Session.clock для списка кампаний; null — ещё не показывалась'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [clicks, results]
+              properties: { clicks: { type: integer }, results: { type: integer } }
+    CampaignPatch:
+      type: object
+      properties:
+        type: { $ref: '#/components/schemas/OfferType' }
+        mode: { $ref: '#/components/schemas/Mode' }
+        goal: { $ref: '#/components/schemas/GoalId' }
+        adText: { type: [string, 'null'], maxLength: 90, description: 'null — вернуть текст по умолчанию' }
+        img: { type: integer }
+        terms: { type: object, additionalProperties: { type: string } }
+        audience: { type: object, additionalProperties: { $ref: '#/components/schemas/Bucket' } }
+        places: { type: object, additionalProperties: { type: boolean } }
+        budget: { type: integer, minimum: 3000 }
+        amount: { type: [integer, 'null'] }
+        payMethod: { $ref: '#/components/schemas/PayMethod' }
+        paused: { type: boolean }
+    Forecast:
+      type: object
+      readOnly: true
+      required: [reach, cpc, clicks, visits, guest, results, per, money, amount, payClicks, payVisits, payResults, audienceEmpty]
+      properties:
+        reach: { type: number, description: подходящих людей рядом с активными точками }
+        cpc: { type: number }
+        clicks: { type: number }
+        visits: { type: number }
+        guest: { type: number, description: цена одного гостя }
+        results: { type: number, description: 'главный результат типа: визиты, купоны, заявки, покупки, подписки' }
+        per: { type: number, description: 'цена результата; для купона и подписки — выплата партнёру за единицу' }
+        money: { type: number, description: 'потратите в месяц, а для купона и подписки — получите' }
+        amount: { type: number, description: к оплате сейчас }
+        payClicks: { type: number }
+        payVisits: { type: number }
+        payResults: { type: number }
+        audienceEmpty: { type: boolean }
+    StopHit:
+      type: object
+      required: [word, why, fix]
+      properties: { word: { type: string }, why: { type: string }, fix: { type: string } }
+
+    Stats:
+      type: object
+      required: [clock, reach, reachTotal, impressions, clicks, ctr, results, returning, spent, payout, per, cpc, hourly, daily, breakdownBy, breakdown, tips]
+      properties:
+        clock: { type: string, enum: [h48, d14] }
+        reach: { type: integer }
+        reachTotal: { type: integer }
+        impressions: { type: integer }
+        clicks: { type: integer }
+        ctr: { type: number }
+        results: { type: integer }
+        returning: { type: integer, description: пришли снова }
+        spent: { type: integer }
+        payout: { type: integer }
+        per: { type: number }
+        cpc: { type: number }
+        hourly: { type: array, items: { $ref: '#/components/schemas/Point2' } }
+        daily: { type: array, items: { $ref: '#/components/schemas/Point2' } }
+        breakdownBy: { type: string, enum: [signals, places] }
+        breakdown:
+          type: array
+          items:
+            type: object
+            required: [label, clicks, ctr, results, per]
+            properties: { label: { type: string }, clicks: { type: integer }, ctr: { type: number }, results: { type: integer }, per: { type: number } }
+        tips:
+          type: array
+          items:
+            type: object
+            required: [id, title, detail, doneTitle, applied]
+            properties: { id: { type: string }, title: { type: string }, detail: { type: string }, doneTitle: { type: string }, applied: { type: boolean } }
+    Point2:
+      type: object
+      required: [label, value]
+      properties: { label: { type: string }, value: { type: number } }
+
+    Approval:
+      type: object
+      required: [company, signerShort, employee, campaign, approved, needsPay]
+      properties:
+        company: { type: string }
+        signerShort: { type: string }
+        employee: { type: string }
+        campaign: { $ref: '#/components/schemas/Campaign' }
+        approved: { type: boolean }
+        needsPay: { type: boolean, description: 'после подтверждения осталось оплатить СБП или картой' }
+
+    # ───────── деньги и документы ─────────
+    Balance:
+      type: object
+      required: [balance, daysLeft, low, autoTopup, operations, payout]
+      properties:
+        balance: { type: integer }
+        daysLeft: { type: [integer, 'null'], description: 'на сколько дней хватит при текущих бюджетах; null — нет активных кампаний с бюджетом' }
+        low: { type: boolean }
+        autoTopup: { type: boolean }
+        operations:
+          type: array
+          items:
+            type: object
+            required: [date, title, amount]
+            properties: { date: { type: string }, title: { type: string }, amount: { type: integer } }
+        payout:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [due, date, gross, fee, count, unit]
+              properties:
+                due: { type: integer, description: к выплате }
+                date: { type: string }
+                gross: { type: integer }
+                fee: { type: integer }
+                count: { type: integer }
+                unit: { type: string }
+    Document:
+      type: object
+      required: [id, title, date, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        date: { type: string }
+        status: { type: string }

@@ -1,17 +1,30 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { motion } from 'motion/react'
 import { ArrowLeft, Loader2, Search } from 'lucide-react'
-import { CO, OFFER_TYPES, PROVIDERS, type ProviderId } from '../data'
-import { update, useStore } from '../store'
+import { $api, act, useCatalog, useCompany, type S } from '../api'
 import { Brand, IdBadge } from '../ui'
 
-const LABEL: Record<ProviderId, string> = { gos: 'войти через Госуслуги', sber: 'войти по СберБизнес ID', alfa: 'войти через Альфа ID' }
+type IdProvider = Exclude<S['ProviderId'], 'inn'>
+const LABEL: Record<IdProvider, string> = { gos: 'войти через Госуслуги', sber: 'войти по СберБизнес ID', alfa: 'войти через Альфа ID' }
 
-export function IdButtons({ onPick, busy }: { onPick: (id: ProviderId) => void; busy?: ProviderId | null }) {
+// Тип оффера, выбранный на лендинге, едет через вход в адресе: /login?type=coupon
+export function useStartType(): S['OfferType'] {
+  const t = useSearchParams()[0].get('type')
+  return useCatalog().offerTypes.some(o => o.id === t) ? (t as S['OfferType']) : 'click'
+}
+
+// Создать кампанию выбранного типа и перейти к охвату
+export function useStart() {
+  const nav = useNavigate(), type = useStartType()
+  const create = $api.useMutation('post', '/campaigns', act)
+  return () => create.mutateAsync({ body: { type } }).then(c => nav(`/c/${c.id}/reach`))
+}
+
+export function IdButtons({ onPick, busy }: { onPick: (id: IdProvider) => void; busy?: IdProvider | null }) {
   return (
     <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
-      {(Object.keys(PROVIDERS) as ProviderId[]).map(id => (
+      {(Object.keys(LABEL) as IdProvider[]).map(id => (
         <button key={id} className={`bl-btn bl-btn--l bl-btn--block id-btn id-btn--${id}`} disabled={!!busy} onClick={() => onPick(id)}>
           <IdBadge id={id} /><span className="id-btn__text">{LABEL[id]}</span>
           {busy === id && <Loader2 size={20} className="spin" />}
@@ -22,14 +35,15 @@ export function IdButtons({ onPick, busy }: { onPick: (id: ProviderId) => void; 
 }
 
 function PhoneForm() {
-  const nav = useNavigate()
+  const nav = useNavigate(), type = useStartType()
+  const login = $api.useMutation('post', '/session/login', act)
   const [phone, setPhone] = useState('')
   const [sent, setSent] = useState(false)
   const [code, setCode] = useState('')
   const digits = phone.replace(/\D/g, '').replace(/^[78]/, '').slice(0, 10)
   const fmt = (d: string) => '+7' + (d ? ` (${d.slice(0, 3)}` : '') + (d.length > 3 ? `) ${d.slice(3, 6)}` : '') + (d.length > 6 ? `-${d.slice(6, 8)}` : '') + (d.length > 8 ? `-${d.slice(8, 10)}` : '')
   const ok = digits.length === 10
-  const enter = () => { update(s => { s.provider = 'inn' }); nav('/inn') }
+  const enter = () => login.mutateAsync({ body: { provider: 'inn' } }).then(() => nav(`/inn?type=${type}`))
   return (
     <form className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }} onSubmit={e => { e.preventDefault(); if (!sent && ok) setSent(true); else if (code.length === 4) enter() }}>
       <label className="bl-field">
@@ -48,26 +62,29 @@ function PhoneForm() {
 }
 
 export function Login() {
-  const nav = useNavigate()
-  const { otype } = useStore()
-  const [busy, setBusy] = useState<ProviderId | null>(null)
-  const pick = (id: ProviderId) => {
+  const nav = useNavigate(), type = useStartType()
+  const T = useCatalog().offerTypes.find(o => o.id === type)!
+  const login = $api.useMutation('post', '/session/login', act)
+  const [busy, setBusy] = useState<IdProvider | null>(null)
+  // пауза — имитация окна бизнес-ID
+  const pick = (id: IdProvider) => {
     setBusy(id)
-    setTimeout(() => { update(s => { s.provider = id }); nav('/consent') }, 1300)
+    setTimeout(() => login.mutateAsync({ body: { provider: id } }).then(() => nav(`/consent?type=${type}`)), 1300)
   }
+  const short = useCatalog().providers.find(p => p.id === busy)?.short
   return (
     <div className="bl-page">
       <header className="bl-header"><div className="bl-header__side"><Brand /></div><Link className="bl-btn" to="/"><ArrowLeft size={18} />на главную</Link></header>
       <main className="center">
         <motion.div className="bl-modal bl-stack" style={{ ['--bl-gap' as string]: '16px' }} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          {otype !== 'click' && <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}>подключаем: {OFFER_TYPES[otype].t}</span>}
+          {type !== 'click' && <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}>подключаем: {T.t}</span>}
           <h1 className="bl-h2">войдите, и мы покажем охват по вашим точкам</h1>
           <PhoneForm />
           <div className="or"><span>или через бизнес-ID, реквизиты заполним сами</span></div>
           <IdButtons onPick={pick} busy={busy} />
-          {busy && <p className="bl-caption" role="status">Подтвердите вход в {PROVIDERS[busy].short}. Обычно это 10 секунд.</p>}
+          {busy && <p className="bl-caption" role="status">Подтвердите вход в {short}. Обычно это 10 секунд.</p>}
           <hr className="bl-divider" />
-          <Link to="/inn">ввести ИНН или сайт без входа</Link>
+          <Link to={`/inn?type=${type}`}>ввести ИНН или сайт без входа</Link>
           <p className="bl-micro">Договор и ЭДО не нужны. Оферту примете галочкой при оплате.</p>
         </motion.div>
       </main>
@@ -76,7 +93,8 @@ export function Login() {
 }
 
 export function Inn() {
-  const nav = useNavigate()
+  const co = useCompany(), start = useStart(), type = useStartType()
+  const login = $api.useMutation('post', '/session/login', act)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   useEffect(() => {
@@ -88,7 +106,7 @@ export function Inn() {
   const found = q.trim().length >= 3 && !loading
   return (
     <div className="bl-page">
-      <header className="bl-header"><div className="bl-header__side"><Brand /></div><Link className="bl-btn" to="/login">войти по бизнес-ID</Link></header>
+      <header className="bl-header"><div className="bl-header__side"><Brand /></div><Link className="bl-btn" to={`/login?type=${type}`}>войти по бизнес-ID</Link></header>
       <main className="center">
         <div className="bl-modal bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
           <h1 className="bl-h2">найдём компанию по ИНН или сайту</h1>
@@ -102,9 +120,9 @@ export function Inn() {
           </label>
           {found && (
             <motion.div className="suggest" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
-              <button onClick={() => { update(s => { s.provider = 'inn' }); nav('/reach') }}>
-                <span className="bl-medium">{CO.name}</span>
-                <span className="bl-caption" style={{ display: 'block' }}>ИНН {CO.inn} · {CO.site} · 2 точки в Москве</span>
+              <button onClick={() => login.mutateAsync({ body: { provider: 'inn' } }).then(start)}>
+                <span className="bl-medium">{co.name}</span>
+                <span className="bl-caption" style={{ display: 'block' }}>ИНН {co.inn} · {co.site} · {co.points.length} точки в Москве</span>
               </button>
             </motion.div>
           )}

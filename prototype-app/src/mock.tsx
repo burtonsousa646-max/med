@@ -1,15 +1,16 @@
 import { useMemo } from 'react'
 import { motion } from 'motion/react'
 import { BatteryLow, Check, Gift, Wifi } from 'lucide-react'
-import { CO, IMAGES, type Point } from './data'
+import { useCatalog, type S } from './api'
 
 export type Surface = 'showcase' | 'main' | 'paid' | 'rest'
 export type Ad = { brand: string; text: string; offer: string; img: number; addr?: string; cta?: string }
 
-export const DEMO_AD: Ad = { brand: CO.brand, text: 'Свежая обжарка каждый день — в двух шагах от дома', offer: '−20% до 10:00', img: 0, addr: 'ул. Покровка, 12 · 300 м' }
+export const DEMO_AD: Ad = { brand: 'кофейня «Зерно»', text: 'Свежая обжарка каждый день — в двух шагах от дома', offer: '−20% до 10:00', img: 0, addr: 'ул. Покровка, 12 · 300 м' }
 
 /* Экран приложения билайна с рекламным слотом. Нарисован токенами, без картинок. */
 export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; ad?: Ad; compact?: boolean }) {
+  const IMAGES = useCatalog().images
   return (
     <div className={`phone-mock${compact ? ' phone-mock--compact' : ''}`}>
       <div className="phone-mock__status"><span>9:41</span><span className="bl-row" style={{ gap: 4 }}><Wifi size={12} /><BatteryLow size={14} /></span></div>
@@ -69,7 +70,7 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
 }
 
 /* Карта охвата: улицы, точки, радиус 1 км и люди внутри */
-export function ReachMap({ points, on, onToggle }: { points: Point[]; on: Record<string, boolean>; onToggle?: (id: string) => void }) {
+export function ReachMap({ points, onToggle }: { points: S['Point'][]; onToggle?: (id: number) => void }) {
   const dots = useMemo(() => {
     let seed = 7
     const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280
@@ -79,7 +80,7 @@ export function ReachMap({ points, on, onToggle }: { points: Point[]; on: Record
     }))
   }, [points])
   return (
-    <svg className="reach-map" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Карта охвата: ${points.filter(p => on[p.id] !== false).length} точки и радиус 1 км`}>
+    <svg className="reach-map" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Карта охвата: ${points.filter(p => p.active).length} точки и радиус 1 км`}>
       <rect width="640" height="480" fill="var(--color-background-primary)" />
       <g fill="var(--color-background-tertiary)" opacity=".55">
         {Array.from({ length: 48 }, (_, i) => <rect key={i} x={(i % 8) * 82 + 6} y={Math.floor(i / 8) * 82 + 6} width="66" height="62" rx="8" />)}
@@ -89,16 +90,16 @@ export function ReachMap({ points, on, onToggle }: { points: Point[]; on: Record
       <g stroke="var(--color-background-secondary)" strokeWidth="10" fill="none" strokeLinecap="round">
         <path d="M-10 150 Q 200 120 320 230 T 660 270" /><path d="M80 -10 L 160 500" /><path d="M380 -10 Q 360 200 420 500" /><path d="M-10 400 L 660 350" />
       </g>
-      {points.map(p => on[p.id] === false ? null : (
+      {points.map(p => !p.active ? null : (
         <motion.circle key={`r-${p.id}`} cx={p.x} cy={p.y} r="105" fill="var(--color-static-blue-500)" fillOpacity=".08" stroke="var(--color-static-blue-500)" strokeDasharray="6 6" strokeWidth="2"
           initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.6 }} style={{ transformOrigin: `${p.x}px ${p.y}px` }} />
       ))}
-      {dots.map(d => on[d.p] === false ? null : (
+      {dots.map(d => !points.find(p => p.id === d.p)?.active ? null : (
         <motion.circle key={d.id} cx={d.x} cy={d.y} r="3.2" fill="var(--color-static-blue-500)"
           initial={{ opacity: 0 }} animate={{ opacity: [0.25, 0.75, 0.25] }} transition={{ duration: 3, delay: d.d * 2, repeat: Infinity }} />
       ))}
       {points.map(p => (
-        <g key={p.id} opacity={on[p.id] === false ? 0.35 : 1} style={{ cursor: onToggle ? 'pointer' : undefined }} onClick={() => onToggle?.(p.id)}>
+        <g key={p.id} opacity={!p.active ? 0.35 : 1} style={{ cursor: onToggle ? 'pointer' : undefined }} onClick={() => onToggle?.(p.id)}>
           <circle cx={p.x} cy={p.y} r="16" fill="var(--color-background-secondary-invert)" />
           <circle cx={p.x} cy={p.y} r="6" fill="var(--color-static-white)" />
           <rect x={p.x - 76} y={p.y - 50} width="152" height="26" rx="13" fill="var(--color-background-secondary)" />

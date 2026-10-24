@@ -1,9 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router'
+import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import { motion } from 'motion/react'
 import { AlertTriangle, BarChart3, Building2, Check as CheckIcon, CircleHelp, FileText, Info, Megaphone, MessageCircle, Pause, Play, Plus, TrendingUp, Wallet } from 'lucide-react'
-import { CO, PAY_NAMES, PROVIDERS, SEGMENTS, n, rub } from '../data'
-import { BONUS, activePoints, balance, campName, deal, forecast, modeOf, payAmount, payout, typeOf, update, useStore } from '../store'
+import { n, rub } from '../data'
+import { $api, act, useBalance, useCampaign, useCampaigns, useCatalog, useCompany, useOfferType, useSession, type Campaign, type S } from '../api'
 import { Bars } from '../charts'
 import { Brand, Check, Chip, DemoNote, Modal, Num, Qr, Segmented, TypePicker, toast } from '../ui'
 
@@ -11,26 +11,24 @@ const gap = (v: string) => ({ ['--bl-gap' as string]: v })
 const NAV = [['campaigns', 'кампании', Megaphone], ['stats', 'статистика', BarChart3], ['balance', 'баланс', Wallet], ['docs', 'документы', FileText], ['company', 'компания', Building2], ['help', 'помощь', CircleHelp]] as const
 
 function Shell({ title, aside, children }: { title: ReactNode; aside?: ReactNode; children: ReactNode }) {
-  const s = useStore()
-  const share = typeOf(s).share
-  const bal = share ? payout(s) : balance(s)
-  const low = !share && s.paid && !s.paused && bal < (s.budget / 30) * 3
+  const co = useCompany(), b = useBalance()
   return (
     <div className="bl-page">
       <div className="cab">
         <aside className="cab-nav">
-          <div className="bl-row" style={{ justifyContent: 'space-between' }}><Brand to="/cab/campaigns" /><Link className="bl-btn bl-btn--s bl-show-mobile" to="/cab/balance">{rub(bal)}</Link></div>
-          <div className="cab-nav__extra bl-stack" style={gap('2px')}><span className="bl-medium">{CO.brand}</span><span className="bl-caption">{CO.name}</span></div>
+          <div className="bl-row" style={{ justifyContent: 'space-between' }}><Brand to="/cab/campaigns" /><Link className="bl-btn bl-btn--s bl-show-mobile" to="/cab/balance">{rub(b.balance)}</Link></div>
+          <div className="cab-nav__extra bl-stack" style={gap('2px')}><span className="bl-medium">{co.brand}</span><span className="bl-caption">{co.name}</span></div>
           <nav aria-label="Разделы кабинета">
             {NAV.map(([id, t, Icon]) => <NavLink key={id} to={`/cab/${id}`} className={({ isActive }) => (isActive ? 'is-active' : '')}><Icon size={20} />{t}</NavLink>)}
           </nav>
           <div className="cab-nav__extra bl-card" style={{ gap: 4, padding: 16 }}>
-            <span className="bl-caption">{share ? 'к выплате' : 'баланс'}</span><span className="bl-h3"><Num value={bal} suffix=" ₽" /></span>
-            <Link to="/cab/balance" className="bl-caption">{share ? 'подробнее' : 'пополнить'}</Link>
+            <span className="bl-caption">баланс</span><span className="bl-h3"><Num value={b.balance} suffix=" ₽" /></span>
+            {b.payout && <span className="bl-caption">к выплате {rub(b.payout.due)}</span>}
+            <Link to="/cab/balance" className="bl-caption">пополнить</Link>
           </div>
         </aside>
         <main className="cab-main">
-          {low && <div className="bl-notice"><AlertTriangle size={18} /><span>Баланса хватит меньше чем на 3 дня. <Link to="/cab/balance">Пополнить</Link> или включить автопополнение.</span></div>}
+          {b.low && <div className="bl-notice"><AlertTriangle size={18} /><span>Баланса хватит меньше чем на 3 дня. <Link to="/cab/balance">Пополнить</Link> или включить автопополнение.</span></div>}
           <div className="page-title" style={{ margin: '16px 0 0' }}><div className="bl-stack" style={gap('8px')}>{title}</div>{aside}</div>
           {children}
         </main>
@@ -39,50 +37,44 @@ function Shell({ title, aside, children }: { title: ReactNode; aside?: ReactNode
   )
 }
 
-function StatusTag() {
-  const s = useStore()
-  if (!s.paid) return <span className="bl-tag">черновик</span>
-  if (!typeOf(s).share && s.pay === 'invoice' && !s.invoicePaid) return <span className="bl-tag">ждём оплату</span>
-  if (s.paused) return <span className="bl-tag">на паузе</span>
-  return <span className="bl-tag bl-tag--success">показывается</span>
+const STATUS: Record<Campaign['status'], [string, string]> = {
+  draft: ['черновик', ''], approval: ['ждёт руководителя', ''], invoice: ['ждём оплату', ''], moderation: ['на проверке', ''],
+  rejected: ['нужна правка', 'bl-tag--soft-violet'], live: ['показывается', 'bl-tag--success'], paused: ['на паузе', ''],
 }
+const StatusTag = ({ c }: { c: Campaign }) => <span className={`bl-tag ${STATUS[c.status][1]}`}>{STATUS[c.status][0]}</span>
 
 /* ───────── статистика ───────── */
-function Live({ start, step, label, sub }: { start: number; step: () => number; label: string; sub: ReactNode }) {
+function Live({ start, step, label, sub, paused }: { start: number; step: () => number; label: string; sub: ReactNode; paused: boolean }) {
   const [v, setV] = useState(start)
-  const s = useStore()
   useEffect(() => {
-    if (s.paused) return
+    if (paused) return
     const t = setInterval(() => setV(x => x + step()), 2200)
     return () => clearInterval(t)
-  }, [s.paused])
+  }, [paused])
   return (
     <div className="bl-card bl-card--white"><div className="bl-stat">
-      <span className={`bl-stat__label${s.paused ? '' : ' live'}`}>{label}</span>
+      <span className={`bl-stat__label${paused ? '' : ' live'}`}>{label}</span>
       <motion.span key={v} className="bl-stat__value bl-nums" initial={{ opacity: 0.4 }} animate={{ opacity: 1 }}>{n(v)}</motion.span>
       <span className="bl-stat__label">{sub}</span>
     </div></div>
   )
 }
 
-function First48() {
-  const s = useStore()
-  const f = forecast(s)
-  const hours = [2, 4, 3, 7, 9, 6, 5, 8, 11, 9, 14, 12]
-  const T = typeOf(s)
+function First48({ c, st }: { c: Campaign; st: S['Stats'] }) {
+  const T = useOfferType(c.type), paused = c.status === 'paused'
   return (
     <>
       <div className="bl-notice bl-notice--info"><Info size={18} />{T.wait}</div>
       <section className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
-        <Live label="охват вокруг точек" start={4120} step={() => 3 + Math.round(Math.random() * 9)} sub={`из ${n(f.reach)} подходящих`} />
-        <Live label="клики" start={42} step={() => (Math.random() > 0.5 ? 1 : 0)} sub="CTR 1,0 %" />
-        <Live label={T.live} start={s.otype === 'click' ? 17 : 6} step={() => (Math.random() > 0.75 ? 1 : 0)} sub="в Витрине выгод" />
+        <Live paused={paused} label="охват вокруг точек" start={st.reach} step={() => 3 + Math.round(Math.random() * 9)} sub={`из ${n(st.reachTotal)} подходящих`} />
+        <Live paused={paused} label="клики" start={st.clicks} step={() => (Math.random() > 0.5 ? 1 : 0)} sub={`CTR ${st.ctr.toLocaleString('ru-RU')} %`} />
+        <Live paused={paused} label={T.live} start={st.results} step={() => (Math.random() > 0.75 ? 1 : 0)} sub="в Витрине выгод" />
       </section>
       <section className="bl-section pad" style={{ maxWidth: 'none' }}>
         <div className="bl-row" style={{ justifyContent: 'space-between' }}><h2 className="bl-h3">клики по часам</h2><span className="bl-caption">с запуска, 12 часов</span></div>
-        <Bars label="Клики по часам с запуска" height={200} fmt={v => `${v} кликов`} data={hours.map((v, i) => ({ label: `${String(8 + i).padStart(2, '0')}:00`, value: v }))} />
+        <Bars label="Клики по часам с запуска" height={200} fmt={v => `${v} кликов`} data={st.hourly} />
       </section>
-      {s.otype === 'click' && <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('4px') }}>
+      {c.type === 'click' && <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('4px') }}>
         <h2 className="bl-h3" style={{ marginBottom: 8 }}>что будет дальше</h2>
         {[['через 1–2 дня', 'первые визиты: кто увидел рекламу и дошёл до точки'], ['через неделю', 'цена гостя и советы, как её снизить'], ['через 2 недели', 'повторные визиты: кто вернулся']].map(([t, d], i) => (
           <div key={t} className="bl-cell"><span className="bl-cell__icon">{i + 1}</span><span className="bl-cell__main"><span className="bl-cell__title">{t}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{d}</span></span></div>
@@ -92,229 +84,216 @@ function First48() {
   )
 }
 
-function TwoWeeks() {
-  const s = useStore()
-  const f = forecast(s)
-  const k = s.budget / 10000
-  const spent = Math.min(s.budget * 0.64, payAmount(s) + BONUS)
-  const T = typeOf(s), click = s.otype === 'click'
-  const clicks = Math.round(spent / f.cpc), again = Math.round(clicks * f.conv * 0.22)
-  // visits — главный результат типа за 2 недели: визиты, купоны, заявки, покупки или подписки
-  const visits = Math.round(click ? clicks * f.conv : T.share ? f.res * 0.5 : spent / f.per)
-  const days = (s.period === 7 ? [50, 65, 75, 60, 80, 90, 100] : [8, 20, 30, 45, 40, 60, 55, 50, 65, 75, 60, 80, 90, 100]).map(v => Math.round(v * visits / 900))
-  const rows = modeOf(s) === 'manual'
-    ? [['живут рядом, 1 км', 0.56, 2.4, 37], ['работают рядом, 1 км', 0.3, 3.8, 27], ['ходят в кофейни рядом', 0.14, 6.1, 41]]
-    : [['Витрина выгод', 0.56, 3.1, 31], ['«Платёж прошёл»', 0.28, 1.6, 38], ['Главная приложения', 0.16, 0.5, 44]]
-  const tips = [
-    click
-      ? { id: 'morning' as const, icon: TrendingUp, t: 'поднять ставку утром', d: `ещё ≈ ${Math.round(60 * k)} гостей за клик 14 ₽`, done: 'ставка утром 14 ₽' }
-      : { id: 'morning' as const, icon: TrendingUp, t: 'показывать чаще утром', d: `ещё ≈ ${Math.max(2, Math.round(visits * 0.15))} ${T.many}`, done: 'утром показываем чаще' },
-    { id: 'rest' as const, icon: Plus, t: 'добавить экран остатков', d: click ? 'у кофеен рядом гость дешевле на 20 %' : `ещё ≈ ${Math.max(2, Math.round(visits * 0.2))} ${T.many} от тех, у кого кончается трафик`, done: 'экран остатков подключён' },
-  ]
+function TwoWeeks({ c, st }: { c: Campaign; st: S['Stats'] }) {
+  const T = useOfferType(c.type), co = useCompany(), click = c.type === 'click'
+  const tip = $api.useMutation('post', '/campaigns/{id}/tips/{tipId}', act)
+  const [period, setPeriod] = useState<7 | 14>(14)
+  const days = st.daily.slice(-period)
+  const unit = click ? 'визиты' : T.unit
   return (
     <>
       <section className="bl-grid kpis">
-        <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">показы</span><span className="bl-stat__value"><Num value={clicks * 56} /></span><span className="bl-stat__label">охват {n(f.reach * 0.8)}</span></div></div>
-        <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">клики</span><span className="bl-stat__value"><Num value={clicks} /></span><span className="bl-stat__delta">+12 % к прошлой неделе</span></div></div>
-        <div className="bl-card" data-theme="invert"><div className="bl-stat"><span className="bl-stat__label">{click ? 'пришли к вам' : T.unit}</span><span className="bl-stat__value"><Num value={visits} /></span><span className="bl-stat__label">{click ? `из них ${n(again)} пришли снова` : deal(s).name}</span></div></div>
+        <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">показы</span><span className="bl-stat__value"><Num value={st.impressions} /></span><span className="bl-stat__label">охват {n(st.reach)}</span></div></div>
+        <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">клики</span><span className="bl-stat__value"><Num value={st.clicks} /></span><span className="bl-stat__delta">+12 % к прошлой неделе</span></div></div>
+        <div className="bl-card" data-theme="invert"><div className="bl-stat"><span className="bl-stat__label">{click ? 'пришли к вам' : T.unit}</span><span className="bl-stat__value"><Num value={st.results} /></span><span className="bl-stat__label">{click ? `из них ${n(st.returning)} пришли снова` : c.name}</span></div></div>
         {T.share
-          ? <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">к выплате вам</span><span className="bl-stat__value"><Num value={payout(s)} suffix=" ₽" /></span><span className="bl-stat__label">{T.per} {rub(f.per)}</span></div></div>
-          : <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">потрачено</span><span className="bl-stat__value"><Num value={spent} suffix=" ₽" /></span><span className="bl-stat__label">{click ? `клик ${Math.round(f.cpc)} ₽ · гость ${Math.round(spent / Math.max(visits, 1))} ₽` : `${T.per} ${rub(f.per)}`}</span></div></div>}
+          ? <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">к выплате вам</span><span className="bl-stat__value"><Num value={st.payout} suffix=" ₽" /></span><span className="bl-stat__label">{T.per} {rub(st.per)}</span></div></div>
+          : <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">потрачено</span><span className="bl-stat__value"><Num value={st.spent} suffix=" ₽" /></span><span className="bl-stat__label">{click ? `клик ${Math.round(st.cpc)} ₽ · гость ${Math.round(st.spent / Math.max(st.results, 1))} ₽` : `${T.per} ${rub(st.per)}`}</span></div></div>}
       </section>
       <div className="two">
         <section className="bl-section pad" style={{ maxWidth: 'none' }}>
-          <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 8 }}><h2 className="bl-h3">{click ? 'визиты' : T.unit} по дням</h2><Segmented label="Период" value={s.period} options={[[7, '7 дней'], [14, '14 дней']]} onChange={v => update(x => { x.period = v })} /></div>
-          <Bars label={`${click ? 'Визиты' : T.unit} по дням`} height={200} fmt={v => `${v} · ${click ? 'визиты' : T.unit}`} data={days.map((v, i) => ({ label: `${i + 1 + (s.period === 7 ? 7 : 0)} ноя`, value: v }))} />
-          <h3 className="bl-h3" style={{ margin: '32px 0 16px' }}>{modeOf(s) === 'manual' ? 'по сигналам' : 'по местам показа'}</h3>
+          <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 8 }}><h2 className="bl-h3">{unit} по дням</h2><Segmented label="Период" value={period} options={[[7, '7 дней'], [14, '14 дней']]} onChange={setPeriod} /></div>
+          <Bars label={`${unit} по дням`} height={200} fmt={v => `${v} · ${unit}`} data={days} />
+          <h3 className="bl-h3" style={{ margin: '32px 0 16px' }}>{st.breakdownBy === 'signals' ? 'по сигналам' : 'по местам показа'}</h3>
           <div className="bl-table-wrap"><table className="bl-table">
-            <thead><tr><th>{modeOf(s) === 'manual' ? 'сигнал' : 'место'}</th><th>клики</th><th>CTR</th><th>{click ? 'пришли' : T.unit}</th><th>{click ? 'один гость' : T.per}</th></tr></thead>
-            <tbody>{rows.map(([t, share, ctr, guest]) => <tr key={t as string}><td>{t}</td><td>{n(clicks * (share as number))}</td><td>{(ctr as number).toLocaleString('ru-RU')} %</td><td>{n(visits * (share as number))}</td><td>{click ? guest : Math.round(f.per)} ₽</td></tr>)}</tbody>
+            <thead><tr><th>{st.breakdownBy === 'signals' ? 'сигнал' : 'место'}</th><th>клики</th><th>CTR</th><th>{click ? 'пришли' : T.unit}</th><th>{click ? 'один гость' : T.per}</th></tr></thead>
+            <tbody>{st.breakdown.map(r => <tr key={r.label}><td>{r.label}</td><td>{n(r.clicks)}</td><td>{r.ctr.toLocaleString('ru-RU')} %</td><td>{n(r.results)}</td><td>{rub(r.per)}</td></tr>)}</tbody>
           </table></div>
         </section>
         <aside className="bl-stack" style={gap('24px')}>
           <section className="bl-section pad" style={{ maxWidth: 'none' }}>
             <h2 className="bl-h3" style={{ marginBottom: 8 }}>что улучшить</h2>
-            {tips.map(t => (
-              <button key={t.id} className="bl-cell tip" disabled={s.tips[t.id]} onClick={() => { update(x => { x.tips[t.id] = true }); toast(`Готово: ${t.done}`) }}>
-                <span className="bl-cell__icon">{s.tips[t.id] ? <CheckIcon size={18} className="bl-success" /> : <t.icon size={18} />}</span>
-                <span className="bl-cell__main"><span className="bl-cell__title">{s.tips[t.id] ? t.done : t.t}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{s.tips[t.id] ? 'применено, результат через 2–3 дня' : t.d}</span>
-                  {!s.tips[t.id] && <span className="bl-btn bl-btn--s" style={{ marginTop: 8 }}>применить</span>}</span>
+            {st.tips.map((t, i) => (
+              <button key={t.id} className="bl-cell tip" disabled={t.applied} onClick={() => tip.mutateAsync({ params: { path: { id: c.id, tipId: t.id } } }).then(() => toast(`Готово: ${t.doneTitle}`))}>
+                <span className="bl-cell__icon">{t.applied ? <CheckIcon size={18} className="bl-success" /> : i === 0 ? <TrendingUp size={18} /> : <Plus size={18} />}</span>
+                <span className="bl-cell__main"><span className="bl-cell__title">{t.applied ? t.doneTitle : t.title}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{t.applied ? 'применено, результат через 2–3 дня' : t.detail}</span>
+                  {!t.applied && <span className="bl-btn bl-btn--s" style={{ marginTop: 8 }}>применить</span>}</span>
               </button>
             ))}
           </section>
-          <p className="bl-caption">{click ? 'Визиты считаем по обезличенным данным базовых станций.' : `Результат подтверждаете вы: ${T.via.label} — ${s.terms[s.otype].via}.`} Данные абонентов не передаём, вы видите только итоги.</p>
+          <p className="bl-caption">{click ? 'Визиты считаем по обезличенным данным базовых станций.' : `Результат подтверждаете вы: ${T.via.label} — ${c.terms.via}.`} Данные абонентов не передаём, вы видите только итоги.</p>
         </aside>
       </div>
-      {!s.edo && <div className="bl-card bl-card--white edo-strip"><span className="bl-body">Подключите ЭДО, чтобы получать закрывающие документы</span><span className="bl-row"><Link className="bl-btn bl-btn--s" to="/cab/docs">подключить ЭДО</Link><Link className="bl-btn bl-btn--s bl-btn--ghost" to="/cab/docs">пригласить бухгалтера</Link></span></div>}
+      {!co.edo && <div className="bl-card bl-card--white edo-strip"><span className="bl-body">Подключите ЭДО, чтобы получать закрывающие документы</span><span className="bl-row"><Link className="bl-btn bl-btn--s" to="/cab/docs">подключить ЭДО</Link><Link className="bl-btn bl-btn--s bl-btn--ghost" to="/cab/docs">пригласить бухгалтера</Link></span></div>}
     </>
   )
 }
 
 export function Stats() {
-  const s = useStore()
-  if (!s.paid) return <Shell title={<h1 className="bl-display-l">статистика</h1>}><Empty /></Shell>
+  const id = Number(useParams().id)
+  if (!id) return <Shell title={<h1 className="bl-display-l">статистика</h1>}><Empty /></Shell>
+  return <CampaignStats id={id} />
+}
+
+function CampaignStats({ id }: { id: number }) {
+  const c = useCampaign(id), session = useSession(), T = useOfferType(c.type)
+  const patchSession = $api.useMutation('patch', '/session', act)
+  const ready = c.status === 'live' || c.status === 'paused'
+  const { data: st } = $api.useQuery('get', '/campaigns/{id}/stats', { params: { path: { id } } }, { enabled: ready })
   return (
     <Shell
-      title={<><span className="bl-row" style={{ gap: 8 }}><StatusTag /><span className="bl-tag bl-tag--soft-violet">{typeOf(s).t}</span></span><h1 className="bl-display-l">{campName(s)}</h1></>}
-      aside={<div className="bl-stack" style={{ ...gap('6px'), alignItems: 'flex-end' }}><DemoNote>время с запуска</DemoNote><Segmented label="Время с запуска" value={s.statsView} options={[['h48', 'первые 48 часов'], ['d14', 'через 2 недели']]} onChange={v => update(x => { x.statsView = v })} /></div>}>
-      {s.statsView === 'h48' ? <First48 /> : <TwoWeeks />}
+      title={<><span className="bl-row" style={{ gap: 8 }}><StatusTag c={c} /><span className="bl-tag bl-tag--soft-violet">{T.t}</span></span><h1 className="bl-display-l">{c.name}</h1></>}
+      aside={ready && <div className="bl-stack" style={{ ...gap('6px'), alignItems: 'flex-end' }}><DemoNote>время с запуска</DemoNote><Segmented label="Время с запуска" value={session.clock} options={[['h48', 'первые 48 часов'], ['d14', 'через 2 недели']]} onChange={v => patchSession.mutate({ body: { clock: v } })} /></div>}>
+      {!ready ? <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
+        <h2 className="bl-h2">статистика появится после запуска</h2>
+        <div><Link className="bl-btn bl-btn--primary bl-btn--l" to={`/c/${id}/launch`}>статус запуска</Link></div>
+      </section> : !st ? <div className="bl-skeleton" style={{ height: 240 }} /> : st.clock === 'h48' ? <First48 c={c} st={st} /> : <TwoWeeks c={c} st={st} />}
     </Shell>
   )
 }
 
 function Empty() {
+  const nav = useNavigate()
+  const create = $api.useMutation('post', '/campaigns', act)
   return (
     <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
       <h2 className="bl-h2">здесь появятся клики и визиты</h2>
       <p className="bl-body bl-secondary">Соберите и оплатите первую кампанию. Первые цифры будут через час после запуска.</p>
-      <div><Link className="bl-btn bl-btn--primary bl-btn--l" to="/build">собрать кампанию</Link></div>
+      <div><button className="bl-btn bl-btn--primary bl-btn--l" onClick={() => create.mutateAsync({ body: { type: 'click' } }).then(c => nav(`/c/${c.id}/build`))}>собрать кампанию</button></div>
     </section>
   )
 }
 
 /* ───────── кампании ───────── */
+// Куда вести из списка: черновик — в сборку, ожидание — к оплате или запуску, остальное — в статистику
+const NEXT: Record<Campaign['status'], [string, string]> = {
+  draft: ['build', 'продолжить'], approval: ['checkout', 'ссылка руководителю'], invoice: ['launch', 'статус'],
+  moderation: ['launch', 'статус'], rejected: ['launch', 'исправить'], live: ['stats', ''], paused: ['stats', ''],
+}
 export function Campaigns() {
-  const s = useStore()
+  const list = useCampaigns(), cat = useCatalog()
   const nav = useNavigate()
-  const f = forecast(s)
-  const T = typeOf(s)
   const [pick, setPick] = useState(false)
+  const create = $api.useMutation('post', '/campaigns', act)
+  const patch = $api.useMutation('patch', '/campaigns/{id}', act)
+  const link = (c: Campaign) => (NEXT[c.status][0] === 'stats' ? `/cab/stats/${c.id}` : `/c/${c.id}/${NEXT[c.status][0]}`)
+  const pause = (c: Campaign) => patch.mutateAsync({ params: { path: { id: c.id } }, body: { paused: c.status !== 'paused' } })
+    .then(() => toast(c.status === 'paused' ? 'Кампания снова показывается' : 'Кампания на паузе, деньги не списываются'))
   return (
     <Shell title={<h1 className="bl-display-l">кампании</h1>} aside={<button className="bl-btn bl-btn--primary bl-btn--l" onClick={() => setPick(true)}><Plus size={18} />новая кампания</button>}>
-      <TypePicker open={pick} onClose={() => setPick(false)} onPick={() => nav('/build')} />
+      <TypePicker open={pick} onClose={() => setPick(false)} onPick={type => create.mutateAsync({ body: { type } }).then(c => nav(`/c/${c.id}/build`))} />
       <section className="bl-section pad" style={{ maxWidth: 'none' }}>
         <div className="bl-table-wrap"><table className="bl-table">
           <thead><tr><th>кампания</th><th>тип</th><th>статус</th><th>бюджет</th><th>клики</th><th>результат</th><th /></tr></thead>
           <tbody>
-            {s.paid && (
-              <tr>
-                <td><Link to="/cab/stats">{campName(s)}</Link></td><td>{T.short}</td><td><StatusTag /></td><td>{T.share ? 'без бюджета' : `${rub(s.budget)} в мес.`}</td>
-                <td>{s.statsView === 'd14' ? n(f.clicks * 0.64) : '42'}</td><td>{s.statsView === 'd14' ? `${n((s.otype === 'click' ? f.visits : f.res) * (T.share ? 0.5 : 0.64))} · ${T.unit}` : '—'}</td>
-                <td><button className="bl-btn bl-btn--s" onClick={() => { update(x => { x.paused = !x.paused }); toast(s.paused ? 'Кампания снова показывается' : 'Кампания на паузе, деньги не списываются') }}>{s.paused ? <><Play size={16} />возобновить</> : <><Pause size={16} />пауза</>}</button></td>
-              </tr>
-            )}
-            <tr><td>утренний кофе на вынос</td><td>переход</td><td><span className="bl-tag">черновик</span></td><td>5 000 ₽ в мес.</td><td>—</td><td>—</td><td><Link className="bl-btn bl-btn--s" to="/build" onClick={() => update(x => { x.otype = 'click' })}>продолжить</Link></td></tr>
+            {list.map(c => {
+              const T = cat.offerTypes.find(t => t.id === c.type)!, on = c.status === 'live' || c.status === 'paused'
+              return (
+                <tr key={c.id}>
+                  <td><Link to={link(c)}>{c.name}</Link></td><td>{T.short}</td><td><StatusTag c={c} /></td>
+                  <td>{T.share ? 'без бюджета' : `${rub(c.budget)} в мес.`}</td>
+                  <td>{c.totals ? n(c.totals.clicks) : '—'}</td>
+                  <td>{c.totals ? `${n(c.totals.results)} · ${c.type === 'click' ? 'визиты' : T.unit}` : '—'}</td>
+                  <td>{on
+                    ? <button className="bl-btn bl-btn--s" onClick={() => pause(c)}>{c.status === 'paused' ? <><Play size={16} />возобновить</> : <><Pause size={16} />пауза</>}</button>
+                    : <Link className="bl-btn bl-btn--s" to={link(c)}>{NEXT[c.status][1]}</Link>}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table></div>
-        {!s.paid && <p className="bl-caption" style={{ marginTop: 16 }}>Оплаченных кампаний пока нет. Пройдите сценарий до оплаты, и кампания появится здесь.</p>}
+        {!list.length && <p className="bl-caption" style={{ marginTop: 16 }}>Кампаний пока нет. Нажмите «новая кампания».</p>}
       </section>
     </Shell>
   )
 }
 
-/* ───────── баланс ───────── */
-// Хуки Topup и Payouts разные, поэтому выбираем компонент, а не ветку внутри одного
+/* ───────── баланс и выплаты ───────── */
 export function Balance() {
-  return typeOf(useStore()).share ? <Payouts /> : <Topup />
-}
-
-function Topup() {
-  const s = useStore()
-  const [top, setTop] = useState<number | null>(null)
+  const b = useBalance()
+  const top = $api.useMutation('post', '/balance/topups', act)
+  const patchCo = $api.useMutation('patch', '/company', act)
+  const [busy, setBusy] = useState<number | null>(null)
   const [pick, setPick] = useState(10000)
-  const bal = balance(s)
-  const days = Math.max(0, Math.round(bal / (s.budget / 30)))
-  const startTop = () => { setTop(pick); setTimeout(() => { update(x => { x.topups += pick }); setTop(null); toast(`Баланс пополнен на ${rub(pick)}`) }, 2000) }
+  const days = b.daysLeft
+  const word = (d: number) => d % 10 === 1 && d % 100 !== 11 ? 'день' : d % 10 >= 2 && d % 10 <= 4 && (d % 100 < 10 || d % 100 >= 20) ? 'дня' : 'дней'
+  // пауза — имитация оплаты по QR
+  const startTop = () => { setBusy(pick); setTimeout(() => top.mutateAsync({ body: { amount: pick } }).then(() => toast(`Баланс пополнен на ${rub(pick)}`)).finally(() => setBusy(null)), 2000) }
   return (
     <Shell title={<h1 className="bl-display-l">баланс</h1>}>
       <div className="two">
-        <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
-          <span className="bl-caption">на счёте</span>
-          <span className="bl-number-xl"><Num value={bal} suffix=" ₽" /></span>
-          <span className="bl-caption">хватит примерно на {days} {days % 10 === 1 && days % 100 !== 11 ? 'день' : days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 10 || days % 100 >= 20) ? 'дня' : 'дней'} при текущем бюджете</span>
-          <div className="bl-row" style={{ marginTop: 8 }}>{[3000, 10000, 30000].map(a => <Chip key={a} on={pick === a} onClick={() => setPick(a)}>+{rub(a)}</Chip>)}</div>
-          <div><button className="bl-btn bl-btn--primary bl-btn--l" onClick={startTop}>пополнить на {rub(pick)} через СБП</button></div>
-          <Check path="autoTopup" label="автопополнение" sub="когда останется меньше 1 000 ₽, пополним на 5 000 ₽ по СБП" />
-        </section>
+        <div className="bl-stack" style={gap('24px')}>
+          <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
+            <span className="bl-caption">на счёте</span>
+            <span className="bl-number-xl"><Num value={b.balance} suffix=" ₽" /></span>
+            <span className="bl-caption">{days === null ? 'активных кампаний с бюджетом нет' : `хватит примерно на ${days} ${word(days)} при текущих бюджетах`}</span>
+            <div className="bl-row" style={{ marginTop: 8 }}>{[3000, 10000, 30000].map(a => <Chip key={a} on={pick === a} onClick={() => setPick(a)}>+{rub(a)}</Chip>)}</div>
+            <div><button className="bl-btn bl-btn--primary bl-btn--l" onClick={startTop}>пополнить на {rub(pick)} через СБП</button></div>
+            <Check checked={b.autoTopup} onChange={v => patchCo.mutate({ body: { autoTopup: v } })} label="автопополнение" sub="когда останется меньше 1 000 ₽, пополним на 5 000 ₽ по СБП" />
+          </section>
+          {b.payout && (
+            <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('12px') }}>
+              <span className="bl-caption">к выплате {b.payout.date}</span>
+              <span className="bl-h1"><Num value={b.payout.due} suffix=" ₽" /></span>
+              <p className="bl-body bl-secondary">За купоны и подписки баланс не нужен: клиент платит билайну, а мы перечисляем вам долю на расчётный счёт.</p>
+              <p className="bl-caption">{b.payout.unit}: {n(b.payout.count)} · начислено {rub(b.payout.gross)} · комиссия билайна −{rub(b.payout.fee)}</p>
+            </section>
+          )}
+        </div>
         <section className="bl-section pad" style={{ maxWidth: 'none' }}>
           <h2 className="bl-h3" style={{ marginBottom: 16 }}>операции</h2>
           <div className="bl-table-wrap"><table className="bl-table"><tbody>
-            {s.topups > 0 && <tr><td>сегодня</td><td>пополнение, СБП</td><td className="bl-success">+{rub(s.topups)}</td></tr>}
-            {s.paid && (s.pay !== 'invoice' || s.invoicePaid) ? <>
-              <tr><td>сегодня</td><td>{s.otype === 'click' ? 'списано за клики' : `списано: ${typeOf(s).unit}`}</td><td className="bl-nums">−{rub(payAmount(s) + BONUS + s.topups - bal)}</td></tr>
-              <tr><td>сегодня</td><td>бонус за первую кампанию</td><td className="bl-success">+{rub(BONUS)}</td></tr>
-              <tr><td>сегодня</td><td>пополнение, {PAY_NAMES[s.pay]}</td><td className="bl-success">+{rub(payAmount(s))}</td></tr>
-            </> : !s.topups && <tr><td className="bl-secondary">операций пока нет</td></tr>}
+            {b.operations.map((o, i) => <tr key={i}><td>{o.date}</td><td>{o.title}</td><td className={o.amount > 0 ? 'bl-success' : 'bl-nums'}>{o.amount > 0 ? '+' : '−'}{rub(Math.abs(o.amount))}</td></tr>)}
+            {!b.operations.length && <tr><td className="bl-secondary">операций пока нет</td></tr>}
           </tbody></table></div>
         </section>
       </div>
-      <Modal open={top !== null} label="Пополнение"><h2 className="bl-h2">пополнение на {rub(top ?? 0)}</h2><Qr /><p className="bl-caption">СБП для бизнеса · отсканируйте в приложении банка</p><div className="wait-bar" /></Modal>
-    </Shell>
-  )
-}
-
-// Купон и подписка: баланс не нужен, клиент платит билайну, партнёр получает выплаты
-function Payouts() {
-  const s = useStore()
-  const T = typeOf(s), f = forecast(s), sum = payout(s)
-  const done = Math.round(sum / f.per), fee = Math.round(sum / (1 - T.fee / 100) - sum)
-  return (
-    <Shell title={<h1 className="bl-display-l">выплаты</h1>}>
-      <div className="two">
-        <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
-          <span className="bl-caption">к выплате 1 декабря</span>
-          <span className="bl-number-xl"><Num value={sum} suffix=" ₽" /></span>
-          <span className="bl-caption">на {CO.bank}, {CO.acc}</span>
-          <p className="bl-body bl-secondary">Пополнять баланс не нужно: {s.otype === 'coupon' ? 'клиент оплачивает купон' : 'клиент платит за подписку со счёта телефона'} билайну, а мы перечисляем вам {rub(f.per)} {s.otype === 'coupon' ? 'за каждый погашенный купон' : 'за каждый оплаченный месяц'}.</p>
-        </section>
-        <section className="bl-section pad" style={{ maxWidth: 'none' }}>
-          <h2 className="bl-h3" style={{ marginBottom: 16 }}>операции за ноябрь</h2>
-          <div className="bl-table-wrap"><table className="bl-table"><tbody>
-            {s.paid ? <>
-              <tr><td>{T.unit}</td><td>{n(done)} шт.</td><td className="bl-success">+{rub(sum + fee)}</td></tr>
-              <tr><td>комиссия билайна</td><td>{T.fee} %</td><td className="bl-nums">−{rub(fee)}</td></tr>
-            </> : <tr><td className="bl-secondary">операций пока нет</td></tr>}
-          </tbody></table></div>
-        </section>
-      </div>
+      <Modal open={busy !== null} label="Пополнение"><h2 className="bl-h2">пополнение на {rub(busy ?? 0)}</h2><Qr /><p className="bl-caption">СБП для бизнеса · отсканируйте в приложении банка</p><div className="wait-bar" /></Modal>
     </Shell>
   )
 }
 
 /* ───────── документы ───────── */
+const EDO = ['Диадок', 'СБИС', 'Калуга Астрал', '1С-ЭДО']
 export function Docs() {
-  const s = useStore()
+  const co = useCompany()
+  const { data: docs } = $api.useSuspenseQuery('get', '/documents')
+  const patchCo = $api.useMutation('patch', '/company', act)
+  const invite = $api.useMutation('post', '/company/members', act)
+  const [op, setOp] = useState(EDO[0])
   const [mail, setMail] = useState('')
-  const [err, setErr] = useState(false)
-  const invite = () => {
-    if (!/.+@.+\..+/.test(mail)) return setErr(true)
-    update(x => { x.invited = mail }); setErr(false); setMail(''); toast(`Приглашение отправлено на ${mail}`)
-  }
-  const edoTag = s.edo ? 'придёт в ЭДО' : 'нужен ЭДО'
+  const invited = co.members.filter(m => m.role === 'accountant').at(-1)
+  const send = () => invite.mutateAsync({ body: { email: mail } }).then(() => { toast(`Приглашение отправлено на ${mail}`); setMail('') })
   return (
     <Shell title={<h1 className="bl-display-l">документы</h1>}>
       <div className="two">
         <section className="bl-section pad" style={{ maxWidth: 'none' }}>
           <div className="bl-table-wrap"><table className="bl-table">
             <thead><tr><th>документ</th><th>дата</th><th>статус</th></tr></thead>
-            <tbody>
-              <tr><td><Link to="/offer">оферта</Link></td><td>сегодня</td><td>{s.paid ? <span className="bl-tag bl-tag--soft-green">принята {s.role === 'boss' ? 'в кабинете' : 'через бизнес-ID'}</span> : <span className="bl-tag">не принята</span>}</td></tr>
-              {typeOf(s).share && <tr><td>отчёт агента за ноябрь</td><td>1 декабря</td><td><span className="bl-tag">{edoTag}</span></td></tr>}
-              {!typeOf(s).share && s.pay === 'invoice' && s.paid && <tr><td>счёт-оферта № 1042</td><td>сегодня</td><td><span className="bl-tag">{s.invoicePaid ? 'оплачен' : 'ждём оплату'}</span></td></tr>}
-              <tr><td>акт за ноябрь</td><td>1 декабря</td><td><span className="bl-tag">{edoTag}</span></td></tr>
-              <tr><td>счёт-фактура за ноябрь</td><td>1 декабря</td><td><span className="bl-tag">{edoTag}</span></td></tr>
-            </tbody>
+            <tbody>{docs.map(d => (
+              <tr key={d.id}><td>{d.id === 'offer' ? <Link to="/offer">{d.title}</Link> : d.title}</td><td>{d.date}</td><td><span className={`bl-tag${d.status === 'принята' ? ' bl-tag--soft-green' : ''}`}>{d.status}</span></td></tr>
+            ))}</tbody>
           </table></div>
         </section>
         <aside className="bl-stack" style={gap('24px')}>
           <section className="bl-card" data-theme="invert" style={{ padding: 32, borderRadius: 'var(--radius-1000)', gap: 16 }}>
-            {s.edo ? <>
+            {co.edo ? <>
               <span className="bl-tag bl-tag--success" style={{ alignSelf: 'flex-start' }}>ЭДО подключён</span>
-              <h2 className="bl-h3">акты будут приходить в {s.edoOp}</h2>
+              <h2 className="bl-h3">акты будут приходить в {co.edo}</h2>
               <p className="bl-body bl-secondary">Первый — 1 декабря. Запуск рекламы от ЭДО не зависит.</p>
             </> : <>
               <h2 className="bl-h3">закрывающие документы</h2>
               <p className="bl-body bl-secondary">Подключите ЭДО, и акты будут приходить сами. Запуск рекламы от этого не зависит.</p>
-              <div className="bl-row">{['Диадок', 'СБИС', 'Калуга Астрал', '1С-ЭДО'].map(o => <Chip key={o} on={s.edoOp === o} onClick={() => update(x => { x.edoOp = o })}>{o}</Chip>)}</div>
-              <div><button className="bl-btn bl-btn--dark" onClick={() => { update(x => { x.edo = true }); toast(`Приглашение отправлено в ${s.edoOp}, примите его там`) }}>подключить {s.edoOp}</button></div>
+              <div className="bl-row">{EDO.map(o => <Chip key={o} on={op === o} onClick={() => setOp(o)}>{o}</Chip>)}</div>
+              <div><button className="bl-btn bl-btn--dark" onClick={() => patchCo.mutateAsync({ body: { edo: op } }).then(() => toast(`Приглашение отправлено в ${op}, примите его там`))}>подключить {op}</button></div>
             </>}
           </section>
           <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('12px') }}>
             <h2 className="bl-h3">пригласить бухгалтера</h2>
             <p className="bl-caption">Бухгалтер увидит документы и баланс, но не сможет менять кампании.</p>
-            {s.invited && <p className="bl-caption bl-success">приглашение отправлено на {s.invited}</p>}
-            <label className={`bl-field${err ? ' is-error' : ''}`}><span className="bl-field__label">почта</span><input className="bl-input" type="email" value={mail} onChange={e => { setMail(e.target.value); setErr(false) }} onKeyDown={e => e.key === 'Enter' && invite()} placeholder="buh@mycoffee.ru" />{err && <span className="bl-field__caption">проверьте адрес почты</span>}</label>
-            <div><button className="bl-btn" onClick={invite}>отправить приглашение</button></div>
+            {invited && <p className="bl-caption bl-success">приглашение отправлено на {invited.email}</p>}
+            <label className={`bl-field${invite.isError ? ' is-error' : ''}`}><span className="bl-field__label">почта</span><input className="bl-input" type="email" value={mail} onChange={e => { setMail(e.target.value); invite.reset() }} onKeyDown={e => e.key === 'Enter' && send()} placeholder="buh@mycoffee.ru" />{invite.isError && <span className="bl-field__caption">проверьте адрес почты</span>}</label>
+            <div><button className="bl-btn" onClick={send} disabled={invite.isPending}>отправить приглашение</button></div>
           </section>
         </aside>
       </div>
@@ -324,26 +303,27 @@ export function Docs() {
 
 /* ───────── компания ───────── */
 export function Company() {
-  const s = useStore()
-  const prov = s.provider && s.provider !== 'inn' ? PROVIDERS[s.provider].name : 'открытых данных'
+  const co = useCompany(), session = useSession(), cat = useCatalog()
+  const patchCo = $api.useMutation('patch', '/company', act)
+  const prov = cat.providers.find(p => p.id === session.provider)?.name ?? 'открытых данных'
   return (
     <Shell title={<h1 className="bl-display-l">компания</h1>}>
       <div className="two two--even">
         <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
-          <div className="bl-row" style={{ justifyContent: 'space-between' }}><h2 className="bl-h3">{CO.name}</h2><span className="bl-tag bl-tag--soft-green">из {prov}</span></div>
-          <dl className="kv"><dt>ИНН / КПП</dt><dd>{CO.inn} / {CO.kpp}</dd><dt>ОГРН</dt><dd>{CO.ogrn}</dd><dt>счёт</dt><dd>{CO.bank}, {CO.acc}</dd><dt>сайт</dt><dd>{CO.site}</dd><dt>сегмент</dt><dd>{SEGMENTS[s.segment].name}</dd></dl>
-          <h3 className="bl-h4" style={{ marginTop: 8 }}>точки · {activePoints(s).length} активны</h3>
-          {s.points.map(p => <div key={p.id} className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{p.addr}</span></span><span className={`bl-tag${s.pointsOn[p.id] !== false ? ' bl-tag--soft-green' : ''}`}>{s.pointsOn[p.id] !== false ? 'в рекламе' : 'выключена'}</span></div>)}
+          <div className="bl-row" style={{ justifyContent: 'space-between' }}><h2 className="bl-h3">{co.name}</h2><span className="bl-tag bl-tag--soft-green">из {prov}</span></div>
+          <dl className="kv"><dt>ИНН / КПП</dt><dd>{co.inn} / {co.kpp}</dd><dt>ОГРН</dt><dd>{co.ogrn}</dd><dt>счёт</dt><dd>{co.bank}, {co.acc}</dd><dt>сайт</dt><dd>{co.site}</dd><dt>сегмент</dt><dd>{cat.segments.find(x => x.id === co.segment)!.name}</dd></dl>
+          <h3 className="bl-h4" style={{ marginTop: 8 }}>точки · {co.points.filter(p => p.active).length} активны</h3>
+          {co.points.map(p => <div key={p.id} className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{p.addr}</span></span><span className={`bl-tag${p.active ? ' bl-tag--soft-green' : ''}`}>{p.active ? 'в рекламе' : 'выключена'}</span></div>)}
         </section>
         <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
           <h2 className="bl-h3">люди и доступ</h2>
-          <div className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{CO.signer}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{CO.role} · подписант, принимает оферту</span></span><span className="bl-tag">владелец</span></div>
-          <div className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{CO.employee}</span><span className="bl-cell__sub" style={{ display: 'block' }}>маркетолог · кампании и статистика</span></span><span className="bl-tag">сотрудник</span></div>
-          {s.invited && <div className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{s.invited}</span><span className="bl-cell__sub" style={{ display: 'block' }}>бухгалтер · документы и баланс</span></span><span className="bl-tag">приглашён</span></div>}
+          {co.members.map(m => (
+            <div key={m.id} className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{m.name}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{m.title}</span></span><span className="bl-tag">{{ owner: 'владелец', staff: 'сотрудник', accountant: 'приглашён' }[m.role]}</span></div>
+          ))}
           <h3 className="bl-h4" style={{ marginTop: 8 }}>согласия</h3>
-          <Check path="consents.company" label="данные компании" sub="нужно для оферты, отозвать можно только вместе с закрытием кабинета" disabled />
-          <Check path="consents.signer" label="данные подписанта" disabled />
-          <Check path="consents.profile" label="профиль абонента билайна" sub="можно отозвать в любой момент" />
+          <Check checked={co.consents.company} onChange={() => {}} label="данные компании" sub="нужно для оферты, отозвать можно только вместе с закрытием кабинета" disabled />
+          <Check checked={co.consents.signer} onChange={() => {}} label="данные подписанта" disabled />
+          <Check checked={co.consents.profile} onChange={v => patchCo.mutate({ body: { consents: { ...co.consents, profile: v } } })} label="профиль абонента билайна" sub="можно отозвать в любой момент" />
         </section>
       </div>
     </Shell>

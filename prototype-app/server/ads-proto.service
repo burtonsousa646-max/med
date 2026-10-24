@@ -1,0 +1,15 @@
+# systemd-служба тестового API на ads.napovtor.ru. Ставит deploy.sh; nginx отдаёт ей /api/
+[Unit]
+Description=Рекламная платформа билайна: тестовый API прототипа
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/ads-proto
+ExecStart=/usr/bin/env node --disable-warning=ExperimentalWarning server/index.ts
+Environment=API_PORT=8787 DB_PATH=/var/lib/ads-proto/demo.sqlite
+StateDirectory=ads-proto
+User=www-data
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

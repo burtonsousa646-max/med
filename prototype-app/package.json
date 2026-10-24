@@ -4,13 +4,21 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node --watch --disable-warning=ExperimentalWarning server/index.ts & vite",
+    "server": "node --disable-warning=ExperimentalWarning server/index.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test server/flow.test.ts",
+    "api:types": "npx -y -p typescript@5.9.3 -p openapi-typescript@7.13.0 openapi-typescript api/openapi.yaml -o src/api.gen.ts",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "@tanstack/react-query": "^5.104.5",
+    "hono": "^4.13.13",
     "lucide-react": "1.61.0",
     "motion": "14.5.0",
+    "openapi-fetch": "^0.17.0",
+    "openapi-react-query": "^0.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-is": "^19.3.1",
@@ -18,10 +26,14 @@
     "recharts": "3.10.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "typescript": "7.0.2",
     "vite": "8.3.5"
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }

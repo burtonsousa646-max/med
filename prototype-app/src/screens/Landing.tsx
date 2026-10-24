@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Copy, Home, MapPin, Plane, ShieldCheck, Smartphone, Sparkles, UserPlus, Wallet } from 'lucide-react'
-import { IMAGES, NICHES, PLACES, n, rub } from '../data'
+import { IMAGES, NICHES, OFFER_TYPES, PLACES, n, rub, type OfferType, type OfferTypeInfo } from '../data'
 import { Bars, HBars, Trend } from '../charts'
 import { DEMO_AD, PhoneSurface, type Surface } from '../mock'
 import { Brand, Chip, IdBadge, Num, Photo, Reveal } from '../ui'
-import { update, useStore } from '../store'
+import { pickType, update, useStore } from '../store'
 
 const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -159,75 +159,44 @@ function Moments() {
   )
 }
 
-// Типы офферов. Основной — реклама с оплатой за переход, остальные схемы из старого кабинета
-// (купон, CPA, CPS, подписка), пересказанные языком владельца бизнеса.
-const OFFERS = [
-  {
-    main: true, t: 'реклама с оплатой за переход',
-    d: 'Показываем ваш оффер в приложении билайна в нужный момент. Клиент нажимает и попадает к вам: на сайт, в Карты или звонит.',
-    gets: 'ваше предложение, когда оно нужно', pay: 'за переход, показы бесплатно',
-    fit: 'кофейни, сервисы, магазины, клиники',
-    ui: (
-      <div className="pm-banner">
-        <div className="ad-img ad-img--0">{IMAGES[0]}</div>
-        <div className="pm-banner__text"><b>{DEMO_AD.brand}</b><span>{DEMO_AD.text}</span></div>
-        <span className="pm-btn">перейти</span>
-        <span className="pm-label">реклама</span>
-      </div>
-    ),
-  },
-  {
-    t: 'купон со скидкой',
-    d: 'Клиент заранее покупает купон в приложении билайна, а потом приходит к вам и показывает его на кассе.',
-    gets: 'скидку по оплаченному купону', pay: 'комиссию с погашенного купона',
-    fit: 'кафе, салоны красоты, развлечения',
-    ui: (
-      <div className="pm-card offer-coupon">
-        <span className="offer-coupon__off">−50%</span>
-        <span className="offer-coupon__body"><b>капучино и круассан</b><span className="pm-muted">кофейня у дома · 300 м</span><span><b>350 ₽</b> <s className="pm-muted">700 ₽</s></span></span>
-      </div>
-    ),
-  },
-  {
-    t: 'оплата за заявку',
-    d: 'Клиент оставляет заявку, регистрируется или ставит ваше приложение. Дальше вы работаете с ним сами.',
-    gets: 'продукт или услугу по заявке', pay: 'фикс за подтверждённую заявку',
-    fit: 'банки, страхование, онлайн-школы',
-    ui: (
-      <div className="pm-card">
-        <b>кредитная карта</b><span className="pm-muted">120 дней без процентов</span>
-        <span className="offer-input">+7 900 000-00-00</span>
-        <span className="pm-btn">оставить заявку</span>
-      </div>
-    ),
-  },
-  {
-    t: 'промокод на покупку',
-    d: 'Клиент получает промокод и покупает на вашем сайте. За возвраты не платите.',
-    gets: 'скидку на вашем сайте', pay: 'процент с оплаченной покупки',
-    fit: 'интернет-магазины, доставка, билеты',
-    ui: (
-      <div className="pm-card">
-        <span className="pm-muted">промокод на первый заказ</span>
-        <span className="offer-code">BEE15 <Copy size={14} /></span>
-        <b>−15% в магазине у дома</b>
-      </div>
-    ),
-  },
-  {
-    t: 'подписка на сервис',
-    d: 'Клиент подключает ваш сервис и платит каждый месяц со счёта телефона, пока подписка активна.',
-    gets: 'пробный период и оплату со счёта', pay: 'долю каждого платежа',
-    fit: 'кино, музыка, облако, курсы',
-    ui: (
-      <div className="pm-card">
-        <span className="bl-row" style={{ justifyContent: 'space-between' }}><b>онлайн-кинотеатр</b><span className="offer-toggle" /></span>
-        <b>30 дней бесплатно</b>
-        <span className="pm-muted">потом 299 ₽ в месяц со счёта телефона</span>
-      </div>
-    ),
-  },
-]
+// Как оффер каждого типа выглядит у клиента. Тексты и условия — в OFFER_TYPES.
+const OFFER_UI: Record<OfferType, ReactNode> = {
+  click: (
+    <div className="pm-banner">
+      <div className="ad-img ad-img--0">{IMAGES[0]}</div>
+      <div className="pm-banner__text"><b>{DEMO_AD.brand}</b><span>{DEMO_AD.text}</span></div>
+      <span className="pm-btn">перейти</span>
+      <span className="pm-label">реклама</span>
+    </div>
+  ),
+  coupon: (
+    <div className="pm-card offer-coupon">
+      <span className="offer-coupon__off">−50%</span>
+      <span className="offer-coupon__body"><b>капучино и круассан</b><span className="pm-muted">кофейня у дома · 300 м</span><span><b>350 ₽</b> <s className="pm-muted">700 ₽</s></span></span>
+    </div>
+  ),
+  lead: (
+    <div className="pm-card">
+      <b>кредитная карта</b><span className="pm-muted">120 дней без процентов</span>
+      <span className="offer-input">+7 900 000-00-00</span>
+      <span className="pm-btn">оставить заявку</span>
+    </div>
+  ),
+  promo: (
+    <div className="pm-card">
+      <span className="pm-muted">промокод на первый заказ</span>
+      <span className="offer-code">BEE15 <Copy size={14} /></span>
+      <b>−15% в магазине у дома</b>
+    </div>
+  ),
+  sub: (
+    <div className="pm-card">
+      <span className="bl-row" style={{ justifyContent: 'space-between' }}><b>онлайн-кинотеатр</b><span className="offer-toggle" /></span>
+      <b>30 дней бесплатно</b>
+      <span className="pm-muted">потом 299 ₽ в месяц со счёта телефона</span>
+    </div>
+  ),
+}
 
 function Offers() {
   const track = useRef<HTMLDivElement>(null)
@@ -254,10 +223,10 @@ function Offers() {
         </div>
       </div>
       <div className="offers-track" ref={track} onScroll={onScroll} tabIndex={0} role="region" aria-label="Типы офферов, прокрутка вбок">
-        {OFFERS.map(o => (
-          <article key={o.t} className={`bl-card offer-card${o.main ? ' bl-card--yellow is-main' : ''}`}>
-            <div className="offer-card__screen" aria-hidden="true">{o.ui}</div>
-            {o.main && <span className="bl-tag bl-tag--dark offer-card__tag">основной</span>}
+        {(Object.entries(OFFER_TYPES) as [OfferType, OfferTypeInfo][]).map(([id, o]) => (
+          <article key={id} className={`bl-card offer-card${id === 'click' ? ' bl-card--yellow is-main' : ''}`}>
+            <div className="offer-card__screen" aria-hidden="true">{OFFER_UI[id]}</div>
+            {id === 'click' && <span className="bl-tag bl-tag--dark offer-card__tag">основной</span>}
             <h3 className="bl-h3">{o.t}</h3>
             <p className="bl-body bl-secondary">{o.d}</p>
             <dl className="offer-card__terms">
@@ -265,6 +234,7 @@ function Offers() {
               <div><dt>вы платите</dt><dd>{o.pay}</dd></div>
             </dl>
             <p className="bl-caption">подходит: {o.fit}</p>
+            <Link className={`bl-btn bl-btn--l bl-btn--block ${id === 'click' ? 'bl-btn--dark' : 'bl-btn--primary'}`} to="/login" onClick={() => pickType(id)}>{o.cta}</Link>
           </article>
         ))}
       </div>

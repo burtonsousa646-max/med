@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { animate, motion, useInView, useReducedMotion, AnimatePresence } from 'motion/react'
 import { Check as CheckIcon, X } from 'lucide-react'
 import logoUrl from '../../design-system/assets/beeline-logo.svg'
-import { type ProviderId } from './data'
-import { reset, update, useStore, type State } from './store'
+import { OFFER_TYPES, type OfferType, type ProviderId } from './data'
+import { pickType, reset, update, useStore, type State } from './store'
 
 /* ───────── бренд и шапка сценария ───────── */
 export function Brand({ to = '/' }: { to?: string }) {
@@ -186,6 +186,39 @@ export function Modal({ open, onClose, children, label }: { open: boolean; onClo
   )
 }
 
+/* ───────── выбор типа оффера: новая кампания и смена типа в сценарии ───────── */
+export function TypePicker({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick?: (t: OfferType) => void }) {
+  const s = useStore()
+  return (
+    <Modal open={open} onClose={onClose} label="Тип оффера">
+      <h2 className="bl-h2">какой оффер запускаем?</h2>
+      <div className="type-grid" role="radiogroup" aria-label="Тип оффера">
+        {(Object.entries(OFFER_TYPES) as [OfferType, (typeof OFFER_TYPES)[OfferType]][]).map(([id, o]) => (
+          <button key={id} role="radio" aria-checked={s.otype === id} className={`bl-card choice type-opt${id === 'click' ? ' type-opt--main' : ''}`} onClick={() => { pickType(id); onClose(); onPick?.(id) }}>
+            <span className="bl-row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className="bl-h4">{o.t}</span>{id === 'click' && <span className="bl-tag bl-tag--dark">основной</span>}</span>
+            <span className="bl-caption">{o.d}</span>
+            <span className="bl-caption">вы платите: <b className="bl-medium">{o.pay}</b></span>
+          </button>
+        ))}
+      </div>
+      <p className="bl-micro">Путь одинаковый: охват, условия, оплата или оферта, запуск. Тип можно сменить до запуска.</p>
+    </Modal>
+  )
+}
+
+// Метка типа с кнопкой смены: на охвате, в сборке и в чекауте
+export function TypeTag() {
+  const s = useStore()
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="bl-row" style={{ gap: 8 }}>
+      <span className={`bl-tag${s.otype === 'click' ? ' bl-tag--dark' : ' bl-tag--soft-violet'}`}>{OFFER_TYPES[s.otype].t}</span>
+      <button className="bl-btn bl-btn--ghost bl-caption" onClick={() => setOpen(true)}>сменить тип</button>
+      <TypePicker open={open} onClose={() => setOpen(false)} />
+    </span>
+  )
+}
+
 /* ───────── QR-заглушка для СБП ───────── */
 export function Qr() {
   const cells: ReactNode[] = []
@@ -232,6 +265,9 @@ export function DemoMenu() {
           ))}
         </div>
         <hr className="bl-divider" />
+        <label className="bl-field"><span className="bl-field__label">тип оффера</span>
+          <select className="bl-select" value={s.otype} onChange={e => pickType(e.target.value as OfferType)}>{(Object.keys(OFFER_TYPES) as OfferType[]).map(id => <option key={id} value={id}>{OFFER_TYPES[id].t}</option>)}</select>
+        </label>
         <div className="bl-row" style={{ justifyContent: 'space-between' }}>
           <Segmented label="Сегмент" value={s.segment} options={[['small', 'малый'], ['medium', 'средний'], ['large', 'крупный']]} onChange={v => update(x => { x.segment = v; x.tab = null })} />
           <button className="bl-btn bl-btn--s" onClick={() => { reset(); setOpen(false); nav('/') }}>сбросить демо</button>

@@ -4,7 +4,7 @@ import { BatteryLow, Check, Gift, Wifi } from 'lucide-react'
 import { CO, IMAGES, type Point } from './data'
 
 export type Surface = 'showcase' | 'main' | 'paid' | 'rest'
-export type Ad = { brand: string; text: string; offer: string; img: number; addr?: string }
+export type Ad = { brand: string; text: string; offer: string; img: number; addr?: string; cta?: string }
 
 export const DEMO_AD: Ad = { brand: CO.brand, text: 'Свежая обжарка каждый день — в двух шагах от дома', offer: '−20% до 10:00', img: 0, addr: 'ул. Покровка, 12 · 300 м' }
 
@@ -33,7 +33,7 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
             <div className={`ad-img ad-img--${ad.img}`} style={{ aspectRatio: '2' }}>{IMAGES[ad.img]}</div>
             <b>{ad.offer}</b>
             <span className="pm-muted">{ad.brand}{ad.addr ? ` · ${ad.addr}` : ''}</span>
-            <span className="pm-btn">сохранить купон</span>
+            <span className="pm-btn">{ad.cta ?? 'сохранить купон'}</span>
             <span className="pm-label">реклама</span>
           </div>
           <div className="pm-card pm-card--ghost"><span /><span /></div>

@@ -3,17 +3,18 @@ import { Link, NavLink, useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { AlertTriangle, BarChart3, Building2, Check as CheckIcon, CircleHelp, FileText, Info, Megaphone, MessageCircle, Pause, Play, Plus, TrendingUp, Wallet } from 'lucide-react'
 import { CO, PAY_NAMES, PROVIDERS, SEGMENTS, n, rub } from '../data'
-import { BONUS, activePoints, balance, campName, forecast, modeOf, payAmount, update, useStore } from '../store'
+import { BONUS, activePoints, balance, campName, deal, forecast, modeOf, payAmount, payout, typeOf, update, useStore } from '../store'
 import { Bars } from '../charts'
-import { Brand, Check, Chip, DemoNote, Modal, Num, Qr, Segmented, toast } from '../ui'
+import { Brand, Check, Chip, DemoNote, Modal, Num, Qr, Segmented, TypePicker, toast } from '../ui'
 
 const gap = (v: string) => ({ ['--bl-gap' as string]: v })
 const NAV = [['campaigns', 'кампании', Megaphone], ['stats', 'статистика', BarChart3], ['balance', 'баланс', Wallet], ['docs', 'документы', FileText], ['company', 'компания', Building2], ['help', 'помощь', CircleHelp]] as const
 
 function Shell({ title, aside, children }: { title: ReactNode; aside?: ReactNode; children: ReactNode }) {
   const s = useStore()
-  const bal = balance(s)
-  const low = s.paid && !s.paused && bal < (s.budget / 30) * 3
+  const share = typeOf(s).share
+  const bal = share ? payout(s) : balance(s)
+  const low = !share && s.paid && !s.paused && bal < (s.budget / 30) * 3
   return (
     <div className="bl-page">
       <div className="cab">
@@ -24,8 +25,8 @@ function Shell({ title, aside, children }: { title: ReactNode; aside?: ReactNode
             {NAV.map(([id, t, Icon]) => <NavLink key={id} to={`/cab/${id}`} className={({ isActive }) => (isActive ? 'is-active' : '')}><Icon size={20} />{t}</NavLink>)}
           </nav>
           <div className="cab-nav__extra bl-card" style={{ gap: 4, padding: 16 }}>
-            <span className="bl-caption">баланс</span><span className="bl-h3"><Num value={bal} suffix=" ₽" /></span>
-            <Link to="/cab/balance" className="bl-caption">пополнить</Link>
+            <span className="bl-caption">{share ? 'к выплате' : 'баланс'}</span><span className="bl-h3"><Num value={bal} suffix=" ₽" /></span>
+            <Link to="/cab/balance" className="bl-caption">{share ? 'подробнее' : 'пополнить'}</Link>
           </div>
         </aside>
         <main className="cab-main">
@@ -41,7 +42,7 @@ function Shell({ title, aside, children }: { title: ReactNode; aside?: ReactNode
 function StatusTag() {
   const s = useStore()
   if (!s.paid) return <span className="bl-tag">черновик</span>
-  if (s.pay === 'invoice' && !s.invoicePaid) return <span className="bl-tag">ждём оплату</span>
+  if (!typeOf(s).share && s.pay === 'invoice' && !s.invoicePaid) return <span className="bl-tag">ждём оплату</span>
   if (s.paused) return <span className="bl-tag">на паузе</span>
   return <span className="bl-tag bl-tag--success">показывается</span>
 }
@@ -68,24 +69,25 @@ function First48() {
   const s = useStore()
   const f = forecast(s)
   const hours = [2, 4, 3, 7, 9, 6, 5, 8, 11, 9, 14, 12]
+  const T = typeOf(s)
   return (
     <>
-      <div className="bl-notice bl-notice--info"><Info size={18} />Гости ещё идут до вас. Визиты в точку появятся завтра к 18:00, пока смотрите, как люди реагируют на объявление.</div>
+      <div className="bl-notice bl-notice--info"><Info size={18} />{T.wait}</div>
       <section className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         <Live label="охват вокруг точек" start={4120} step={() => 3 + Math.round(Math.random() * 9)} sub={`из ${n(f.reach)} подходящих`} />
         <Live label="клики" start={42} step={() => (Math.random() > 0.5 ? 1 : 0)} sub="CTR 1,0 %" />
-        <Live label="сохранили купон" start={17} step={() => (Math.random() > 0.75 ? 1 : 0)} sub="в Витрине выгод" />
+        <Live label={T.live} start={s.otype === 'click' ? 17 : 6} step={() => (Math.random() > 0.75 ? 1 : 0)} sub="в Витрине выгод" />
       </section>
       <section className="bl-section pad" style={{ maxWidth: 'none' }}>
         <div className="bl-row" style={{ justifyContent: 'space-between' }}><h2 className="bl-h3">клики по часам</h2><span className="bl-caption">с запуска, 12 часов</span></div>
         <Bars label="Клики по часам с запуска" height={200} fmt={v => `${v} кликов`} data={hours.map((v, i) => ({ label: `${String(8 + i).padStart(2, '0')}:00`, value: v }))} />
       </section>
-      <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('4px') }}>
+      {s.otype === 'click' && <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('4px') }}>
         <h2 className="bl-h3" style={{ marginBottom: 8 }}>что будет дальше</h2>
         {[['через 1–2 дня', 'первые визиты: кто увидел рекламу и дошёл до точки'], ['через неделю', 'цена гостя и советы, как её снизить'], ['через 2 недели', 'повторные визиты: кто вернулся']].map(([t, d], i) => (
           <div key={t} className="bl-cell"><span className="bl-cell__icon">{i + 1}</span><span className="bl-cell__main"><span className="bl-cell__title">{t}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{d}</span></span></div>
         ))}
-      </section>
+      </section>}
     </>
   )
 }
@@ -95,31 +97,38 @@ function TwoWeeks() {
   const f = forecast(s)
   const k = s.budget / 10000
   const spent = Math.min(s.budget * 0.64, payAmount(s) + BONUS)
-  const clicks = Math.round(spent / f.cpc), visits = Math.round(clicks * f.conv), again = Math.round(visits * 0.22)
+  const T = typeOf(s), click = s.otype === 'click'
+  const clicks = Math.round(spent / f.cpc), again = Math.round(clicks * f.conv * 0.22)
+  // visits — главный результат типа за 2 недели: визиты, купоны, заявки, покупки или подписки
+  const visits = Math.round(click ? clicks * f.conv : T.share ? f.res * 0.5 : spent / f.per)
   const days = (s.period === 7 ? [50, 65, 75, 60, 80, 90, 100] : [8, 20, 30, 45, 40, 60, 55, 50, 65, 75, 60, 80, 90, 100]).map(v => Math.round(v * visits / 900))
   const rows = modeOf(s) === 'manual'
     ? [['живут рядом, 1 км', 0.56, 2.4, 37], ['работают рядом, 1 км', 0.3, 3.8, 27], ['ходят в кофейни рядом', 0.14, 6.1, 41]]
     : [['Витрина выгод', 0.56, 3.1, 31], ['«Платёж прошёл»', 0.28, 1.6, 38], ['Главная приложения', 0.16, 0.5, 44]]
   const tips = [
-    { id: 'morning' as const, icon: TrendingUp, t: 'поднять ставку утром', d: `ещё ≈ ${Math.round(60 * k)} гостей за клик 14 ₽`, done: 'ставка утром 14 ₽' },
-    { id: 'rest' as const, icon: Plus, t: 'добавить экран остатков', d: 'у кофеен рядом гость дешевле на 20 %', done: 'экран остатков подключён' },
+    click
+      ? { id: 'morning' as const, icon: TrendingUp, t: 'поднять ставку утром', d: `ещё ≈ ${Math.round(60 * k)} гостей за клик 14 ₽`, done: 'ставка утром 14 ₽' }
+      : { id: 'morning' as const, icon: TrendingUp, t: 'показывать чаще утром', d: `ещё ≈ ${Math.max(2, Math.round(visits * 0.15))} ${T.many}`, done: 'утром показываем чаще' },
+    { id: 'rest' as const, icon: Plus, t: 'добавить экран остатков', d: click ? 'у кофеен рядом гость дешевле на 20 %' : `ещё ≈ ${Math.max(2, Math.round(visits * 0.2))} ${T.many} от тех, у кого кончается трафик`, done: 'экран остатков подключён' },
   ]
   return (
     <>
       <section className="bl-grid kpis">
         <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">показы</span><span className="bl-stat__value"><Num value={clicks * 56} /></span><span className="bl-stat__label">охват {n(f.reach * 0.8)}</span></div></div>
         <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">клики</span><span className="bl-stat__value"><Num value={clicks} /></span><span className="bl-stat__delta">+12 % к прошлой неделе</span></div></div>
-        <div className="bl-card" data-theme="invert"><div className="bl-stat"><span className="bl-stat__label">пришли к вам</span><span className="bl-stat__value"><Num value={visits} /></span><span className="bl-stat__label">из них {n(again)} пришли снова</span></div></div>
-        <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">потрачено</span><span className="bl-stat__value"><Num value={spent} suffix=" ₽" /></span><span className="bl-stat__label">клик {Math.round(f.cpc)} ₽ · гость {Math.round(spent / Math.max(visits, 1))} ₽</span></div></div>
+        <div className="bl-card" data-theme="invert"><div className="bl-stat"><span className="bl-stat__label">{click ? 'пришли к вам' : T.unit}</span><span className="bl-stat__value"><Num value={visits} /></span><span className="bl-stat__label">{click ? `из них ${n(again)} пришли снова` : deal(s).name}</span></div></div>
+        {T.share
+          ? <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">к выплате вам</span><span className="bl-stat__value"><Num value={payout(s)} suffix=" ₽" /></span><span className="bl-stat__label">{T.per} {rub(f.per)}</span></div></div>
+          : <div className="bl-card bl-card--white"><div className="bl-stat"><span className="bl-stat__label">потрачено</span><span className="bl-stat__value"><Num value={spent} suffix=" ₽" /></span><span className="bl-stat__label">{click ? `клик ${Math.round(f.cpc)} ₽ · гость ${Math.round(spent / Math.max(visits, 1))} ₽` : `${T.per} ${rub(f.per)}`}</span></div></div>}
       </section>
       <div className="two">
         <section className="bl-section pad" style={{ maxWidth: 'none' }}>
-          <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 8 }}><h2 className="bl-h3">визиты по дням</h2><Segmented label="Период" value={s.period} options={[[7, '7 дней'], [14, '14 дней']]} onChange={v => update(x => { x.period = v })} /></div>
-          <Bars label="Визиты по дням" height={200} fmt={v => `${v} визитов`} data={days.map((v, i) => ({ label: `${i + 1 + (s.period === 7 ? 7 : 0)} ноя`, value: v }))} />
+          <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 8 }}><h2 className="bl-h3">{click ? 'визиты' : T.unit} по дням</h2><Segmented label="Период" value={s.period} options={[[7, '7 дней'], [14, '14 дней']]} onChange={v => update(x => { x.period = v })} /></div>
+          <Bars label={`${click ? 'Визиты' : T.unit} по дням`} height={200} fmt={v => `${v} · ${click ? 'визиты' : T.unit}`} data={days.map((v, i) => ({ label: `${i + 1 + (s.period === 7 ? 7 : 0)} ноя`, value: v }))} />
           <h3 className="bl-h3" style={{ margin: '32px 0 16px' }}>{modeOf(s) === 'manual' ? 'по сигналам' : 'по местам показа'}</h3>
           <div className="bl-table-wrap"><table className="bl-table">
-            <thead><tr><th>{modeOf(s) === 'manual' ? 'сигнал' : 'место'}</th><th>клики</th><th>CTR</th><th>пришли</th><th>один гость</th></tr></thead>
-            <tbody>{rows.map(([t, share, ctr, guest]) => <tr key={t as string}><td>{t}</td><td>{n(clicks * (share as number))}</td><td>{(ctr as number).toLocaleString('ru-RU')} %</td><td>{n(visits * (share as number))}</td><td>{guest} ₽</td></tr>)}</tbody>
+            <thead><tr><th>{modeOf(s) === 'manual' ? 'сигнал' : 'место'}</th><th>клики</th><th>CTR</th><th>{click ? 'пришли' : T.unit}</th><th>{click ? 'один гость' : T.per}</th></tr></thead>
+            <tbody>{rows.map(([t, share, ctr, guest]) => <tr key={t as string}><td>{t}</td><td>{n(clicks * (share as number))}</td><td>{(ctr as number).toLocaleString('ru-RU')} %</td><td>{n(visits * (share as number))}</td><td>{click ? guest : Math.round(f.per)} ₽</td></tr>)}</tbody>
           </table></div>
         </section>
         <aside className="bl-stack" style={gap('24px')}>
@@ -133,7 +142,7 @@ function TwoWeeks() {
               </button>
             ))}
           </section>
-          <p className="bl-caption">Визиты считаем по обезличенным данным базовых станций. Данные абонентов не передаём, вы видите только итоги.</p>
+          <p className="bl-caption">{click ? 'Визиты считаем по обезличенным данным базовых станций.' : `Результат подтверждаете вы: ${T.via.label} — ${s.terms[s.otype].via}.`} Данные абонентов не передаём, вы видите только итоги.</p>
         </aside>
       </div>
       {!s.edo && <div className="bl-card bl-card--white edo-strip"><span className="bl-body">Подключите ЭДО, чтобы получать закрывающие документы</span><span className="bl-row"><Link className="bl-btn bl-btn--s" to="/cab/docs">подключить ЭДО</Link><Link className="bl-btn bl-btn--s bl-btn--ghost" to="/cab/docs">пригласить бухгалтера</Link></span></div>}
@@ -146,7 +155,7 @@ export function Stats() {
   if (!s.paid) return <Shell title={<h1 className="bl-display-l">статистика</h1>}><Empty /></Shell>
   return (
     <Shell
-      title={<><StatusTag /><h1 className="bl-display-l">{campName(s)}</h1></>}
+      title={<><span className="bl-row" style={{ gap: 8 }}><StatusTag /><span className="bl-tag bl-tag--soft-violet">{typeOf(s).t}</span></span><h1 className="bl-display-l">{campName(s)}</h1></>}
       aside={<div className="bl-stack" style={{ ...gap('6px'), alignItems: 'flex-end' }}><DemoNote>время с запуска</DemoNote><Segmented label="Время с запуска" value={s.statsView} options={[['h48', 'первые 48 часов'], ['d14', 'через 2 недели']]} onChange={v => update(x => { x.statsView = v })} /></div>}>
       {s.statsView === 'h48' ? <First48 /> : <TwoWeeks />}
     </Shell>
@@ -168,21 +177,23 @@ export function Campaigns() {
   const s = useStore()
   const nav = useNavigate()
   const f = forecast(s)
-  const fresh = () => { update(x => { x.tab = null; x.adText = null; x.launch = 0 }); nav('/build') }
+  const T = typeOf(s)
+  const [pick, setPick] = useState(false)
   return (
-    <Shell title={<h1 className="bl-display-l">кампании</h1>} aside={<button className="bl-btn bl-btn--primary bl-btn--l" onClick={fresh}><Plus size={18} />новая кампания</button>}>
+    <Shell title={<h1 className="bl-display-l">кампании</h1>} aside={<button className="bl-btn bl-btn--primary bl-btn--l" onClick={() => setPick(true)}><Plus size={18} />новая кампания</button>}>
+      <TypePicker open={pick} onClose={() => setPick(false)} onPick={() => nav('/build')} />
       <section className="bl-section pad" style={{ maxWidth: 'none' }}>
         <div className="bl-table-wrap"><table className="bl-table">
-          <thead><tr><th>кампания</th><th>статус</th><th>бюджет</th><th>клики</th><th>пришли</th><th /></tr></thead>
+          <thead><tr><th>кампания</th><th>тип</th><th>статус</th><th>бюджет</th><th>клики</th><th>результат</th><th /></tr></thead>
           <tbody>
             {s.paid && (
               <tr>
-                <td><Link to="/cab/stats">{campName(s)}</Link></td><td><StatusTag /></td><td>{rub(s.budget)} в мес.</td>
-                <td>{s.statsView === 'd14' ? n(f.clicks * 0.64) : '42'}</td><td>{s.statsView === 'd14' ? n(f.visits * 0.64) : '—'}</td>
+                <td><Link to="/cab/stats">{campName(s)}</Link></td><td>{T.short}</td><td><StatusTag /></td><td>{T.share ? 'без бюджета' : `${rub(s.budget)} в мес.`}</td>
+                <td>{s.statsView === 'd14' ? n(f.clicks * 0.64) : '42'}</td><td>{s.statsView === 'd14' ? `${n((s.otype === 'click' ? f.visits : f.res) * (T.share ? 0.5 : 0.64))} · ${T.unit}` : '—'}</td>
                 <td><button className="bl-btn bl-btn--s" onClick={() => { update(x => { x.paused = !x.paused }); toast(s.paused ? 'Кампания снова показывается' : 'Кампания на паузе, деньги не списываются') }}>{s.paused ? <><Play size={16} />возобновить</> : <><Pause size={16} />пауза</>}</button></td>
               </tr>
             )}
-            <tr><td>утренний кофе на вынос</td><td><span className="bl-tag">черновик</span></td><td>5 000 ₽ в мес.</td><td>—</td><td>—</td><td><Link className="bl-btn bl-btn--s" to="/build">продолжить</Link></td></tr>
+            <tr><td>утренний кофе на вынос</td><td>переход</td><td><span className="bl-tag">черновик</span></td><td>5 000 ₽ в мес.</td><td>—</td><td>—</td><td><Link className="bl-btn bl-btn--s" to="/build" onClick={() => update(x => { x.otype = 'click' })}>продолжить</Link></td></tr>
           </tbody>
         </table></div>
         {!s.paid && <p className="bl-caption" style={{ marginTop: 16 }}>Оплаченных кампаний пока нет. Пройдите сценарий до оплаты, и кампания появится здесь.</p>}
@@ -192,7 +203,12 @@ export function Campaigns() {
 }
 
 /* ───────── баланс ───────── */
+// Хуки Topup и Payouts разные, поэтому выбираем компонент, а не ветку внутри одного
 export function Balance() {
+  return typeOf(useStore()).share ? <Payouts /> : <Topup />
+}
+
+function Topup() {
   const s = useStore()
   const [top, setTop] = useState<number | null>(null)
   const [pick, setPick] = useState(10000)
@@ -215,7 +231,7 @@ export function Balance() {
           <div className="bl-table-wrap"><table className="bl-table"><tbody>
             {s.topups > 0 && <tr><td>сегодня</td><td>пополнение, СБП</td><td className="bl-success">+{rub(s.topups)}</td></tr>}
             {s.paid && (s.pay !== 'invoice' || s.invoicePaid) ? <>
-              <tr><td>сегодня</td><td>списано за клики</td><td className="bl-nums">−{rub(payAmount(s) + BONUS + s.topups - bal)}</td></tr>
+              <tr><td>сегодня</td><td>{s.otype === 'click' ? 'списано за клики' : `списано: ${typeOf(s).unit}`}</td><td className="bl-nums">−{rub(payAmount(s) + BONUS + s.topups - bal)}</td></tr>
               <tr><td>сегодня</td><td>бонус за первую кампанию</td><td className="bl-success">+{rub(BONUS)}</td></tr>
               <tr><td>сегодня</td><td>пополнение, {PAY_NAMES[s.pay]}</td><td className="bl-success">+{rub(payAmount(s))}</td></tr>
             </> : !s.topups && <tr><td className="bl-secondary">операций пока нет</td></tr>}
@@ -223,6 +239,34 @@ export function Balance() {
         </section>
       </div>
       <Modal open={top !== null} label="Пополнение"><h2 className="bl-h2">пополнение на {rub(top ?? 0)}</h2><Qr /><p className="bl-caption">СБП для бизнеса · отсканируйте в приложении банка</p><div className="wait-bar" /></Modal>
+    </Shell>
+  )
+}
+
+// Купон и подписка: баланс не нужен, клиент платит билайну, партнёр получает выплаты
+function Payouts() {
+  const s = useStore()
+  const T = typeOf(s), f = forecast(s), sum = payout(s)
+  const done = Math.round(sum / f.per), fee = Math.round(sum / (1 - T.fee / 100) - sum)
+  return (
+    <Shell title={<h1 className="bl-display-l">выплаты</h1>}>
+      <div className="two">
+        <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
+          <span className="bl-caption">к выплате 1 декабря</span>
+          <span className="bl-number-xl"><Num value={sum} suffix=" ₽" /></span>
+          <span className="bl-caption">на {CO.bank}, {CO.acc}</span>
+          <p className="bl-body bl-secondary">Пополнять баланс не нужно: {s.otype === 'coupon' ? 'клиент оплачивает купон' : 'клиент платит за подписку со счёта телефона'} билайну, а мы перечисляем вам {rub(f.per)} {s.otype === 'coupon' ? 'за каждый погашенный купон' : 'за каждый оплаченный месяц'}.</p>
+        </section>
+        <section className="bl-section pad" style={{ maxWidth: 'none' }}>
+          <h2 className="bl-h3" style={{ marginBottom: 16 }}>операции за ноябрь</h2>
+          <div className="bl-table-wrap"><table className="bl-table"><tbody>
+            {s.paid ? <>
+              <tr><td>{T.unit}</td><td>{n(done)} шт.</td><td className="bl-success">+{rub(sum + fee)}</td></tr>
+              <tr><td>комиссия билайна</td><td>{T.fee} %</td><td className="bl-nums">−{rub(fee)}</td></tr>
+            </> : <tr><td className="bl-secondary">операций пока нет</td></tr>}
+          </tbody></table></div>
+        </section>
+      </div>
     </Shell>
   )
 }
@@ -245,7 +289,8 @@ export function Docs() {
             <thead><tr><th>документ</th><th>дата</th><th>статус</th></tr></thead>
             <tbody>
               <tr><td><Link to="/offer">оферта</Link></td><td>сегодня</td><td>{s.paid ? <span className="bl-tag bl-tag--soft-green">принята {s.role === 'boss' ? 'в кабинете' : 'через бизнес-ID'}</span> : <span className="bl-tag">не принята</span>}</td></tr>
-              {s.pay === 'invoice' && s.paid && <tr><td>счёт-оферта № 1042</td><td>сегодня</td><td><span className="bl-tag">{s.invoicePaid ? 'оплачен' : 'ждём оплату'}</span></td></tr>}
+              {typeOf(s).share && <tr><td>отчёт агента за ноябрь</td><td>1 декабря</td><td><span className="bl-tag">{edoTag}</span></td></tr>}
+              {!typeOf(s).share && s.pay === 'invoice' && s.paid && <tr><td>счёт-оферта № 1042</td><td>сегодня</td><td><span className="bl-tag">{s.invoicePaid ? 'оплачен' : 'ждём оплату'}</span></td></tr>}
               <tr><td>акт за ноябрь</td><td>1 декабря</td><td><span className="bl-tag">{edoTag}</span></td></tr>
               <tr><td>счёт-фактура за ноябрь</td><td>1 декабря</td><td><span className="bl-tag">{edoTag}</span></td></tr>
             </tbody>
@@ -308,6 +353,7 @@ export function Company() {
 /* ───────── помощь ───────── */
 export function Help() {
   const q = [
+    ['чем отличаются типы офферов?', 'За переход платите за клик с баланса. За заявку и промокод — за подтверждённый результат, тоже с баланса. Купон и подписку оплачивает клиент, а мы выплачиваем вам долю раз в месяц. Тип выбирается при создании кампании.'],
     ['когда появятся визиты?', 'Через 1–2 дня после запуска: человеку нужно дойти до точки. До этого видны охват, клики и сохранения купона.'],
     ['как считается визит?', 'Человек кликнул по объявлению и в течение 7 дней побывал в радиусе 100 м от вашей точки. Считаем по обезличенным данным базовых станций.'],
     ['почему объявление не прошло проверку?', 'Подсвечиваем причину и предлагаем замену прямо в тексте. Если не согласны, отправьте на ручную проверку.'],

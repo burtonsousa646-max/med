@@ -5,10 +5,10 @@ import { AlertTriangle, Check as CheckIcon, Clock, FileText, Info, Loader2, MapP
 import { CO, PAY_NAMES, PLACES, PROVIDERS, SEGMENTS, n, rub, stopHit, type Pay, type Segment } from '../data'
 
 const PAY_HINT: Record<Pay, string> = { sbp: 'зачисление за 10 секунд, без комиссии', card: 'любая карта юрлица, зачисление сразу', invoice: 'зачисление 1–3 дня, запуск после оплаты', post: 'лимит 500 000 ₽, счёт в конце месяца' }
-import { BONUS, activePoints, adText, campName, forecast, modeOf, payAmount, update, useStore } from '../store'
+import { BONUS, activePoints, adText, campName, deal, forecast, modeOf, payAmount, typeOf, update, useStore } from '../store'
 import { ReachMap } from '../mock'
 import { Trend } from '../charts'
-import { Check, Chip, Done, FlowHead, Modal, Num, Qr, Segmented, Switch, toast } from '../ui'
+import { Check, Chip, Done, FlowHead, Modal, Num, Qr, Segmented, Switch, TypeTag, toast } from '../ui'
 import { IdButtons } from './Entry'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 
@@ -81,14 +81,18 @@ export function Reach() {
   const f = forecast(s)
   const [segEdit, setSegEdit] = useState(false)
   const on = activePoints(s).length
-  const weeks = [0.2, 0.45, 0.72, 1].map((k, i) => ({ label: `${i + 1} неделя`, value: Math.round(f.clicks * k) }))
+  const T = typeOf(s), click = s.otype === 'click'
+  const weeks = [0.2, 0.45, 0.72, 1].map((k, i) => ({ label: `${i + 1} неделя`, value: Math.round((click ? f.clicks : f.res) * k) }))
+  const stats: [string, number, string?][] = click
+    ? [['клики', f.clicks], ['придут к вам', f.visits], ['цена клика', f.cpc, ' ₽'], ['один гость', f.guest, ' ₽']]
+    : [[T.unit, f.res], [T.share ? 'выплатим вам' : 'потратите', f.money, ' ₽'], [T.per, f.per, ' ₽'], ['охват', f.reach]]
   return (
     <div className="bl-page wrap">
       <FlowHead step={0} />
       {s.provider === 'inn' && <div className="bl-notice bl-notice--info" style={{ marginTop: 16 }}><Info size={18} />Вы без входа: охват по открытым данным. Точнее посчитаем после входа по бизнес-ID, он же понадобится для оплаты.</div>}
       <div className="page-title">
         <div className="bl-stack" style={gap('12px')}>
-          <div className="bl-row"><span className="bl-tag bl-tag--dark">{SEGMENTS[s.segment].name}</span><button className="bl-btn bl-btn--ghost bl-caption" onClick={() => setSegEdit(!segEdit)}>{segEdit ? 'готово' : 'неверно? изменить'}</button></div>
+          <div className="bl-row"><TypeTag /><span className="bl-tag">{SEGMENTS[s.segment].name}</span><button className="bl-btn bl-btn--ghost bl-caption" onClick={() => setSegEdit(!segEdit)}>{segEdit ? 'готово' : 'неверно? изменить'}</button></div>
           {segEdit && <Segmented label="Размер бизнеса" value={s.segment} options={Object.entries(SEGMENTS).map(([k, v]) => [k as Segment, v.name])} onChange={v => update(x => { x.segment = v; x.tab = null })} />}
           <h1 className="bl-h1">рядом с {on > 1 ? 'вашими точками' : 'вашей точкой'} <span className="hl"><Num value={f.reach} /></span> подходящих людей</h1>
           <p className="bl-body bl-secondary">{SEGMENTS[s.segment].hint}</p>
@@ -104,19 +108,18 @@ export function Reach() {
         </section>
         <section className="bl-section pad bl-stack sticky" style={gap('20px')}>
           <h2 className="bl-h3">прогноз на месяц</h2>
-          <label className="bl-field">
-            <span className="bl-field__label">бюджет: <b className="bl-medium">{rub(s.budget)}</b></span>
-            <input className="bl-range" type="range" min={3000} max={100000} step={1000} value={s.budget} onChange={e => update(x => { x.budget = +e.target.value })} aria-label="Бюджет в месяц" />
-          </label>
+          {T.share
+            ? <p className="bl-caption">{deal(s).line}. Бюджет не нужен: клиент платит билайну, мы выплачиваем вам раз в месяц.</p>
+            : <label className="bl-field">
+                <span className="bl-field__label">бюджет: <b className="bl-medium">{rub(s.budget)}</b></span>
+                <input className="bl-range" type="range" min={3000} max={100000} step={1000} value={s.budget} onChange={e => update(x => { x.budget = +e.target.value })} aria-label="Бюджет в месяц" />
+              </label>}
           <div className="bl-grid" style={{ ['--bl-cols' as string]: 2, gap: 20 }}>
-            <div className="bl-stat"><span className="bl-stat__label">клики</span><span className="bl-stat__value"><Num value={f.clicks} /></span></div>
-            <div className="bl-stat"><span className="bl-stat__label">придут к вам</span><span className="bl-stat__value"><Num value={f.visits} /></span></div>
-            <div className="bl-stat"><span className="bl-stat__label">цена клика</span><span className="bl-stat__value"><Num value={f.cpc} suffix=" ₽" /></span></div>
-            <div className="bl-stat"><span className="bl-stat__label">один гость</span><span className="bl-stat__value"><Num value={f.guest} suffix=" ₽" /></span></div>
+            {stats.map(([t, v, suf]) => <div key={t} className="bl-stat"><span className="bl-stat__label">{t}</span><span className="bl-stat__value"><Num value={v} suffix={suf} /></span></div>)}
           </div>
-          <div className="short-hide"><Trend label="Накопленные клики по неделям" data={weeks} fmt={v => `${n(v)} кликов`} height={120} /></div>
-          <p className="bl-micro">Прогноз по ставкам кофеен в вашем районе. Списываем только за клики, остановить можно в любой момент.</p>
-          <button className="bl-btn bl-btn--primary bl-btn--l bl-btn--block" onClick={() => nav('/build')}>собрать кампанию</button>
+          <div className="short-hide"><Trend label={`Накопленные ${click ? 'клики' : T.unit} по неделям`} data={weeks} fmt={v => `${n(v)} · ${click ? 'клики' : T.unit}`} height={120} /></div>
+          <p className="bl-micro">{click ? 'Прогноз по ставкам кофеен в вашем районе. Списываем только за клики, остановить можно в любой момент.' : `Прогноз по похожим офферам в вашем районе. Вы платите ${T.pay}, остановить можно в любой момент.`}</p>
+          <button className="bl-btn bl-btn--primary bl-btn--l bl-btn--block" onClick={() => nav('/build')}>{click ? 'собрать кампанию' : 'задать условия'}</button>
         </section>
       </div>
     </div>
@@ -132,11 +135,13 @@ export function Checkout() {
   const p = s.provider && s.provider !== 'inn' ? PROVIDERS[s.provider] : null
   const boss = s.role === 'boss'
   const amount = payAmount(s)
-  const amountErr = s.amount === 0 && amount < 3000
+  const T = typeOf(s), d = deal(s)
+  const amountErr = !T.share && s.amount === 0 && amount < 3000
   const canGo = !!p && !amountErr && (boss ? s.offer : true)
   const finish = () => { update(x => { x.paid = true; x.launch = 0; x.invoicePaid = false }); nav('/launch') }
   const pay = () => {
-    if (s.pay === 'sbp' || s.pay === 'card') {
+    if (T.share) { toast('Оферта принята, отправляем на проверку'); finish() }
+    else if (s.pay === 'sbp' || s.pay === 'card') {
       setModal(s.pay)
       setTimeout(() => setModal('done'), s.pay === 'sbp' ? 2400 : 1800)
       setTimeout(() => { setModal(null); finish() }, s.pay === 'sbp' ? 3800 : 3000)
@@ -169,6 +174,14 @@ export function Checkout() {
               <p className="bl-body">{CO.name}, ИНН {CO.inn} · {CO.bank}<span className="bl-caption" style={{ display: 'block' }}>подписант {CO.signer}{!boss && ` · вы: ${CO.employee}, маркетолог`}</span></p>
             )}
           </section>
+          {T.share ? (
+          <section className="bl-section pad bl-stack" style={gap('16px')}>
+            <h2 className="bl-h3">выплаты вам</h2>
+            <p className="bl-body">Пополнять баланс не нужно. Клиент платит билайну, а мы перечисляем вам <b className="bl-medium">{rub(f.per)}</b> {s.otype === 'coupon' ? 'за каждый погашенный купон' : 'за каждый оплаченный месяц подписки'}.</p>
+            <p className="bl-body">по прогнозу ≈ <b className="bl-medium"><Num value={f.money} suffix=" ₽" /></b> в месяц · выплата 1-го числа на {CO.bank}</p>
+            <p className="bl-caption">Комиссию {T.fee} % удерживаем из выплаты. Отчёт агента придёт в ЭДО вместе с актом.</p>
+          </section>
+          ) : <>
           <section className="bl-section pad bl-stack" style={gap('16px')}>
             <h2 className="bl-h3">сумма на баланс</h2>
             <div className="bl-row">{amounts.map(([v, t]) => <Chip key={t} on={s.amount === v} onClick={() => update(x => { x.amount = v })}>{t}</Chip>)}</div>
@@ -179,21 +192,24 @@ export function Checkout() {
                 <span className="bl-field__caption">от 3 000 ₽</span>
               </label>
             )}
-            <p className="bl-body">хватит примерно на <b className="bl-medium"><Num value={f.aClicks} /></b> кликов и <b className="bl-medium"><Num value={f.aVisits} /></b> гостей · <span className="bl-success">+{rub(BONUS)} бонус на первую кампанию</span></p>
+            <p className="bl-body">хватит примерно на {s.otype === 'click' ? <><b className="bl-medium"><Num value={f.aClicks} /></b> кликов и <b className="bl-medium"><Num value={f.aVisits} /></b> гостей</> : <><b className="bl-medium"><Num value={f.aRes} /></b> {T.many}</>} · <span className="bl-success">+{rub(BONUS)} бонус на первую кампанию</span></p>
           </section>
           <section className="bl-section pad bl-stack" style={gap('16px')}>
             <h2 className="bl-h3">способ оплаты</h2>
             <div className="bl-row">{(Object.keys(PAY_NAMES) as Pay[]).map(k => <Chip key={k} on={s.pay === k} onClick={k === 'post' && s.segment !== 'large' ? undefined : () => update(x => { x.pay = k })}>{PAY_NAMES[k]}</Chip>)}</div>
             <p className="bl-caption">{PAY_HINT[s.pay]}{s.segment !== 'large' && ' · постоплата — для крупного бизнеса по договору'}</p>
           </section>
+          </>}
         </div>
         <section className="bl-section pad bl-stack sticky" style={gap('16px')}>
           <h2 className="bl-h3">кампания</h2>
           <dl className="kv kv--narrow">
-            <dt>цель</dt><dd>{campName(s)}</dd>
+            <dt>тип</dt><dd>{T.t}</dd>
+            <dt>{s.otype === 'click' ? 'цель' : 'оффер'}</dt><dd>{campName(s)}</dd>
+            {s.otype !== 'click' && <><dt>условия</dt><dd>{d.line}</dd></>}
             <dt>точки</dt><dd>{activePoints(s).length} из {s.points.length}</dd>
             <dt>места</dt><dd>{modeOf(s) === 'manual' ? PLACES.filter(x => s.places[x.id]).map(x => x.t).join(', ') : 'подберёт автопилот'}</dd>
-            <dt>к оплате</dt><dd className="bl-h3">{rub(amount)}</dd>
+            {T.share ? <><dt>к оплате</dt><dd>без предоплаты</dd></> : <><dt>к оплате</dt><dd className="bl-h3">{rub(amount)}</dd></>}
           </dl>
           {stopHit(adText(s)) && <div className="bl-notice bl-notice--error"><AlertTriangle size={18} /><span>В тексте есть слово, которое не пройдёт модерацию. <Link to="/build">Исправить сейчас</Link> или поправите на шаге запуска.</span></div>}
           <hr className="bl-divider" />
@@ -201,7 +217,7 @@ export function Checkout() {
             <>
               <Check path="offer" label={<>принимаю <Link to="/offer" target="_blank">оферту</Link></>} sub="договор и ЭДО не нужны, закрывающие документы — когда подключите ЭДО" />
               <button className="bl-btn bl-btn--primary bl-btn--l bl-btn--block" disabled={!canGo} onClick={pay}>
-                {s.pay === 'invoice' ? 'выставить счёт' : s.pay === 'post' ? 'запустить с постоплатой' : `оплатить ${rub(amount)} и запустить`}
+                {T.share ? 'принять оферту и запустить' : s.pay === 'invoice' ? 'выставить счёт' : s.pay === 'post' ? 'запустить с постоплатой' : `оплатить ${rub(amount)} и запустить`}
               </button>
               {!s.offer && p && <p className="bl-micro" style={{ textAlign: 'center' }}>отметьте оферту, чтобы продолжить</p>}
             </>
@@ -235,7 +251,8 @@ export function Approve() {
   const nav = useNavigate()
   const [stage, setStage] = useState<'confirm' | 'busy' | 'pay' | 'paying' | 'done'>(s.approved ? 'done' : 'confirm')
   const amount = payAmount(s)
-  const needsPay = s.pay === 'sbp' || s.pay === 'card'
+  const share = typeOf(s).share
+  const needsPay = !share && (s.pay === 'sbp' || s.pay === 'card')
   const confirm = () => {
     setStage('busy')
     setTimeout(() => {
@@ -254,7 +271,7 @@ export function Approve() {
               <div className="bl-card bl-card--white" style={{ marginTop: 32, gap: 16 }}>
                 <span className="ok-badge"><CheckIcon size={28} strokeWidth={3} /></span>
                 <h1 className="bl-h2">готово, кампания на проверке</h1>
-                <p className="bl-body bl-secondary">Оферта принята{needsPay ? `, ${rub(amount)} оплачено` : s.pay === 'invoice' ? ', счёт отправлен на почту' : ''}. {CO.employee} получит уведомление.</p>
+                <p className="bl-body bl-secondary">Оферта принята{needsPay ? `, ${rub(amount)} оплачено` : !share && s.pay === 'invoice' ? ', счёт отправлен на почту' : ''}. {CO.employee} получит уведомление.</p>
               </div>
               <button className="bl-btn bl-btn--block bl-btn--l" style={{ marginTop: 'auto' }} onClick={() => nav('/launch')}>открыть кабинет</button>
             </motion.div>
@@ -271,7 +288,7 @@ export function Approve() {
             <motion.div key="confirm" className="bl-stack" style={{ ...gap('16px'), flex: 1 }} exit={{ opacity: 0, x: -24 }}>
               <h1 className="bl-h2" style={{ marginTop: 16 }}>{CO.employee} просит подтвердить запуск рекламы</h1>
               <div className="bl-card bl-card--white">
-                <dl className="kv kv--stack"><dt>компания</dt><dd>{CO.name}</dd><dt>кампания</dt><dd>{campName(s)}</dd><dt>сумма</dt><dd className="bl-h3">{rub(amount)}</dd><dt>оплата</dt><dd>{PAY_NAMES[s.pay]}</dd></dl>
+                <dl className="kv kv--stack"><dt>компания</dt><dd>{CO.name}</dd><dt>кампания</dt><dd>{campName(s)}</dd><dt>тип</dt><dd>{typeOf(s).t}</dd>{share ? <><dt>оплата</dt><dd>без предоплаты, выплаты вам раз в месяц</dd></> : <><dt>сумма</dt><dd className="bl-h3">{rub(amount)}</dd><dt>оплата</dt><dd>{PAY_NAMES[s.pay]}</dd></>}</dl>
                 <Link to="/offer" target="_blank" className="bl-caption">текст оферты</Link>
               </div>
               <p className="bl-caption">Подтверждая, вы принимаете оферту от имени {CO.name}.</p>
@@ -295,7 +312,8 @@ export function Launch() {
   const nav = useNavigate()
   const text = adText(s)
   const hit = stopHit(text)
-  const waitInvoice = s.paid && s.pay === 'invoice' && !s.invoicePaid
+  const T = typeOf(s)
+  const waitInvoice = s.paid && !T.share && s.pay === 'invoice' && !s.invoicePaid
   const L = hit || waitInvoice || !s.paid ? 0 : s.launch
   useEffect(() => {
     if (hit || waitInvoice || !s.paid || s.launch >= 3) return
@@ -304,9 +322,10 @@ export function Launch() {
   }, [hit, waitInvoice, s.paid, s.launch])
   const fix = () => update(x => { x.adText = text.replace(hit!.word, hit!.fix) })
   const rows = [
-    ...(s.pay === 'invoice' ? [{ done: !waitInvoice, wait: waitInvoice, t: waitInvoice ? 'ждём оплату по счёту' : 'оплата по счёту получена', sub: 'обычно 1–3 рабочих дня' }] : []),
+    ...(s.pay === 'invoice' && !T.share ? [{ done: !waitInvoice, wait: waitInvoice, t: waitInvoice ? 'ждём оплату по счёту' : 'оплата по счёту получена', sub: 'обычно 1–3 рабочих дня' }] : []),
     { done: L >= 1, wait: !hit && !waitInvoice && L === 0, t: L >= 1 ? 'проверено за 2 минуты' : 'ИИ-проверка текста и картинки', sub: 'закон «О рекламе», правила площадок' },
     { done: L >= 2, wait: L === 1, t: 'маркировка', sub: L >= 2 ? 'erid 2SDnjc7Xy3M присвоен, данные в ОРД переданы' : 'присвоим erid и передадим данные в ОРД' },
+    ...(s.otype !== 'click' ? [{ done: L >= 2, wait: L === 1, t: `${T.via.label}: ${s.terms[s.otype].via}`, sub: L >= 2 ? 'проверили тестовым результатом' : T.via.hint }] : []),
     { done: L >= 3, wait: L === 2, t: 'показывается', sub: L >= 3 ? 'первые показы в Витрине выгод и на главной' : 'старт в аукционе сразу после маркировки' },
   ]
   if (!s.paid) {

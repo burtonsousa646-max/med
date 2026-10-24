@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { ArrowLeft, Loader2, Search } from 'lucide-react'
-import { CO, PROVIDERS, type ProviderId } from '../data'
-import { update } from '../store'
+import { CO, OFFER_TYPES, PROVIDERS, type ProviderId } from '../data'
+import { update, useStore } from '../store'
 import { Brand, IdBadge } from '../ui'
 
 const LABEL: Record<ProviderId, string> = { gos: 'войти через Госуслуги', sber: 'войти по СберБизнес ID', alfa: 'войти через Альфа ID' }
@@ -49,6 +49,7 @@ function PhoneForm() {
 
 export function Login() {
   const nav = useNavigate()
+  const { otype } = useStore()
   const [busy, setBusy] = useState<ProviderId | null>(null)
   const pick = (id: ProviderId) => {
     setBusy(id)
@@ -59,6 +60,7 @@ export function Login() {
       <header className="bl-header"><div className="bl-header__side"><Brand /></div><Link className="bl-btn" to="/"><ArrowLeft size={18} />на главную</Link></header>
       <main className="center">
         <motion.div className="bl-modal bl-stack" style={{ ['--bl-gap' as string]: '16px' }} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          {otype !== 'click' && <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}>подключаем: {OFFER_TYPES[otype].t}</span>}
           <h1 className="bl-h2">войдите, и мы покажем охват по вашим точкам</h1>
           <PhoneForm />
           <div className="or"><span>или через бизнес-ID, реквизиты заполним сами</span></div>

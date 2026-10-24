@@ -3,17 +3,40 @@ import { useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
 import { AlertTriangle, Check as CheckIcon, Download, FileDown, Image as ImageIcon, PenLine, Plus, Sparkles, X } from 'lucide-react'
 import { CO, GOALS, IMAGES, PLACES, SIGNALS, VALUE, n, rub, stopHit, type GoalId } from '../data'
-import { activePoints, adText, audience, forecast, modeOf, tabOf, update, useStore, type Bucket, type State, type Tab } from '../store'
+import { activePoints, adText, audience, deal, forecast, modeOf, tabOf, typeOf, update, useStore, type Bucket, type State, type Tab } from '../store'
 import { PhoneSurface, type Ad } from '../mock'
 import { Bars } from '../charts'
-import { Chip, Done, FlowHead, Num, Segmented, toast } from '../ui'
+import { Chip, Done, FlowHead, Num, Segmented, TypeTag, toast } from '../ui'
 
 const gap = (v: string) => ({ ['--bl-gap' as string]: v })
 const TABS: [Tab, string][] = [['auto', 'автопилот'], ['manual', 'вручную'], ['plan', 'медиаплан'], ['special', 'спецпроект']]
 
 export function adOf(s: State): Ad {
   const pts = activePoints(s)
-  return { brand: CO.brand, text: adText(s), offer: GOALS[s.goal].offer, img: s.img, addr: pts[0] ? `${pts[0].addr} · 300 м` : undefined }
+  const d = deal(s)
+  return { brand: CO.brand, text: adText(s), offer: d.offer, img: s.img, addr: pts[0] ? `${pts[0].addr} · 300 м` : undefined, cta: s.otype === 'click' ? undefined : d.cta }
+}
+
+// Условия оффера для купона, заявки, промокода и подписки. У перехода условий нет: платит за клик.
+function Terms() {
+  const s = useStore()
+  const T = typeOf(s), t = s.terms[s.otype]
+  const set = (k: string, v: string) => update(x => { x.terms[x.otype][k] = v; x.adText = null })
+  return (
+    <section className="bl-section bl-section--wide pad" style={{ marginBottom: 24 }}>
+      <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 16 }}><h2 className="bl-h3">условия оффера</h2><span className="bl-caption">{deal(s).line}</span></div>
+      <div className="terms">
+        {T.fields.map(f => (
+          <label key={f.k} className={`bl-field${f.wide ? ' is-wide' : ''}${f.num && !(+t[f.k] > 0) ? ' is-error' : ''}`}>
+            <span className="bl-field__label">{f.label}{f.suffix ? `, ${f.suffix}` : ''}</span>
+            <input className="bl-input" inputMode={f.num ? 'numeric' : undefined} value={t[f.k]} onChange={e => set(f.k, f.num ? e.target.value.replace(/\D/g, '') : e.target.value)} />
+          </label>
+        ))}
+        <div className="bl-field terms__via"><span className="bl-field__label">{T.via.label}</span><div className="bl-row">{T.via.options.map(o => <Chip key={o} on={t.via === o} onClick={() => update(x => { x.terms[x.otype].via = o })}>{o}</Chip>)}</div></div>
+      </div>
+      <p className="bl-caption">{T.via.hint}{T.share ? ` · комиссия билайна ${T.fee} % удерживается из выплаты` : ''}</p>
+    </section>
+  )
 }
 
 function Highlight({ text }: { text: string }) {
@@ -33,14 +56,14 @@ function Auto() {
     <>
       <div className="two">
         <section className="bl-section pad bl-stack" style={gap('16px')}>
-          <h2 className="bl-h2">чего хотите?</h2>
+          <h2 className="bl-h2">{s.otype === 'click' ? 'чего хотите?' : 'кому показать?'}</h2>
           {(Object.keys(GOALS) as GoalId[]).map(id => {
             const g = GOALS[id]
             return (
               <button key={id} className="bl-card choice" aria-pressed={s.goal === id} onClick={() => update(x => { x.goal = id; x.adText = null })}>
                 <span className="bl-row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}><span className="bl-h3">{g.t}</span><span className="choice__mark"><CheckIcon size={16} strokeWidth={3} /></span></span>
                 <span className="bl-body bl-secondary">{g.d}</span>
-                <span className="bl-caption">≈ {n(g.reach * k)} человек · клик от {g.cpc} ₽</span>
+                <span className="bl-caption">≈ {n(g.reach * k)} человек{s.otype === 'click' && ` · клик от ${g.cpc} ₽`}</span>
               </button>
             )
           })}
@@ -147,7 +170,7 @@ function Manual() {
             <tr key={p.id} className={s.places[p.id] ? '' : 'is-dim'}>
               <td style={{ width: 40 }}><label className="bl-check"><input type="checkbox" checked={s.places[p.id]} aria-label={p.t} onChange={e => update(x => { x.places[p.id] = e.target.checked })} /><span className="bl-check__box" /></label></td>
               <td>{p.t}</td><td className="bl-secondary">{p.f}</td><td>{p.ctr === null ? '—' : `${p.ctr.toLocaleString('ru-RU')} %`}</td>
-              <td>{p.pay === 'показы' ? <span className="bl-tag bl-tag--soft-blue">за показы</span> : 'за клик'}</td>
+              <td>{p.pay === 'показы' ? <span className="bl-tag bl-tag--soft-blue">за показы</span> : typeOf(s).payFor}</td>
             </tr>
           ))}</tbody>
         </table></div>
@@ -158,7 +181,7 @@ function Manual() {
 
 function planRows(s: State) {
   const f = forecast(s)
-  return [['ноябрь', 1], ['декабрь', 1.15], ['январь', 1.3]].map(([mo, k]) => ({ mo: mo as string, budget: s.budget * (k as number), clicks: f.clicks * (k as number), visits: f.visits * (k as number) }))
+  return [['ноябрь', 1], ['декабрь', 1.15], ['январь', 1.3]].map(([mo, k]) => ({ mo: mo as string, budget: (typeOf(s).share ? f.money : s.budget) * (k as number), clicks: f.clicks * (k as number), visits: f.res * (k as number) }))
 }
 
 function Plan() {
@@ -167,8 +190,9 @@ function Plan() {
   const rows = planRows(s)
   const a = audience(s)
   const sum = (k: 'budget' | 'clicks' | 'visits') => rows.reduce((t, r) => t + r[k], 0)
+  const T = typeOf(s), money = T.share ? 'выплата вам' : 'бюджет'
   const csv = () => {
-    const lines = [['месяц', 'бюджет, ₽', 'клики', 'визиты'], ...rows.map(r => [r.mo, Math.round(r.budget), Math.round(r.clicks), Math.round(r.visits)])]
+    const lines = [['месяц', `${money}, ₽`, 'клики', T.unit], ...rows.map(r => [r.mo, Math.round(r.budget), Math.round(r.clicks), Math.round(r.visits)])]
     const blob = new Blob(['﻿' + lines.map(r => r.join(';')).join('\n')], { type: 'text/csv;charset=utf-8' })
     const el = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'медиаплан-зерно.csv' })
     el.click(); URL.revokeObjectURL(el.href); toast('Медиаплан скачан, открывается в Excel')
@@ -182,10 +206,11 @@ function Plan() {
           <dt>места показа</dt><dd>{modeOf(s) === 'manual' ? PLACES.filter(p => s.places[p.id]).map(p => p.t).join(', ') : 'подберёт автопилот'}</dd>
           <dt>точки</dt><dd>{activePoints(s).map(p => p.addr).join(', ')}</dd>
           <dt>охват</dt><dd>{n(f.reach)} человек</dd>
+          <dt>тип оффера</dt><dd>{T.t}{s.otype !== 'click' && `: ${deal(s).line}`}</dd>
         </dl>
-        <Bars label="Бюджет по месяцам" height={140} fmt={rub} data={rows.map(r => ({ label: r.mo, value: Math.round(r.budget) }))} />
+        <Bars label={`${money} по месяцам`} height={140} fmt={rub} data={rows.map(r => ({ label: r.mo, value: Math.round(r.budget) }))} />
         <div className="bl-table-wrap"><table className="bl-table">
-          <thead><tr><th>месяц</th><th>бюджет</th><th>клики</th><th>визиты</th></tr></thead>
+          <thead><tr><th>месяц</th><th>{money}</th><th>клики</th><th>{T.unit}</th></tr></thead>
           <tbody>
             {rows.map(r => <tr key={r.mo}><td>{r.mo}</td><td>{rub(r.budget)}</td><td>{n(r.clicks)}</td><td>{n(r.visits)}</td></tr>)}
             <tr className="bl-medium"><td>итого</td><td>{rub(sum('budget'))}</td><td>{n(sum('clicks'))}</td><td>{n(sum('visits'))}</td></tr>
@@ -234,14 +259,16 @@ export default function Build() {
   const f = forecast(s)
   const a = audience(s)
   const hit = stopHit(adText(s))
-  const block = t === 'manual' && a.empty ? 'добавьте сигнал' : null
+  const T = typeOf(s)
+  const block = t === 'manual' && a.empty ? 'добавьте сигнал' : T.fields.some(x => x.num && !(+s.terms[s.otype][x.k] > 0)) ? 'заполните условия' : null
   return (
     <div className="bl-page wrap">
       <FlowHead step={1} />
       <div className="page-title">
-        <h1 className="bl-h1">соберите кампанию</h1>
+        <div className="bl-stack" style={gap('8px')}><TypeTag /><h1 className="bl-h1">соберите кампанию</h1></div>
         <Segmented label="Режим сборки" value={t} options={TABS} onChange={v => update(x => { x.tab = v })} />
       </div>
+      {s.otype !== 'click' && t !== 'special' && <Terms />}
       <AnimatePresence mode="wait">
         <motion.div key={t} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
           {t === 'auto' && <Auto />}{t === 'manual' && <Manual />}{t === 'plan' && <Plan />}{t === 'special' && <Special />}
@@ -249,14 +276,20 @@ export default function Build() {
       </AnimatePresence>
       <div className="bottombar">
         <div className="bl-row" style={gap('24px')}>
-          <span><span className="bl-caption">бюджет</span> <b className="bl-medium">{rub(s.budget)}</b></span>
-          <span><span className="bl-caption">клики</span> <b className="bl-medium"><Num value={f.clicks} /></b></span>
-          <span className="bl-hide-mobile"><span className="bl-caption">придут</span> <b className="bl-medium"><Num value={f.visits} /></b></span>
+          {T.share
+            ? <span><span className="bl-caption">выплатим вам</span> <b className="bl-medium"><Num value={f.money} suffix=" ₽" /></b></span>
+            : <span><span className="bl-caption">бюджет</span> <b className="bl-medium">{rub(s.budget)}</b></span>}
+          {s.otype === 'click'
+            ? <span><span className="bl-caption">клики</span> <b className="bl-medium"><Num value={f.clicks} /></b></span>
+            : <span><span className="bl-caption">{T.unit}</span> <b className="bl-medium"><Num value={f.res} /></b></span>}
+          <span className="bl-hide-mobile">{s.otype === 'click'
+            ? <><span className="bl-caption">придут</span> <b className="bl-medium"><Num value={f.visits} /></b></>
+            : <><span className="bl-caption">{T.per}</span> <b className="bl-medium"><Num value={f.per} suffix=" ₽" /></b></>}</span>
           {hit && t === 'auto' && <span className="bl-caption bl-error bl-hide-mobile">в тексте есть правка</span>}
         </div>
         <div className="bl-row">
           <button className="bl-btn bl-hide-mobile" onClick={() => nav('/reach')}>назад</button>
-          <button className={`bl-btn bl-btn--l ${t === 'special' ? 'bl-btn--dark' : 'bl-btn--primary'}`} disabled={!!block} title={block ?? undefined} onClick={() => nav('/checkout')}>к оплате</button>
+          <button className={`bl-btn bl-btn--l ${t === 'special' ? 'bl-btn--dark' : 'bl-btn--primary'}`} disabled={!!block} title={block ?? undefined} onClick={() => nav('/checkout')}>{T.share ? 'к оферте' : 'к оплате'}</button>
         </div>
       </div>
     </div>

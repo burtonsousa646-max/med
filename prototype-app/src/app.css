@@ -162,7 +162,17 @@
 
 .choice { text-align: left; border: 2px solid transparent; cursor: pointer; font: inherit; transition: border-color var(--transition-fast), background-color var(--transition-fast); }
 .choice:hover { border-color: var(--color-background-tertiary); }
-.choice[aria-pressed="true"] { border-color: var(--color-border-primary); background: var(--color-background-secondary); }
+.choice[aria-pressed="true"], .choice[aria-checked="true"] { border-color: var(--color-border-primary); background: var(--color-background-secondary); }
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.type-opt, .type-opt[aria-checked="true"] { gap: 6px; padding: var(--space-m); background: var(--color-background-primary); }
+.type-opt.type-opt--main { grid-column: 1 / -1; background: var(--color-brand-primary); }
+.type-opt--main .bl-caption { color: var(--color-constant-01); }
+.bl-modal:has(.type-grid) { max-width: 720px; max-height: calc(100dvh - 32px); overflow: auto; }
+.terms { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; margin-bottom: 24px; }
+.terms .bl-field { min-width: 120px; flex: 0 1 140px; }
+.terms .bl-field.is-wide { flex: 1 1 260px; }
+.terms .bl-field.terms__via { flex: 0 0 auto; }
+.terms .bl-row { flex-wrap: nowrap; }
 .choice__mark { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--color-background-tertiary); color: transparent; flex: none; transition: background-color var(--transition-fast); }
 .choice[aria-pressed="true"] .choice__mark { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
 mark.stop { background: var(--color-background-error); color: var(--color-text-primary); border-radius: 4px; padding: 0 2px; text-decoration: underline wavy var(--color-error-primary); text-underline-offset: 3px; }
@@ -246,6 +256,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   .final { padding: var(--space-3xl); }
 }
 @media (max-width: 767px) {
+  .type-grid { grid-template-columns: 1fr; }
+  .terms .bl-row { flex-wrap: wrap; }
   .hero { padding: var(--space-l) 0 var(--space-3xl); gap: var(--space-3xl); }
   .hero__visual { padding: 16px 0 40px 0; }
   .float-card--reach { top: auto; bottom: 18%; left: -4px; }

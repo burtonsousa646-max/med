@@ -12,6 +12,14 @@ info:
       В бою — авторизация по бизнес-ID.
     - `Session.clock` двигает время для показа: «первые 48 часов» или «через 2 недели».
     - Оплата, ЭДО и подтверждение через бизнес-ID — заглушки, отвечают сразу.
+    - Кликов как событий сервер не хранит: click_id собирается из номера кампании (`bl<id>x<случайные символы>`),
+      по нему сервер находит кампанию. В бою click_id выдаёт сервис переходов и хранит каждый клик.
+
+    Отслеживание результата. В каждой ссылке объявления — UTM-метки и click_id. Партнёр передаёт click_id
+    в заказ или заявку и сообщает о результате одним из способов: ответом своего сервера на /postback,
+    загрузкой CSV или отметкой в кабинете. Купон и подписку билайн видит сам: погашение и платёж со счёта.
+    Заявки и заказы по промокоду приходят со статусом «ждёт» и сроком на спор; не оспоренные к сроку
+    засчитываются сами.
 servers:
   - url: /api
 tags:
@@ -21,6 +29,7 @@ tags:
   - { name: кампании }
   - { name: подтверждение }
   - { name: деньги и документы }
+  - { name: отслеживание }
 
 paths:
   /catalog:
@@ -260,6 +269,96 @@ paths:
       responses:
         '200': { description: ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Document' } } } } }
 
+  /tracking:
+    get:
+      tags: [отслеживание]
+      summary: Адрес для ответов сервера партнёра, ключ, состояние подключения
+      operationId: getTracking
+      responses:
+        '200': { $ref: '#/components/responses/Tracking' }
+  /tracking/test:
+    post:
+      tags: [отслеживание]
+      summary: Демо — отправить тестовое событие так, как его прислал бы сервер партнёра
+      operationId: testTracking
+      responses:
+        '200': { $ref: '#/components/responses/Tracking' }
+        '409': { $ref: '#/components/responses/Error' }
+  /postback:
+    get:
+      tags: [отслеживание]
+      summary: Ответ сервера партнёра о результате перехода (S2S)
+      description: |
+        Вызывает сервер партнёра, не браузер. Авторизация — ключ из GET /tracking. Повтор с тем же order_id
+        не создаёт новую конверсию, а меняет статус существующей: так приходят подтверждение, отказ и возврат.
+        Без status заявка и заказ встают в «ждёт» со сроком на спор, купон и подписка засчитываются сразу.
+      operationId: postback
+      parameters:
+        - { name: key, in: query, required: true, schema: { type: string } }
+        - { name: click_id, in: query, required: true, schema: { type: string }, description: 'из ссылки объявления' }
+        - { name: order_id, in: query, schema: { type: string }, description: 'номер заказа или заявки у партнёра; по нему повторы' }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ConversionStatus' } }
+        - { name: amount, in: query, schema: { type: number }, description: 'сумма заказа, ₽ — для процента с покупки' }
+      responses:
+        '200': { $ref: '#/components/responses/Conversion' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /conversions:
+    get:
+      tags: [отслеживание]
+      summary: Конверсии компании, новые сверху. Не оспоренные к сроку становятся подтверждёнными
+      operationId: listConversions
+      parameters:
+        - { name: campaignId, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Conversion' } } } } }
+  /conversions/{conversionId}:
+    patch:
+      tags: [отслеживание]
+      summary: Подтвердить или оспорить конверсию до конца срока на спор
+      operationId: patchConversion
+      parameters: [{ name: conversionId, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [approved, rejected] }
+                note: { type: string, description: 'причина отказа: дубль, не дозвонились, не наш регион' }
+      responses:
+        '200': { $ref: '#/components/responses/Conversion' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /conversions/import:
+    post:
+      tags: [отслеживание]
+      summary: Загрузить статусы файлом CSV
+      description: |
+        Столбцы click_id, order_id, status, amount; разделитель «;» или «,»; первая строка может быть заголовком.
+        Каждая строка обрабатывается как один вызов /postback. Ошибочные строки пропускаются и перечисляются в ответе.
+      operationId: importConversions
+      requestBody:
+        required: true
+        content: { text/csv: { schema: { type: string } } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, updated, errors]
+                properties:
+                  created: { type: integer }
+                  updated: { type: integer }
+                  errors:
+                    type: array
+                    items: { type: object, required: [line, message], properties: { line: { type: integer }, message: { type: string } } }
+
 components:
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
@@ -271,6 +370,8 @@ components:
     Campaign: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Campaign' } } } }
     Approval: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Approval' } } } }
     Balance: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Balance' } } } }
+    Tracking: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Tracking' } } } }
+    Conversion: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Conversion' } } } }
 
   schemas:
     Error:
@@ -441,7 +542,7 @@ components:
     # ───────── кампании ─────────
     Campaign:
       type: object
-      required: [id, type, status, name, mode, goal, adText, img, terms, audience, places, budget, amount, payMethod, tips, approvalToken, createdAt, launchedAt, launchStep, deal, forecast, moderation, totals]
+      required: [id, type, status, name, mode, goal, adText, img, terms, audience, places, budget, amount, payMethod, tips, approvalToken, createdAt, launchedAt, launchStep, deal, forecast, moderation, totals, landingUrl, trackingUrl, partnerEventAt]
       properties:
         id: { type: integer }
         type: { $ref: '#/components/schemas/OfferType' }
@@ -462,6 +563,9 @@ components:
         payMethod: { $ref: '#/components/schemas/PayMethod' }
         tips: { type: array, items: { type: string }, description: применённые советы }
         approvalToken: { type: [string, 'null'] }
+        landingUrl: { type: string, format: uri, description: 'куда ведёт объявление: сайт, страница в Картах, телефон' }
+        trackingUrl: { type: string, readOnly: true, description: 'landingUrl с UTM-метками и макросом {click_id}: его подставляет сервис переходов' }
+        partnerEventAt: { type: [string, 'null'], format: date-time, readOnly: true, description: 'последнее событие по кампании от партнёра (postback или CSV); null — ещё не было' }
         createdAt: { type: string, format: date-time }
         launchedAt: { type: [string, 'null'], format: date-time }
         launchStep: { type: integer, minimum: 0, maximum: 3, description: '0 — проверка, 1 — маркировка, 2 — подключение, 3 — показывается' }
@@ -495,6 +599,7 @@ components:
         amount: { type: [integer, 'null'] }
         payMethod: { $ref: '#/components/schemas/PayMethod' }
         paused: { type: boolean }
+        landingUrl: { type: string, format: uri }
     Forecast:
       type: object
       readOnly: true
@@ -600,3 +705,35 @@ components:
         title: { type: string }
         date: { type: string }
         status: { type: string }
+
+    # ───────── отслеживание ─────────
+    ConversionStatus: { type: string, enum: [pending, approved, rejected, returned], description: 'ждёт, засчитана, отклонена партнёром, возврат' }
+    Conversion:
+      type: object
+      required: [id, campaignId, campaignName, clickId, orderId, kind, amount, status, source, note, disputeUntil, createdAt]
+      properties:
+        id: { type: integer }
+        campaignId: { type: integer }
+        campaignName: { type: string }
+        clickId: { type: string }
+        orderId: { type: [string, 'null'] }
+        kind: { type: string, enum: [lead, order, redeem, renewal], description: 'заявка, заказ по промокоду, погашение купона, платёж подписки' }
+        amount: { type: [number, 'null'], description: сумма заказа или платежа, ₽ }
+        status: { $ref: '#/components/schemas/ConversionStatus' }
+        source: { type: string, enum: [postback, csv, cabinet, form, billing], description: 'сервер партнёра, файл, кабинет, форма в приложении билайна, платёж со счёта телефона' }
+        note: { type: [string, 'null'] }
+        disputeUntil: { type: [string, 'null'], format: date-time, description: 'до какого момента можно оспорить; null — оспаривать нечего' }
+        createdAt: { type: string, format: date-time }
+    Tracking:
+      type: object
+      required: [postbackUrl, key, connected, lastEventAt, events, disputeDays]
+      properties:
+        postbackUrl: { type: string, description: 'шаблон адреса для сервера партнёра с ключом и макросами в фигурных скобках' }
+        key: { type: string, description: секретный ключ компании }
+        connected: { type: boolean, description: пришло хотя бы одно событие от партнёра (postback или CSV) }
+        lastEventAt: { type: [string, 'null'], format: date-time }
+        events: { type: integer, description: событий от партнёра всего }
+        disputeDays:
+          type: object
+          description: срок на спор в днях по типам оффера; типов без спора здесь нет
+          additionalProperties: { type: integer }

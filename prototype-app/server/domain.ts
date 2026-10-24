@@ -150,7 +150,7 @@ export const DEFAULT_TERMS: Record<OfferType, Record<string, string>> = {
 }
 
 // Кампания, как она хранится: то, что задаёт партнёр, плюс служебные даты. Вычисляемое — в view()
-export type CampaignRow = Omit<S['Campaign'], 'name' | 'adText' | 'launchStep' | 'deal' | 'forecast' | 'moderation' | 'launchedAt' | 'totals'> & {
+export type CampaignRow = Omit<S['Campaign'], 'name' | 'adText' | 'launchStep' | 'deal' | 'forecast' | 'moderation' | 'launchedAt' | 'totals' | 'trackingUrl' | 'partnerEventAt'> & {
   adText: string | null; approved: boolean; submittedAt: string | null
 }
 
@@ -223,7 +223,7 @@ const STEPS_MS = [1600, 2800, 4000]
 const LAUNCHED = ['moderation', 'live', 'paused'] as const
 export const launched = (c: CampaignRow) => (LAUNCHED as readonly string[]).includes(c.status)
 
-export function view(c: CampaignRow, activePoints: number, clock: Clock): S['Campaign'] {
+export function view(c: CampaignRow, activePoints: number, clock: Clock, partnerEventAt: string | null = null): S['Campaign'] {
   const d = deal(c), adText = c.adText ?? d.text, hit = stopHit(adText)
   const since = c.submittedAt ? Date.now() - Date.parse(c.submittedAt) : 0
   let status = c.status, launchStep = launched(c) ? 3 : 0, launchedAt: string | null = null
@@ -236,7 +236,22 @@ export function view(c: CampaignRow, activePoints: number, clock: Clock): S['Cam
   if (launched(c) && status !== 'rejected' && c.submittedAt) launchedAt = new Date(Date.parse(c.submittedAt) + STEPS_MS[2]).toISOString()
   const { approved: _a, submittedAt: _s, ...rest } = c
   const st = status === 'live' || status === 'paused' ? stats(c, clock, activePoints) : null
-  return { ...rest, status, name: d.name, adText, launchStep, launchedAt, deal: { line: d.line, offer: d.offer, cta: d.cta }, forecast: forecast(c, activePoints), moderation: hit, totals: st && { clicks: st.clicks, results: st.results } }
+  return { ...rest, partnerEventAt, landingUrl: landingOf(c), trackingUrl: trackingUrl(c), status, name: d.name, adText, launchStep, launchedAt, deal: { line: d.line, offer: d.offer, cta: d.cta }, forecast: forecast(c, activePoints), moderation: hit, totals: st && { clicks: st.clicks, results: st.results } }
+}
+
+/* ───────── отслеживание ───────── */
+// Срок на спор, дней: заявку партнёр проверяет звонком, заказ по промокоду ждёт окончания срока возврата
+export const DISPUTE_DAYS: Partial<Record<OfferType, number>> = { lead: 7, promo: 14 }
+export const KIND: Record<Exclude<OfferType, 'click'>, S['Conversion']['kind']> = { coupon: 'redeem', lead: 'lead', promo: 'order', sub: 'renewal' }
+
+// click_id тестового сервера: номер кампании внутри, чтобы найти её без таблицы кликов
+export const newClickId = (campaignId: number) => `bl${campaignId}x${Math.random().toString(16).slice(2, 10)}`
+export const clickCampaign = (clickId: string) => Number(/^bl(\d+)x[0-9a-f]{4,}$/.exec(clickId)?.[1] ?? NaN)
+
+export const landingOf = (c: CampaignRow) => c.landingUrl ?? `https://${CO.site}` // кампании, созданные до появления поля
+export function trackingUrl(c: CampaignRow) {
+  const url = landingOf(c)
+  return `${url}${url.includes('?') ? '&' : '?'}utm_source=beeline&utm_medium=${c.type}&utm_campaign=${c.id}&click_id={click_id}`
 }
 
 // Сколько списано с баланса на момент демо-часов

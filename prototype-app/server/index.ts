@@ -7,11 +7,11 @@ import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { components } from '../src/api.gen.ts'
 import * as db from './db.ts'
-import { CO, DEFAULT_TERMS, OFFER_TYPES, SLOTS, catalog, launched, payAmount, payout, spent, stats, view, type CampaignRow, type OfferType } from './domain.ts'
+import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, view, type CampaignRow, type OfferType } from './domain.ts'
 
 type S = components['schemas']
 type Env = { Variables: { cid: string } }
-const fail = (c: Context, status: 400 | 404 | 409, message: string) => c.json({ message }, status)
+const fail = (c: Context, status: 400 | 401 | 404 | 409, message: string) => c.json({ message }, status)
 
 export const app = new Hono<Env>().basePath('/api')
 
@@ -24,7 +24,7 @@ const newDemo = (c: Context<Env>) => {
 }
 app.use('*', async (c, next) => {
   const path = c.req.path.replace(/^\/api/, '')
-  if (path === '/catalog' || path.startsWith('/approvals/')) return next()
+  if (path === '/catalog' || path === '/postback' || path.startsWith('/approvals/')) return next()
   let id = getCookie(c, COOKIE)
   if (!id || !db.companyExists(id)) id = newDemo(c)
   else db.touch(id)
@@ -76,13 +76,14 @@ app.post('/company/members', async c => {
 })
 
 /* ───────── кампании ───────── */
-const show = (cid: string, row: CampaignRow) => view(row, db.activePoints(cid), db.getSession(cid).clock)
+const show = (cid: string, row: CampaignRow) => view(row, db.activePoints(cid), db.getSession(cid).clock, db.partnerEventAt(cid, row.id))
 const find = (c: Context<Env>) => db.getCampaign(c.var.cid, +c.req.param('id')!)
 
 // Отправка на запуск: деньги на баланс (кроме купона, подписки и счёта), потом проверка и показы
 function launch(cid: string, row: CampaignRow) {
   const share = OFFER_TYPES[row.type].share
   if (!share && row.payMethod === 'invoice' && row.status !== 'invoice') return { ...row, status: 'invoice' as const }
+  seedConversions(cid, row)
   if (!share) {
     const first = !db.listOperations(cid).some(o => o.title.startsWith('бонус'))
     db.addOperation(cid, row.payMethod === 'post' ? 'постоплата, лимит по договору' : `пополнение, ${row.payMethod === 'card' ? 'бизнес-карта' : row.payMethod === 'invoice' ? 'счёт-оферта' : 'СБП'}`, payAmount(row))
@@ -115,6 +116,10 @@ app.patch('/campaigns/:id', async c => {
     if (row.status === 'moderation') row.submittedAt = new Date().toISOString() // исправленный текст — на повторную проверку
   }
   if (p.budget !== undefined) row.budget = Math.max(3000, Math.round(p.budget))
+  if (p.landingUrl !== undefined) {
+    if (!/^https?:\/\/[^\s.]+\.[^\s]+$/.test(p.landingUrl)) return fail(c, 400, 'адрес должен начинаться с https:// и вести на сайт')
+    row.landingUrl = p.landingUrl
+  }
   if (p.paused !== undefined && launched(row)) row.status = p.paused ? 'paused' : 'live'
   for (const k of ['mode', 'img', 'audience', 'places', 'amount', 'payMethod'] as const) if (p[k] !== undefined) (row as Record<string, unknown>)[k] = p[k]
   return c.json(show(c.var.cid, db.saveCampaign(c.var.cid, row)))
@@ -185,6 +190,103 @@ app.post('/approvals/:token/pay', c => {
   if (!found || !found.c.approved || found.c.status !== 'approval') return fail(c, 409, 'сначала подтвердите оферту')
   db.saveCampaign(found.companyId, launch(found.companyId, found.c))
   return c.json(approval(c.req.param('token'))!)
+})
+
+/* ───────── отслеживание ───────── */
+// Демо: после запуска у купона уже есть погашения, у подписки — платежи, у заявки — заявки из формы, ждущие проверки
+function seedConversions(cid: string, row: CampaignRow) {
+  if (row.type === 'click' || row.type === 'promo') return
+  const price = +row.terms.price || 0, days = DISPUTE_DAYS[row.type]
+  const n = { coupon: 3, lead: 3, sub: 2 }[row.type]
+  for (let i = 0; i < n; i++) db.addConversion(cid, {
+    campaignId: row.id, clickId: newClickId(row.id), orderId: null, kind: KIND[row.type], amount: row.type === 'lead' ? null : price,
+    status: days ? 'pending' : 'approved', source: { coupon: 'cabinet', lead: 'form', sub: 'billing' }[row.type] as S['Conversion']['source'],
+    note: null, disputeUntil: days ? new Date(Date.now() + days * 864e5).toISOString() : null,
+  })
+}
+
+type Event = { clickId: string; orderId?: string | null; status?: string | null; amount?: number | null; source: 'postback' | 'csv'; note?: string }
+const STATUSES = ['pending', 'approved', 'rejected', 'returned']
+// Один разбор для /postback и строк CSV. Повтор order_id меняет статус, а не создаёт новую конверсию
+function receive(cid: string, e: Event): { conv: S['Conversion']; created: boolean } | { error: string; code: 400 | 404 | 409 } {
+  const row = db.getCampaign(cid, clickCampaign(e.clickId))
+  if (!row) return { error: 'click_id не из ваших кампаний', code: 404 }
+  if (row.type === 'click') return { error: 'у рекламы с оплатой за переход партнёр результат не присылает', code: 400 }
+  if (e.status && !STATUSES.includes(e.status)) return { error: `статус: ${STATUSES.join(', ')}`, code: 400 }
+  if (e.amount != null && !(e.amount >= 0)) return { error: 'сумма — число', code: 400 }
+  const old = e.orderId ? db.conversionByOrder(cid, e.orderId) : undefined
+  if (old) {
+    if (!e.status || e.status === old.status) return { conv: named(cid, old), created: false }
+    const ok = (old.status === 'pending' && e.status !== 'pending') || (old.status === 'approved' && e.status === 'returned')
+    if (!ok) return { error: `заказ ${e.orderId}: из «${old.status}» в «${e.status}» нельзя`, code: 409 }
+    return { conv: named(cid, db.setConversion(cid, old.id, e.status, null)), created: false }
+  }
+  if (e.status === 'returned' || e.status === 'rejected') return { error: 'возврат или отказ — только для уже присланного order_id', code: 409 }
+  const days = DISPUTE_DAYS[row.type], status = e.status ?? (days ? 'pending' : 'approved')
+  const conv = db.addConversion(cid, {
+    campaignId: row.id, clickId: e.clickId, orderId: e.orderId ?? null, kind: KIND[row.type], amount: e.amount ?? null, status: status as S['ConversionStatus'],
+    source: e.source, note: e.note ?? null, disputeUntil: status === 'pending' && days ? new Date(Date.now() + days * 864e5).toISOString() : null,
+  })
+  return { conv: named(cid, conv), created: true }
+}
+const named = (cid: string, r: db.ConversionRow): S['Conversion'] => {
+  const row = db.getCampaign(cid, r.campaignId)
+  return { ...r, campaignName: row ? deal(row).name : '—' }
+}
+
+function trackingView(c: Context<Env>): S['Tracking'] {
+  const t = db.tracking(c.var.cid), host = c.req.header('host') ?? '127.0.0.1:8787'
+  const origin = `${/^(127\.|localhost)/.test(host) ? 'http' : 'https'}://${host}`
+  return {
+    postbackUrl: `${origin}/api/postback?key=${t.key}&click_id={click_id}&order_id={order_id}&status={status}&amount={amount}`,
+    key: t.key, connected: t.events > 0, lastEventAt: t.last_event_at, events: t.events,
+    disputeDays: DISPUTE_DAYS as Record<string, number>,
+  }
+}
+app.get('/tracking', c => c.json(trackingView(c)))
+app.post('/tracking/test', c => {
+  const row = db.listCampaigns(c.var.cid).find(r => r.type !== 'click')
+  if (!row) return fail(c, 409, 'создайте кампанию с купоном, заявкой, промокодом или подпиской')
+  const r = receive(c.var.cid, { clickId: newClickId(row.id), orderId: `test-${Date.now()}`, amount: row.type === 'promo' ? +row.terms.check || null : null, source: 'postback', note: 'тестовое событие' })
+  if ('error' in r) return fail(c, r.code, r.error)
+  db.trackingEvent(c.var.cid)
+  return c.json(trackingView(c))
+})
+app.get('/postback', c => {
+  const q = c.req.query(), cid = db.companyByKey(q.key ?? '')
+  if (!cid) return fail(c, 401, 'неверный ключ')
+  if (!q.click_id) return fail(c, 400, 'нужен click_id')
+  const r = receive(cid, { clickId: q.click_id, orderId: q.order_id || null, status: q.status || null, amount: q.amount ? +q.amount : null, source: 'postback' })
+  if ('error' in r) return fail(c, r.code, r.error)
+  db.trackingEvent(cid)
+  return c.json(r.conv)
+})
+app.get('/conversions', c => {
+  const campaignId = c.req.query('campaignId')
+  return c.json(db.listConversions(c.var.cid, campaignId ? +campaignId : undefined).map(r => named(c.var.cid, r)))
+})
+app.patch('/conversions/:conversionId', async c => {
+  const conv = db.getConversion(c.var.cid, +c.req.param('conversionId'))
+  if (!conv) return fail(c, 404, 'конверсия не найдена')
+  const { status, note } = await c.req.json<{ status: string; note?: string }>()
+  if (status !== 'approved' && status !== 'rejected') return fail(c, 400, 'статус: approved или rejected')
+  if (conv.status !== 'pending' || !conv.disputeUntil || Date.parse(conv.disputeUntil) < Date.now()) return fail(c, 409, 'срок на спор прошёл или решение уже принято')
+  return c.json(named(c.var.cid, db.setConversion(c.var.cid, conv.id, status, note?.trim() || null)))
+})
+app.post('/conversions/import', async c => {
+  const lines = (await c.req.text()).split(/\r?\n/)
+  const out = { created: 0, updated: 0, errors: [] as { line: number; message: string }[] }
+  lines.forEach((text, i) => {
+    const cells = text.split(/[;,]/).map(x => x.trim())
+    if (!cells[0] || (i === 0 && cells[0] === 'click_id')) return
+    const [clickId, orderId, status, amount] = cells
+    const r = receive(c.var.cid, { clickId, orderId: orderId || null, status: status || null, amount: amount ? +amount.replace(/\s/g, '') : null, source: 'csv' })
+    if ('error' in r) out.errors.push({ line: i + 1, message: r.error })
+    else if (r.created) out.created++
+    else out.updated++
+  })
+  if (out.created + out.updated) db.trackingEvent(c.var.cid, out.created + out.updated)
+  return c.json(out)
 })
 
 /* ───────── деньги и документы ───────── */

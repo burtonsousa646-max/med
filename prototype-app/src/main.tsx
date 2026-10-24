@@ -11,7 +11,7 @@ import Landing from './screens/Landing'
 import { Inn, Login } from './screens/Entry'
 import { Approve, Checkout, Consent, Launch, Reach } from './screens/Flow'
 import Build from './screens/Build'
-import { Balance, Campaigns, Company, Docs, Help, Stats } from './screens/Cabinet'
+import { Balance, Campaigns, Company, Connections, Docs, Help, Stats } from './screens/Cabinet'
 import { Brand, DemoMenu, Toaster, screenName } from './ui'
 
 function Offer() {
@@ -80,6 +80,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/cab/stats" element={<LatestStats />} />
                 <Route path="/cab/stats/:id" element={<Stats />} />
                 <Route path="/cab/campaigns" element={<Campaigns />} />
+                <Route path="/cab/connections" element={<Connections />} />
                 <Route path="/cab/balance" element={<Balance />} />
                 <Route path="/cab/docs" element={<Docs />} />
                 <Route path="/cab/company" element={<Company />} />

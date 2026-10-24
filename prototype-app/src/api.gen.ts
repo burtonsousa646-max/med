@@ -383,6 +383,117 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tracking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Адрес для ответов сервера партнёра, ключ, состояние подключения */
+        get: operations["getTracking"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tracking/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Демо — отправить тестовое событие так, как его прислал бы сервер партнёра */
+        post: operations["testTracking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/postback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ответ сервера партнёра о результате перехода (S2S)
+         * @description Вызывает сервер партнёра, не браузер. Авторизация — ключ из GET /tracking. Повтор с тем же order_id
+         *     не создаёт новую конверсию, а меняет статус существующей: так приходят подтверждение, отказ и возврат.
+         *     Без status заявка и заказ встают в «ждёт» со сроком на спор, купон и подписка засчитываются сразу.
+         */
+        get: operations["postback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Конверсии компании, новые сверху. Не оспоренные к сроку становятся подтверждёнными */
+        get: operations["listConversions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions/{conversionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Подтвердить или оспорить конверсию до конца срока на спор */
+        patch: operations["patchConversion"];
+        trace?: never;
+    };
+    "/conversions/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Загрузить статусы файлом CSV
+         * @description Столбцы click_id, order_id, status, amount; разделитель «;» или «,»; первая строка может быть заголовком.
+         *     Каждая строка обрабатывается как один вызов /postback. Ошибочные строки пропускаются и перечисляются в ответе.
+         */
+        post: operations["importConversions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -611,6 +722,18 @@ export interface components {
             /** @description применённые советы */
             tips: string[];
             approvalToken: string | null;
+            /**
+             * Format: uri
+             * @description куда ведёт объявление: сайт, страница в Картах, телефон
+             */
+            landingUrl: string;
+            /** @description landingUrl с UTM-метками и макросом {click_id}: его подставляет сервис переходов */
+            readonly trackingUrl: string;
+            /**
+             * Format: date-time
+             * @description последнее событие по кампании от партнёра (postback или CSV); null — ещё не было
+             */
+            readonly partnerEventAt: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -650,6 +773,8 @@ export interface components {
             amount?: number | null;
             payMethod?: components["schemas"]["PayMethod"];
             paused?: boolean;
+            /** Format: uri */
+            landingUrl?: string;
         };
         Forecast: {
             /** @description подходящих людей рядом с активными точками */
@@ -751,6 +876,55 @@ export interface components {
             date: string;
             status: string;
         };
+        /**
+         * @description ждёт, засчитана, отклонена партнёром, возврат
+         * @enum {string}
+         */
+        ConversionStatus: "pending" | "approved" | "rejected" | "returned";
+        Conversion: {
+            id: number;
+            campaignId: number;
+            campaignName: string;
+            clickId: string;
+            orderId: string | null;
+            /**
+             * @description заявка, заказ по промокоду, погашение купона, платёж подписки
+             * @enum {string}
+             */
+            kind: "lead" | "order" | "redeem" | "renewal";
+            /** @description сумма заказа или платежа */
+            amount: number | null;
+            status: components["schemas"]["ConversionStatus"];
+            /**
+             * @description сервер партнёра, файл, кабинет, форма в приложении билайна, платёж со счёта телефона
+             * @enum {string}
+             */
+            source: "postback" | "csv" | "cabinet" | "form" | "billing";
+            note: string | null;
+            /**
+             * Format: date-time
+             * @description до какого момента можно оспорить; null — оспаривать нечего
+             */
+            disputeUntil: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        Tracking: {
+            /** @description шаблон адреса для сервера партнёра с ключом и макросами в фигурных скобках */
+            postbackUrl: string;
+            /** @description секретный ключ компании */
+            key: string;
+            /** @description пришло хотя бы одно событие от партнёра (postback или CSV) */
+            connected: boolean;
+            /** Format: date-time */
+            lastEventAt: string | null;
+            /** @description событий от партнёра всего */
+            events: number;
+            /** @description срок на спор в днях по типам оффера; типов без спора здесь нет */
+            disputeDays: {
+                [key: string]: number;
+            };
+        };
     };
     responses: {
         /** @description ошибка */
@@ -805,6 +979,24 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["Balance"];
+            };
+        };
+        /** @description ok */
+        Tracking: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Tracking"];
+            };
+        };
+        /** @description ok */
+        Conversion: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Conversion"];
             };
         };
     };
@@ -1257,6 +1449,133 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Document"][];
+                };
+            };
+        };
+    };
+    getTracking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Tracking"];
+        };
+    };
+    testTracking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Tracking"];
+            409: components["responses"]["Error"];
+        };
+    };
+    postback: {
+        parameters: {
+            query: {
+                key: string;
+                /** @description из ссылки объявления */
+                click_id: string;
+                /** @description номер заказа или заявки у партнёра; по нему повторы */
+                order_id?: string;
+                status?: components["schemas"]["ConversionStatus"];
+                /** @description сумма заказа, ₽ — для процента с покупки */
+                amount?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Conversion"];
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listConversions: {
+        parameters: {
+            query?: {
+                campaignId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ok */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversion"][];
+                };
+            };
+        };
+    };
+    patchConversion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "approved" | "rejected";
+                    /** @description причина отказа: дубль, не дозвонились, не наш регион */
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            200: components["responses"]["Conversion"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    importConversions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/csv": string;
+            };
+        };
+        responses: {
+            /** @description ok */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        created: number;
+                        updated: number;
+                        errors: {
+                            line: number;
+                            message: string;
+                        }[];
+                    };
                 };
             };
         };

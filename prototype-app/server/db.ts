@@ -19,6 +19,12 @@ db.exec(`
   create table if not exists operations (id integer primary key, company_id text not null references companies on delete cascade, title text not null, amount integer not null, created text not null);
   create table if not exists requests (id integer primary key, company_id text not null references companies on delete cascade, data text not null, created text not null);
   create index if not exists campaigns_company on campaigns (company_id);
+  create table if not exists tracking (company_id text primary key references companies on delete cascade, key text not null unique, events integer not null default 0, last_event_at text);
+  create table if not exists conversions (
+    id integer primary key, company_id text not null references companies on delete cascade, campaign_id integer not null,
+    click_id text not null, order_id text, kind text not null, amount real, status text not null, source text not null, note text,
+    dispute_until text, created text not null, unique (company_id, order_id)
+  );
 `)
 
 const json = <T>(v: unknown) => JSON.parse(String(v)) as T
@@ -84,6 +90,7 @@ export function newCampaign(companyId: string, type: OfferType): CampaignRow {
     terms: { ...DEFAULT_TERMS[type] }, audience: { live: 'any', work: 'any', rival: 'and' },
     places: { showcase: true, main: true, paid: true, rest: false, shop: false, push: false, tv: false },
     budget: 10000, amount: null, payMethod: 'sbp', tips: [], approvalToken: null, approved: false, createdAt: now(), submittedAt: null,
+    landingUrl: `https://${CO.site}`,
   }
   const { lastInsertRowid } = db.prepare('insert into campaigns (company_id, data) values (?, ?)').run(companyId, JSON.stringify(row))
   return { ...row, id: Number(lastInsertRowid) }
@@ -114,3 +121,35 @@ export const listOperations = (companyId: string) =>
   db.prepare('select title, amount, created from operations where company_id = ? order by id desc').all(companyId) as { title: string; amount: number; created: string }[]
 export const addRequest = (companyId: string, data: object) =>
   Number(db.prepare('insert into requests (company_id, data, created) values (?, ?, ?)').run(companyId, JSON.stringify(data), now()).lastInsertRowid)
+
+/* ───────── отслеживание ───────── */
+type TrackingRow = { key: string; events: number; last_event_at: string | null }
+export function tracking(companyId: string) {
+  db.prepare('insert or ignore into tracking (company_id, key) values (?, ?)').run(companyId, randomUUID().replaceAll('-', ''))
+  return db.prepare('select key, events, last_event_at from tracking where company_id = ?').get(companyId) as TrackingRow
+}
+export const companyByKey = (key: string) => (db.prepare('select company_id from tracking where key = ?').get(key) as { company_id: string } | undefined)?.company_id
+export const trackingEvent = (companyId: string, n = 1) =>
+  db.prepare('update tracking set events = events + ?, last_event_at = ? where company_id = ?').run(n, now(), companyId)
+
+export type ConversionRow = Omit<S['Conversion'], 'campaignName'>
+const CONV = 'select id, campaign_id campaignId, click_id clickId, order_id orderId, kind, amount, status, source, note, dispute_until disputeUntil, created createdAt from conversions'
+export function addConversion(companyId: string, c: Omit<ConversionRow, 'id' | 'createdAt'>) {
+  const { lastInsertRowid } = db.prepare('insert into conversions (company_id, campaign_id, click_id, order_id, kind, amount, status, source, note, dispute_until, created) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(companyId, c.campaignId, c.clickId, c.orderId, c.kind, c.amount, c.status, c.source, c.note, c.disputeUntil, now())
+  return getConversion(companyId, Number(lastInsertRowid))!
+}
+export const partnerEventAt = (companyId: string, campaignId: number) =>
+  (db.prepare("select max(created) at from conversions where company_id = ? and campaign_id = ? and source in ('postback', 'csv')").get(companyId, campaignId) as { at: string | null }).at
+export const getConversion = (companyId: string, id: number) => db.prepare(`${CONV} where company_id = ? and id = ?`).get(companyId, id) as unknown as ConversionRow | undefined
+export const conversionByOrder = (companyId: string, orderId: string) => db.prepare(`${CONV} where company_id = ? and order_id = ?`).get(companyId, orderId) as unknown as ConversionRow | undefined
+export function setConversion(companyId: string, id: number, status: string, note: string | null) {
+  db.prepare('update conversions set status = ?, note = coalesce(?, note) where company_id = ? and id = ?').run(status, note, companyId, id)
+  return getConversion(companyId, id)!
+}
+// Срок на спор вышел — заявка или заказ засчитываются сами
+export function listConversions(companyId: string, campaignId?: number) {
+  db.prepare("update conversions set status = 'approved' where company_id = ? and status = 'pending' and dispute_until < ?").run(companyId, now())
+  const rows = campaignId ? db.prepare(`${CONV} where company_id = ? and campaign_id = ? order by id desc`).all(companyId, campaignId) : db.prepare(`${CONV} where company_id = ? order by id desc`).all(companyId)
+  return rows as unknown as ConversionRow[]
+}

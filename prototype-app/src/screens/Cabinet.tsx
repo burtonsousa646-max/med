@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import { motion } from 'motion/react'
-import { AlertTriangle, BarChart3, Building2, Check as CheckIcon, CircleHelp, FileText, Info, Megaphone, MessageCircle, Pause, Play, Plus, TrendingUp, Wallet } from 'lucide-react'
+import { AlertTriangle, BarChart3, Building2, Check as CheckIcon, CircleHelp, Copy, FileText, Info, Megaphone, MessageCircle, Pause, Play, Plug, Plus, TrendingUp, Upload, Wallet } from 'lucide-react'
 import { n, rub } from '../data'
-import { $api, act, useBalance, useCampaign, useCampaigns, useCatalog, useCompany, useOfferType, useSession, type Campaign, type S } from '../api'
+import { $api, act, client, queryClient, useBalance, useCampaign, useCampaigns, useCatalog, useCompany, useOfferType, useSession, type Campaign, type S } from '../api'
 import { Bars } from '../charts'
-import { Brand, Check, Chip, DemoNote, Modal, Num, Qr, Segmented, TypePicker, toast } from '../ui'
+import { Brand, Check, Chip, DemoNote, Modal, Num, Qr, Segmented, TypePicker, copy, toast, when } from '../ui'
 
 const gap = (v: string) => ({ ['--bl-gap' as string]: v })
-const NAV = [['campaigns', 'кампании', Megaphone], ['stats', 'статистика', BarChart3], ['balance', 'баланс', Wallet], ['docs', 'документы', FileText], ['company', 'компания', Building2], ['help', 'помощь', CircleHelp]] as const
+const NAV = [['campaigns', 'кампании', Megaphone], ['stats', 'статистика', BarChart3], ['connections', 'подключения', Plug], ['balance', 'баланс', Wallet], ['docs', 'документы', FileText], ['company', 'компания', Building2], ['help', 'помощь', CircleHelp]] as const
 
 function Shell({ title, aside, children }: { title: ReactNode; aside?: ReactNode; children: ReactNode }) {
   const co = useCompany(), b = useBalance()
@@ -148,6 +148,7 @@ function CampaignStats({ id }: { id: number }) {
         <h2 className="bl-h2">статистика появится после запуска</h2>
         <div><Link className="bl-btn bl-btn--primary bl-btn--l" to={`/c/${id}/launch`}>статус запуска</Link></div>
       </section> : !st ? <div className="bl-skeleton" style={{ height: 240 }} /> : st.clock === 'h48' ? <First48 c={c} st={st} /> : <TwoWeeks c={c} st={st} />}
+      {ready && c.type !== 'click' && <CampaignConversions c={c} />}
     </Shell>
   )
 }
@@ -204,6 +205,94 @@ export function Campaigns() {
         </table></div>
         {!list.length && <p className="bl-caption" style={{ marginTop: 16 }}>Кампаний пока нет. Нажмите «новая кампания».</p>}
       </section>
+    </Shell>
+  )
+}
+
+/* ───────── конверсии и подключения ───────── */
+const CONV_STATUS: Record<S['ConversionStatus'], [string, string]> = {
+  pending: ['ждёт решения', ''], approved: ['засчитана', 'bl-tag--soft-green'], rejected: ['отклонена', 'bl-tag--soft-violet'], returned: ['возврат', ''],
+}
+const KIND: Record<S['Conversion']['kind'], string> = { lead: 'заявка', order: 'заказ', redeem: 'погашение купона', renewal: 'платёж подписки' }
+const SOURCE: Record<S['Conversion']['source'], string> = { postback: 'сервер партнёра', csv: 'файл CSV', cabinet: 'кабинет', form: 'форма билайна', billing: 'счёт телефона' }
+
+// Таблица конверсий: в статистике кампании — её конверсии, в «подключениях» — общая очередь спора
+function Conversions({ rows, campaign }: { rows: S['Conversion'][]; campaign?: boolean }) {
+  const decide = $api.useMutation('patch', '/conversions/{conversionId}', act)
+  const set = (id: number, status: 'approved' | 'rejected') => decide.mutate({ params: { path: { conversionId: id } }, body: status === 'rejected' ? { status, note: 'оспорено в кабинете' } : { status } })
+  return (
+    <div className="bl-table-wrap"><table className="bl-table">
+      <thead><tr><th>когда</th><th>{campaign ? 'кампания и событие' : 'событие'}</th><th>сумма</th><th>источник</th><th>статус</th><th /></tr></thead>
+      <tbody>{rows.map(v => (
+        <tr key={v.id}>
+          <td className="bl-nums" style={{ whiteSpace: 'nowrap' }}>{when(v.createdAt)}</td>
+          <td>{campaign ? v.campaignName : KIND[v.kind]}<span className="bl-caption" style={{ display: 'block' }}>{campaign ? `${KIND[v.kind]} · ` : ''}{v.orderId ? `№ ${v.orderId} · ` : ''}{v.clickId}</span></td>
+          <td>{v.amount != null ? rub(v.amount) : '—'}</td>
+          <td>{SOURCE[v.source]}{v.note && <span className="bl-caption" style={{ display: 'block' }}>{v.note}</span>}</td>
+          <td><span className={`bl-tag ${CONV_STATUS[v.status][1]}`}>{CONV_STATUS[v.status][0]}</span>{v.status === 'pending' && v.disputeUntil && <span className="bl-caption" style={{ display: 'block' }}>спор до {when(v.disputeUntil)}</span>}</td>
+          <td>{v.status === 'pending' && <span className="bl-row" style={{ gap: 6, flexWrap: 'nowrap' }}>
+            <button className="bl-btn bl-btn--s" onClick={() => set(v.id, 'approved')}>засчитать</button>
+            <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={() => set(v.id, 'rejected')}>оспорить</button>
+          </span>}</td>
+        </tr>
+      ))}</tbody>
+    </table></div>
+  )
+}
+
+function CampaignConversions({ c }: { c: Campaign }) {
+  const T = useOfferType(c.type)
+  const { data: rows } = $api.useSuspenseQuery('get', '/conversions', { params: { query: { campaignId: c.id } } })
+  const pending = rows.filter(v => v.status === 'pending').length
+  return (
+    <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
+      <div className="bl-row" style={{ justifyContent: 'space-between' }}>
+        <h2 className="bl-h3">{T.unit} · {rows.filter(v => v.status === 'approved').length} засчитано{pending ? `, ${pending} ждут решения` : ''}</h2>
+        <span className="bl-caption">{T.via.label}: {c.terms.via} · {c.partnerEventAt ? `от вас последнее событие ${when(c.partnerEventAt)}` : 'от вас событий ещё не было'}</span>
+      </div>
+      {rows.length ? <Conversions rows={rows} /> : <p className="bl-body bl-secondary">Пока пусто. Как только придёт первый результат, он появится здесь.</p>}
+      <p className="bl-caption">Не оспоренные к сроку засчитываются сами. <Link to="/cab/connections">Ключ для вашего сервера и загрузка файла — в «Подключениях»</Link>.</p>
+    </section>
+  )
+}
+
+export function Connections() {
+  const { data: t } = $api.useSuspenseQuery('get', '/tracking')
+  const { data: convs } = $api.useSuspenseQuery('get', '/conversions')
+  const test = $api.useMutation('post', '/tracking/test', act)
+  const [report, setReport] = useState<{ created: number; updated: number; errors: { line: number; message: string }[] } | null>(null)
+  // CSV уходит текстом, как его прислал бы скрипт партнёра
+  const upload = async (file: File) => {
+    const { data, error } = await client.POST('/conversions/import', { body: await file.text(), bodySerializer: b => b as string, headers: { 'content-type': 'text/csv' } })
+    if (error) return toast('Файл не принят')
+    setReport(data); queryClient.invalidateQueries()
+    toast(`Загружено: новых ${data.created}, обновлено ${data.updated}${data.errors.length ? `, ошибок ${data.errors.length}` : ''}`)
+  }
+  const queue = convs.filter(v => v.status === 'pending')
+  return (
+    <Shell title={<h1 className="bl-display-l">подключения</h1>} aside={<span className={`bl-tag${t.connected ? ' bl-tag--success' : ''}`}>{t.connected ? 'ваш сервер подключён' : 'ждём первое событие'}</span>}>
+      <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
+        <div className="bl-row" style={{ justifyContent: 'space-between' }}><h2 className="bl-h3">ждут решения{queue.length ? ` · ${queue.length}` : ''}</h2><span className="bl-caption">заявки и заказы всех кампаний</span></div>
+        {queue.length ? <Conversions rows={queue} campaign /> : <p className="bl-body bl-secondary">Всё разобрано: решений не ждёт ни одна заявка или заказ.</p>}
+        <p className="bl-caption">Не оспоренные к сроку засчитываются сами: заявка — через {t.disputeDays.lead} дней, заказ по промокоду — через {t.disputeDays.promo}, когда пройдёт срок возврата. Все конверсии кампании — в её статистике.</p>
+      </section>
+      <div className="two two--even" style={{ marginTop: 24 }}>
+        <section className="bl-card" data-theme="invert" style={{ padding: 32, borderRadius: 'var(--radius-1000)', gap: 12 }}>
+          <h2 className="bl-h3">ответ вашего сервера</h2>
+          <p className="bl-body bl-secondary">Один адрес на все кампании: кампанию мы узнаём по click_id из ссылки объявления. Когда заявка или заказ появились, подтвердились или вернулись, ваш сайт или CRM вызывает этот адрес. Повтор с тем же order_id меняет статус, дубля не будет.</p>
+          <span className="bl-row track-code"><code>{t.postbackUrl}</code><button className="bl-icon-btn bl-icon-btn--s" aria-label="Скопировать адрес" onClick={() => copy(t.postbackUrl, 'Адрес')}><Copy size={16} /></button></span>
+          <p className="bl-caption">status: pending, approved, rejected, returned · amount — сумма заказа в рублях · ключ не публикуйте на сайте, его вызывает только сервер</p>
+          <p className="bl-caption">{t.events ? `событий от вас: ${t.events}, последнее ${when(t.lastEventAt!)}` : 'событий от вас пока не было'}</p>
+          <div><button className="bl-btn bl-btn--dark" disabled={test.isPending} onClick={() => test.mutateAsync({}).then(() => toast('Тестовое событие пришло, смотрите в очереди'))}>отправить тестовое событие</button></div>
+        </section>
+        <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('12px') }}>
+          <h2 className="bl-h3">загрузить файлом</h2>
+          <p className="bl-body bl-secondary">Если сервер подключать некому: выгрузите заказы из CRM или 1С раз в неделю. В одном файле — все кампании.</p>
+          <p className="bl-caption">Столбцы: click_id; order_id; status; amount. Первая строка может быть заголовком.</p>
+          <label className="bl-btn" style={{ alignSelf: 'flex-start' }}><Upload size={18} />выбрать файл CSV<input type="file" accept=".csv,text/csv" hidden onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = '' }} /></label>
+          {report && <p className="bl-caption">новых {report.created}, обновлено {report.updated}{report.errors.map(x => <span key={x.line} className="bl-error" style={{ display: 'block' }}>строка {x.line}: {x.message}</span>)}</p>}
+        </section>
+      </div>
     </Shell>
   )
 }
@@ -333,6 +422,7 @@ export function Company() {
 /* ───────── помощь ───────── */
 export function Help() {
   const q = [
+    ['как узнать, что клиент купил или оставил заявку?', 'В статистике кампании. Купоны, подписки и заявки из формы в приложении билайна видны сами. Для заказов на сайте подключите ответ вашего сервера или загружайте файл CSV раз в неделю в разделе «Подключения»: у каждого перехода есть click_id.'],
     ['чем отличаются типы офферов?', 'За переход платите за клик с баланса. За заявку и промокод — за подтверждённый результат, тоже с баланса. Купон и подписку оплачивает клиент, а мы выплачиваем вам долю раз в месяц. Тип выбирается при создании кампании.'],
     ['когда появятся визиты?', 'Через 1–2 дня после запуска: человеку нужно дойти до точки. До этого видны охват, клики и сохранения купона.'],
     ['как считается визит?', 'Человек кликнул по объявлению и в течение 7 дней побывал в радиусе 100 м от вашей точки. Считаем по обезличенным данным базовых станций.'],

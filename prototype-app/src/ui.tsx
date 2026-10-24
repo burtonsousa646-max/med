@@ -78,6 +78,9 @@ export function IdBadge({ id }: { id: Exclude<S['ProviderId'], 'inn'> }) {
   return <span className="id-badge" aria-hidden="true">{ID_ICONS[id]}</span>
 }
 
+export const when = (iso: string) => new Date(iso).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+export const copy = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast(`${what} скопирован`), () => toast('Не получилось скопировать, выделите вручную'))
+
 export function DemoNote({ children }: { children: ReactNode }) {
   return <span className="demo-note">{children}</span>
 }
@@ -223,7 +226,7 @@ export const SCREENS: [string, string, string][] = [
   ['сборка кампании', '/c/:id/build', '3 · автопилот, вручную, медиаплан, спецпроект'],
   ['оплата', '/c/:id/checkout', '4.1 · чекаут'], ['оплата', '/approve/:token', '4.2 · подтверждение руководителем'],
   ['кампания и рост', '/c/:id/launch', '5 · ИИ-модерация и запуск'], ['кампания и рост', '/cab/stats', '6 · статистика'],
-  ['кампания и рост', '/cab/campaigns', 'кабинет · кампании'], ['кампания и рост', '/cab/balance', 'кабинет · баланс'],
+  ['кампания и рост', '/cab/campaigns', 'кабинет · кампании'], ['кампания и рост', '/cab/connections', 'кабинет · подключения'], ['кампания и рост', '/cab/balance', 'кабинет · баланс'],
   ['кампания и рост', '/cab/docs', 'кабинет · документы и ЭДО'], ['кампания и рост', '/cab/company', 'кабинет · компания'], ['кампания и рост', '/cab/help', 'кабинет · помощь'],
 ]
 export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathname.replace(/^\/c\/\d+/, '/c/:id').replace(/^\/approve\/.+/, '/approve/:token'))?.[2]

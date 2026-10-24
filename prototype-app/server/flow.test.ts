@@ -58,3 +58,33 @@ test('ошибки по контракту', async () => {
   await call('PATCH', `/company/points/${co.points[0].id}`, { active: false })
   assert.equal((await call('PATCH', `/company/points/${co.points[1].id}`, { active: false })).status, 409, 'последнюю точку не выключить')
 })
+
+test('отслеживание: ссылка с click_id, ответ сервера партнёра, спор, CSV', async () => {
+  await call('POST', '/session/reset')
+  await call('POST', '/session/login', { provider: 'alfa' })
+  const { body: c } = await call('POST', '/campaigns', { type: 'lead' })
+  assert.match(c.trackingUrl, /utm_source=beeline.*click_id=\{click_id\}/)
+  assert.equal((await call('PATCH', `/campaigns/${c.id}`, { landingUrl: 'не адрес' })).status, 400)
+  await call('POST', `/campaigns/${c.id}/submit`, { acceptOffer: true })
+  const seeded = (await call('GET', `/conversions?campaignId=${c.id}`)).body
+  assert.equal(seeded.length, 3, 'заявки из формы в приложении')
+  assert.ok(seeded.every((x: { status: string; disputeUntil: string }) => x.status === 'pending' && x.disputeUntil))
+
+  const { key } = (await call('GET', '/tracking')).body
+  const pb = (q: string) => call('GET', `/postback?${q}`)
+  assert.equal((await pb(`key=wrong&click_id=bl${c.id}xabcdef`)).status, 401)
+  assert.equal((await pb(`key=${key}&click_id=bl99999xabcdef`)).status, 404)
+  const lead = (await pb(`key=${key}&click_id=bl${c.id}xabcdef&order_id=A1`)).body
+  assert.equal(lead.status, 'pending')
+  assert.equal((await pb(`key=${key}&click_id=bl${c.id}xabcdef&order_id=A1`)).body.id, lead.id, 'повтор не создаёт дубль')
+  assert.equal((await pb(`key=${key}&click_id=bl${c.id}xabcdef&order_id=A1&status=approved`)).body.status, 'approved')
+  assert.equal((await call('PATCH', `/conversions/${lead.id}`, { status: 'rejected' })).status, 409, 'решение уже принято')
+  assert.equal((await call('PATCH', `/conversions/${seeded[0].id}`, { status: 'rejected', note: 'дубль' })).body.status, 'rejected')
+
+  const res = await app.request('/api/conversions/import', { method: 'POST', headers: { cookie, 'content-type': 'text/csv' },
+    body: `click_id;order_id;status;amount\nbl${c.id}x111111;B1;;\nbl${c.id}x111111;A1;returned;\nbl1x;C1;;\n` })
+  const imp = await res.json()
+  assert.deepEqual([imp.created, imp.updated, imp.errors.length], [1, 1, 1])
+  assert.equal((await call('GET', '/tracking')).body.connected, true)
+  assert.ok((await call('GET', `/campaigns/${c.id}`)).body.partnerEventAt, 'у кампании видно последнее событие от партнёра')
+})

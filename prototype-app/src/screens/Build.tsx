@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
-import { AlertTriangle, Check as CheckIcon, Download, FileDown, Image as ImageIcon, PenLine, Plus, Sparkles, X } from 'lucide-react'
+import { AlertTriangle, Check as CheckIcon, Copy, Download, FileDown, Image as ImageIcon, PenLine, Plus, Sparkles, X } from 'lucide-react'
 import { n, rub } from '../data'
 import { $api, act, useCampaign, useCatalog, useCompany, useLater, useOfferType, type Campaign, type S } from '../api'
 import { PhoneSurface, type Ad } from '../mock'
 import { Bars } from '../charts'
-import { Chip, Done, FlowHead, Num, Segmented, TypeTag, toast } from '../ui'
+import { Chip, Done, FlowHead, Num, Segmented, TypeTag, copy, toast, when } from '../ui'
 import { useId } from './Flow'
 
 const gap = (v: string) => ({ ['--bl-gap' as string]: v })
@@ -48,9 +48,40 @@ function Terms({ c }: { c: Campaign }) {
             <input className="bl-input" inputMode={f.num ? 'numeric' : undefined} value={terms[f.k] ?? ''} onChange={e => setTerms({ ...terms, [f.k]: f.num ? e.target.value.replace(/\D/g, '') : e.target.value })} />
           </label>
         ))}
-        <div className="bl-field terms__via"><span className="bl-field__label">{T.via.label}</span><div className="bl-row">{T.via.options.map(o => <Chip key={o} on={c.terms.via === o} onClick={() => patch({ terms: { via: o } })}>{o}</Chip>)}</div></div>
       </div>
-      <p className="bl-caption">{T.via.hint}{T.share ? ` · комиссия билайна ${T.fee} % удерживается из выплаты` : ''}</p>
+      {T.share && <p className="bl-caption">Комиссия билайна {T.fee} % удерживается из выплаты.</p>}
+    </section>
+  )
+}
+
+// Куда ведёт объявление и как партнёр сообщает о результате: у каждой кампании свои
+const PARTNER_SENDS = new Set(['постбэк', 'API', 'файл раз в неделю', 'коннектор 1С', 'Битрикс24', 'amoCRM', 'коннектор к кассе'])
+function LinkBlock({ c }: { c: Campaign }) {
+  const T = useOfferType(c.type), patch = usePatch(c.id)
+  const [url, setUrl] = useLater(c.landingUrl, v => patch({ landingUrl: v }), 800)
+  const sends = PARTNER_SENDS.has(c.terms.via)
+  return (
+    <section className="bl-section bl-section--wide pad" style={{ marginTop: 24 }}>
+      <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 16 }}><h2 className="bl-h3">ссылка и отслеживание</h2><span className="bl-caption">переходы видны в вашей Яндекс Метрике по utm_source=beeline</span></div>
+      <div className="two two--even">
+        <div className="bl-stack" style={gap('12px')}>
+          <label className="bl-field"><span className="bl-field__label">куда ведёт объявление</span><input className="bl-input" value={url} onChange={e => setUrl(e.target.value)} inputMode="url" /></label>
+          <span className="bl-row track-code"><code>{c.trackingUrl}</code><button className="bl-icon-btn bl-icon-btn--s" aria-label="Скопировать ссылку" onClick={() => copy(c.trackingUrl, 'Адрес')}><Copy size={16} /></button></span>
+          <p className="bl-caption">При каждом переходе билайн подставит свой click_id.{c.type !== 'click' && ' Сохраните его в заказе или заявке — по нему вы сообщите о результате.'}</p>
+        </div>
+        {c.type === 'click' ? (
+          <p className="bl-body bl-secondary">За переход вы платите по клику, сообщать о результате не нужно. Визиты в точку посчитаем по обезличенным данным сети.</p>
+        ) : (
+          <div className="bl-stack" style={gap('12px')}>
+            <div className="bl-field"><span className="bl-field__label">{T.via.label}</span><div className="bl-row">{T.via.options.map(o => <Chip key={o} on={c.terms.via === o} onClick={() => patch({ terms: { via: o } })}>{o}</Chip>)}</div></div>
+            <p className="bl-caption">{T.via.hint}</p>
+            <p className="bl-body">{sends
+              ? <>Ключ и адрес для вашего сервера, загрузка файла — в разделе <Link to="/cab/connections">«Подключения»</Link>, один на все кампании.</>
+              : <>Результаты появятся в статистике кампании, спорные засчитаете или оспорите там.</>}</p>
+            {sends && <p className="bl-caption">{c.partnerEventAt ? `по этой кампании последнее событие ${when(c.partnerEventAt)}` : 'по этой кампании событий от вас ещё не было'}</p>}
+          </div>
+        )}
+      </div>
     </section>
   )
 }
@@ -279,6 +310,7 @@ export default function Build() {
           {t === 'auto' && <Auto c={c} />}{t === 'manual' && <Manual c={c} />}{t === 'plan' && <Plan c={c} />}{t === 'special' && <Special c={c} />}
         </motion.div>
       </AnimatePresence>
+      {(t === 'auto' || t === 'manual') && <LinkBlock c={c} />}
       <div className="bottombar">
         <div className="bl-row" style={gap('24px')}>
           {T.share

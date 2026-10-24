@@ -1,11 +1,12 @@
 # systemd-служба тестового API на ads.napovtor.ru. Ставит deploy.sh; nginx отдаёт ей /api/
+# Node 22 лежит отдельно в /opt/node22: системный Node 20 нужен приложениям под pm2
 [Unit]
 Description=Рекламная платформа билайна: тестовый API прототипа
 After=network.target
 
 [Service]
 WorkingDirectory=/opt/ads-proto
-ExecStart=/usr/bin/env node --disable-warning=ExperimentalWarning server/index.ts
+ExecStart=/opt/node22/bin/node --disable-warning=ExperimentalWarning server/index.ts
 Environment=API_PORT=8787 DB_PATH=/var/lib/ads-proto/demo.sqlite
 StateDirectory=ads-proto
 User=www-data

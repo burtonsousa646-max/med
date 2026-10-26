@@ -88,7 +88,7 @@ export function newCampaign(companyId: string, type: OfferType): CampaignRow {
   const row: Omit<CampaignRow, 'id'> = {
     type, status: 'draft', mode: MODE[segment in SEGMENTS ? segment : 'small'], goal: 'near', adText: null, img: 0,
     terms: { ...DEFAULT_TERMS[type] }, audience: { live: 'any', work: 'any', rival: 'and' },
-    places: { showcase: true, main: true, paid: true, rest: false, shop: false, push: false, tv: false },
+    places: { showcase: true, main: true, paid: true, rest: false, shop: false, push: false, tv: false }, wideCard: false,
     budget: 10000, amount: null, payMethod: 'sbp', tips: [], approvalToken: null, approved: false, createdAt: now(), submittedAt: null,
     landingUrl: `https://${CO.site}`,
   }

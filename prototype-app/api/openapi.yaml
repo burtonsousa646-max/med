@@ -359,6 +359,32 @@ paths:
                     type: array
                     items: { type: object, required: [line, message], properties: { line: { type: integer }, message: { type: string } } }
 
+  /showcase/{id}/act:
+    post:
+      tags: [витрина]
+      summary: Абонент нажал кнопку оффера на витрине «лучшее рядом»
+      description: |
+        Демо: витрина показывает кампании демо-компании из GET /campaigns (статус live, место showcase),
+        а нажатие абонента приходит сюда. В бою витрина — сервис билайна для абонентов, этот вызов делает сервис переходов.
+        Переход и промокод: ссылка с click_id, результат потом пришлёт партнёр. Заявка из формы билайна встаёт в «ждёт»
+        со сроком на спор. Купон и подписка оплачиваются со счёта телефона и засчитываются сразу.
+      operationId: showcaseAct
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clickId, url, conversion]
+                properties:
+                  clickId: { type: string }
+                  url: { type: string, description: 'trackingUrl с подставленным click_id' }
+                  conversion: { oneOf: [{ $ref: '#/components/schemas/Conversion' }, { type: 'null' }], description: 'null — у перехода и промокода результат присылает партнёр' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+
 components:
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
@@ -390,7 +416,7 @@ components:
 
     Catalog:
       type: object
-      required: [offerTypes, goals, signals, places, providers, segments, payMethods, images, bonus]
+      required: [offerTypes, goals, signals, places, providers, segments, payMethods, images, bonus, wideMarkup]
       properties:
         offerTypes: { type: array, items: { $ref: '#/components/schemas/OfferTypeInfo' } }
         goals: { type: array, items: { $ref: '#/components/schemas/Goal' } }
@@ -432,6 +458,7 @@ components:
           items: { type: object, required: [id, name, hint, largeOnly], properties: { id: { $ref: '#/components/schemas/PayMethod' }, name: { type: string }, hint: { type: string }, largeOnly: { type: boolean } } }
         images: { type: array, items: { type: string }, description: подписи вариантов картинки объявления }
         bonus: { type: integer, description: бонус на первую кампанию, ₽ }
+        wideMarkup: { type: integer, description: 'наценка широкой карточки в витрине «лучшее рядом», % к цене клика или результата' }
 
     OfferTypeInfo:
       type: object
@@ -542,7 +569,7 @@ components:
     # ───────── кампании ─────────
     Campaign:
       type: object
-      required: [id, type, status, name, mode, goal, adText, img, terms, audience, places, budget, amount, payMethod, tips, approvalToken, createdAt, launchedAt, launchStep, deal, forecast, moderation, totals, landingUrl, trackingUrl, partnerEventAt]
+      required: [id, type, status, name, mode, goal, adText, img, terms, audience, places, wideCard, budget, amount, payMethod, tips, approvalToken, createdAt, launchedAt, launchStep, deal, forecast, moderation, totals, landingUrl, trackingUrl, partnerEventAt]
       properties:
         id: { type: integer }
         type: { $ref: '#/components/schemas/OfferType' }
@@ -558,6 +585,7 @@ components:
         terms: { type: object, additionalProperties: { type: string }, description: 'условия оффера, поля — из OfferTypeInfo.fields, плюс via' }
         audience: { type: object, additionalProperties: { $ref: '#/components/schemas/Bucket' }, description: 'сигнал → блок' }
         places: { type: object, additionalProperties: { type: boolean } }
+        wideCard: { type: boolean, description: 'широкая карточка в витрине «лучшее рядом»: первое место в разделе, цена клика или результата выше на Catalog.wideMarkup; у купона и подписки входит в комиссию' }
         budget: { type: integer, description: бюджет в месяц, ₽ }
         amount: { type: [integer, 'null'], description: 'к оплате; null — равна бюджету' }
         payMethod: { $ref: '#/components/schemas/PayMethod' }
@@ -595,6 +623,7 @@ components:
         terms: { type: object, additionalProperties: { type: string } }
         audience: { type: object, additionalProperties: { $ref: '#/components/schemas/Bucket' } }
         places: { type: object, additionalProperties: { type: boolean } }
+        wideCard: { type: boolean }
         budget: { type: integer, minimum: 3000 }
         amount: { type: [integer, 'null'] }
         payMethod: { $ref: '#/components/schemas/PayMethod' }

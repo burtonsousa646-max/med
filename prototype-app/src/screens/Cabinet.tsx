@@ -68,7 +68,7 @@ function First48({ c, st }: { c: Campaign; st: S['Stats'] }) {
       <section className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         <Live paused={paused} label="охват вокруг точек" start={st.reach} step={() => 3 + Math.round(Math.random() * 9)} sub={`из ${n(st.reachTotal)} подходящих`} />
         <Live paused={paused} label="клики" start={st.clicks} step={() => (Math.random() > 0.5 ? 1 : 0)} sub={`CTR ${st.ctr.toLocaleString('ru-RU')} %`} />
-        <Live paused={paused} label={T.live} start={st.results} step={() => (Math.random() > 0.75 ? 1 : 0)} sub="в Витрине выгод" />
+        <Live paused={paused} label={T.live} start={st.results} step={() => (Math.random() > 0.75 ? 1 : 0)} sub="в витрине «лучшее рядом»" />
       </section>
       <section className="bl-section pad" style={{ maxWidth: 'none' }}>
         <div className="bl-row" style={{ justifyContent: 'space-between' }}><h2 className="bl-h3">клики по часам</h2><span className="bl-caption">с запуска, 12 часов</span></div>
@@ -196,7 +196,10 @@ export function Campaigns() {
                   <td>{c.totals ? n(c.totals.clicks) : '—'}</td>
                   <td>{c.totals ? `${n(c.totals.results)} · ${c.type === 'click' ? 'визиты' : T.unit}` : '—'}</td>
                   <td>{on
-                    ? <button className="bl-btn bl-btn--s" onClick={() => pause(c)}>{c.status === 'paused' ? <><Play size={16} />возобновить</> : <><Pause size={16} />пауза</>}</button>
+                    ? <span className="bl-row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+                        <button className="bl-btn bl-btn--s" onClick={() => pause(c)}>{c.status === 'paused' ? <><Play size={16} />возобновить</> : <><Pause size={16} />пауза</>}</button>
+                        {c.status === 'live' && c.places.showcase && <Link className="bl-btn bl-btn--s" to={`/near?offer=c${c.id}`}>на витрине</Link>}
+                      </span>
                     : <Link className="bl-btn bl-btn--s" to={link(c)}>{NEXT[c.status][1]}</Link>}</td>
                 </tr>
               )

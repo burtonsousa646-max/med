@@ -5,8 +5,9 @@ import { AlertTriangle, Check as CheckIcon, Copy, Download, FileDown, Image as I
 import { n, rub } from '../data'
 import { $api, act, useCampaign, useCatalog, useCompany, useLater, useOfferType, type Campaign, type S } from '../api'
 import { PhoneSurface, type Ad } from '../mock'
+import { Creative, creativeOf } from '../creative'
 import { Bars } from '../charts'
-import { Chip, Done, FlowHead, Num, Segmented, TypeTag, copy, toast, when } from '../ui'
+import { Chip, Done, FlowHead, Num, Segmented, Switch, TypeTag, copy, toast, when } from '../ui'
 import { useId } from './Flow'
 
 const gap = (v: string) => ({ ['--bl-gap' as string]: v })
@@ -21,6 +22,18 @@ const VALUE: Record<'hot' | 'week' | 'wide', { t: string; cls: string }> = {
 function usePatch(id: number) {
   const m = $api.useMutation('patch', '/campaigns/{id}', act)
   return (body: S['CampaignPatch']) => m.mutate({ params: { path: { id } }, body })
+}
+
+// Широкая карточка в витрине «лучшее рядом»: первое место в разделе за наценку к цене клика или результата
+function WideCard({ c }: { c: Campaign }) {
+  const patch = usePatch(c.id), T = useOfferType(c.type), { wideMarkup } = useCatalog()
+  if (!c.places.showcase) return null
+  return (
+    <div className="bl-stack" style={gap('4px')}>
+      <Switch checked={c.wideCard} onChange={v => patch({ wideCard: v })} label="широкая карточка в витрине «лучшее рядом»" />
+      <span className="bl-caption">первое место в разделе и карточка вдвое шире. {T.share ? 'Для купона и подписки входит в комиссию.' : `Цена ${c.type === 'click' ? 'клика' : 'результата'} выше на ${wideMarkup} %.`}</span>
+    </div>
+  )
 }
 
 function useAd(c: Campaign): Ad {
@@ -128,13 +141,17 @@ function Auto({ c }: { c: Campaign }) {
             <button className="bl-btn bl-btn--s" onClick={() => setEdit(!edit)}><PenLine size={16} />{edit ? 'готово' : 'поменять текст'}</button>
             <button className="bl-btn bl-btn--s" onClick={() => patch({ img: (c.img + 1) % cat.images.length })}><ImageIcon size={16} />поменять картинку</button>
           </div>
-          <div className={`ad-img ad-img--${c.img}`} style={{ aspectRatio: '3' }}>{cat.images[c.img]}</div>
+          <div className={`build-creative${c.wideCard ? ' build-creative--wide' : ''}`}>
+            <Creative o={creativeOf(co.brand, c.deal.offer, c.img)} erid="erid после маркировки" wide={c.wideCard} />
+            <span className="bl-caption">Креатив для витрины «лучшее рядом» собираем сами: ваш знак, условие крупно, картинка «{cat.images[c.img]}». Поменяете условие — креатив обновится.</span>
+          </div>
+          <WideCard c={c} />
         </section>
       </div>
       <section className="bl-section bl-section--wide pad" style={{ marginTop: 24 }}>
         <div className="bl-row" style={{ justifyContent: 'space-between', marginBottom: 16 }}><h2 className="bl-h3">так его увидят</h2><span className="bl-caption">места подобраны под цель автоматически</span></div>
         <div className="previews">
-          {([['showcase', 'карточка в Витрине выгод'], ['main', 'баннер на главной'], ['paid', 'экран «Платёж прошёл»']] as const).map(([kind, t]) => (
+          {([['showcase', 'карточка в витрине «лучшее рядом»'], ['main', 'баннер на главной'], ['paid', 'экран «Платёж прошёл»']] as const).map(([kind, t]) => (
             <figure key={kind} className="preview"><PhoneSurface kind={kind} ad={{ ...ad, text }} compact /><figcaption className="bl-caption">{t}</figcaption></figure>
           ))}
         </div>
@@ -216,6 +233,7 @@ function Manual({ c }: { c: Campaign }) {
             </tr>
           ))}</tbody>
         </table></div>
+        <div style={{ marginTop: 16 }}><WideCard c={c} /></div>
       </section>
     </>
   )

@@ -329,7 +329,7 @@ export function Launch() {
     { done: L >= 1, wait: !hit && !waitInvoice && L === 0, t: L >= 1 ? 'проверено за 2 минуты' : 'ИИ-проверка текста и картинки', sub: 'закон «О рекламе», правила площадок' },
     { done: L >= 2, wait: L === 1, t: 'маркировка', sub: L >= 2 ? 'erid 2SDnjc7Xy3M присвоен, данные в ОРД переданы' : 'присвоим erid и передадим данные в ОРД' },
     ...(c.type !== 'click' ? [{ done: L >= 3, wait: L === 2, t: `${T.via.label}: ${c.terms.via}`, sub: L >= 3 ? 'проверили тестовым результатом' : T.via.hint }] : []),
-    { done: L >= 3, wait: L === 2 && c.type === 'click', t: 'показывается', sub: L >= 3 ? 'первые показы в Витрине выгод и на главной' : 'старт в аукционе сразу после маркировки' },
+    { done: L >= 3, wait: L === 2 && c.type === 'click', t: 'показывается', sub: L >= 3 ? 'первые показы в витрине «лучшее рядом» и на главной' : 'старт в аукционе сразу после маркировки' },
   ]
   if (c.status === 'draft' || c.status === 'approval') {
     return (
@@ -381,6 +381,7 @@ export function Launch() {
           {waitInvoice && <button className="bl-btn bl-btn--s" onClick={() => paid.mutate({ params: { path: { id } } })}><span className="demo-note">оплата пришла</span></button>}
           <button className={`bl-btn bl-btn--l bl-btn--block${L >= 3 ? ' bl-btn--primary' : ''}`} disabled={L < 3} onClick={() => nav(`/cab/stats/${id}`)}>смотреть статистику</button>
           {L < 3 && <p className="bl-micro" style={{ textAlign: 'center' }}>статистика откроется, как только пойдут показы</p>}
+          {c.status === 'live' && c.places.showcase && <Link className="bl-btn bl-btn--block" to={`/near?offer=c${id}`}>посмотреть на витрине глазами абонента</Link>}
         </section>
       </div>
     </div>

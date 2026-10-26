@@ -34,7 +34,7 @@ export type GoalId = 'near' | 'rivals' | 'showcase'
 export const GOALS: Record<GoalId, { t: string; d: string; reach: number; cpc: number; conv: number; text: string; offer: string }> = {
   near: { t: 'привести соседей в точку', d: 'покажем тем, кто живёт и работает в километре от вас', reach: 12400, cpc: 9, conv: 0.26, text: 'Лучший кофе в городе — в двух шагах от дома. −20% на всё до 10:00', offer: '−20% до 10:00' },
   rivals: { t: 'перехватить клиентов конкурентов', d: 'тем, кто регулярно ходит в кофейни рядом с вами', reach: 6800, cpc: 12, conv: 0.22, text: 'Самый вкусный капучино района. Второй кофе в подарок', offer: 'второй кофе в подарок' },
-  showcase: { t: 'оффер в Витрине выгод с бонусом гигабайтами', d: 'купон в приложении билайна, гостю +5 ГБ за визит', reach: 21500, cpc: 7, conv: 0.3, text: 'Капучино за 1 ₽ при первом визите и 5 ГБ от билайна', offer: 'капучино за 1 ₽ + 5 ГБ' },
+  showcase: { t: 'оффер в витрине «лучшее рядом» с бонусом гигабайтами', d: 'купон в приложении билайна, гостю +5 ГБ за визит', reach: 21500, cpc: 7, conv: 0.3, text: 'Капучино за 1 ₽ при первом визите и 5 ГБ от билайна', offer: 'капучино за 1 ₽ + 5 ГБ' },
 }
 
 // Типы офферов. Основной — реклама с оплатой за переход, остальные — схемы из старого кабинета
@@ -103,7 +103,8 @@ export const STOP = [
   { re: /самый [а-яё]+/i, why: '«самый» без подтверждения данными, п. 1 ч. 3 ст. 5 закона «О рекламе»', fix: 'Наш' },
 ]
 
-export const IMAGES = ['фото зала с Яндекс Карт', 'латте-арт с сайта', 'логотип на фирменном фоне']
+export const WIDE_MARKUP = 30 // широкая карточка в витрине, % к цене клика или результата
+export const IMAGES = ['чашка кофе на тёмном фоне', 'латте-арт на светлом фоне', 'кофейные зёрна на фиолетовом фоне']
 
 export type Value = 'hot' | 'week' | 'wide' | 'off'
 export type Signal = { id: string; t: string; v: Value; reach: number; cpc: number }
@@ -120,7 +121,7 @@ export const SIG: Record<string, Signal> = Object.fromEntries(SIGNALS.flatMap(g 
 
 export type PlaceId = 'showcase' | 'main' | 'paid' | 'rest' | 'shop' | 'push' | 'tv'
 export const PLACES: { id: PlaceId; t: string; f: string; ctr: number | null; pay: 'клик' | 'показы' }[] = [
-  { id: 'showcase', t: 'Витрина выгод', f: 'нативная карточка', ctr: 3.1, pay: 'клик' },
+  { id: 'showcase', t: 'Лучшее рядом', f: 'витрина предложений рядом с абонентом', ctr: 3.1, pay: 'клик' },
   { id: 'push', t: 'Пуш', f: 'только тем, кто согласился на рекламу', ctr: 4.0, pay: 'клик' },
   { id: 'rest', t: 'Экран остатков', f: 'награда гигабайтами', ctr: 2.2, pay: 'клик' },
   { id: 'paid', t: '«Платёж прошёл»', f: 'карточка после оплаты', ctr: 1.6, pay: 'клик' },
@@ -164,6 +165,7 @@ export const catalog = (): S['Catalog'] => ({
   payMethods: [...PAY_METHODS],
   images: IMAGES,
   bonus: BONUS,
+  wideMarkup: WIDE_MARKUP,
 })
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
@@ -195,16 +197,16 @@ function audience(aud: Record<string, string>) {
 export function forecast(c: CampaignRow, activePoints: number): S['Forecast'] {
   const k = activePoints / 2, manual = c.mode === 'manual'
   const g = GOALS[c.goal], a = audience(c.audience)
-  const cpc = manual ? a.cpc || 9 : g.cpc
+  const T = OFFER_TYPES[c.type], wide = c.wideCard && c.places.showcase ? 1 + WIDE_MARKUP / 100 : 1
+  const cpc = (manual ? a.cpc || 9 : g.cpc) * wide
   const conv = manual ? 0.24 : g.conv
   const reach = (manual ? a.reach : g.reach) * k
   const clicks = c.budget / cpc, visits = clicks * conv, amount = payAmount(c)
   const guest = visits ? c.budget / visits : 0
   // results — главный результат типа (для перехода — визиты), per — цена одного результата, money — потратите или получите
-  const T = OFFER_TYPES[c.type]
   let results = visits, per = guest, money = c.budget
   if (c.type !== 'click') {
-    per = Math.max(deal(c).per, 1)
+    per = Math.max(deal(c).per, 1) * (T.share ? 1 : wide) // у купона и подписки широкая карточка входит в комиссию
     if (T.share) { results = reach * T.rate; money = results * per } else results = c.budget / per
   }
   return { reach, cpc, clicks, visits, guest, results, per, money, amount, payClicks: amount / cpc, payVisits: (amount / cpc) * conv, payResults: per ? amount / per : 0, audienceEmpty: a.empty }
@@ -236,7 +238,7 @@ export function view(c: CampaignRow, activePoints: number, clock: Clock, partner
   if (launched(c) && status !== 'rejected' && c.submittedAt) launchedAt = new Date(Date.parse(c.submittedAt) + STEPS_MS[2]).toISOString()
   const { approved: _a, submittedAt: _s, ...rest } = c
   const st = status === 'live' || status === 'paused' ? stats(c, clock, activePoints) : null
-  return { ...rest, partnerEventAt, landingUrl: landingOf(c), trackingUrl: trackingUrl(c), status, name: d.name, adText, launchStep, launchedAt, deal: { line: d.line, offer: d.offer, cta: d.cta }, forecast: forecast(c, activePoints), moderation: hit, totals: st && { clicks: st.clicks, results: st.results } }
+  return { ...rest, wideCard: !!c.wideCard /* у кампаний до появления поля его нет */, partnerEventAt, landingUrl: landingOf(c), trackingUrl: trackingUrl(c), status, name: d.name, adText, launchStep, launchedAt, deal: { line: d.line, offer: d.offer, cta: d.cta }, forecast: forecast(c, activePoints), moderation: hit, totals: st && { clicks: st.clicks, results: st.results } }
 }
 
 /* ───────── отслеживание ───────── */
@@ -281,7 +283,7 @@ export function stats(c: CampaignRow, clock: Clock, activePoints: number): S['St
   const manual = c.mode === 'manual'
   const rows: [string, number, number, number][] = manual
     ? [['живут рядом, 1 км', 0.56, 2.4, 37], ['работают рядом, 1 км', 0.3, 3.8, 27], ['ходят в кофейни рядом', 0.14, 6.1, 41]]
-    : [['Витрина выгод', 0.56, 3.1, 31], ['«Платёж прошёл»', 0.28, 1.6, 38], ['Главная приложения', 0.16, 0.5, 44]]
+    : [['Лучшее рядом', 0.56, 3.1, 31], ['«Платёж прошёл»', 0.28, 1.6, 38], ['Главная приложения', 0.16, 0.5, 44]]
   const many = (x: number) => `ещё ≈ ${Math.max(2, Math.round(x))} ${T.many}`
   const tips = [
     click ? { id: 'morning', title: 'поднять ставку утром', detail: `ещё ≈ ${Math.round(60 * k)} гостей за клик 14 ₽`, doneTitle: 'ставка утром 14 ₽' }

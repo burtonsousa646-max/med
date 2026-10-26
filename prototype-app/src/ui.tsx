@@ -202,7 +202,7 @@ export function TypeTag({ c }: { c: S['Campaign'] }) {
 }
 
 /* ───────── QR-заглушка для СБП ───────── */
-export function Qr() {
+export function Qr({ label = 'QR-код для оплаты по СБП, заглушка' }: { label?: string }) {
   const cells: ReactNode[] = []
   let seed = 3
   const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647
@@ -215,7 +215,7 @@ export function Qr() {
     const f = finder(x, y)
     if (f ?? r() > 0.5) cells.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />)
   }
-  return <div className="qr"><svg viewBox="0 0 21 21" fill="currentColor" role="img" aria-label="QR-код для оплаты по СБП, заглушка">{cells}</svg></div>
+  return <div className="qr"><svg viewBox="0 0 21 21" fill="currentColor" role="img" aria-label={label}>{cells}</svg></div>
 }
 
 /* ───────── карта экранов прототипа ───────── */
@@ -228,6 +228,7 @@ export const SCREENS: [string, string, string][] = [
   ['кампания и рост', '/c/:id/launch', '5 · ИИ-модерация и запуск'], ['кампания и рост', '/cab/stats', '6 · статистика'],
   ['кампания и рост', '/cab/campaigns', 'кабинет · кампании'], ['кампания и рост', '/cab/connections', 'кабинет · подключения'], ['кампания и рост', '/cab/balance', 'кабинет · баланс'],
   ['кампания и рост', '/cab/docs', 'кабинет · документы и ЭДО'], ['кампания и рост', '/cab/company', 'кабинет · компания'], ['кампания и рост', '/cab/help', 'кабинет · помощь'],
+  ['что видит абонент', '/near', '7 · витрина «лучшее рядом»'],
 ]
 export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathname.replace(/^\/c\/\d+/, '/c/:id').replace(/^\/approve\/.+/, '/approve/:token'))?.[2]
 

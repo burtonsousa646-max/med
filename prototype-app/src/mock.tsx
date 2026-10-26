@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { motion } from 'motion/react'
 import { BatteryLow, Check, Gift, Wifi } from 'lucide-react'
 import { useCatalog, type S } from './api'
+import { Creative, creativeOf } from './creative'
 
 export type Surface = 'showcase' | 'main' | 'paid' | 'rest'
 export type Ad = { brand: string; text: string; offer: string; img: number; addr?: string; cta?: string }
@@ -28,12 +29,13 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
       )}
       {kind === 'showcase' && (
         <>
-          <div className="pm-title">витрина выгод</div>
+          <div className="pm-title">лучшее рядом</div>
           <div className="pm-chips"><span className="is-on">рядом</span><span>еда</span><span>авто</span></div>
           <div className="pm-card">
-            <div className={`ad-img ad-img--${ad.img}`} style={{ aspectRatio: '2' }}>{IMAGES[ad.img]}</div>
-            <b>{ad.offer}</b>
-            <span className="pm-muted">{ad.brand}{ad.addr ? ` · ${ad.addr}` : ''}</span>
+            <div className="pm-near">
+              <Creative o={creativeOf(ad.brand, ad.offer, ad.img)} erid="erid" />
+              <span className="bl-stack" style={{ ['--bl-gap' as string]: '4px' }}><b>{ad.offer}</b><span className="pm-muted">{ad.brand}{ad.addr ? ` · ${ad.addr}` : ''}</span></span>
+            </div>
             <span className="pm-btn">{ad.cta ?? 'сохранить купон'}</span>
             <span className="pm-label">реклама</span>
           </div>

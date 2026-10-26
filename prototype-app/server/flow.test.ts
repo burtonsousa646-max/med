@@ -23,6 +23,9 @@ test('переход: вход, сборка, оплата, запуск, ста
   const fixed = (await call('PATCH', `/campaigns/${c.id}`, { adText: 'Свежая обжарка у дома', budget: 20000 })).body
   assert.equal(fixed.moderation, null)
   assert.equal(fixed.forecast.amount, 20000)
+  const wide = (await call('PATCH', `/campaigns/${c.id}`, { wideCard: true })).body
+  assert.equal(wide.wideCard, true)
+  assert.equal(Math.round(wide.forecast.cpc * 100), Math.round(fixed.forecast.cpc * 130), 'широкая карточка: клик дороже на 30 %')
   assert.equal((await call('POST', `/campaigns/${c.id}/submit`, {})).status, 400, 'без оферты нельзя')
   assert.equal((await call('POST', `/campaigns/${c.id}/submit`, { acceptOffer: true })).body.status, 'moderation')
   await sleep(4100)
@@ -87,4 +90,17 @@ test('отслеживание: ссылка с click_id, ответ серве�
   assert.deepEqual([imp.created, imp.updated, imp.errors.length], [1, 1, 1])
   assert.equal((await call('GET', '/tracking')).body.connected, true)
   assert.ok((await call('GET', `/campaigns/${c.id}`)).body.partnerEventAt, 'у кампании видно последнее событие от партнёра')
+})
+
+test('витрина: заявка абонента приходит в кабинет партнёра', async () => {
+  await call('POST', '/session/reset')
+  await call('POST', '/session/login', { provider: 'sber' })
+  const { body: c } = await call('POST', '/campaigns', { type: 'lead' })
+  assert.equal((await call('POST', `/showcase/${c.id}/act`)).status, 409, 'черновик на витрине не показывается')
+  await call('POST', `/campaigns/${c.id}/submit`, { acceptOffer: true })
+  await sleep(4100)
+  const act = (await call('POST', `/showcase/${c.id}/act`)).body
+  assert.ok(act.url.includes(`click_id=${act.clickId}`))
+  assert.equal(act.conversion.source, 'form')
+  assert.ok((await call('GET', `/conversions?campaignId=${c.id}`)).body.some((x: { id: number }) => x.id === act.conversion.id))
 })

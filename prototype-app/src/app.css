@@ -345,3 +345,122 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   .cab-main .chart { max-height: 140px; }
   .cab-main .bl-notice { padding: var(--space-s) var(--space-m); }
 }
+
+/* ───────── креатив карточки «лучшее рядом»: размеры от меньшей стороны: квадрат и широкая 2:1 ───────── */
+.cr { --cr-bg: var(--color-background-secondary-invert); --cr-fg: var(--color-text-primary-invert);
+  position: relative; aspect-ratio: 1; overflow: hidden; container-type: size; border-radius: var(--radius-400); background: var(--cr-bg); color: var(--cr-fg); text-align: left; }
+.cr--red { --cr-bg: var(--color-accent-06); }
+.cr--green { --cr-bg: var(--color-accent-01); }
+.cr--blue { --cr-bg: var(--color-accent-03); }
+.cr--violet { --cr-bg: var(--color-accent-04); }
+.cr--magenta { --cr-bg: var(--color-accent-05); }
+.cr--teal { --cr-bg: var(--color-accent-02); }
+.cr--light { --cr-bg: var(--color-surface-08); --cr-fg: var(--color-text-primary); }
+.cr__img { position: absolute; right: -4cqmin; bottom: -4cqmin; width: 66cqmin; height: 66cqmin; object-fit: contain; }
+.cr__icon { position: absolute; right: 9cqmin; bottom: 9cqmin; width: 34cqmin; height: 34cqmin; opacity: .3; stroke-width: 1.4; }
+.cr__text { position: absolute; inset: 7cqmin 7cqmin auto; display: flex; flex-direction: column; align-items: flex-start; gap: 2cqmin; }
+.cr__mark { margin-bottom: 3cqmin; padding: 1.6cqmin 3.4cqmin; border-radius: var(--radius-circle); background: var(--color-constant-02); color: var(--color-constant-01); font: 500 5.4cqmin/1.2 var(--font-primary); white-space: nowrap; }
+.cr__big { font: 400 19cqmin/.95 var(--font-primary); letter-spacing: -.02em; white-space: nowrap; }
+.cr__big--long { font-size: 12.5cqmin; }
+.cr__big--text { max-width: 86cqmin; font-size: 10cqmin; line-height: 1.05; white-space: normal; }
+.cr__small { max-width: 60cqmin; font: 400 6.4cqmin/1.2 var(--font-primary); }
+.cr__erid { position: absolute; left: 5cqmin; bottom: 5cqmin; padding: .8cqmin 2.4cqmin; border-radius: var(--radius-circle); font: 4cqmin/1.4 var(--font-primary);
+  background: color-mix(in srgb, var(--color-background-primary-invert) 45%, transparent); color: var(--color-constant-02); }
+
+.cr--wide { aspect-ratio: 2; }
+.cr--wide .cr__img { right: 4cqmin; bottom: -6cqmin; width: 96cqmin; height: 96cqmin; }
+.cr--wide .cr__icon { right: 14cqmin; width: 44cqmin; height: 44cqmin; }
+.cr--wide .cr__small { max-width: 92cqmin; }
+.cr--wide .cr__big--text { max-width: 110cqmin; }
+
+/* ───────── витрина «лучшее рядом» ───────── */
+.near-search { width: 320px; }
+.near-main { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xs) 0 var(--space-5xl); }
+.near-intro { display: flex; justify-content: space-between; align-items: end; gap: var(--space-m); flex-wrap: wrap; }
+.near-scroller { display: flex; gap: var(--space-s); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 2px var(--page-side); }
+.near-scroller::-webkit-scrollbar { display: none; }
+.near-scroller > * { flex: none; }
+.near-story { width: 132px; height: 92px; padding: var(--space-s); border: 0; border-radius: var(--radius-500); display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; font: var(--type-caption); color: var(--color-text-primary); cursor: pointer; transition: transform var(--transition-fast); }
+.near-story:hover { transform: translateY(-2px); }
+
+.near-box { padding: var(--space-l); max-width: none; }
+.near-box__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-l); }
+.near-list { max-height: 320px; overflow-y: auto; }
+.near-map { position: relative; height: 320px; border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-tertiary); container-type: size; }
+.near-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.near-map__ring { position: absolute; left: 50%; top: 50%; width: calc(var(--r) * 2cqmin); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 2px dashed var(--color-link-primary); background: color-mix(in srgb, var(--color-link-primary) 8%, transparent); pointer-events: none; }
+.near-map__me { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--color-link-primary); border: 3px solid var(--color-background-secondary); box-shadow: var(--shadow-popover); }
+.near-map__note { position: absolute; left: var(--space-m); bottom: var(--space-m); }
+.near-pin { position: absolute; left: calc(50% + var(--dx) * 1cqmin); top: calc(50% + var(--dy) * 1cqmin); transform: translate(-50%, -50%); width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--color-background-secondary); color: var(--color-icon-primary); box-shadow: var(--shadow-popover); cursor: pointer; transition: transform var(--transition-fast), background-color var(--transition-fast); }
+.near-pin.is-own { outline: 2px solid var(--color-link-primary); outline-offset: 2px; }
+.near-pin:hover, .near-pin.is-hot { background: var(--color-brand-primary); color: var(--color-constant-01); transform: translate(-50%, -50%) scale(1.15); z-index: 2; }
+.near-cell { width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; }
+.near-cell:hover .bl-cell__title { color: var(--color-text-secondary); }
+.near-cell .bl-cell__title, .near-cell .bl-cell__sub { display: block; }
+.near-cell__end { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.near-empty { padding: var(--space-3xl) var(--space-m); text-align: center; }
+
+.near-foryou { flex-direction: row; align-items: center; gap: var(--space-m); padding: var(--space-s); border: 0; text-align: left; font: inherit; cursor: pointer; }
+.near-foryou__cr { width: 132px; flex: none; }
+.near-card { padding: var(--space-xs); gap: 0; border: 0; text-align: left; font: inherit; cursor: pointer; transition: transform var(--transition-fast); }
+.near-card:hover { transform: translateY(-2px); }
+.near-card__body { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-s) var(--space-xs) var(--space-xs); }
+.near-card--wide { grid-column: span 2; }
+.near-tools { max-width: 100%; min-width: 0; flex-wrap: nowrap; } /* переключатель типов листается, а не растягивает страницу */
+.near-tools .bl-segmented { min-width: 0; }
+.near-tools .bl-segmented button { white-space: nowrap; }
+.near-tools .bl-btn { flex: none; }
+.near-hero { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gutter); align-items: start; }
+.near-carousel > .near-card { width: 264px; }
+.near-carousel > .near-card--wide { width: calc(264px * 2 + var(--space-s)); }
+.near-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-3xl); padding: var(--space-xs) var(--space-l); max-width: none; }
+.near-row { display: flex; align-items: center; gap: var(--space-m); padding: var(--space-m) 0; border: 0; border-bottom: 1px solid var(--color-border-secondary); background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.near-row:hover .bl-body { color: var(--color-text-secondary); }
+.near-row__tile { width: 56px; flex: none; display: grid; place-items: center; border-radius: var(--radius-300); }
+.near-row__end { margin-left: auto; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-xs); }
+.near-banner { flex-direction: row; justify-content: space-between; align-items: center; gap: var(--space-l); padding: var(--space-3xl); border-radius: var(--radius-600); flex-wrap: wrap; }
+.near-foot { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0 var(--space-6xl); }
+
+.near-sheet__head { display: flex; gap: var(--space-m); align-items: center; padding-right: var(--space-3xl); }
+.near-sheet__cr { width: 128px; flex: none; }
+.near-code { display: flex; align-items: center; justify-content: space-between; gap: var(--space-m); padding: var(--space-m) var(--space-l); border-radius: var(--radius-400); border: 2px dashed var(--color-border-primary); font: var(--type-h3); letter-spacing: .08em; }
+.near-sheet__demo { gap: var(--space-xs); align-items: flex-start; }
+.near-sheet__url { font: var(--type-micro); color: var(--color-text-secondary); word-break: break-all; }
+
+/* креатив в превью кабинета */
+.pm-near { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; padding-top: 14px; } /* место под плашку «реклама» */
+.build-creative { display: flex; gap: var(--space-m); align-items: center; }
+.build-creative .cr { width: 176px; flex: none; }
+.build-creative--wide { flex-direction: column; align-items: flex-start; }
+.build-creative--wide .cr { width: 100%; max-width: 360px; }
+
+@media (max-width: 1023px) {
+  .near-hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .near-rows { grid-template-columns: 1fr; }
+  .near-box__grid { grid-template-columns: 1fr; }
+  .near-map { height: 260px; }
+  .near-list { max-height: none; }
+}
+@media (max-width: 767px) {
+  .near-hero { grid-template-columns: 1fr; }
+  .near-card--wide { grid-column: auto; }
+  .near-carousel > .near-card { width: 232px; }
+  .near-carousel > .near-card--wide { width: 300px; }
+  .near-rows { padding: 0 var(--space-m); }
+  .near-row__end .bl-btn { display: none; }
+  .near-banner { padding: var(--space-l); }
+  .near-box { padding: var(--space-m); }
+  .near-intro .bl-segmented { width: 100%; }
+  .near-intro .bl-segmented button { flex: 1; padding-inline: var(--space-s); }
+  .near-foryou__cr { width: 104px; }
+  .near-sheet__cr { width: 96px; }
+}
+/* низкое окно ноутбука: ближайшие предложения видны без прокрутки */
+@media (min-width: 1024px) and (max-height: 800px) {
+  .near-story { height: 76px; }
+  .near-map, .near-list { height: 290px; max-height: 290px; }
+  .near-main { gap: var(--space-m); }
+}
+@media (min-width: 1024px) and (max-height: 680px) {
+  .near-map, .near-list { height: 225px; max-height: 225px; }
+}

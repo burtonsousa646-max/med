@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { components } from '../src/api.gen.ts'
 import * as db from './db.ts'
-import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, view, type CampaignRow, type OfferType } from './domain.ts'
+import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, trackingUrl, view, type CampaignRow, type OfferType } from './domain.ts'
 
 type S = components['schemas']
 type Env = { Variables: { cid: string } }
@@ -121,7 +121,7 @@ app.patch('/campaigns/:id', async c => {
     row.landingUrl = p.landingUrl
   }
   if (p.paused !== undefined && launched(row)) row.status = p.paused ? 'paused' : 'live'
-  for (const k of ['mode', 'img', 'audience', 'places', 'amount', 'payMethod'] as const) if (p[k] !== undefined) (row as Record<string, unknown>)[k] = p[k]
+  for (const k of ['mode', 'img', 'audience', 'places', 'wideCard', 'amount', 'payMethod'] as const) if (p[k] !== undefined) (row as Record<string, unknown>)[k] = p[k]
   return c.json(show(c.var.cid, db.saveCampaign(c.var.cid, row)))
 })
 
@@ -196,12 +196,15 @@ app.post('/approvals/:token/pay', c => {
 // Демо: после запуска у купона уже есть погашения, у подписки — платежи, у заявки — заявки из формы, ждущие проверки
 function seedConversions(cid: string, row: CampaignRow) {
   if (row.type === 'click' || row.type === 'promo') return
-  const price = +row.terms.price || 0, days = DISPUTE_DAYS[row.type]
   const n = { coupon: 3, lead: 3, sub: 2 }[row.type]
-  for (let i = 0; i < n; i++) db.addConversion(cid, {
-    campaignId: row.id, clickId: newClickId(row.id), orderId: null, kind: KIND[row.type], amount: row.type === 'lead' ? null : price,
-    status: days ? 'pending' : 'approved', source: { coupon: 'cabinet', lead: 'form', sub: 'billing' }[row.type] as S['Conversion']['source'],
-    note: null, disputeUntil: days ? new Date(Date.now() + days * 864e5).toISOString() : null,
+  for (let i = 0; i < n; i++) addResult(cid, row, newClickId(row.id), { coupon: 'cabinet', lead: 'form', sub: 'billing' }[row.type] as S['Conversion']['source'], null)
+}
+// Результат, который билайн видит сам: заявка из своей формы, купон и подписка — платёж со счёта
+function addResult(cid: string, row: CampaignRow, clickId: string, source: S['Conversion']['source'], note: string | null) {
+  const type = row.type as 'coupon' | 'lead' | 'sub', days = DISPUTE_DAYS[type]
+  return db.addConversion(cid, {
+    campaignId: row.id, clickId, orderId: null, kind: KIND[type], amount: type === 'lead' ? null : +row.terms.price || 0,
+    status: days ? 'pending' : 'approved', source, note, disputeUntil: days ? new Date(Date.now() + days * 864e5).toISOString() : null,
   })
 }
 
@@ -243,6 +246,17 @@ function trackingView(c: Context<Env>): S['Tracking'] {
     disputeDays: DISPUTE_DAYS as Record<string, number>,
   }
 }
+/* ───────── витрина «лучшее рядом» ───────── */
+app.post('/showcase/:id/act', c => {
+  const row = find(c)
+  if (!row) return fail(c, 404, 'кампания не найдена')
+  if (show(c.var.cid, row).status !== 'live' || !row.places.showcase) return fail(c, 409, 'кампания сейчас не показывается на витрине')
+  const clickId = newClickId(row.id), url = trackingUrl(row).replace('{click_id}', clickId)
+  if (row.type === 'click' || row.type === 'promo') return c.json({ clickId, url, conversion: null })
+  const conv = addResult(c.var.cid, row, clickId, row.type === 'lead' ? 'form' : 'billing', 'с витрины «лучшее рядом»')
+  return c.json({ clickId, url, conversion: named(c.var.cid, conv) })
+})
+
 app.get('/tracking', c => c.json(trackingView(c)))
 app.post('/tracking/test', c => {
   const row = db.listCampaigns(c.var.cid).find(r => r.type !== 'click')

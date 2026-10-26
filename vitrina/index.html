@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лучшее рядом</title>
+<link rel="stylesheet" href="../design-system/tokens.css">
+<link rel="stylesheet" href="../design-system/components.css">
+<style>
+  /* Набросок витрины «лучшее рядом». Только раскладка, цвета и формы из дизайн-системы. */
+  .head-search { width: 320px; }
+  .loc { gap: 6px; }
+  .loc svg, .ico { width: 20px; height: 20px; flex: none; }
+  main { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xs) 0 var(--space-5xl); }
+
+  .intro { display: flex; justify-content: space-between; align-items: end; gap: var(--space-m); flex-wrap: wrap; }
+  .scroller { display: flex; gap: var(--space-s); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 0 var(--page-side); }
+  .scroller::-webkit-scrollbar { display: none; }
+  .scroller > * { flex: none; }
+
+  /* Подборки, как истории в Т-Городе */
+  .story { width: 132px; height: 96px; padding: var(--space-s); border: 0; border-radius: var(--radius-500); display: flex; flex-direction: column; justify-content: space-between; text-align: left; font: var(--type-caption); color: var(--color-text-primary); cursor: pointer; transition: transform var(--transition-fast); }
+  .story:hover { transform: translateY(-2px); }
+  .story svg { width: 28px; height: 28px; }
+  .story.is-active { outline: 2px solid var(--color-border-primary); outline-offset: 2px; }
+
+  /* Рядом: карта и ближайшие */
+  .near { padding: var(--space-l); max-width: none; }
+  .near__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-l); }
+  .near__list { max-height: 320px; overflow-y: auto; }
+  .map { position: relative; height: 320px; border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-tertiary); container-type: size; }
+  .map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .map__ring { position: absolute; left: 50%; top: 50%; width: calc(var(--r) * 2cqmin); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 2px dashed var(--color-link-primary); background: color-mix(in srgb, var(--color-link-primary) 8%, transparent); pointer-events: none; }
+  .map__me { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--color-link-primary); border: 3px solid var(--color-background-secondary); box-shadow: var(--shadow-popover); }
+  .pin { position: absolute; left: calc(50% + var(--dx) * 1cqmin); top: calc(50% + var(--dy) * 1cqmin); transform: translate(-50%, -50%); width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--color-background-secondary); color: var(--color-icon-primary); box-shadow: var(--shadow-popover); cursor: pointer; transition: transform var(--transition-fast), background-color var(--transition-fast); }
+  .pin svg { width: 18px; height: 18px; }
+  .pin:hover, .pin.is-hot { background: var(--color-brand-primary); color: var(--color-constant-01); transform: translate(-50%, -50%) scale(1.15); z-index: 2; }
+  .map__note { position: absolute; left: var(--space-m); bottom: var(--space-m); }
+  .bl-cell { width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; }
+  .bl-cell:hover .bl-cell__title { color: var(--color-text-secondary); }
+  .bl-cell__end { font: var(--type-caption); text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+  /* Для тебя сегодня */
+  .for-you .bl-card--promo { min-height: 0; padding: var(--space-l); gap: var(--space-xs); border: 0; text-align: left; font: inherit; cursor: pointer; }
+  .why { align-self: flex-start; }
+
+  /* Сетка офферов */
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-m); flex-wrap: wrap; }
+  .offer { padding: 0; gap: 0; overflow: hidden; border: 0; text-align: left; font: inherit; cursor: pointer; }
+  .offer__img { position: relative; aspect-ratio: 16 / 9; display: grid; place-items: center; color: var(--color-icon-secondary); }
+  .offer__img > svg { width: 48px; height: 48px; opacity: .6; }
+  .offer__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .offer__img .bl-pill-dark { position: absolute; left: var(--space-s); top: var(--space-s); }
+  .offer__img .bl-tag { position: absolute; right: var(--space-s); top: var(--space-s); }
+  .offer__body { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-m) var(--space-m) var(--space-l); flex: 1; }
+  .offer__body .bl-btn { margin-top: auto; align-self: flex-start; }
+  .offer__body .bl-micro { margin-top: var(--space-xs); }
+  .empty { padding: var(--space-4xl); text-align: center; }
+
+  /* Окно оффера */
+  dialog.bl-modal { border: 0; max-height: calc(100vh - 32px); overflow-y: auto; }
+  dialog::backdrop { background: var(--color-background-overlay); }
+  .modal__close { position: absolute; right: var(--space-m); top: var(--space-m); }
+  .code { display: flex; align-items: center; justify-content: space-between; gap: var(--space-m); padding: var(--space-m) var(--space-l); border-radius: var(--radius-400); border: 2px dashed var(--color-border-primary); font: var(--type-h3); letter-spacing: .08em; }
+  .qr { width: 168px; height: 168px; padding: 12px; border-radius: var(--radius-400); background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); align-self: center; }
+  .toast-wrap { position: fixed; left: 50%; bottom: var(--space-l); transform: translateX(-50%); z-index: 60; }
+
+  .foot { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0; }
+
+  @media (max-width: 1023px) {
+    .near__grid { grid-template-columns: 1fr; }
+    .map { height: 260px; }
+    .near__list { max-height: none; }
+  }
+  @media (max-width: 767px) {
+    .near { padding: var(--space-m); }
+    .intro .bl-segmented { width: 100%; }
+    .intro .bl-segmented button { flex: 1; padding-inline: var(--space-s); }
+  }
+  /* Низкое окно ноутбука: сжимаем шапку раздела, чтобы ближайшие офферы были видны сразу */
+  @media (min-width: 1024px) and (max-height: 760px) {
+    .story { height: 80px; }
+    .map, .near__list { height: 300px; max-height: 300px; }
+    main { gap: var(--space-m); }
+  }
+  @media (min-width: 1024px) and (max-height: 680px) {
+    .map, .near__list { height: 250px; max-height: 250px; }
+  }
+</style>
+</head>
+<body>
+<div class="bl-page">
+  <header class="bl-header">
+    <div class="bl-header__side">
+      <button class="bl-icon-btn bl-hide-mobile" aria-label="Меню"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg></button>
+      <button class="bl-btn bl-btn--s loc" id="loc" aria-label="Сменить район">
+        <svg class="ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        Хамовники
+      </button>
+    </div>
+    <img class="bl-logo" src="../design-system/assets/beeline-logo.svg" alt="билайн" width="44" height="44">
+    <div class="bl-header__side bl-header__side--end">
+      <label class="bl-search head-search bl-hide-mobile">
+        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="кофе, шиномонтаж, маникюр" aria-label="Поиск по предложениям">
+      </label>
+      <button class="bl-icon-btn" aria-label="Профиль"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div class="bl-stack" style="--bl-gap: 4px">
+        <h1 class="bl-h1">лучшее рядом</h1>
+        <p class="bl-body bl-secondary">скидки, купоны и промокоды от мест вокруг тебя — для абонентов билайна</p>
+      </div>
+      <div class="bl-segmented" role="tablist" aria-label="Радиус" id="radius">
+        <button role="tab" data-r="500">500 м</button>
+        <button role="tab" data-r="1000" aria-selected="true">1 км</button>
+        <button role="tab" data-r="3000">3 км</button>
+      </div>
+    </section>
+
+    <div class="scroller" id="stories" aria-label="Подборки"></div>
+    <div class="scroller" id="cats" role="toolbar" aria-label="Категории"></div>
+
+    <section class="bl-section near" aria-labelledby="near-h">
+      <div class="bl-row" style="justify-content: space-between; margin-bottom: var(--space-m)">
+        <h2 class="bl-h3" id="near-h">ближе всего</h2>
+        <span class="bl-caption" id="near-count"></span>
+      </div>
+      <div class="near__grid">
+        <div class="map" id="map" style="--r: 44">
+          <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <path d="M-20 330 C 120 290, 220 360, 360 320 S 560 250, 640 290" fill="none" stroke="var(--color-surface-03)" stroke-width="34"/>
+            <rect x="380" y="40" width="150" height="110" rx="24" fill="var(--color-surface-01)"/>
+            <rect x="60" y="60" width="90" height="70" rx="16" fill="var(--color-surface-01)"/>
+            <g stroke="var(--color-background-secondary)" stroke-width="12" fill="none" stroke-linecap="round">
+              <path d="M0 200 H600"/><path d="M300 0 V400"/><path d="M0 70 L600 150"/><path d="M120 0 L200 400"/><path d="M460 0 L420 400"/>
+            </g>
+            <g stroke="var(--color-background-secondary)" stroke-width="5" fill="none">
+              <path d="M0 260 H600"/><path d="M0 120 H600"/><path d="M60 0 V400"/><path d="M380 0 V400"/><path d="M540 0 V400"/><path d="M220 0 V400"/>
+            </g>
+          </svg>
+          <div class="map__ring"></div>
+          <div id="pins"></div>
+          <div class="map__me" title="ты здесь"></div>
+          <span class="bl-pill-dark map__note">по геоданным билайна, без доступа к GPS</span>
+        </div>
+        <div class="near__list" id="near"></div>
+      </div>
+    </section>
+
+    <section class="bl-stack for-you" style="--bl-gap: 16px" aria-labelledby="fy-h">
+      <h2 class="bl-h3" id="fy-h">для тебя сегодня</h2>
+      <div class="bl-grid" style="--bl-cols: 3" id="foryou"></div>
+    </section>
+
+    <section class="bl-stack" style="--bl-gap: 16px" aria-labelledby="all-h">
+      <div class="toolbar">
+        <h2 class="bl-h3" id="all-h">все предложения <span class="bl-secondary" id="all-count"></span></h2>
+        <div class="bl-segmented" role="tablist" aria-label="Тип предложения" id="types"></div>
+      </div>
+      <div class="bl-grid" style="--bl-cols: 4" id="grid"></div>
+    </section>
+  </main>
+
+  <footer class="foot bl-caption">
+    <span>Реклама. Скидки и условия предоставляют партнёры, билайн показывает их абонентам.</span>
+    <span class="bl-row" style="--bl-gap: 24px"><a href="#">как мы подбираем предложения</a><a href="https://ads.napovtor.ru/">разместить своё предложение</a></span>
+  </footer>
+</div>
+
+<dialog class="bl-modal" id="dlg" aria-labelledby="dlg-title"></dialog>
+<div class="toast-wrap" id="toast" hidden><div class="bl-toast" role="status"></div></div>
+
+<script>
+const ICON = {
+  all: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
+  food: '<path d="M10 2v2M14 2v2M6 2v2M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>',
+  beauty: '<circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/>',
+  auto: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  health: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  home: '<path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  sport: '<path d="M6 5v14M18 5v14M3 9v6M21 9v6M6 12h12"/>',
+  kids: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  fun: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/>',
+  shop: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>',
+  new: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7Z"/>',
+  wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+  walk: '<circle cx="13" cy="4" r="2"/><path d="m9 20 3-6 3 3v4M7 12l3-4 4 1 2 3h3M10 8l-2 6"/>',
+  close: '<path d="M18 6 6 18M6 6l12 12"/>',
+};
+const svg = (k, cls = '') => `<svg class="${cls}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+
+const CATS = {
+  all: ['всё'], food: ['еда и кофе', '08'], beauty: ['красота', '05'], auto: ['авто', '03'], health: ['здоровье', '01'],
+  home: ['дом', '02'], sport: ['спорт', '07'], kids: ['дети', '04'], fun: ['развлечения', '06'], shop: ['покупки', '08'],
+};
+// Типы офферов те же, что в кабинете партнёра (OfferType в api.gen.ts)
+const TYPES = {
+  click:  { name: 'на сайте',  tag: 'bl-tag--soft-blue',   cta: 'перейти на сайт' },
+  coupon: { name: 'купон',     tag: 'bl-tag--soft-green',  cta: 'взять купон' },
+  promo:  { name: 'промокод',  tag: 'bl-tag--soft-violet', cta: 'показать промокод' },
+  lead:   { name: 'запись',    tag: '',                    cta: 'записаться' },
+  sub:    { name: 'подписка',  tag: 'bl-tag--brand',       cta: 'подключить' },
+};
+
+// Партнёры вымышленные. a — угол на карте, dist — метры от абонента.
+const OFFERS = [
+  { id: 'zerno',  cat: 'food',   type: 'promo',  partner: 'кофейня «Зерно»',        title: '−20% на любой кофе',                 cond: 'до 11:00 по будням', dist: 180,  a: 40,  code: 'ZERNO20', till: '30 ноября' },
+  { id: 'kolos',  cat: 'food',   type: 'coupon', partner: 'пекарня «Колос»',        title: 'круассан в подарок к кофе',          cond: 'один купон в день', dist: 350,  a: 200, till: '15 ноября' },
+  { id: 'apteka', cat: 'health', type: 'click',  partner: 'аптека «Плюс»',          title: '−10% на заказ с самовывозом',         cond: 'при заказе на сайте', dist: 260,  a: 300, till: '31 декабря' },
+  { id: 'britva', cat: 'beauty', type: 'click',  partner: 'барбершоп «Бритва»',     title: 'первая стрижка −30%',                cond: 'запись на сайте', dist: 420,  a: 120, till: '30 ноября' },
+  { id: 'buket',  cat: 'shop',   type: 'promo',  partner: 'цветы «Букет»',          title: '−15% на букеты с доставкой',          cond: 'от 2 500 ₽', dist: 510,  a: 250, code: 'BEE15', till: '20 ноября' },
+  { id: 'puls',   cat: 'sport',  type: 'sub',    partner: 'фитнес «Пульс»',         title: 'месяц безлимита за 990 ₽',            cond: 'дальше 2 900 ₽ в месяц со счёта билайна', dist: 650,  a: 340, till: '31 декабря' },
+  { id: 'len',    cat: 'shop',   type: 'click',  partner: 'шоурум «Лён»',           title: '−15% на осеннюю коллекцию',          cond: 'онлайн и в шоуруме', dist: 750,  a: 160, till: '10 ноября' },
+  { id: 'nogti',  cat: 'beauty', type: 'coupon', partner: 'студия «Ноготок»',       title: 'маникюр за 1 490 ₽ вместо 2 200 ₽',   cond: 'покажи купон мастеру', dist: 900,  a: 70,  till: '30 ноября' },
+  { id: 'sova',   cat: 'kids',   type: 'lead',   partner: 'детский центр «Сова»',   title: 'пробное занятие бесплатно',           cond: 'дети 4–10 лет', dist: 1100, a: 280, till: '31 декабря' },
+  { id: 'pena',   cat: 'auto',   type: 'promo',  partner: 'автомойка «Пена»',       title: 'комплексная мойка −25% по будням',    cond: 'кроме выходных', dist: 1200, a: 20,  code: 'PENA25', till: '30 ноября' },
+  { id: 'clinic', cat: 'health', type: 'lead',   partner: 'клиника «Здоровье рядом»', title: 'приём терапевта за 990 ₽',          cond: 'перезвонят за 15 минут', dist: 1400, a: 220, till: '31 декабря' },
+  { id: 'chisto', cat: 'home',   type: 'promo',  partner: 'клининг «Чисто»',        title: 'первая уборка −40%',                 cond: 'выезжают в твой район', dist: 1600, a: 130, code: 'NEWHOME40', till: '31 декабря' },
+  { id: 'koleso', cat: 'auto',   type: 'lead',   partner: 'шиномонтаж «Колесо 24»', title: 'переобувка к зиме от 2 000 ₽',       cond: 'без очереди по записи', dist: 1800, a: 320, till: '15 декабря' },
+  { id: 'oktyabr',cat: 'fun',    type: 'coupon', partner: 'кинотеатр «Октябрь»',    title: 'два билета по цене одного',           cond: 'сеансы в будни до 17:00', dist: 2100, a: 100, till: '30 ноября' },
+];
+const byId = Object.fromEntries(OFFERS.map(o => [o.id, o]));
+
+// Подборки сверху: фильтр одним нажатием
+const STORIES = [
+  { t: 'кофе по пути', icon: 'food', s: '08', set: { cat: 'food' } },
+  { t: 'в пяти минутах пешком', icon: 'walk', s: '01', set: { radius: 500, cat: 'all' } },
+  { t: 'новое в районе', icon: 'new', s: '04', set: { cat: 'all', type: 'all' } },
+  { t: 'машину к зиме', icon: 'auto', s: '03', set: { cat: 'auto', radius: 3000 } },
+  { t: 'выходные с детьми', icon: 'kids', s: '05', set: { cat: 'kids', radius: 3000 } },
+  { t: 'только промокоды', icon: 'wallet', s: '02', set: { type: 'promo', cat: 'all' } },
+];
+// Персональные по сигналам билайна. Причина показывается абоненту.
+const FOR_YOU = [
+  { id: 'len',    why: 'сегодня зарплата', look: 'bl-card--yellow' },
+  { id: 'chisto', why: 'ты недавно переехал', look: '', theme: 'invert' },
+  { id: 'zerno',  why: 'ты часто здесь по утрам', look: 'bl-card--white' },
+];
+
+const state = { cat: 'all', type: 'all', radius: 1000, q: '' };
+const $ = id => document.getElementById(id);
+const km = m => m < 1000 ? `${m} м` : `${+(m / 1000).toFixed(1)} км`.replace('.', ',');
+const walk = m => `${Math.max(1, Math.round(m / 80))} мин пешком`;
+const typeTag = o => `<span class="bl-tag ${TYPES[o.type].tag}">${TYPES[o.type].name}</span>`;
+const ad = o => `реклама · ${o.partner}`;
+const photo = o => `<img src="img/${o.id}.jpg" alt="" loading="lazy" onerror="this.remove()">`;
+
+function visible() {
+  const q = state.q.trim().toLowerCase();
+  return OFFERS.filter(o =>
+    (state.cat === 'all' || o.cat === state.cat) &&
+    (state.type === 'all' || o.type === state.type) &&
+    o.dist <= state.radius &&
+    (!q || (o.partner + o.title + CATS[o.cat][0]).toLowerCase().includes(q))
+  ).sort((a, b) => a.dist - b.dist);
+}
+
+function render() {
+  const list = visible();
+
+  $('stories').innerHTML = STORIES.map((s, i) =>
+    `<button class="story" data-story="${i}" style="background: var(--color-surface-${s.s})">${svg(s.icon)}<span>${s.t}</span></button>`).join('');
+
+  $('cats').innerHTML = Object.entries(CATS).map(([k, [name]]) =>
+    `<button class="bl-chip" data-cat="${k}" aria-pressed="${state.cat === k}">${svg(k, 'ico')}${name}</button>`).join('');
+
+  document.querySelectorAll('#radius button').forEach(b => b.setAttribute('aria-selected', +b.dataset.r === state.radius));
+  // карта «приближается» к радиусу: граница радиуса всегда на 44 % меньшей стороны
+  const scale = m => m / state.radius * 44;
+  $('pins').innerHTML = list.map(o => {
+    const rad = o.a * Math.PI / 180;
+    return `<button class="pin" data-id="${o.id}" style="--dx:${(Math.cos(rad) * scale(o.dist)).toFixed(1)};--dy:${(Math.sin(rad) * scale(o.dist)).toFixed(1)}" aria-label="${o.partner}: ${o.title}">${svg(o.cat)}</button>`;
+  }).join('');
+
+  $('near-count').textContent = list.length ? `${list.length} в радиусе ${km(state.radius)}` : '';
+  $('near').innerHTML = list.length ? list.slice(0, 6).map(o =>
+    `<button class="bl-cell" data-id="${o.id}">
+      <span class="bl-cell__icon" style="background: var(--color-surface-${CATS[o.cat][1]})">${svg(o.cat, 'ico')}</span>
+      <span class="bl-cell__main"><span class="bl-cell__title">${o.title}</span><span class="bl-cell__sub" style="display:block">${o.partner}</span></span>
+      <span class="bl-cell__end"><span class="bl-secondary">${km(o.dist)}</span>${typeTag(o)}</span>
+    </button>`).join('')
+    : `<div class="empty bl-secondary">рядом ничего не нашлось — увеличь радиус</div>`;
+
+  $('foryou').innerHTML = FOR_YOU.map(f => { const o = byId[f.id]; return `
+    <button class="bl-card bl-card--promo ${f.look}" ${f.theme ? `data-theme="${f.theme}"` : ''} data-id="${o.id}">
+      <span class="bl-tag why">${f.why}</span>
+      <span class="bl-h3" style="margin-top: var(--space-s)">${o.title}</span>
+      <span class="bl-body" style="opacity:.8">${o.partner} · ${km(o.dist)}</span>
+      <span class="bl-micro" style="color: inherit; opacity: .7; margin-top: var(--space-s)">${ad(o)}</span>
+    </button>`; }).join('');
+
+  $('types').innerHTML = [['all', 'все'], ...Object.entries(TYPES).map(([k, t]) => [k, t.name])].map(([k, n]) =>
+    `<button role="tab" data-type="${k}" aria-selected="${state.type === k}">${n}</button>`).join('');
+
+  $('all-count').textContent = list.length;
+  $('grid').innerHTML = list.length ? list.map(o => `
+    <button class="bl-card bl-card--white offer" data-id="${o.id}">
+      <span class="offer__img" style="background: var(--color-surface-${CATS[o.cat][1]})">${svg(o.cat)}${photo(o)}
+        <span class="bl-pill-dark">${km(o.dist)}</span>${typeTag(o)}</span>
+      <span class="offer__body">
+        <span class="bl-caption">${o.partner}</span>
+        <span class="bl-h4">${o.title}</span>
+        <span class="bl-caption">${o.cond}</span>
+        <span class="bl-micro">${ad(o)}</span>
+        <span class="bl-btn bl-btn--s" style="margin-top: var(--space-s)">${TYPES[o.type].cta}</span>
+      </span>
+    </button>`).join('')
+    : `<div class="empty bl-secondary" style="grid-column: 1 / -1">по этим условиям пока ничего. Попробуй радиус 3 км или другую категорию.</div>`;
+}
+
+// ───── окно оффера: своё действие для каждого типа
+const dlg = $('dlg');
+function qr(seed) {
+  let x = [...seed].reduce((a, c) => a * 31 + c.charCodeAt(0), 7), cells = '';
+  for (let i = 0; i < 21; i++) for (let j = 0; j < 21; j++) {
+    const corner = (i < 7 || i > 13) && (j < 7) || (i < 7 && j > 13);
+    x = (x * 1103515245 + 12345) & 0x7fffffff;
+    if (corner ? ((i % 14 < 7 && j % 14 < 7) && (Math.max(Math.abs((i % 14) - 3), Math.abs((j % 14) - 3)) !== 2)) : x % 2)
+      cells += `<rect x="${j}" y="${i}" width="1" height="1"/>`;
+  }
+  return `<svg class="qr" viewBox="0 0 21 21" fill="var(--color-text-primary)" aria-label="QR-код купона">${cells}</svg>`;
+}
+const ACTION = {
+  promo: o => `<button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-do="code">показать промокод</button>`,
+  coupon: o => `<button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-do="coupon">взять купон</button>`,
+  click: o => `<button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-do="go">перейти на сайт</button>
+               <p class="bl-caption" style="text-align:center">скидка применится сама, промокод не нужен</p>`,
+  lead: o => `<label class="bl-field"><span class="bl-field__label">номер для связи</span><input class="bl-input" value="+7 903 ••• 45 67" inputmode="tel"></label>
+              <label class="bl-check"><input type="checkbox" checked><span class="bl-check__box"></span><span class="bl-caption">передать номер только партнёру «${o.partner.split('«')[1].replace('»', '')}» для записи</span></label>
+              <button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-do="lead">${TYPES.lead.cta}</button>`,
+  sub: o => `<div class="bl-notice bl-notice--info">первый месяц 990 ₽, потом ${o.cond.replace('дальше ', '')}. Отключить можно в любой момент в приложении билайна.</div>
+             <button class="bl-btn bl-btn--primary bl-btn--l bl-btn--block" data-do="sub">подключить за 990 ₽</button>`,
+};
+const DONE = {
+  code: o => `<div class="code"><span>${o.code}</span><button class="bl-btn bl-btn--s" data-do="copy" data-code="${o.code}">скопировать</button></div>
+              <button class="bl-btn bl-btn--dark bl-btn--block" data-do="go">на сайт партнёра</button>`,
+  coupon: o => `${qr(o.id)}<p class="bl-body" style="text-align:center">покажи на кассе<br><span class="bl-caption">купон сохранён в разделе «мои выгоды»</span></p>`,
+  lead: o => `<div class="bl-notice bl-notice--success">заявка у партнёра. Перезвонят в течение 15 минут.</div>`,
+  sub: o => `<div class="bl-notice bl-notice--success">подключено. 990 ₽ спишем со счёта билайна сегодня.</div>`,
+};
+
+function openOffer(id) {
+  const o = byId[id];
+  dlg.dataset.id = id;
+  dlg.innerHTML = `
+    <button class="bl-icon-btn bl-icon-btn--s modal__close" data-do="close" aria-label="Закрыть">${svg('close')}</button>
+    <div class="bl-stack" style="--bl-gap: 16px">
+      <div class="bl-row">${typeTag(o)}<span class="bl-caption">${km(o.dist)} · ${walk(o.dist)}</span></div>
+      <div class="bl-stack" style="--bl-gap: 4px"><span class="bl-caption">${o.partner}</span><h2 class="bl-h2" id="dlg-title">${o.title}</h2></div>
+      <p class="bl-body bl-secondary">${o.cond}. Действует до ${o.till}.</p>
+      <div class="bl-stack" style="--bl-gap: 12px" id="act">${ACTION[o.type](o)}</div>
+      <p class="bl-micro">Реклама. ${o.partner}, erid: 2Vtzq${id.slice(0, 4)}Xk. Условия предоставляет партнёр.</p>
+    </div>`;
+  dlg.showModal();
+}
+
+let toastTimer;
+function toast(text) {
+  $('toast').firstElementChild.textContent = text;
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('toast').hidden = true, 2600);
+}
+
+dlg.addEventListener('click', e => {
+  if (e.target === dlg) return dlg.close();
+  const b = e.target.closest('[data-do]'); if (!b) return;
+  const o = byId[dlg.dataset.id], what = b.dataset.do;
+  if (what === 'close') return dlg.close();
+  if (what === 'copy') { navigator.clipboard?.writeText(b.dataset.code); return toast('промокод скопирован'); }
+  // ponytail: переход на сайт партнёра не настоящий, в продукте здесь ссылка с click_id
+  if (what === 'go') return toast('здесь откроется сайт партнёра с отметкой перехода');
+  $('act').innerHTML = DONE[what](o);
+});
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-id], [data-cat], [data-type], [data-r], [data-story], #loc');
+  if (!t || dlg.contains(t)) return;
+  if (t.id === 'loc') return toast('район определяется по сети билайна, можно выбрать другой');
+  if (t.dataset.id) return openOffer(t.dataset.id);
+  if (t.dataset.cat) state.cat = t.dataset.cat;
+  if (t.dataset.type) state.type = t.dataset.type;
+  if (t.dataset.r) state.radius = +t.dataset.r;
+  if (t.dataset.story) Object.assign(state, STORIES[t.dataset.story].set);
+  render();
+});
+// подсветка точки на карте при наведении на строку списка
+document.addEventListener('pointerover', e => {
+  const c = e.target.closest('.bl-cell[data-id]');
+  document.querySelectorAll('.pin').forEach(p => p.classList.toggle('is-hot', !!c && p.dataset.id === c.dataset.id));
+});
+$('q').addEventListener('input', e => { state.q = e.target.value; render(); });
+
+render();
+</script>
+</body>
+</html>

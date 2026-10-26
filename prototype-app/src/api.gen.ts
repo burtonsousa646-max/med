@@ -494,6 +494,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/showcase/{id}/act": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Абонент нажал кнопку оффера на витрине «лучшее рядом»
+         * @description Демо: витрина показывает кампании демо-компании из GET /campaigns (статус live, место showcase),
+         *     а нажатие абонента приходит сюда. В бою витрина — сервис билайна для абонентов, этот вызов делает сервис переходов.
+         *     Переход и промокод: ссылка с click_id, результат потом пришлёт партнёр. Заявка из формы билайна встаёт в «ждёт»
+         *     со сроком на спор. Купон и подписка оплачиваются со счёта телефона и засчитываются сразу.
+         */
+        post: operations["showcaseAct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -570,6 +593,8 @@ export interface components {
             images: string[];
             /** @description бонус на первую кампанию */
             bonus: number;
+            /** @description наценка широкой карточки в витрине «лучшее рядом», % к цене клика или результата */
+            wideMarkup: number;
         };
         OfferTypeInfo: {
             id: components["schemas"]["OfferType"];
@@ -714,6 +739,8 @@ export interface components {
             places: {
                 [key: string]: boolean;
             };
+            /** @description широкая карточка в витрине «лучшее рядом»: первое место в разделе, цена клика или результата выше на Catalog.wideMarkup; у купона и подписки входит в комиссию */
+            wideCard: boolean;
             /** @description бюджет в месяц */
             budget: number;
             /** @description к оплате; null — равна бюджету */
@@ -769,6 +796,7 @@ export interface components {
             places?: {
                 [key: string]: boolean;
             };
+            wideCard?: boolean;
             budget?: number;
             amount?: number | null;
             payMethod?: components["schemas"]["PayMethod"];
@@ -1578,6 +1606,36 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    showcaseAct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ok */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        clickId: string;
+                        /** @description trackingUrl с подставленным click_id */
+                        url: string;
+                        /** @description null — у перехода и промокода результат присылает партнёр */
+                        conversion: components["schemas"]["Conversion"] | null;
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
 }

@@ -22,14 +22,19 @@ export function creativeOf(brand: string, offer: string, img: number): CreativeD
   return { mark: brand.replace(/^.*«(.+)»$/, '$1'), big: m ? m[1] : offer, small: m ? m[2] : '', tone: TONES[img] ?? 'dark', img: `own-${img}`, cat: 'food' }
 }
 
-export function Creative({ o, erid, wide }: { o: CreativeData; erid: string; wide?: boolean }) {
+// предмет из public/img/near, пока файла нет — иконка категории
+export function CrImg({ o }: { o: CreativeData }) {
   const [failed, setFailed] = useState(false)
   const Icon = CATS[o.cat][1]
+  return failed
+    ? <Icon className="cr__icon" aria-hidden="true" />
+    : <img className="cr__img" src={`${import.meta.env.BASE_URL}img/near/${o.img}.png`} alt="" onError={() => setFailed(true)} />
+}
+
+export function Creative({ o, erid, wide }: { o: CreativeData; erid: string; wide?: boolean }) {
   return (
     <div className={`cr cr--${o.tone}${wide ? ' cr--wide' : ''}`}>
-      {failed
-        ? <Icon className="cr__icon" aria-hidden="true" />
-        : <img className="cr__img" src={`${import.meta.env.BASE_URL}img/near/${o.img}.png`} alt="" onError={() => setFailed(true)} />}
+      <CrImg o={o} />
       <span className="cr__text">
         <span className="cr__mark">{o.mark}</span>
         {/* условие без цифры, например «второй кофе в подарок», переносится строками */}

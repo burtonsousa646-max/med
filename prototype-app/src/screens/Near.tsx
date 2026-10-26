@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { Baby, Car, Coffee, Footprints, LayoutGrid, MapPin, Search, ShoppingBasket, Star } from 'lucide-react'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
-import { CATS, Creative, creativeOf, type Cat, type CreativeData } from '../creative'
+import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
 import { Check, Chip, Modal, Qr, Segmented, copy, toast } from '../ui'
 
 /* Витрина «лучшее рядом»: предложения партнёров вокруг абонента, по мотивам раздела «Город» в Т-Банке.
@@ -292,7 +292,7 @@ function Card({ o, wide, onOpen }: { o: Offer; wide?: boolean; onOpen: (id: stri
 function Row({ o, onOpen }: { o: Offer; onOpen: (id: string) => void }) {
   return (
     <button className="near-row" onClick={() => onOpen(o.id)}>
-      <span className={`cr cr--${o.tone} near-row__tile`} aria-hidden="true">{(() => { const Icon = CATS[o.cat][1]; return <Icon size={24} /> })()}</span>
+      <span className={`cr cr--${o.tone} near-row__tile`} aria-hidden="true"><CrImg o={o} /></span>
       <span className="bl-stack" style={{ ['--bl-gap' as string]: '4px', minWidth: 0 }}>
         <span className="bl-body">{o.title}</span>
         <span className="bl-caption">{o.partner} · {km(o.dist)}</span>

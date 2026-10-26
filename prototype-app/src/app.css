@@ -417,6 +417,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-row { display: flex; align-items: center; gap: var(--space-m); padding: var(--space-m) 0; border: 0; border-bottom: 1px solid var(--color-border-secondary); background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .near-row:hover .bl-body { color: var(--color-text-secondary); }
 .near-row__tile { width: 56px; flex: none; display: grid; place-items: center; border-radius: var(--radius-300); }
+.near-row__tile .cr__img { inset: 4%; width: 92%; height: 92%; }
+.near-row__tile .cr__icon { position: static; width: 24px; height: 24px; opacity: 1; }
 .near-row__end { margin-left: auto; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-xs); }
 .near-banner { flex-direction: row; justify-content: space-between; align-items: center; gap: var(--space-l); padding: var(--space-3xl); border-radius: var(--radius-600); flex-wrap: wrap; }
 .near-foot { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0 var(--space-6xl); }

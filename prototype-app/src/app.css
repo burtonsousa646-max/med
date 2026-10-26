@@ -349,12 +349,13 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 /* ───────── креатив карточки «лучшее рядом»: размеры от меньшей стороны: квадрат и широкая 2:1 ───────── */
 .cr { --cr-bg: var(--color-background-secondary-invert); --cr-fg: var(--color-text-primary-invert);
   position: relative; aspect-ratio: 1; overflow: hidden; container-type: size; border-radius: var(--radius-400); background: var(--cr-bg); color: var(--cr-fg); text-align: left; }
-.cr--red { --cr-bg: var(--color-accent-06); }
-.cr--green { --cr-bg: var(--color-accent-01); }
-.cr--blue { --cr-bg: var(--color-accent-03); }
+/* цвета притемнены ровно до 4,5:1 для белого текста условия: на чистых акцентах бирюзовый давал 3:1 */
+.cr--red { --cr-bg: color-mix(in srgb, var(--color-accent-06), black 10%); }
+.cr--green { --cr-bg: color-mix(in srgb, var(--color-accent-01), black 20%); }
+.cr--blue { --cr-bg: color-mix(in srgb, var(--color-accent-03), black 14%); }
 .cr--violet { --cr-bg: var(--color-accent-04); }
-.cr--magenta { --cr-bg: var(--color-accent-05); }
-.cr--teal { --cr-bg: var(--color-accent-02); }
+.cr--magenta { --cr-bg: color-mix(in srgb, var(--color-accent-05), black 8%); }
+.cr--teal { --cr-bg: color-mix(in srgb, var(--color-accent-02), black 23%); }
 .cr--light { --cr-bg: var(--color-surface-08); --cr-fg: var(--color-text-primary); }
 .cr__img { position: absolute; right: -4cqmin; bottom: -4cqmin; width: 66cqmin; height: 66cqmin; object-fit: contain; }
 .cr__icon { position: absolute; right: 9cqmin; bottom: 9cqmin; width: 34cqmin; height: 34cqmin; opacity: .3; stroke-width: 1.4; }
@@ -365,17 +366,20 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .cr__big--text { max-width: 86cqmin; font-size: 10cqmin; line-height: 1.05; white-space: normal; }
 .cr__small { max-width: 60cqmin; font: 400 6.4cqmin/1.2 var(--font-primary); }
 .cr__erid { position: absolute; left: 5cqmin; bottom: 5cqmin; padding: .8cqmin 2.4cqmin; border-radius: var(--radius-circle); font: 4cqmin/1.4 var(--font-primary);
-  background: color-mix(in srgb, var(--color-background-primary-invert) 45%, transparent); color: var(--color-constant-02); }
+  background: color-mix(in srgb, var(--color-background-primary-invert) 72%, transparent); color: var(--color-constant-02); } /* erid обязателен — читается и поверх светлой картинки */
 
 .cr--wide { aspect-ratio: 2; }
 .cr--wide .cr__img { right: 4cqmin; bottom: -6cqmin; width: 96cqmin; height: 96cqmin; }
 .cr--wide .cr__icon { right: 14cqmin; width: 44cqmin; height: 44cqmin; }
 .cr--wide .cr__small { max-width: 92cqmin; }
 .cr--wide .cr__big--text { max-width: 110cqmin; }
+/* на витрине карточки бывают маленькими: текст креатива не мельче читаемого */
+.near-card .cr__mark { font-size: max(12px, 5.4cqmin); }
+.near-card .cr__small { font-size: max(13px, 6.4cqmin); }
+.near-card .cr__erid { font-size: max(11px, 4cqmin); }
 
 /* ───────── витрина «лучшее рядом» ───────── */
 .near-search { width: 320px; }
-.near-intro__tools { display: flex; align-items: center; gap: var(--space-s); flex-wrap: wrap; }
 .near-main { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xs) 0 var(--space-5xl); }
 .near-intro { display: flex; justify-content: space-between; align-items: end; gap: var(--space-m); flex-wrap: wrap; }
 .near-scroller { display: flex; gap: var(--space-s); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 2px var(--page-side); }
@@ -385,6 +389,15 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-story .cr__img { right: -6px; top: -6px; bottom: auto; width: 76px; height: 76px; }
 .near-story .cr__icon { right: 12px; top: 12px; bottom: auto; width: 32px; height: 32px; opacity: .5; }
 .near-story__t { position: relative; max-width: 100%; }
+.near-story.is-on { outline: 2px solid var(--color-border-primary); outline-offset: 2px; }
+.near-toolbar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-s) var(--space-m); flex-wrap: wrap; scroll-margin-top: var(--space-m); }
+.near-toolbar__state { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; min-width: 0; }
+.near-toolbar__state .bl-h3 { margin-right: var(--space-xs); }
+.near-toolbar__state .bl-chip svg { margin-left: 2px; }
+.near-toolbar__ctl { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.near-type { width: auto; min-height: 48px; padding-block: 0; border-radius: var(--radius-circle); }
+.near-box__head { justify-content: space-between; margin-bottom: var(--space-m); }
+.near-search:focus-within { outline: 2px solid var(--color-border-primary); outline-offset: 2px; } /* у поля поиска был невидимый фокус */
 .near-story:hover { transform: translateY(-2px); }
 
 .near-box { padding: var(--space-l); max-width: none; border-radius: var(--radius-500); } /* как карточки рядом, а не 40 px большой секции */
@@ -409,7 +422,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-s); padding: var(--space-3xl) var(--space-m); text-align: center; }
 .near-cell__tile { width: 48px; }
 
-.near-foryou-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--gutter); }
 .near-foryou { flex-direction: row; align-items: center; gap: var(--space-m); padding: var(--space-xs); border: 0; text-align: left; font: inherit; cursor: pointer; transition: transform var(--transition-fast); }
 .near-foryou:hover { transform: translateY(-2px); }
 .near-foryou__cr { width: 96px; }
@@ -439,6 +451,9 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-pair .near-row { align-items: stretch; }
 .near-pair .near-row__tile { width: 44%; aspect-ratio: auto; }
 .near-pair .near-row__body { justify-content: center; }
+.near-pair .near-foryou { align-items: stretch; }
+.near-pair .near-foryou__cr { width: 40%; aspect-ratio: auto; }
+.near-foryou__body { justify-content: center; min-width: 0; padding-right: var(--space-xs); }
 .near-row__body { text-wrap: pretty; } /* «₽» не уходит на строку один */
 .near-row__body { display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0; padding-right: var(--space-xs); }
 .near-row__big { font-size: 32px; line-height: 1.1; letter-spacing: -.02em; }
@@ -450,7 +465,10 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-place { display: flex; align-items: center; gap: var(--space-s); padding: var(--space-s) var(--space-m); border-radius: var(--radius-400); background: var(--color-background-tertiary); }
 .near-place > svg { flex: none; color: var(--color-icon-secondary); }
 .near-place .bl-btn { margin-left: auto; flex: none; }
-.near-code { display: flex; align-items: center; justify-content: space-between; gap: var(--space-m); padding: var(--space-m) var(--space-l); border-radius: var(--radius-400); border: 2px dashed var(--color-border-primary); font: var(--type-h3); letter-spacing: .08em; }
+.near-code { padding: var(--space-l); border-radius: var(--radius-400); border: 2px dashed var(--color-border-primary); text-align: center; font: var(--type-h1); letter-spacing: .08em; user-select: all; } /* код читают с экрана на кассе */
+.near-sheet__btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--space-xs); }
+.near-price { display: flex; align-items: baseline; gap: var(--space-s); flex-wrap: wrap; }
+.near-phone { display: flex; align-items: center; justify-content: space-between; gap: var(--space-s); padding: var(--space-s) var(--space-m); border-radius: var(--radius-400); background: var(--color-background-tertiary); }
 .near-sheet__demo { gap: var(--space-xs); align-items: flex-start; }
 .near-sheet__url { font: var(--type-micro); color: var(--color-text-secondary); word-break: break-all; }
 
@@ -477,20 +495,27 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   .near-carousel > .near-card--wide { width: 300px; }
   .near-banner { padding: var(--space-l); }
   .near-box { padding: var(--space-m); }
-  .near-intro .bl-segmented { width: 100%; }
-  .near-intro .bl-segmented button { flex: 1; padding-inline: var(--space-s); }
-  .near-foryou-grid { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 2px var(--page-side); } /* на телефоне — ряд, чтобы не съедать экран */
-  .near-foryou-grid > * { flex: none; width: 300px; }
+  .near-toolbar__ctl { width: 100%; flex-wrap: nowrap; }
+  .near-toolbar__ctl .bl-segmented { flex: 1; }
+  .near-toolbar__ctl .bl-segmented button { flex: 1; padding-inline: var(--space-xs); white-space: nowrap; }
   .near-foryou__cr { width: 80px; }
   .near-sheet__cr { width: 88px; }
-  .near-intro__tools, .near-search { width: 100%; }
+  .near-search { width: 100%; }
   .near-box:not(.is-map) .near-map { display: none; }
   .near-row__tile { width: 96px; }
+  /* широкая 2:1 на телефоне сжимала текст до 9 px: делаем её 4:3 с раскладкой квадрата */
+  .cr--wide { aspect-ratio: 4 / 3; }
+  .cr--wide .cr__img { right: -4cqmin; bottom: -4cqmin; width: 66cqmin; height: 66cqmin; }
+  .cr--wide .cr__icon { right: 9cqmin; width: 34cqmin; height: 34cqmin; }
+  .cr--wide .cr__small { max-width: 60cqmin; }
+  .cr--wide .cr__big--text { max-width: 86cqmin; }
   .near-pair__side { grid-template-columns: 1fr; }
 }
 /* низкое окно ноутбука: ближайшие предложения видны без прокрутки */
 @media (min-width: 1024px) and (max-height: 800px) {
   .near-story { height: 92px; }
+  .near-pair--fy { grid-template-columns: repeat(2, minmax(0, 1fr)); } /* на невысоком ноутбуке крупное предложение целиком на первом экране */
+  .near-pair--fy .near-card--wide { grid-column: auto; }
   .near-story .cr__img { width: 60px; height: 60px; }
   .near-map, .near-list { height: 290px; max-height: 290px; }
   .near-main { gap: var(--space-m); }

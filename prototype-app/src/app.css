@@ -387,10 +387,10 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-story__t { position: relative; max-width: 100%; }
 .near-story:hover { transform: translateY(-2px); }
 
-.near-box { padding: var(--space-l); max-width: none; }
+.near-box { padding: var(--space-l); max-width: none; border-radius: var(--radius-500); } /* как карточки рядом, а не 40 px большой секции */
 .near-box__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-l); }
 .near-list { max-height: 320px; overflow-y: auto; }
-.near-map { position: relative; height: 320px; border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-tertiary); container-type: size; }
+.near-map { position: relative; height: 320px; border-radius: var(--radius-400); overflow: hidden; background: var(--color-background-tertiary); container-type: size; }
 .near-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .near-map__ring { position: absolute; left: 50%; top: 50%; width: calc(var(--r) * 2cqmin); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 2px dashed var(--color-link-primary); background: color-mix(in srgb, var(--color-link-primary) 8%, transparent); pointer-events: none; }
 .near-map__me { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--color-link-primary); border: 3px solid var(--color-background-secondary); box-shadow: var(--shadow-popover); }
@@ -416,11 +416,12 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-tile { flex: none; border-radius: var(--radius-300); }
 .near-tile .cr__img { inset: 4%; width: 92%; height: 92%; }
 .near-tile .cr__icon { right: 28%; bottom: 28%; width: 44%; height: 44%; }
-.near-invite { justify-content: space-between; align-items: flex-start; gap: var(--space-s); padding: var(--space-l); border: 2px dashed var(--color-border-primary); background: none; color: inherit; text-decoration: none; }
+.near-card.near-invite { justify-content: space-between; align-items: flex-start; gap: var(--space-s); padding: var(--space-l); border: 2px dashed var(--color-border-primary); background: none; color: inherit; text-decoration: none; }
 .near-card { padding: var(--space-xs); gap: 0; border: 0; text-align: left; font: inherit; cursor: pointer; transition: transform var(--transition-fast); }
 .near-card:hover { transform: translateY(-2px); }
 .near-card__body { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-s) var(--space-xs) var(--space-xs); }
 .near-card--wide { grid-column: span 2; }
+.near-card > .cr { border-radius: var(--radius-300); } /* 20 px карточки минус 8 px отступа */
 .near-tools { max-width: 100%; min-width: 0; flex-wrap: nowrap; } /* переключатель типов листается, а не растягивает страницу */
 .near-tools .bl-segmented { min-width: 0; }
 .near-tools .bl-segmented button { white-space: nowrap; }
@@ -437,7 +438,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-pair .near-row__tile { width: 144px; }
 .near-row__body { display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0; padding-right: var(--space-xs); }
 .near-row__big { font-size: 32px; line-height: 1.1; letter-spacing: -.02em; }
-.near-banner { flex-direction: row; justify-content: space-between; align-items: center; gap: var(--space-l); padding: var(--space-3xl); border-radius: var(--radius-600); flex-wrap: wrap; }
+.near-banner { flex-direction: row; justify-content: space-between; align-items: center; gap: var(--space-l); padding: var(--space-3xl); border-radius: var(--radius-500); flex-wrap: wrap; }
 .near-foot { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0 var(--space-6xl); }
 
 .near-sheet__head { display: flex; gap: var(--space-m); align-items: center; padding-right: var(--space-3xl); }

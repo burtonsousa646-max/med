@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { MapPin, Search, X } from 'lucide-react'
+import { LayoutGrid, MapPin, Search, X } from 'lucide-react'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
 import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
@@ -82,15 +82,6 @@ const RADII = [500, 1000, 3000]
 // ponytail: номер и баланс демо-абонента, в бою — из профиля и биллинга
 const PHONE = '+7 903 ••• 45 67', BALANCE = 640
 type Filter = { cats: Cat[] | null; type: S['OfferType'] | 'all'; radius: number } // cats: null — все категории
-// подборка: картинка берётся у одного из её офферов
-const STORIES: { t: string; img: string; s: string; set: Partial<Filter> }[] = [
-  { t: 'магазины у дома', img: 'perek', s: '06', set: { cats: ['grocery'], type: 'all' } },
-  { t: 'кофе по пути', img: 'kolos', s: '08', set: { cats: ['food'], type: 'all' } },
-  { t: 'в пяти минутах пешком', img: 'p5-delivery', s: '01', set: { cats: null, type: 'all', radius: 500 } },
-  { t: 'машину к зиме', img: 'koleso', s: '03', set: { cats: ['auto'], type: 'all', radius: 3000 } },
-  { t: 'выходные с детьми', img: 'sova', s: '05', set: { cats: ['kids'], type: 'all', radius: 3000 } },
-  { t: 'только промокоды', img: 'buket', s: '02', set: { cats: null, type: 'promo' } },
-]
 // Персональные по сигналам билайна; причину абонент видит
 const FOR_YOU: [string, string][] = [['p5-new', 'рядом открылся магазин'], ['chisto', 'ты недавно переехал'], ['nogti', 'сегодня зарплата']]
 
@@ -144,8 +135,6 @@ export default function Near() {
     && (!needle || `${o.partner} ${o.title} ${o.small}`.toLowerCase().includes(needle))
   const list = all.filter(o => fits(o) && o.dist <= f.radius).sort((x, y) => x.dist - y.dist)
   const scale = (m: number) => (m / f.radius) * 44 // граница радиуса всегда на 44 % меньшей стороны карты
-  // подборка горит, пока фильтр совпадает с ней
-  const storyOn = (x: Partial<Filter>) => (Object.keys(x) as (keyof Filter)[]).every(k => JSON.stringify(f[k]) === JSON.stringify(x[k]))
   const catName = f.cats && (SECTIONS.find(sec => sec.cats.join() === f.cats!.join())?.t ?? f.cats.map(c => CATS[c][0]).join(', '))
 
   // пусто в радиусе — подсказываем ближайшее за ним и радиус, в который оно попадёт
@@ -160,7 +149,6 @@ export default function Near() {
             <button className="bl-btn bl-btn--s" onClick={reset}>сбросить фильтры</button></>}
     </div>
   )
-  const [hero, ...side] = FOR_YOU.map(([id, why]) => ({ o: OFFERS.find(x => x.id === id)!, why }))
 
   return (
     <div className="bl-page near">
@@ -184,50 +172,39 @@ export default function Near() {
           <label className="bl-search near-search"><Search /><input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="кофе, продукты, маникюр" aria-label="Поиск по предложениям" /></label>
         </section>
 
-        {/* выгода — первое, что видно: одно крупное предложение и два поменьше */}
+        {/* выгода — первое, что видно: три баннера по сигналам билайна */}
         {!filtered && (
           <section className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }} aria-labelledby="fy-h">
             <h2 className="bl-h3" id="fy-h">для тебя сегодня</h2>
-            <div className="near-pair near-pair--fy">
-              <button className="bl-card bl-card--white near-card near-card--wide" onClick={() => show(hero.o.id)}>
-                <Creative o={hero.o} erid={erid(hero.o)} wide />
-                <span className="near-card__body">
-                  <span className="bl-row" style={{ gap: 8 }}><span className="bl-tag bl-tag--soft-violet">{hero.why}</span><span className="bl-caption">{hero.o.partner} · {km(hero.o.dist)}</span></span>
-                </span>
-              </button>
-              <div className="near-pair__side">
-                {side.map(({ o, why }) => (
-                  <button key={o.id} className="bl-card bl-card--white near-foryou" onClick={() => show(o.id)}>
-                    <Tile o={o} className="near-foryou__cr" />
-                    <span className="bl-stack near-foryou__body" style={{ ['--bl-gap' as string]: '6px' }}>
-                      <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}>{why}</span>
-                      <span className="bl-h4">{o.title}</span>
-                      <span className="bl-caption">{o.partner} · {km(o.dist)}</span>
+            <div className="near-fy">
+              {FOR_YOU.map(([id, why]) => {
+                const o = OFFERS.find(x => x.id === id)!
+                return (
+                  <button key={id} className="bl-card bl-card--white near-card" onClick={() => show(id)}>
+                    <Creative o={o} erid={erid(o)} wide />
+                    <span className="near-card__body">
+                      <span className="bl-row" style={{ gap: 8 }}><span className="bl-tag bl-tag--soft-violet">{why}</span><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
                     </span>
                   </button>
-                ))}
-              </div>
+                )
+              })}
             </div>
           </section>
         )}
 
-        {/* одна навигация вместо подборок и чипов: подборки с картинками, выбранная подсвечена */}
-        <div className="near-scroller" role="group" aria-label="Подборки">
-          {STORIES.map(({ t, img, s, set: x }) => {
-            const on = storyOn(x)
-            return (
-              <button key={t} className={`near-story${on ? ' is-on' : ''}`} aria-pressed={on} style={{ background: `var(--color-surface-${s})` }} onClick={() => (on ? reset() : go(x))}>
-                <CrImg o={OFFERS.find(o => o.id === img)!} /><span className="near-story__t">{t}</span>
-              </button>
-            )
-          })}
+        {/* одна навигация — категории чипами с иконками */}
+        <div className="near-scroller" role="toolbar" aria-label="Категории">
+          <Chip on={!f.cats} onClick={() => set({ cats: null })}><LayoutGrid size={18} />всё</Chip>
+          {(Object.entries(CATS) as [Cat, (typeof CATS)[Cat]][]).map(([k, [t, Icon]]) => (
+            <Chip key={k} on={f.cats?.length === 1 && f.cats[0] === k} onClick={() => set({ cats: [k] })}><Icon size={18} />{t}</Chip>
+          ))}
         </div>
 
         {/* одна строка фильтров: что выбрано — видно и снимается крестиком */}
         <div id="near-results" className="near-toolbar">
           <div className="near-toolbar__state" aria-live="polite">
             <h2 className="bl-h3">{filtered ? <>нашлось <span className="bl-secondary">{list.length}</span></> : 'ближе всего'}</h2>
-            {catName && <Chip on onClick={() => set({ cats: null })}>{catName}<X size={16} aria-label="убрать" /></Chip>}
+            {f.cats && f.cats.length > 1 && <Chip on onClick={() => set({ cats: null })}>{catName}<X size={16} aria-label="убрать" /></Chip>}
             {needle && <Chip on onClick={() => setQ('')}>«{q.trim()}»<X size={16} aria-label="убрать" /></Chip>}
             {f.type !== 'all' && <Chip on onClick={() => set({ type: 'all' })}>{TYPES[f.type].t}<X size={16} aria-label="убрать" /></Chip>}
             {(filtered || f.radius !== 1000) && <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={reset}>сбросить всё</button>}

@@ -51,6 +51,10 @@ const OFFERS: Offer[] = [
   { id: 'bowling', cat: 'fun', type: 'coupon', partner: 'боулинг «Страйк»', mark: 'Страйк', big: '990 ₽', small: 'час игры вместо 1 800 ₽', title: 'час боулинга за 990 ₽ по будням', cond: 'купон оплачивается со счёта телефона', dist: 950, a: 232, tone: 'red', img: 'bowling', till: '31 декабря', price: 990 },
 ]
 
+// «1 800 ₽» не разрывается переносом строки
+const nb = (t: string) => t.replace(/(\d) (?=\d|₽)/g, '$1\u00a0')
+for (const o of OFFERS) Object.assign(o, { title: nb(o.title), small: nb(o.small), cond: nb(o.cond) })
+
 // Разделы каталога, пока фильтры не выбраны. Вид блока закреплён за разделом, чтобы страница не превращалась в лоскуты:
 // hero — широкая карточка и две квадратные, carousel — ряд с прокруткой, list — купоны без крупной картинки,
 // pair — широкая карточка и два купона сбоку
@@ -346,7 +350,8 @@ function Row({ o, onOpen }: { o: Offer; onOpen: (id: string) => void }) {
       <span className="near-row__body">
         <span className="near-row__big">{o.big}</span>
         <span className="bl-body">{o.small}</span>
-        <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{o.mark} · {km(o.dist)}</span><Till o={o} /></span>
+        <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
+        <span><Till o={o} /></span>
       </span>
     </button>
   )

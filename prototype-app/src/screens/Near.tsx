@@ -244,7 +244,7 @@ export default function Near() {
                   <div className="near-scroller near-carousel">{items.map(o => <Card key={o.id} o={o} wide={o.wide} onOpen={show} />)}</div>
                 )}
                 {layout === 'list' && (
-                  <div className="bl-section near-rows">{items.slice(0, 6).map(o => <Row key={o.id} o={o} onOpen={show} />)}</div>
+                  <div className="near-rows">{items.slice(0, 6).map(o => <Row key={o.id} o={o} onOpen={show} />)}</div>
                 )}
               </section>
             ),
@@ -291,13 +291,13 @@ function Card({ o, wide, onOpen }: { o: Offer; wide?: boolean; onOpen: (id: stri
 
 function Row({ o, onOpen }: { o: Offer; onOpen: (id: string) => void }) {
   return (
-    <button className="near-row" onClick={() => onOpen(o.id)}>
+    <button className="bl-card bl-card--white near-row" onClick={() => onOpen(o.id)}>
       <span className={`cr cr--${o.tone} near-row__tile`} aria-hidden="true"><CrImg o={o} /></span>
-      <span className="bl-stack" style={{ ['--bl-gap' as string]: '4px', minWidth: 0 }}>
-        <span className="bl-body">{o.title}</span>
-        <span className="bl-caption">{o.partner} · {km(o.dist)}</span>
+      <span className="near-row__body">
+        <span className="near-row__big">{o.big}</span>
+        <span className="bl-body">{o.small}</span>
+        <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
       </span>
-      <span className="near-row__end"><Tag o={o} /><span className="bl-btn bl-btn--s">{cta(o)}</span></span>
     </button>
   )
 }

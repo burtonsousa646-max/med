@@ -442,6 +442,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-pair .near-row { align-items: stretch; }
 .near-pair .near-row__tile { width: 44%; aspect-ratio: auto; }
 .near-pair .near-row__body { justify-content: center; }
+.near-bee { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 3px 10px 3px 3px; border-radius: var(--radius-circle); background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); font: 500 13px/18px var(--font-primary); white-space: nowrap; } /* тёмная, чтобы жёлтый логотип не сливался */
+.near-bee img { width: 18px; height: 18px; flex: none; }
 .near-fy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); }
 .near-row__body { text-wrap: pretty; } /* «₽» не уходит на строку один */
 .near-row__body { display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0; padding-right: var(--space-xs); }

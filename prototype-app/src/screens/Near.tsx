@@ -18,6 +18,7 @@ type Offer = CreativeData & {
   addr?: string; where?: string // where — вместо адреса, когда идти никуда не нужно: доставка, мастер на дом
   was?: number // цена без купона: абонент видит экономию
   site?: boolean // промокод вводят на сайте, а не называют на кассе
+  bee?: boolean // только для клиентов билайна
 }
 
 // Партнёры выдуманы, кроме X5: «Пятёрочка» и «Перекрёсток» настоящие, условия их акций придуманы для примера.
@@ -27,20 +28,20 @@ const OFFERS: Offer[] = [
   { id: 'p5-delivery', cat: 'grocery', type: 'click', partner: '«Пятёрочка» Доставка', mark: 'Пятёрочка', big: '0 ₽', small: 'доставка первого заказа', title: 'бесплатная доставка из магазина у дома за 30 минут', cond: 'заказ от 1 000 ₽ в приложении «Пятёрочки»', dist: 250, a: 58, tone: 'green', img: 'p5-delivery', till: '31 декабря', where: 'привезут из магазина на Плющихе' },
   { id: 'p5-job', cat: 'grocery', type: 'lead', partner: '«Пятёрочка» ищет сотрудников', mark: 'Пятёрочка', big: '72 000 ₽', small: 'продавец-кассир рядом с домом', title: 'работа в семи минутах от дома: продавец-кассир', cond: 'график 2/2, оформление по ТК, перезвонят сегодня', dist: 600, a: 300, tone: 'dark', img: 'p5-job', till: '15 декабря' },
   { id: 'perek', cat: 'grocery', type: 'promo', partner: '«Перекрёсток»', mark: 'Перекрёсток', big: '−10%', small: 'на овощи и фрукты', title: '−10% на овощи и фрукты по промокоду', cond: 'в магазине и в доставке, чек от 700 ₽', dist: 1300, a: 200, tone: 'green', img: 'perek', till: '30 ноября', code: 'FRESH10', site: true },
-  { id: 'kolos', cat: 'food', type: 'coupon', partner: 'пекарня «Колос»', mark: 'Колос', big: '199 ₽', small: 'круассан и капучино вместо 320 ₽', title: 'завтрак: круассан и капучино за 199 ₽', cond: 'купон оплачивается со счёта телефона', dist: 350, a: 210, tone: 'light', img: 'kolos', till: 2, price: 199, was: 320 },
+  { id: 'kolos', bee: true, cat: 'food', type: 'coupon', partner: 'пекарня «Колос»', mark: 'Колос', big: '199 ₽', small: 'круассан и капучино вместо 320 ₽', title: 'завтрак: круассан и капучино за 199 ₽', cond: 'купон оплачивается со счёта телефона', dist: 350, a: 210, tone: 'light', img: 'kolos', till: 2, price: 199, was: 320 },
   { id: 'apteka', cat: 'health', type: 'click', partner: 'аптека «Плюс»', mark: 'Аптека Плюс', big: '−10%', small: 'на заказ с самовывозом', title: '−10% на заказ на сайте с самовывозом из аптеки', cond: 'скидка применится сама', dist: 260, a: 320, tone: 'teal', img: 'apteka', till: '31 декабря' },
   { id: 'britva', cat: 'beauty', type: 'click', partner: 'барбершоп «Бритва»', mark: 'Бритва', big: '−30%', small: 'на первую стрижку', title: 'первая стрижка со скидкой 30%', cond: 'запись на сайте барбершопа', dist: 420, a: 120, tone: 'dark', img: 'britva', till: '30 ноября' },
   { id: 'buket', cat: 'grocery', type: 'promo', partner: 'цветы «Букет»', mark: 'Букет', big: '−15%', small: 'на букеты с доставкой', title: '−15% на букеты с доставкой за час', cond: 'заказ от 2 500 ₽', dist: 510, a: 250, tone: 'magenta', img: 'buket', till: 1, code: 'BEE15', site: true },
-  { id: 'puls', cat: 'sport', type: 'sub', partner: 'фитнес «Пульс»', mark: 'Пульс', big: '7 дней', small: 'безлимит в зале бесплатно', title: 'неделя фитнеса бесплатно, дальше 2 900 ₽ в месяц', cond: 'оплата со счёта билайна, отключить можно в любой момент', dist: 650, a: 340, tone: 'violet', img: 'puls', till: '31 декабря', price: 2900 },
-  { id: 'nogti', cat: 'beauty', type: 'coupon', partner: 'студия «Ноготок»', mark: 'Ноготок', big: '1 490 ₽', small: 'маникюр с покрытием вместо 2 200 ₽', title: 'маникюр с покрытием за 1 490 ₽', cond: 'купон оплачивается со счёта телефона', dist: 900, a: 70, tone: 'magenta', img: 'nogti', till: '30 ноября', price: 1490, was: 2200 },
+  { id: 'puls', bee: true, cat: 'sport', type: 'sub', partner: 'фитнес «Пульс»', mark: 'Пульс', big: '7 дней', small: 'безлимит в зале бесплатно', title: 'неделя фитнеса бесплатно, дальше 2 900 ₽ в месяц', cond: 'оплата со счёта билайна, отключить можно в любой момент', dist: 650, a: 340, tone: 'violet', img: 'puls', till: '31 декабря', price: 2900 },
+  { id: 'nogti', bee: true, cat: 'beauty', type: 'coupon', partner: 'студия «Ноготок»', mark: 'Ноготок', big: '1 490 ₽', small: 'маникюр с покрытием вместо 2 200 ₽', title: 'маникюр с покрытием за 1 490 ₽', cond: 'купон оплачивается со счёта телефона', dist: 900, a: 70, tone: 'magenta', img: 'nogti', till: '30 ноября', price: 1490, was: 2200 },
   { id: 'sova', cat: 'kids', type: 'lead', partner: 'детский центр «Сова»', mark: 'Сова', big: '0 ₽', small: 'пробное занятие для детей 4–10 лет', title: 'пробное занятие в детском центре бесплатно', cond: 'перезвонят и подберут группу', dist: 750, a: 280, tone: 'blue', img: 'sova', till: '31 декабря' },
-  { id: 'pena', cat: 'auto', type: 'promo', partner: 'автомойка «Пена»', mark: 'Пена', big: '−25%', small: 'на комплексную мойку в будни', title: 'комплексная мойка −25% по будням', cond: 'назови код администратору', dist: 850, a: 20, tone: 'blue', img: 'pena', till: '30 ноября', code: 'PENA25' },
+  { id: 'pena', bee: true, cat: 'auto', type: 'promo', partner: 'автомойка «Пена»', mark: 'Пена', big: '−25%', small: 'на комплексную мойку в будни', title: 'комплексная мойка −25% по будням', cond: 'назови код администратору', dist: 850, a: 20, tone: 'blue', img: 'pena', till: '30 ноября', code: 'PENA25' },
   { id: 'clinic', cat: 'health', type: 'lead', partner: 'клиника «Здоровье рядом»', mark: 'Здоровье рядом', big: '990 ₽', small: 'приём терапевта', title: 'приём терапевта за 990 ₽', cond: 'перезвонят за 15 минут', dist: 1400, a: 230, tone: 'teal', img: 'clinic', till: '31 декабря' },
   { id: 'chisto', cat: 'home', type: 'promo', partner: 'клининг «Чисто»', mark: 'Чисто', big: '−40%', small: 'на первую уборку квартиры', title: 'первая уборка после переезда −40%', cond: 'выезжают в твой район', dist: 900, a: 130, tone: 'violet', img: 'chisto', till: '31 декабря', where: 'мастер приедет к тебе', code: 'NEWHOME40' },
   { id: 'koleso', cat: 'auto', type: 'lead', partner: 'шиномонтаж «Колесо 24»', mark: 'Колесо 24', big: '2 000 ₽', small: 'переобувка к зиме без очереди', title: 'переобувка к зиме от 2 000 ₽ по записи', cond: 'перезвонят и подберут время', dist: 1800, a: 335, tone: 'dark', img: 'koleso', till: '15 декабря' },
-  { id: 'oktyabr', cat: 'fun', type: 'coupon', partner: 'кинотеатр «Октябрь»', mark: 'Октябрь', big: '2 = 1', small: 'билеты на дневные сеансы', title: 'два билета по цене одного в будни до 17:00', cond: 'купон оплачивается со счёта телефона', dist: 2100, a: 100, tone: 'red', img: 'oktyabr', till: '30 ноября', price: 450, was: 900 },
-  { id: 'lavash', cat: 'food', type: 'promo', partner: 'шаурмичная «Лаваш»', mark: 'Лаваш', big: '−20%', small: 'на шаурму после 21:00', title: '−20% на шаурму по вечерам', cond: 'назови код на кассе', dist: 450, a: 262, tone: 'red', img: 'lavash', till: 4, code: 'NIGHT20' },
-  { id: 'schi', cat: 'food', type: 'coupon', partner: 'столовая «Щи да каша»', mark: 'Щи да каша', big: '290 ₽', small: 'бизнес-ланч из трёх блюд', title: 'бизнес-ланч за 290 ₽ вместо 420 ₽', cond: 'купон оплачивается со счёта телефона, с 12 до 16', dist: 550, a: 32, tone: 'green', img: 'schi', till: '31 декабря', price: 290, was: 420 },
+  { id: 'oktyabr', bee: true, cat: 'fun', type: 'coupon', partner: 'кинотеатр «Октябрь»', mark: 'Октябрь', big: '2 = 1', small: 'билеты на дневные сеансы', title: 'два билета по цене одного в будни до 17:00', cond: 'купон оплачивается со счёта телефона', dist: 2100, a: 100, tone: 'red', img: 'oktyabr', till: '30 ноября', price: 450, was: 900 },
+  { id: 'lavash', bee: true, cat: 'food', type: 'promo', partner: 'шаурмичная «Лаваш»', mark: 'Лаваш', big: '−20%', small: 'на шаурму после 21:00', title: '−20% на шаурму по вечерам', cond: 'назови код на кассе', dist: 450, a: 262, tone: 'red', img: 'lavash', till: 4, code: 'NIGHT20' },
+  { id: 'schi', bee: true, cat: 'food', type: 'coupon', partner: 'столовая «Щи да каша»', mark: 'Щи да каша', big: '290 ₽', small: 'бизнес-ланч из трёх блюд', title: 'бизнес-ланч за 290 ₽ вместо 420 ₽', cond: 'купон оплачивается со счёта телефона, с 12 до 16', dist: 550, a: 32, tone: 'green', img: 'schi', till: '31 декабря', price: 290, was: 420 },
   { id: 'testo', cat: 'food', type: 'click', partner: 'пиццерия «Тесто»', mark: 'Тесто', big: '1 + 1', small: 'вторая пицца в подарок', title: 'вторая пицца в подарок к заказу от 1 500 ₽', cond: 'на сайте пиццерии, доставка 40 минут', dist: 700, a: 150, tone: 'magenta', img: 'testo', till: '30 ноября', where: 'привезут за 40 минут' },
   { id: 'optika', cat: 'health', type: 'promo', partner: 'оптика «Линза»', mark: 'Линза', big: '−50%', small: 'на вторые очки', title: 'вторые очки за полцены и проверка зрения бесплатно', cond: 'промокод назови консультанту', dist: 800, a: 192, tone: 'blue', img: 'optika', till: '31 декабря', code: 'LINZA50', wide: true },
   { id: 'stomat', cat: 'health', type: 'lead', partner: 'стоматология «Улыбка»', mark: 'Улыбка', big: '2 490 ₽', small: 'профессиональная чистка зубов', title: 'профессиональная чистка зубов за 2 490 ₽', cond: 'перезвонят и запишут на удобное время', dist: 1500, a: 60, tone: 'teal', img: 'stomat', till: '31 декабря' },
@@ -49,8 +50,8 @@ const OFFERS: Offer[] = [
   { id: 'remont', cat: 'home', type: 'lead', partner: 'сервис «Мастер на час»', mark: 'Мастер на час', big: '−30%', small: 'на первый выезд мастера', title: 'повесить полки, собрать шкаф: первый выезд −30%', cond: 'перезвонят за 10 минут', dist: 500, a: 352, tone: 'blue', img: 'remont', till: '31 декабря', where: 'мастер приедет к тебе' },
   { id: 'zamki', cat: 'home', type: 'promo', partner: 'служба «Ключник»', mark: 'Ключник', big: '−20%', small: 'на замену замков после переезда', title: 'замена замков в новой квартире −20%', cond: 'приедут в день заявки', dist: 820, a: 112, tone: 'dark', img: 'zamki', till: '31 декабря', where: 'мастер приедет к тебе', code: 'NEWKEY20' },
   { id: 'toys', cat: 'kids', type: 'click', partner: 'магазин «Кубик»', mark: 'Кубик', big: '−15%', small: 'на конструкторы', title: '−15% на конструкторы в магазине у дома', cond: 'заказ на сайте, самовывоз через час', dist: 650, a: 202, tone: 'violet', img: 'toys', till: '20 декабря' },
-  { id: 'quest', cat: 'fun', type: 'promo', partner: 'квесты «Ключ»', mark: 'Ключ', big: '−20%', small: 'на квест для компании до 6 человек', title: 'квест для компании со скидкой 20%', cond: 'бронь на сайте по промокоду', dist: 600, a: 82, tone: 'violet', img: 'quest', till: '31 декабря', code: 'KEY20', site: true, wide: true },
-  { id: 'bowling', cat: 'fun', type: 'coupon', partner: 'боулинг «Страйк»', mark: 'Страйк', big: '990 ₽', small: 'час игры вместо 1 800 ₽', title: 'час боулинга за 990 ₽ по будням', cond: 'купон оплачивается со счёта телефона', dist: 950, a: 232, tone: 'red', img: 'bowling', till: '31 декабря', price: 990, was: 1800 },
+  { id: 'quest', bee: true, cat: 'fun', type: 'promo', partner: 'квесты «Ключ»', mark: 'Ключ', big: '−20%', small: 'на квест для компании до 6 человек', title: 'квест для компании со скидкой 20%', cond: 'бронь на сайте по промокоду', dist: 600, a: 82, tone: 'violet', img: 'quest', till: '31 декабря', code: 'KEY20', site: true, wide: true },
+  { id: 'bowling', bee: true, cat: 'fun', type: 'coupon', partner: 'боулинг «Страйк»', mark: 'Страйк', big: '990 ₽', small: 'час игры вместо 1 800 ₽', title: 'час боулинга за 990 ₽ по будням', cond: 'купон оплачивается со счёта телефона', dist: 950, a: 232, tone: 'red', img: 'bowling', till: '31 декабря', price: 990, was: 1800 },
 ]
 
 // «1 800 ₽» не разрывается переносом строки
@@ -102,6 +103,8 @@ const addrOf = (o: Offer) => {
   return o.addr ?? `${STREETS[h % STREETS.length]}, ${(h % 40) + 1}`
 }
 const erid = (o: Offer) => (o.campaign ? '2SDnjc7Xy3M' : `2VSb5${o.id.replace('-', '').slice(0, 6)}`) // у кампании — erid со шага маркировки
+// плашка «только для клиентов» с логотипом билайна: логотип читается скринридером как «билайн»
+const Bee = ({ o }: { o: Offer }) => o.bee ? <span className="near-bee"><img src={logoUrl} alt="билайн" width={16} height={16} />только для клиентов</span> : null
 const Tag = ({ o }: { o: Offer }) => <span className={`bl-tag ${TYPES[o.type].tag}`}>{TYPES[o.type].t}</span>
 
 function fromCampaign(c: Campaign, i: number, brand: string, addr?: string): Offer {
@@ -184,6 +187,7 @@ export default function Near() {
                     <Creative o={o} erid={erid(o)} wide />
                     <span className="near-card__body">
                       <span className="bl-row" style={{ gap: 8 }}><span className="bl-tag bl-tag--soft-violet">{why}</span><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
+                      <Bee o={o} />
                     </span>
                   </button>
                 )
@@ -332,6 +336,7 @@ function Card({ o, wide, onOpen }: { o: Offer; wide?: boolean; onOpen: (id: stri
       <span className="near-card__body">
         <span className="bl-body">{o.partner}</span>
         <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{km(o.dist)}</span><Till o={o} /></span>
+        <Bee o={o} />
         {o.campaign && <span className="demo-note">ваша кампания из кабинета</span>}
       </span>
     </button>
@@ -345,6 +350,7 @@ function Row({ o, onOpen }: { o: Offer; onOpen: (id: string) => void }) {
       <span className="near-row__body">
         <span className="near-row__big">{o.big}</span>
         <span className="bl-body">{o.small}</span>
+        <Bee o={o} />
         <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
         <span><Till o={o} /></span>
       </span>
@@ -393,7 +399,7 @@ function Sheet({ o }: { o: Offer }) {
       <div className="near-sheet__head">
         <Tile o={o} className="near-sheet__cr" />
         <span className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
-          <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><Till o={o} /></span>
+          <span className="bl-row" style={{ gap: 8 }}><Bee o={o} /><Tag o={o} /><Till o={o} /></span>
           <span className="bl-caption">{o.partner}</span>
           <h2 className="bl-h3">{o.title}</h2>
         </span>

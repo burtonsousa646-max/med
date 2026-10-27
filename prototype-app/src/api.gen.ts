@@ -517,12 +517,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/showcase/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * ИИ-поиск по витрине «лучшее рядом»
+         * @description Абонент пишет, что ищет, обычными словами. Ответ — короткая реплика, подобранные офферы и кнопки-уточнения,
+         *     следующая реплика абонента приходит вместе с прошлыми ходами. Учитываются район, время, сигналы абонента и что он уже смотрел.
+         *     Демо: каталог и сигналы присылает сама витрина. В бою каталог берёт сервис витрины, сигналы — профиль абонента.
+         *     Без ключа ANTHROPIC_API_KEY на сервере или при сбое модели отвечает поиск по словам (source: rules).
+         *     Лимит — 20 вопросов за 10 минут на посетителя.
+         */
+        post: operations["showcaseAsk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Error: {
             message: string;
+        };
+        AskOffer: {
+            id: string;
+            partner: string;
+            title: string;
+            /** @description условие крупным шрифтом на креативе */
+            small: string;
+            /** @description grocery, food, beauty, health, auto, home, sport, kids, fun */
+            cat: string;
+            type: components["schemas"]["OfferType"];
+            /** @description метры от абонента */
+            dist: number;
+            /** @description цена купона или подписки */
+            price?: number;
+            /** @description до какого числа, или «ещё N дней» */
+            till: string;
+            /** @description только для клиентов билайна */
+            bee: boolean;
+        };
+        AskTurn: {
+            /** @enum {string} */
+            role: "user" | "assistant";
+            text: string;
+        };
+        AskRequest: {
+            /** @description диалог по порядку, последний ход — абонента */
+            turns: components["schemas"]["AskTurn"][];
+            offers: components["schemas"]["AskOffer"][];
+            context: {
+                district: string;
+                /** @description поводы из «для тебя»: недавно переехал, сегодня зарплата */
+                signals: string[];
+                /** @description id офферов */
+                viewed: string[];
+            };
+        };
+        AskAnswer: {
+            /** @description короткая реплика ассистента */
+            reply: string;
+            /** @description подобранные офферы, лучшие первыми, до 6 */
+            offerIds: string[];
+            /** @description кнопки-уточнения, до 4; пусто — уточнять нечего */
+            questions: string[];
+            /**
+             * @description rules — ответил поиск по словам, модель недоступна
+             * @enum {string}
+             */
+            source: "ai" | "rules";
         };
         /**
          * @description переход, купон, заявка, промокод, подписка
@@ -1636,6 +1708,32 @@ export interface operations {
             };
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
+        };
+    };
+    showcaseAsk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description ok */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskAnswer"];
+                };
+            };
+            400: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
 }

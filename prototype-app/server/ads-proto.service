@@ -8,6 +8,8 @@ After=network.target
 WorkingDirectory=/opt/ads-proto
 ExecStart=/opt/node22/bin/node --disable-warning=ExperimentalWarning server/index.ts
 Environment=API_PORT=8787 DB_PATH=/var/lib/ads-proto/demo.sqlite
+# ключ Claude для ИИ-поиска витрины: ANTHROPIC_API_KEY=... (файл необязателен — без него поиск по словам)
+EnvironmentFile=-/etc/ads-proto.env
 StateDirectory=ads-proto
 User=www-data
 Restart=on-failure

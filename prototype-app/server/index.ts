@@ -7,11 +7,12 @@ import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { components } from '../src/api.gen.ts'
 import * as db from './db.ts'
+import { allow, ask, checkAsk } from './ask.ts'
 import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, trackingUrl, view, type CampaignRow, type OfferType } from './domain.ts'
 
 type S = components['schemas']
 type Env = { Variables: { cid: string } }
-const fail = (c: Context, status: 400 | 401 | 404 | 409, message: string) => c.json({ message }, status)
+const fail = (c: Context, status: 400 | 401 | 404 | 409 | 429, message: string) => c.json({ message }, status)
 
 export const app = new Hono<Env>().basePath('/api')
 
@@ -247,6 +248,13 @@ function trackingView(c: Context<Env>): S['Tracking'] {
   }
 }
 /* ───────── витрина «лучшее рядом» ───────── */
+app.post('/showcase/ask', async c => {
+  const body = await c.req.json().catch(() => null)
+  const bad = checkAsk(body)
+  if (bad) return fail(c, 400, bad)
+  if (!allow(c.var.cid)) return fail(c, 429, 'слишком много вопросов подряд — подожди пару минут')
+  return c.json(await ask(body))
+})
 app.post('/showcase/:id/act', c => {
   const row = find(c)
   if (!row) return fail(c, 404, 'кампания не найдена')

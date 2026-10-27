@@ -3,6 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 process.env.DB_PATH = ':memory:'
+delete process.env.ANTHROPIC_API_KEY // ИИ-поиск в тестах идёт запасным путём, без платных вызовов
 const { app } = await import('./index.ts')
 
 let cookie = ''
@@ -103,4 +104,23 @@ test('витрина: заявка абонента приходит в каби
   assert.ok(act.url.includes(`click_id=${act.clickId}`))
   assert.equal(act.conversion.source, 'form')
   assert.ok((await call('GET', `/conversions?campaignId=${c.id}`)).body.some((x: { id: number }) => x.id === act.conversion.id))
+})
+
+test('ИИ-поиск витрины: без ключа отвечает поиск по словам, проверка запроса и лимит', async () => {
+  const offers = [
+    { id: 'kolos', partner: 'пекарня «Колос»', title: 'завтрак: круассан и капучино за 199 ₽', small: 'круассан и капучино', cat: 'food', type: 'coupon', dist: 350, price: 199, till: 'ещё 2 дня', bee: true },
+    { id: 'pena', partner: 'автомойка «Пена»', title: 'комплексная мойка −25%', small: 'на мойку в будни', cat: 'auto', type: 'promo', dist: 850, till: '30 ноября', bee: false },
+  ]
+  const context = { district: 'Хамовники', signals: [], viewed: [] }
+  const ok = await call('POST', '/showcase/ask', { turns: [{ role: 'user', text: 'хочу капучино' }], offers, context })
+  assert.equal(ok.status, 200)
+  assert.equal(ok.body.source, 'rules')
+  assert.deepEqual(ok.body.offerIds, ['kolos'])
+  assert.ok(ok.body.questions.length > 0, 'есть кнопки-уточнения')
+  const none = (await call('POST', '/showcase/ask', { turns: [{ role: 'user', text: 'зоопарк' }], offers, context })).body
+  assert.equal(none.offerIds[0], 'kolos', 'ничего не нашёл — показывает ближайшее')
+  assert.equal((await call('POST', '/showcase/ask', { turns: [{ role: 'assistant', text: 'привет' }], offers, context })).status, 400, 'последний ход — абонента')
+  let status = 200
+  for (let i = 0; i < 20 && status === 200; i++) status = (await call('POST', '/showcase/ask', { turns: [{ role: 'user', text: 'мойка' }], offers, context })).status
+  assert.equal(status, 429, 'не больше 20 вопросов за 10 минут')
 })

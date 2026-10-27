@@ -1,6 +1,6 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { LayoutGrid, Map as MapIcon, MapPin, Search, X } from 'lucide-react'
+import { ArrowUp, LayoutGrid, Loader2, Map as MapIcon, MapPin, Sparkles, X } from 'lucide-react'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
 import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
@@ -120,22 +120,19 @@ export default function Near() {
   const own = campaigns.filter(c => c.status === 'live' && c.places.showcase).map((c, i) => fromCampaign(c, i, co.brand, addr))
   const all = [...own, ...OFFERS]
   const [f, setF] = useState<Filter>({ cats: null, radius: 1000 })
-  const [q, setQ] = useState('')
+  const [viewed, setViewed] = useState<string[]>([]) // что абонент открывал — ИИ-поиск не советует это первым
   const [hot, setHot] = useState<string>()
   const [mapOpen, setMapOpen] = useState(false) // карта — по кнопке, в ленте её нет
   const [params, setParams] = useSearchParams()
   const open = all.find(o => o.id === params.get('offer'))
-  const show = (id?: string) => setParams(id ? { offer: id } : {}, { replace: true })
+  const show = (id?: string) => { setParams(id ? { offer: id } : {}, { replace: true }); if (id && !viewed.includes(id)) setViewed([...viewed, id]) }
   const set = (x: Partial<Filter>) => setF({ ...f, ...x })
   // фильтр из подборки, раздела или баннера: сразу показываем результат, а не оставляем его ниже экрана
   const go = (x: Partial<Filter>) => { set(x); requestAnimationFrame(() => document.getElementById('near-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }
-  const reset = () => { setF({ cats: null, radius: 1000 }); setQ('') }
+  const reset = () => setF({ cats: null, radius: 1000 })
 
-  const needle = q.trim().toLowerCase()
-  const filtered = !!f.cats || !!needle
-  // ищем по партнёру и тексту предложения: по названию категории «кофе» находил шаурму
-  const fits = (o: Offer) => (!f.cats || f.cats.includes(o.cat))
-    && (!needle || `${o.partner} ${o.title} ${o.small}`.toLowerCase().includes(needle))
+  const filtered = !!f.cats
+  const fits = (o: Offer) => !f.cats || f.cats.includes(o.cat)
   const list = all.filter(o => fits(o) && o.dist <= f.radius).sort((x, y) => x.dist - y.dist)
   const scale = (m: number) => (m / f.radius) * 44 // граница радиуса всегда на 44 % меньшей стороны карты
   const catName = f.cats && (SECTIONS.find(sec => sec.cats.join() === f.cats!.join())?.t ?? f.cats.map(c => CATS[c][0]).join(', '))
@@ -172,8 +169,9 @@ export default function Near() {
               ? <>ваших предложений здесь: {own.length} · <Link to="/cab/campaigns">кабинет партнёра</Link></>
               : <>ваших запущенных кампаний здесь пока нет · <Link to="/cab/campaigns">запустить в кабинете</Link></>}</span>
           </div>
-          <label className="bl-search near-search"><Search /><input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="кофе, продукты, маникюр" aria-label="Поиск по предложениям" /></label>
         </section>
+
+        <Ask all={all} viewed={viewed} onOpen={show} />
 
         {/* выгода — первое, что видно: три баннера по сигналам билайна */}
         {!filtered && (
@@ -210,7 +208,6 @@ export default function Near() {
               ? <h2 className="bl-h3">нашлось <span className="bl-secondary">{list.length}</span></h2>
               : <span className="bl-caption">{list.length} мест в радиусе {km(f.radius)}</span>}
             {f.cats && f.cats.length > 1 && <Chip on onClick={() => set({ cats: null })}>{catName}<X size={16} aria-label="убрать" /></Chip>}
-            {needle && <Chip on onClick={() => setQ('')}>«{q.trim()}»<X size={16} aria-label="убрать" /></Chip>}
             {(filtered || f.radius !== 1000) && <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={reset}>сбросить всё</button>}
           </div>
           <div className="near-toolbar__ctl">
@@ -302,6 +299,76 @@ export default function Near() {
         {open && <Sheet key={open.id} o={open} />}
       </Modal>
     </div>
+  )
+}
+
+/* ───────── ИИ-поиск: абонент пишет обычными словами, Claude подбирает офферы и предлагает уточнения ───────── */
+type Turn = S['AskTurn'] & { answer?: S['AskAnswer'] }
+const askOffer = (o: Offer): S['AskOffer'] => ({
+  id: o.id, partner: o.partner, title: o.title, small: o.small, cat: o.cat, type: o.type, dist: o.dist, price: o.price,
+  till: typeof o.till === 'number' ? `ещё ${days(o.till)}` : o.till, bee: !!o.bee,
+})
+// подсказки до первого вопроса — из времени суток и сигналов абонента
+const starters = () => {
+  const h = new Date().getHours()
+  return [h < 11 ? 'кофе и завтрак по пути' : h < 16 ? 'недорого пообедать' : 'куда сходить вечером', 'всё для новой квартиры', 'порадовать себя в зарплату', 'подготовить машину к зиме']
+}
+
+function Ask({ all, viewed, onOpen }: { all: Offer[]; viewed: string[]; onOpen: (id: string) => void }) {
+  const [text, setText] = useState('')
+  const [turns, setTurns] = useState<Turn[]>([])
+  const askM = $api.useMutation('post', '/showcase/ask')
+  const send = (q: string) => {
+    const said = q.trim()
+    if (!said || askM.isPending) return
+    const next: Turn[] = [...turns, { role: 'user', text: said }]
+    setTurns(next)
+    setText('')
+    askM.mutate({
+      // нечётное число ходов: диалог для модели всегда начинается с реплики абонента
+      body: { turns: next.slice(-11).map(({ role, text }) => ({ role, text })), offers: all.map(askOffer), context: { district: 'Хамовники', signals: FOR_YOU.map(([, why]) => why), viewed } },
+    }, {
+      onSuccess: answer => setTurns([...next, { role: 'assistant', text: answer.reply, answer }]),
+      onError: e => { setTurns(turns); setText(said); toast((e as S['Error'] | undefined)?.message ?? 'не получилось спросить, попробуй ещё раз') },
+    })
+  }
+  const submit = (e: FormEvent) => { e.preventDefault(); send(text) }
+  const last = turns.at(-1)?.answer
+  const found = last?.offerIds.map(id => all.find(o => o.id === id)).filter((o): o is Offer => !!o) ?? []
+
+  return (
+    <section className="near-ask" aria-label="Поиск с ИИ">
+      <form className="near-ask__bar" onSubmit={submit}>
+        <Sparkles size={20} aria-hidden="true" />
+        <input value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder={turns.length ? 'уточни или спроси другое' : 'спроси, что ищешь: «поужинать недорого», «подарок маме»'} aria-label="Спроси, что ищешь" />
+        <button className="bl-btn bl-btn--primary near-ask__send" disabled={!text.trim() || askM.isPending} aria-label="Спросить"><ArrowUp size={20} /></button>
+      </form>
+
+      {!turns.length && (
+        <div className="near-scroller near-ask__chips" aria-label="Например">
+          {starters().map(t => <Chip key={t} onClick={() => send(t)}>{t}</Chip>)}
+        </div>
+      )}
+
+      {turns.length > 0 && (
+        <div className="bl-section near-ask__panel" aria-live="polite">
+          <div className="near-ask__log">
+            {turns.map((t, i) => t.role === 'user'
+              ? <p key={i} className="near-ask__me">{t.text}</p>
+              : <p key={i} className="bl-body">{t.text}</p>)}
+            {askM.isPending && <p className="bl-body bl-secondary near-ask__wait"><Loader2 size={18} aria-hidden="true" />подбираю…</p>}
+          </div>
+          {!askM.isPending && found.length > 0 && <div className="near-scroller near-carousel">{found.map(o => <Card key={o.id} o={o} onOpen={onOpen} />)}</div>}
+          {!askM.isPending && last && (
+            <div className="near-ask__foot">
+              {last.questions.map(q => <Chip key={q} onClick={() => send(q)}>{q}</Chip>)}
+              <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={() => setTurns([])}><X size={16} />новый вопрос</button>
+            </div>
+          )}
+          {last?.source === 'rules' && <p className="bl-caption">ИИ сейчас недоступен — подобрал по словам из вопроса</p>}
+        </div>
+      )}
+    </section>
   )
 }
 

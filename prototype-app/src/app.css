@@ -379,7 +379,22 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-card .cr__erid { font-size: max(11px, 4cqmin); }
 
 /* ───────── витрина «лучшее рядом» ───────── */
-.near-search { width: 320px; }
+/* ИИ-поиск: строка «спроси», подсказки, панель с ответом и подобранными карточками */
+.near-ask { display: flex; flex-direction: column; gap: var(--space-s); }
+.near-ask__bar { display: flex; align-items: center; gap: var(--space-s); padding: 6px 6px 6px var(--space-m); border-radius: var(--radius-circle); background: var(--color-background-secondary); box-shadow: var(--shadow-raised); }
+.near-ask__bar:focus-within { outline: 2px solid var(--color-border-primary); outline-offset: 2px; }
+.near-ask__bar > svg { flex: none; color: var(--color-icon-secondary); }
+.near-ask__bar input { flex: 1; min-width: 0; border: 0; background: none; font: var(--type-body); color: var(--color-text-primary); outline: none; }
+.near-ask__bar input::placeholder { color: var(--color-text-secondary); } /* подсказка читается: серый дизайн-системы даёт 6:1 */
+.near-ask__send { width: 44px; height: 44px; padding: 0; flex: none; border-radius: 50%; }
+.near-ask__panel { display: flex; flex-direction: column; gap: var(--space-m); padding: var(--space-l); max-width: none; border-radius: var(--radius-500); }
+.near-ask__log { display: flex; flex-direction: column; gap: var(--space-xs); max-width: 72ch; }
+.near-ask__me { align-self: flex-start; padding: var(--space-2xs) var(--space-s); border-radius: var(--radius-400); background: var(--color-background-tertiary); font: var(--type-body); }
+.near-ask__wait { display: inline-flex; align-items: center; gap: var(--space-xs); }
+.near-ask__wait svg { animation: near-spin 1s linear infinite; }
+@keyframes near-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .near-ask__wait svg { animation: none; } }
+.near-ask__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
 .near-main { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xs) 0 var(--space-5xl); }
 .near-intro { display: flex; justify-content: space-between; align-items: end; gap: var(--space-m); flex-wrap: wrap; }
 .near-scroller { display: flex; gap: var(--space-s); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 2px var(--page-side); }
@@ -393,7 +408,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-mapbtn { min-height: 48px; }
 .near-mapbtn[aria-pressed="true"] { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
 .near-box { scroll-margin-top: var(--space-m); }
-.near-search:focus-within { outline: 2px solid var(--color-border-primary); outline-offset: 2px; } /* у поля поиска был невидимый фокус */
 
 .near-box { padding: var(--space-l); max-width: none; border-radius: var(--radius-500); } /* как карточки рядом, а не 40 px большой секции */
 .near-box__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-l); }
@@ -475,7 +489,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   .near-toolbar__ctl .bl-segmented { flex: 1; }
   .near-toolbar__ctl .bl-segmented button { flex: 1; padding-inline: var(--space-xs); white-space: nowrap; }
   .near-sheet__cr { width: 88px; }
-  .near-search { width: 100%; }
   /* широкая 2:1 на телефоне сжимала текст до 9 px: делаем её 4:3 с раскладкой квадрата */
   .cr--wide { aspect-ratio: 4 / 3; }
   .cr--wide .cr__img { right: -4cqmin; bottom: -4cqmin; width: 66cqmin; height: 66cqmin; }

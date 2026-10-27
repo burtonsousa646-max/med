@@ -384,6 +384,24 @@ paths:
                   conversion: { oneOf: [{ $ref: '#/components/schemas/Conversion' }, { type: 'null' }], description: 'null — у перехода и промокода результат присылает партнёр' }
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
+  /showcase/ask:
+    post:
+      tags: [витрина]
+      summary: ИИ-поиск по витрине «лучшее рядом»
+      description: |
+        Абонент пишет, что ищет, обычными словами. Ответ — короткая реплика, подобранные офферы и кнопки-уточнения,
+        следующая реплика абонента приходит вместе с прошлыми ходами. Учитываются район, время, сигналы абонента и что он уже смотрел.
+        Демо: каталог и сигналы присылает сама витрина. В бою каталог берёт сервис витрины, сигналы — профиль абонента.
+        Без ключа ANTHROPIC_API_KEY на сервере или при сбое модели отвечает поиск по словам (source: rules).
+        Лимит — 20 вопросов за 10 минут на посетителя.
+      operationId: showcaseAsk
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AskRequest' } } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/AskAnswer' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
 
 components:
   parameters:
@@ -404,6 +422,49 @@ components:
       type: object
       required: [message]
       properties: { message: { type: string } }
+
+    # ───────── ИИ-поиск витрины ─────────
+    AskOffer:
+      type: object
+      required: [id, partner, title, small, cat, type, dist, till, bee]
+      properties:
+        id: { type: string }
+        partner: { type: string }
+        title: { type: string }
+        small: { type: string, description: условие крупным шрифтом на креативе }
+        cat: { type: string, description: 'grocery, food, beauty, health, auto, home, sport, kids, fun' }
+        type: { $ref: '#/components/schemas/OfferType' }
+        dist: { type: integer, description: метры от абонента }
+        price: { type: integer, description: цена купона или подписки, ₽ }
+        till: { type: string, description: 'до какого числа, или «ещё N дней»' }
+        bee: { type: boolean, description: только для клиентов билайна }
+    AskTurn:
+      type: object
+      required: [role, text]
+      properties:
+        role: { type: string, enum: [user, assistant] }
+        text: { type: string, maxLength: 500 }
+    AskRequest:
+      type: object
+      required: [turns, offers, context]
+      properties:
+        turns: { type: array, minItems: 1, maxItems: 12, items: { $ref: '#/components/schemas/AskTurn' }, description: 'диалог по порядку, последний ход — абонента' }
+        offers: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/AskOffer' } }
+        context:
+          type: object
+          required: [district, signals, viewed]
+          properties:
+            district: { type: string }
+            signals: { type: array, items: { type: string }, description: 'поводы из «для тебя»: недавно переехал, сегодня зарплата' }
+            viewed: { type: array, items: { type: string }, description: id офферов, которые абонент уже открывал }
+    AskAnswer:
+      type: object
+      required: [reply, offerIds, questions, source]
+      properties:
+        reply: { type: string, description: короткая реплика ассистента }
+        offerIds: { type: array, items: { type: string }, description: 'подобранные офферы, лучшие первыми, до 6' }
+        questions: { type: array, items: { type: string }, description: 'кнопки-уточнения, до 4; пусто — уточнять нечего' }
+        source: { type: string, enum: [ai, rules], description: 'rules — ответил поиск по словам, модель недоступна' }
 
     # ───────── справочники ─────────
     OfferType: { type: string, enum: [click, coupon, lead, promo, sub], description: 'переход, купон, заявка, промокод, подписка' }

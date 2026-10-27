@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { LayoutGrid, MapPin, Search, X } from 'lucide-react'
+import { LayoutGrid, Map as MapIcon, MapPin, Search, X } from 'lucide-react'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
 import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
@@ -58,17 +58,15 @@ const OFFERS: Offer[] = [
 const nb = (t: string) => t.replace(/(\d) (?=\d|₽)/g, '$1\u00a0')
 for (const o of OFFERS) Object.assign(o, { title: nb(o.title), small: nb(o.small), cond: nb(o.cond) })
 
-// Разделы каталога, пока фильтры не выбраны. Вид блока закреплён за разделом, чтобы страница не превращалась в лоскуты:
-// hero — широкая карточка и две квадратные, carousel — ряд с прокруткой, list — купоны без крупной картинки,
-// pair — широкая карточка и два купона сбоку
-type Layout = 'hero' | 'carousel' | 'list' | 'pair'
-const SECTIONS: { t: string; cats: Cat[]; layout: Layout }[] = [
-  { t: 'магазины у дома', cats: ['grocery'], layout: 'hero' },
-  { t: 'еда и кофе', cats: ['food'], layout: 'carousel' },
-  { t: 'красота и здоровье', cats: ['beauty', 'health'], layout: 'hero' },
-  { t: 'авто', cats: ['auto'], layout: 'list' },
-  { t: 'дом и дети', cats: ['home', 'kids'], layout: 'carousel' },
-  { t: 'спорт и развлечения', cats: ['sport', 'fun'], layout: 'pair' },
+// Разделы каталога, пока фильтры не выбраны. Все одного вида — ряд с прокруткой, как в «Городе» Т-Банка:
+// ритм даёт только широкая карточка, которую купил партнёр
+const SECTIONS: { t: string; cats: Cat[] }[] = [
+  { t: 'магазины у дома', cats: ['grocery'] },
+  { t: 'еда и кофе', cats: ['food'] },
+  { t: 'красота и здоровье', cats: ['beauty', 'health'] },
+  { t: 'авто', cats: ['auto'] },
+  { t: 'дом и дети', cats: ['home', 'kids'] },
+  { t: 'спорт и развлечения', cats: ['sport', 'fun'] },
 ]
 const BANNER_AFTER = 1 // подборка билайна — после второго раздела, одна на страницу
 
@@ -82,7 +80,7 @@ const cta = (o: Offer) => ({ click: 'перейти на сайт', coupon: `к�
 const RADII = [500, 1000, 3000]
 // ponytail: номер и баланс демо-абонента, в бою — из профиля и биллинга
 const PHONE = '+7 903 ••• 45 67', BALANCE = 640
-type Filter = { cats: Cat[] | null; type: S['OfferType'] | 'all'; radius: number } // cats: null — все категории
+type Filter = { cats: Cat[] | null; radius: number } // cats: null — все категории
 // Персональные по сигналам билайна; причину абонент видит
 const FOR_YOU: [string, string][] = [['p5-new', 'рядом открылся магазин'], ['chisto', 'ты недавно переехал'], ['nogti', 'сегодня зарплата']]
 
@@ -90,10 +88,12 @@ const km = (m: number) => (m < 1000 ? `${m} м` : `${+(m / 1000).toFixed(1)} к�
 const walk = (m: number) => `${Math.max(1, Math.round(m / 80))} мин пешком`
 const days = (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'день' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'дня' : 'дней'}`
 const tillDate = (o: Offer) => typeof o.till === 'number' ? new Date(Date.now() + o.till * 864e5).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : o.till
-// подпись на карточке: срочные выделены, у кампании из кабинета срока нет
+// срок в окне оффера: срочные выделены, у кампании из кабинета срока нет
 const Till = ({ o }: { o: Offer }) => o.campaign ? null
   : typeof o.till === 'number' ? <span className="bl-tag bl-tag--accent">{o.till ? `ещё ${days(o.till)}` : 'последний день'}</span>
   : <span className="bl-caption">до {o.till}</span>
+// под карточкой: расстояние и срок — только если скоро кончается
+const Where = ({ o }: { o: Offer }) => <span className="bl-caption">{km(o.dist)}{typeof o.till === 'number' && <b className="near-soon"> · {o.till ? `ещё ${days(o.till)}` : 'последний день'}</b>}</span>
 
 // ponytail: адрес и часы выдуманы по id и категории, в бою придут из точек партнёра в кабинете
 const STREETS = ['ул. Плющиха', 'Комсомольский пр-т', 'ул. Льва Толстого', 'Зубовский б-р', 'ул. Усачёва', 'Фрунзенская наб.', 'ул. Россолимо', 'Смоленская ул.']
@@ -103,8 +103,8 @@ const addrOf = (o: Offer) => {
   return o.addr ?? `${STREETS[h % STREETS.length]}, ${(h % 40) + 1}`
 }
 const erid = (o: Offer) => (o.campaign ? '2SDnjc7Xy3M' : `2VSb5${o.id.replace('-', '').slice(0, 6)}`) // у кампании — erid со шага маркировки
-// плашка «только для клиентов» с логотипом билайна: логотип читается скринридером как «билайн»
-const Bee = ({ o }: { o: Offer }) => o.bee ? <span className="near-bee"><img src={logoUrl} alt="билайн" width={16} height={16} />только для клиентов</span> : null
+// плашка «для клиентов» с логотипом билайна: логотип читается скринридером как «билайн»
+const Bee = ({ o }: { o: Offer }) => o.bee ? <span className="near-bee"><img src={logoUrl} alt="билайн" width={16} height={16} />для клиентов</span> : null
 const Tag = ({ o }: { o: Offer }) => <span className={`bl-tag ${TYPES[o.type].tag}`}>{TYPES[o.type].t}</span>
 
 function fromCampaign(c: Campaign, i: number, brand: string, addr?: string): Offer {
@@ -119,22 +119,22 @@ export default function Near() {
   const addr = co.points.find(p => p.active)?.addr
   const own = campaigns.filter(c => c.status === 'live' && c.places.showcase).map((c, i) => fromCampaign(c, i, co.brand, addr))
   const all = [...own, ...OFFERS]
-  const [f, setF] = useState<Filter>({ cats: null, type: 'all', radius: 1000 })
+  const [f, setF] = useState<Filter>({ cats: null, radius: 1000 })
   const [q, setQ] = useState('')
   const [hot, setHot] = useState<string>()
-  const [mapOpen, setMapOpen] = useState(false) // на телефоне карта свёрнута, сначала список
+  const [mapOpen, setMapOpen] = useState(false) // карта — по кнопке, в ленте её нет
   const [params, setParams] = useSearchParams()
   const open = all.find(o => o.id === params.get('offer'))
   const show = (id?: string) => setParams(id ? { offer: id } : {}, { replace: true })
   const set = (x: Partial<Filter>) => setF({ ...f, ...x })
   // фильтр из подборки, раздела или баннера: сразу показываем результат, а не оставляем его ниже экрана
   const go = (x: Partial<Filter>) => { set(x); requestAnimationFrame(() => document.getElementById('near-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }
-  const reset = () => { setF({ cats: null, type: 'all', radius: 1000 }); setQ('') }
+  const reset = () => { setF({ cats: null, radius: 1000 }); setQ('') }
 
   const needle = q.trim().toLowerCase()
-  const filtered = !!f.cats || f.type !== 'all' || !!needle
+  const filtered = !!f.cats || !!needle
   // ищем по партнёру и тексту предложения: по названию категории «кофе» находил шаурму
-  const fits = (o: Offer) => (!f.cats || f.cats.includes(o.cat)) && (f.type === 'all' || o.type === f.type)
+  const fits = (o: Offer) => (!f.cats || f.cats.includes(o.cat))
     && (!needle || `${o.partner} ${o.title} ${o.small}`.toLowerCase().includes(needle))
   const list = all.filter(o => fits(o) && o.dist <= f.radius).sort((x, y) => x.dist - y.dist)
   const scale = (m: number) => (m / f.radius) * 44 // граница радиуса всегда на 44 % меньшей стороны карты
@@ -186,8 +186,7 @@ export default function Near() {
                   <button key={id} className="bl-card bl-card--white near-card" onClick={() => show(id)}>
                     <Creative o={o} erid={erid(o)} wide />
                     <span className="near-card__body">
-                      <span className="bl-row" style={{ gap: 8 }}><span className="bl-tag bl-tag--soft-violet">{why}</span><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
-                      <Bee o={o} />
+                      <span className="near-card__line"><span className="bl-tag bl-tag--soft-violet">{why}</span><span className="bl-caption">{km(o.dist)}</span><Bee o={o} /></span>
                     </span>
                   </button>
                 )
@@ -207,32 +206,22 @@ export default function Near() {
         {/* одна строка фильтров: что выбрано — видно и снимается крестиком */}
         <div id="near-results" className="near-toolbar">
           <div className="near-toolbar__state" aria-live="polite">
-            <h2 className="bl-h3">{filtered ? <>нашлось <span className="bl-secondary">{list.length}</span></> : 'ближе всего'}</h2>
+            {filtered
+              ? <h2 className="bl-h3">нашлось <span className="bl-secondary">{list.length}</span></h2>
+              : <span className="bl-caption">{list.length} мест в радиусе {km(f.radius)}</span>}
             {f.cats && f.cats.length > 1 && <Chip on onClick={() => set({ cats: null })}>{catName}<X size={16} aria-label="убрать" /></Chip>}
             {needle && <Chip on onClick={() => setQ('')}>«{q.trim()}»<X size={16} aria-label="убрать" /></Chip>}
-            {f.type !== 'all' && <Chip on onClick={() => set({ type: 'all' })}>{TYPES[f.type].t}<X size={16} aria-label="убрать" /></Chip>}
             {(filtered || f.radius !== 1000) && <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={reset}>сбросить всё</button>}
           </div>
           <div className="near-toolbar__ctl">
-            <select className="bl-select near-type" value={f.type} onChange={e => set({ type: e.target.value as Filter['type'] })} aria-label="Тип предложения">
-              <option value="all">все типы</option>
-              {(Object.entries(TYPES) as [S['OfferType'], { t: string }][]).map(([k, t]) => <option key={k} value={k}>{t.t}</option>)}
-            </select>
+            <button className="bl-btn near-mapbtn" aria-pressed={mapOpen} onClick={() => setMapOpen(!mapOpen)}><MapIcon size={18} />{mapOpen ? 'скрыть карту' : 'на карте'}</button>
             <Segmented label="Радиус" value={f.radius} options={RADII.map(r => [r, km(r)])} onChange={radius => set({ radius })} />
           </div>
         </div>
 
-        {/* человек ищет — одна ровная сетка; не ищет — карта и ближайшие */}
-        {filtered
-          ? (list.length
-              ? <div className="bl-grid near-found" style={{ ['--bl-cols' as string]: 4 }}>{list.map(o => <Card key={o.id} o={o} onOpen={show} />)}</div>
-              : empty)
-          : (
-          <section className={`bl-section near-box${mapOpen ? ' is-map' : ''}`} aria-label="Ближе всего">
-            <div className="bl-row near-box__head">
-              <span className="bl-caption">{list.length} мест в радиусе {km(f.radius)}</span>
-              <button className="bl-btn bl-btn--s bl-show-mobile" aria-pressed={mapOpen} onClick={() => setMapOpen(!mapOpen)}>{mapOpen ? 'списком' : 'на карте'}</button>
-            </div>
+        {/* карта и ближайшие — по кнопке: в ленте они повторяли карточки разделов */}
+        {mapOpen && list.length > 0 && (
+          <section className="bl-section near-box" aria-label="Карта предложений">
             <div className="near-box__grid">
               <div className="near-map" style={{ '--r': 44 } as CSSProperties}>
                 <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -265,16 +254,18 @@ export default function Near() {
                     <span className="near-cell__end"><span className="bl-caption">{km(o.dist)}</span><Tag o={o} /></span>
                   </button>
                 ))}
-                {!list.length && empty}
               </div>
             </div>
           </section>
         )}
 
+        {!list.length && empty}
+        {/* человек ищет — одна ровная сетка */}
+        {filtered && list.length > 0 && <div className="bl-grid near-found" style={{ ['--bl-cols' as string]: 4 }}>{list.map(o => <Card key={o.id} o={o} onOpen={show} />)}</div>}
+
         {!filtered && SECTIONS.map((sec, i) => {
           // широкие карточки первыми, дальше по расстоянию; показанное в «для тебя» не повторяем
           const items = list.filter(o => sec.cats.includes(o.cat) && !FOR_YOU.some(([id]) => id === o.id)).sort((x, y) => +!!y.wide - +!!x.wide)
-          const layout = (sec.layout === 'hero' || sec.layout === 'pair') && items.length < 3 ? 'carousel' : sec.layout
           return [
             items.length > 0 && (
               <section key={sec.t} className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
@@ -282,24 +273,10 @@ export default function Near() {
                   <h2 className="bl-h3">{sec.t} <span className="bl-secondary">{items.length}</span></h2>
                   <button className="bl-btn bl-btn--ghost" onClick={() => go({ cats: sec.cats })}>все →</button>
                 </div>
-                {layout === 'hero' && (
-                  <div className="near-hero">{items.slice(0, 3).map((o, j) => <Card key={o.id} o={o} wide={j === 0} onOpen={show} />)}</div>
-                )}
-                {layout === 'carousel' && (
-                  <div className="near-scroller near-carousel">
-                    {items.map(o => <Card key={o.id} o={o} wide={o.wide} onOpen={show} />)}
-                    {sec.cats.includes('food') && <Invite />}
-                  </div>
-                )}
-                {layout === 'pair' && (
-                  <div className="near-pair">
-                    <Card o={items[0]} wide onOpen={show} />
-                    <div className="near-pair__side">{items.slice(1, 3).map(o => <Row key={o.id} o={o} onOpen={show} />)}</div>
-                  </div>
-                )}
-                {layout === 'list' && (
-                  <div className="near-rows">{items.slice(0, 6).map(o => <Row key={o.id} o={o} onOpen={show} />)}</div>
-                )}
+                <div className="near-scroller near-carousel">
+                  {items.map(o => <Card key={o.id} o={o} wide={o.wide} onOpen={show} />)}
+                  {sec.cats.includes('food') && <Invite />}
+                </div>
               </section>
             ),
             i === BANNER_AFTER && (
@@ -309,7 +286,7 @@ export default function Near() {
                   <span className="bl-h2">переезд без хлопот</span>
                   <span className="bl-body bl-secondary">уборка, мастер на час и новые замки — всё в паре километров от нового дома</span>
                 </span>
-                <button className="bl-btn bl-btn--dark bl-btn--l" onClick={() => go({ cats: ['home'], type: 'all', radius: 3000 })}>смотреть подборку</button>
+                <button className="bl-btn bl-btn--dark bl-btn--l" onClick={() => go({ cats: ['home'], radius: 3000 })}>смотреть подборку</button>
               </section>
             ),
           ]
@@ -334,25 +311,8 @@ function Card({ o, wide, onOpen }: { o: Offer; wide?: boolean; onOpen: (id: stri
     <button className={`bl-card bl-card--white near-card${wide ? ' near-card--wide' : ''}`} onClick={() => onOpen(o.id)}>
       <Creative o={o} erid={erid(o)} wide={wide} />
       <span className="near-card__body">
-        <span className="bl-body">{o.partner}</span>
-        <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{km(o.dist)}</span><Till o={o} /></span>
-        <Bee o={o} />
+        <span className="near-card__line"><Where o={o} /><Bee o={o} /></span>
         {o.campaign && <span className="demo-note">ваша кампания из кабинета</span>}
-      </span>
-    </button>
-  )
-}
-
-function Row({ o, onOpen }: { o: Offer; onOpen: (id: string) => void }) {
-  return (
-    <button className="bl-card bl-card--white near-row" onClick={() => onOpen(o.id)}>
-      <Tile o={o} className="near-row__tile" />
-      <span className="near-row__body">
-        <span className="near-row__big">{o.big}</span>
-        <span className="bl-body">{o.small}</span>
-        <Bee o={o} />
-        <span className="bl-row" style={{ gap: 8 }}><Tag o={o} /><span className="bl-caption">{o.mark} · {km(o.dist)}</span></span>
-        <span><Till o={o} /></span>
       </span>
     </button>
   )

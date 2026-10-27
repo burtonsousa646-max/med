@@ -390,8 +390,9 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-toolbar__state .bl-h3 { margin-right: var(--space-xs); }
 .near-toolbar__state .bl-chip svg { margin-left: 2px; }
 .near-toolbar__ctl { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
-.near-type { width: auto; min-height: 48px; padding-block: 0; border-radius: var(--radius-circle); }
-.near-box__head { justify-content: space-between; margin-bottom: var(--space-m); }
+.near-mapbtn { min-height: 48px; }
+.near-mapbtn[aria-pressed="true"] { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
+.near-box { scroll-margin-top: var(--space-m); }
 .near-search:focus-within { outline: 2px solid var(--color-border-primary); outline-offset: 2px; } /* у поля поиска был невидимый фокус */
 
 .near-box { padding: var(--space-l); max-width: none; border-radius: var(--radius-500); } /* как карточки рядом, а не 40 px большой секции */
@@ -423,31 +424,18 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-card { padding: var(--space-xs); gap: 0; border: 0; text-align: left; font: inherit; cursor: pointer; transition: transform var(--transition-fast); }
 .near-card:hover { transform: translateY(-2px); }
 .near-card__body { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-s) var(--space-xs) var(--space-xs); }
-.near-card--wide { grid-column: span 2; }
+.near-card__line { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; min-height: 26px; } /* под креативом одна строка: расстояние, срочность, «для клиентов» */
+.near-soon { font-weight: 500; color: var(--color-text-primary); } /* срочность — словами, без ещё одной метки */
 .near-card > .cr { border-radius: var(--radius-300); } /* 20 px карточки минус 8 px отступа */
 .near-tools { max-width: 100%; min-width: 0; flex-wrap: nowrap; } /* переключатель типов листается, а не растягивает страницу */
 .near-tools .bl-segmented { min-width: 0; }
 .near-tools .bl-segmented button { white-space: nowrap; }
 .near-tools .bl-btn { flex: none; }
-.near-hero { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gutter); align-items: start; }
-.near-carousel > .near-card { width: 264px; }
-.near-carousel > .near-card--wide { width: calc(264px * 2 + var(--space-s)); }
-.near-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--gutter); }
-.near-row { flex-direction: row; align-items: center; gap: var(--space-m); padding: var(--space-xs); border: 0; text-align: left; font: inherit; cursor: pointer; transition: transform var(--transition-fast); }
-.near-row:hover { transform: translateY(-2px); }
-.near-row__tile { width: 112px; }
-.near-pair { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); }
-.near-pair__side { display: grid; grid-auto-rows: 1fr; gap: var(--gutter); }
-/* сбоку от широкой карточки купон растянут по высоте: картинка заполняет его целиком, без пустых полей */
-.near-pair .near-row { align-items: stretch; }
-.near-pair .near-row__tile { width: 44%; aspect-ratio: auto; }
-.near-pair .near-row__body { justify-content: center; }
+.near-carousel > .near-card { width: 272px; }
+.near-carousel > .near-card--wide { width: calc(272px * 2 + var(--space-s)); }
 .near-bee { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 3px 10px 3px 3px; border-radius: var(--radius-circle); background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); font: 500 13px/18px var(--font-primary); white-space: nowrap; } /* тёмная, чтобы жёлтый логотип не сливался */
 .near-bee img { width: 18px; height: 18px; flex: none; }
 .near-fy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); }
-.near-row__body { text-wrap: pretty; } /* «₽» не уходит на строку один */
-.near-row__body { display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0; padding-right: var(--space-xs); }
-.near-row__big { font-size: 32px; line-height: 1.1; letter-spacing: -.02em; }
 .near-banner { flex-direction: row; justify-content: space-between; align-items: center; gap: var(--space-l); padding: var(--space-3xl); border-radius: var(--radius-500); flex-wrap: wrap; }
 .near-foot { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0 var(--space-6xl); }
 
@@ -471,20 +459,14 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .build-creative--wide .cr { width: 100%; max-width: 360px; }
 
 @media (max-width: 1023px) {
-  .near-hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* на планшете и телефоне три баннера листаются вбок, а не стоят столбиком */
   .near-fy { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 2px var(--page-side); }
   .near-fy > * { flex: none; width: min(340px, 82vw); }
   .near-box__grid { grid-template-columns: 1fr; }
   .near-map { height: 260px; }
   .near-list { max-height: none; }
-  .near-pair { grid-template-columns: 1fr; }
-  .near-pair .near-card--wide { grid-column: auto; }
-  .near-pair__side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 767px) {
-  .near-hero { grid-template-columns: 1fr; }
-  .near-card--wide { grid-column: auto; }
   .near-carousel > .near-card { width: 232px; }
   .near-carousel > .near-card--wide { width: 300px; }
   .near-banner { padding: var(--space-l); }
@@ -494,15 +476,12 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   .near-toolbar__ctl .bl-segmented button { flex: 1; padding-inline: var(--space-xs); white-space: nowrap; }
   .near-sheet__cr { width: 88px; }
   .near-search { width: 100%; }
-  .near-box:not(.is-map) .near-map { display: none; }
-  .near-row__tile { width: 96px; }
   /* широкая 2:1 на телефоне сжимала текст до 9 px: делаем её 4:3 с раскладкой квадрата */
   .cr--wide { aspect-ratio: 4 / 3; }
   .cr--wide .cr__img { right: -4cqmin; bottom: -4cqmin; width: 66cqmin; height: 66cqmin; }
   .cr--wide .cr__icon { right: 9cqmin; width: 34cqmin; height: 34cqmin; }
   .cr--wide .cr__small { max-width: 60cqmin; }
   .cr--wide .cr__big--text { max-width: 86cqmin; }
-  .near-pair__side { grid-template-columns: 1fr; }
 }
 /* низкое окно ноутбука: ближайшие предложения видны без прокрутки */
 @media (min-width: 1024px) and (max-height: 800px) {

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { motion } from 'motion/react'
 import { BatteryLow, Check, Gift, Wifi } from 'lucide-react'
-import { useCatalog, type S } from './api'
+import { type S } from './api'
 import { Creative, creativeOf } from './creative'
 
 export type Surface = 'showcase' | 'main' | 'paid' | 'rest'
@@ -11,7 +11,6 @@ export const DEMO_AD: Ad = { brand: 'кофейня «Зерно»', text: 'Св
 
 /* Экран приложения билайна с рекламным слотом. Нарисован токенами, без картинок. */
 export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; ad?: Ad; compact?: boolean }) {
-  const IMAGES = useCatalog().images
   return (
     <div className={`phone-mock${compact ? ' phone-mock--compact' : ''}`}>
       <div className="phone-mock__status"><span>9:41</span><span className="bl-row" style={{ gap: 4 }}><Wifi size={12} /><BatteryLow size={14} /></span></div>
@@ -20,7 +19,7 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
           <div className="pm-title">билайн</div>
           <div className="pm-tiles"><span /><span /><span /></div>
           <div className="pm-banner">
-            <div className={`ad-img ad-img--${ad.img}`}>{IMAGES[ad.img]}</div>
+            <Creative o={creativeOf(ad.brand, ad.offer, ad.img)} erid="erid" wide />
             <div className="pm-banner__text"><b>{ad.brand}</b><span>{ad.text}</span></div>
             <span className="pm-label">реклама</span>
           </div>
@@ -72,15 +71,16 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
 }
 
 /* Карта охвата: улицы, точки, радиус 1 км и люди внутри */
-export function ReachMap({ points, onToggle }: { points: S['Point'][]; onToggle?: (id: number) => void }) {
+// r — радиус охвата в единицах карты: 105 = 1 км; лендинг двигает его ползунком
+export function ReachMap({ points, onToggle, r = 105 }: { points: S['Point'][]; onToggle?: (id: number) => void; r?: number }) {
   const dots = useMemo(() => {
     let seed = 7
     const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280
     return points.flatMap(p => Array.from({ length: 34 }, (_, i) => {
-      const a = rnd() * 6.28, r = Math.sqrt(rnd()) * 100
-      return { id: `${p.id}-${i}`, p: p.id, x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, d: rnd() }
+      const a = rnd() * 6.28, d = Math.sqrt(rnd()) * (r - 5)
+      return { id: `${p.id}-${i}`, p: p.id, x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d, d: rnd() }
     }))
-  }, [points])
+  }, [points, r])
   return (
     <svg className="reach-map" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Карта охвата: ${points.filter(p => p.active).length} точки и радиус 1 км`}>
       <rect width="640" height="480" fill="var(--color-background-primary)" />
@@ -93,8 +93,8 @@ export function ReachMap({ points, onToggle }: { points: S['Point'][]; onToggle?
         <path d="M-10 150 Q 200 120 320 230 T 660 270" /><path d="M80 -10 L 160 500" /><path d="M380 -10 Q 360 200 420 500" /><path d="M-10 400 L 660 350" />
       </g>
       {points.map(p => !p.active ? null : (
-        <motion.circle key={`r-${p.id}`} cx={p.x} cy={p.y} r="105" fill="var(--color-static-blue-500)" fillOpacity=".08" stroke="var(--color-static-blue-500)" strokeDasharray="6 6" strokeWidth="2"
-          initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.6 }} style={{ transformOrigin: `${p.x}px ${p.y}px` }} />
+        <motion.circle key={`r-${p.id}`} cx={p.x} cy={p.y} r={r} fill="var(--color-static-blue-500)" fillOpacity=".08" stroke="var(--color-static-blue-500)" strokeDasharray="6 6" strokeWidth="2"
+          initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1, r }} transition={{ duration: 0.6 }} style={{ transformOrigin: `${p.x}px ${p.y}px` }} />
       ))}
       {dots.map(d => !points.find(p => p.id === d.p)?.active ? null : (
         <motion.circle key={d.id} cx={d.x} cy={d.y} r="3.2" fill="var(--color-static-blue-500)"

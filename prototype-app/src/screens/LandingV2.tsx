@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, animate, motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useTransform, type MotionValue } from 'motion/react'
-import { ArrowRight, BadgeCheck, BellRing, Bot, Check, EyeOff, FileCheck2, Globe, LayoutTemplate, MapPin, Pause, Play, Search, Smartphone, Sparkles, Tv, UserPlus, Wallet } from 'lucide-react'
+import { ArrowRight, BellRing, Bot, Check, EyeOff, FileCheck2, Globe, LayoutTemplate, MapPin, Pause, Play, Smartphone, Sparkles, Tv, UserPlus, Wallet } from 'lucide-react'
 import { PhoneSurface, ReachMap } from '../mock'
 import { Creative, creativeOf, type CreativeData } from '../creative'
-import { Brand, IdBadge, Num, Photo, Reveal } from '../ui'
+import { Brand, Chip, IdBadge, Num, Photo, Reveal, Segmented } from '../ui'
 import { OFFERS } from './Near'
+import { NICHES, n, rub } from '../data'
 import { PartnerLogo } from './Landing'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 
-/* Лендинг v2: порядок и подача блоков по мотивам shopify.com, всё из дизайн-системы.
-   Hero со сменным словом и видео на фоне → где увидят → ИИ-поиск → один кабинет → вокруг точки →
-   от малого до крупного → ИИ-помощник → интеграции → цифры и доверие → отзыв и бонус → три шага. */
+/* Лендинг v2: подача и анимации по мотивам shopify.com, всё из дизайн-системы.
+   Порядок — вопросы владельца бизнеса: что это (hero) → кому покажем → где увидят → и в чате →
+   сколько стоит → как запустить и управлять → помощник → интеграции → истории → отзыв → риски → вопросы → запуск. */
 
 const WORDS = ['рядом с домом', 'в день зарплаты', 'после переезда', 'по дороге на работу', 'когда кончился трафик']
 
@@ -57,11 +58,11 @@ function HeroVideo() {
 
 function Hero() {
   return (
-    <section className="bl-section bl-section--wide v2-hero" data-theme="invert">
+    <section id="v2-hero" className="bl-section bl-section--wide v2-hero" data-theme="invert">
       <HeroVideo />
       <div className="v2-hero__text">
         <h1 className="bl-display-xl">пусть вас выбирают<br /><Rotator /></h1>
-        <p className="bl-lead bl-secondary">Реклама для 45 млн абонентов билайна: в приложении, витрине «лучшее рядом» и после оплаты. Платите только за результат.</p>
+        <p className="bl-lead bl-secondary">Покажем вашу акцию абонентам билайна, которые живут или бывают рядом, — в приложении и в момент, когда им это нужно. Платите только за результат.</p>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
           <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
           <Link className="bl-btn bl-btn--ghost" to="/near">как это видит абонент <ArrowRight size={18} /></Link>
@@ -71,49 +72,106 @@ function Hero() {
   )
 }
 
+// автосмена шагов, как вкладки у Shopify: идёт, пока блок на экране и курсор не над ним; клик выбирает шаг и сбрасывает таймер
+function useAuto(len: number, ms: number) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { amount: 0.4 })
+  const reduce = useReducedMotion()
+  const [i, pick] = useState(0)
+  const [hold, setHold] = useState(false)
+  const run = inView && !reduce && !hold
+  useEffect(() => { if (!run) return; const t = setTimeout(() => pick(x => (x + 1) % len), ms); return () => clearTimeout(t) }, [run, i, len, ms])
+  return { ref, i, pick, run, hover: { onMouseEnter: () => setHold(true), onMouseLeave: () => setHold(false) } }
+}
+// полоска прогресса под активным шагом, длиной в один шаг
+const Prog = ({ i, ms, run }: { i: number; ms: number; run: boolean }) =>
+  <span key={i} className="v2-prog" style={{ animationDuration: `${ms}ms`, animationPlayState: run ? 'running' : 'paused' }} />
+
+const SURFACES = [
+  { k: 'main' as const, t: 'на главной приложения', d: 'Первое, что абонент видит утром, когда проверяет баланс.' },
+  { k: 'showcase' as const, t: 'в разделе «лучшее рядом»', d: 'Акции заведений у дома, ближние — первыми.' },
+  { k: 'paid' as const, t: 'сразу после оплаты', d: 'В момент, когда деньги есть и решение близко.' },
+  { k: 'rest' as const, t: 'за гигабайты в подарок', d: 'Абонент получает гигабайты за визит к вам — и приходит.' },
+]
+const SURF_MS = 4200
 function Everywhere() {
-  const s = [
-    { k: 'main' as const, t: 'главная приложения', d: 'первое, что видят утром' },
-    { k: 'showcase' as const, t: 'лучшее рядом', d: 'витрина офферов у дома' },
-    { k: 'paid' as const, t: 'после оплаты', d: 'в момент, когда деньги есть' },
-    { k: 'rest' as const, t: 'остатки', d: 'гигабайты за визит к вам' },
-  ]
+  const a = useAuto(SURFACES.length, SURF_MS)
   return (
-    <section className="bl-section bl-section--wide">
-      <div className="section-head">
-        <h2 className="bl-display-l">вас увидят там,<br />где абонент проводит день</h2>
-        <p className="bl-body bl-secondary" style={{ maxWidth: 360 }}>Четыре экрана в приложении, ТВ и пуши по согласию. Места подберём сами или выберите вручную.</p>
-      </div>
-      <div className="v2-phones">
-        {s.map((x, i) => (
-          <Reveal key={x.k} delay={i * 0.08} className="v2-phone">
-            <PhoneSurface kind={x.k} compact />
-            <b className="bl-h4">{x.t}</b>
-            <span className="bl-caption">{x.d}</span>
-          </Reveal>
-        ))}
+    <section id="where" className="bl-section bl-section--wide">
+      <div ref={a.ref} className="v2-stage" {...a.hover}>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '32px' }}>
+          <h2 className="bl-display-l">вас увидят там,<br />где абонент проводит день</h2>
+          <ol className="v2-tabs">
+            {SURFACES.map((x, n) => (
+              <li key={x.k} className={n === a.i ? 'is-on' : ''}>
+                <button type="button" onClick={() => a.pick(n)} aria-pressed={n === a.i}>
+                  <span className="bl-h3">{x.t}</span>
+                  {n === a.i && <motion.span className="bl-body bl-secondary" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>{x.d}</motion.span>}
+                </button>
+                {n === a.i && <Prog i={a.i} ms={SURF_MS} run={a.run} />}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="v2-stage__phone">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={a.i} initial={{ opacity: 0, y: 24, rotate: -2 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease: [0.2, 0.7, 0.2, 1] }}>
+              <PhoneSurface kind={SURFACES[a.i].k} />
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </section>
   )
 }
 
+// ИИ-поиск витрины: вопрос печатается, ИИ «думает», отвечает и выкладывает офферы. Чипсами можно выбрать вопрос самому
+const ASKS = [
+  { q: 'где позавтракать рядом до 300 ₽?', a: 'Нашёл два места в 5 минутах. Завтрак с кофе дешевле в «Колосе».', ids: ['kolos', 'schi'], more: ['ближе', 'с собой', 'открыто сейчас'] },
+  { q: 'переобуть машину до выходных', a: 'В «Колесе 24» есть запись на четверг, «Мотор» бесплатно проверит ходовую.', ids: ['koleso', 'motor'], more: ['по записи', 'дешевле'] },
+  { q: 'чем занять ребёнка в субботу?', a: 'Пробное занятие в «Сове» бесплатно, а в «Кубике» −15% на конструкторы.', ids: ['sova', 'toys'], more: ['4–6 лет', 'рядом с домом'] },
+]
 function Chat() {
-  const pick = ['kolos', 'schi'].map(id => OFFERS.find(o => o.id === id)!)
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { amount: 0.4 })
+  const reduce = useReducedMotion()
+  const [s, setS] = useState(0)
+  const [k, setK] = useState(0) // тики по 45 мс от начала сценария
+  const x = ASKS[s], typed = reduce ? x.q.length : Math.min(k, x.q.length)
+  const T = { think: x.q.length + 6, answer: x.q.length + 22, cards: x.q.length + 30, next: x.q.length + 150 }
+  const at = reduce ? T.next : k
+  useEffect(() => {
+    if (!inView || reduce) return
+    const t = setInterval(() => setK(v => v + 1), 45)
+    return () => clearInterval(t)
+  }, [inView, reduce, s])
+  useEffect(() => { if (at >= T.next && !reduce) { setS(v => (v + 1) % ASKS.length); setK(0) } }, [at])
+  const play = (n: number) => { setS(n); setK(0) }
   return (
     <section className="bl-section bl-section--wide v2-split">
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
         <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}><Sparkles size={14} /> новое</span>
-        <h2 className="bl-display-l">ваш бизнес уже в&nbsp;чате</h2>
-        <p className="bl-lead bl-secondary">Абонент спрашивает витрину словами: «где позавтракать рядом до 300 ₽». ИИ подбирает офферы и уточняет. Вам ничего настраивать не нужно.</p>
-        <Link className="bl-btn" to="/near" style={{ alignSelf: 'flex-start' }}><Search size={18} /> спросить витрину</Link>
+        <h2 className="bl-display-l">и даже когда спрашивают словами</h2>
+        <p className="bl-lead bl-secondary">Абонент спрашивает приложение словами, ИИ подбирает акции рядом. Ваша появится сама, если подходит. Настраивать ничего не нужно.</p>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
+          <span className="bl-caption">спросите сами:</span>
+          <div className="bl-row">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
+        </div>
       </div>
-      <div className="v2-chat" aria-label="Пример диалога в витрине">
-        <Reveal className="v2-bubble v2-bubble--me">где позавтракать рядом до 300 ₽?</Reveal>
-        <Reveal delay={0.2} className="v2-bubble"><Bot size={16} /> Нашёл два места в 5 минутах. Завтрак с кофе дешевле в «Колосе».</Reveal>
-        <Reveal delay={0.35} className="v2-chat__cards">
-          {pick.map(o => <Creative key={o.id} o={o} erid="реклама" />)}
-        </Reveal>
-        <Reveal delay={0.5} className="bl-row" ><span className="bl-chip">ближе</span><span className="bl-chip">с собой</span><span className="bl-chip">открыто сейчас</span></Reveal>
+      <div ref={ref} className="v2-chat v2-chat--live" aria-live="polite" aria-label="Пример диалога в витрине">
+        <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
+        <AnimatePresence mode="popLayout">
+          {at >= T.think && at < T.answer && <motion.div key={`t${s}`} className="v2-bubble v2-typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><i /><i /><i /></motion.div>}
+          {at >= T.answer && <motion.div key={`a${s}`} className="v2-bubble" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><Bot size={16} /> {x.a}</motion.div>}
+        </AnimatePresence>
+        <div className="v2-chat__cards">
+          {at >= T.cards && x.ids.map((id, n) => (
+            <motion.div key={`${s}${id}`} initial={{ opacity: 0, scale: 0.9, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: n * 0.12, type: 'spring', stiffness: 260, damping: 22 }}>
+              <Creative o={OFFERS.find(o => o.id === id)!} erid="реклама" />
+            </motion.div>
+          ))}
+        </div>
+        {at >= T.cards && <motion.div className="bl-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{x.more.map(m => <span key={m} className="bl-chip">{m}</span>)}</motion.div>}
       </div>
     </section>
   )
@@ -246,13 +304,13 @@ function Anywhere() {
     return () => m.removeEventListener('change', f)
   }, [])
   const items = [
-    { ui: (on: boolean) => <Builder run={run && on} />, t: 'оффер, собранный для продаж', d: <><Link to="/login">Соберите оффер</Link> по ссылке на сайт или Карты с помощью ИИ. Или из готовых шаблонов.</> },
-    { ui: (on: boolean) => <Hub active={on} run={run} />, t: 'управляйте всем из одного места', d: <><Link to="/cab/campaigns">Кампании</Link>, <Link to="/cab/balance">баланс</Link>, <Link to="/cab/docs">документы</Link>. Платите за клик, заявку, купон или подписку.</> },
-    { ui: (on: boolean) => <Channels active={on} run={run} />, t: 'показывайте во всех каналах', d: <>Приложение билайна, <Link to="/near">витрина «лучшее рядом»</Link>, ТВ и пуши. И у партнёров: Авито, Альфа-Банк, Т-Банк.</> },
+    { ui: (on: boolean) => <Builder run={run && on} />, t: 'объявление за 5 минут', d: <>Дайте ссылку на сайт или Карты — <Link to="/login">ИИ соберёт объявление</Link> сам. Поправить можно словами.</> },
+    { ui: (on: boolean) => <Hub active={on} run={run} />, t: 'всё в одном кабинете', d: <><Link to="/cab/campaigns">Кампании</Link>, <Link to="/cab/balance">баланс</Link>, заявки и <Link to="/cab/docs">документы</Link>. Статистика каждый день.</> },
+    { ui: (on: boolean) => <Channels active={on} run={run} />, t: 'одна кампания — все каналы', d: <>Приложение билайна, <Link to="/near">раздел «лучшее рядом»</Link>, ТВ и пуши. И у партнёров: Авито, Альфа-Банк, Т-Банк.</> },
   ]
   return (
-    <section className="bl-section bl-section--wide v2-anywhere" data-theme="invert">
-      <h2 className="bl-display-l">будьте везде.<br />не выходя из кабинета</h2>
+    <section id="how" className="bl-section bl-section--wide v2-anywhere" data-theme="invert">
+      <h2 className="bl-display-l">запуск за вечер.<br />дальше — из одного окна</h2>
       <div ref={ref} className="v2-any" style={{ ['--any-cols' as string]: items.map((_, i) => `minmax(0, ${i === active ? 2 : 1}fr)`).join(' ') }}>
         {items.map((x, i) => (
           <article key={x.t} className={`v2-any__item${i === active ? ' is-active' : ''}`} onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)}>
@@ -270,28 +328,81 @@ const POINTS = [
   { id: 1, addr: 'Покровка, 12', x: 230, y: 250, active: true },
   { id: 2, addr: 'Плющиха, 22', x: 450, y: 170, active: true },
 ]
+// кому покажем: радиус и момент выбирает сам посетитель лендинга — круги и число людей меняются вживую.
+// Доли моментов — заглушки, в бою придут из охвата по точкам
+const RADIUS: [string, number, number][] = [['500 м', 60, 4100], ['1 км', 105, 12400], ['3 км', 190, 61000]]
+const WHEN: [string, string, number][] = [['всегда', '', 1], ['в день зарплаты', ' · в день зарплаты', 0.18], ['после переезда', ' · недавно переехали', 0.03], ['после оплаты', ' · сразу после оплаты', 0.35]]
 function AroundPoint() {
   const [n, setN] = useState(0)
+  const [rad, setRad] = useState(1)
+  const [when, setWhen] = useState(0)
   const reduce = useReducedMotion()
-  useEffect(() => { if (reduce) return; const t = setInterval(() => setN(x => x + 1), 3000); return () => clearInterval(t) }, [reduce])
+  useEffect(() => { if (reduce) return; const t = setInterval(() => setN(x => x + 1), 2600); return () => clearInterval(t) }, [reduce])
+  const [label, r, people] = RADIUS[rad]
   return (
-    <section className="bl-section bl-section--wide v2-split v2-split--map">
+    <section id="who" className="bl-section bl-section--wide v2-split v2-split--map">
       <div className="v2-map">
-        <ReachMap points={POINTS} />
+        <ReachMap points={POINTS} r={r} />
         <AnimatePresence>
           <motion.div key={n} className="float-card v2-map__guest" style={{ left: `${18 + (n * 23) % 50}%`, top: `${12 + (n * 37) % 55}%` }}
             initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}>
             <span className="guest-dot"><UserPlus size={16} /></span>
-            <span><b className="bl-medium">+1 гость</b><span className="bl-micro" style={{ display: 'block' }}>{['300 м', '650 м', '1 км'][n % 3]} от точки</span></span>
+            <span><b className="bl-medium">+1 гость</b><span className="bl-micro" style={{ display: 'block' }}>{['300 м', '650 м', '900 м'][n % 3]} от точки</span></span>
           </motion.div>
         </AnimatePresence>
+        <span className="bl-pill-dark v2-map__today">сегодня пришли: <b className="bl-nums">{14 + n}</b></span>
       </div>
-      <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
-        <h2 className="bl-display-l">растите вокруг своей точки</h2>
-        <p className="bl-lead bl-secondary">Покажем тем, кто живёт, работает или каждый день проезжает в километре от вас. Открыли вторую точку — добавьте второй круг.</p>
-        <ul className="v2-list">
-          <li><MapPin size={18} /> 12 400 подходящих людей в среднем рядом с одной точкой</li>
-          <li><BadgeCheck size={18} /> визиты в точку видно через день-два</li>
+      <div className="bl-stack" style={{ ['--bl-gap' as string]: '24px' }}>
+        <h2 className="bl-display-l">покажем тем, кто рядом и&nbsp;кому это нужно сейчас</h2>
+        <p className="bl-body bl-secondary">Тем, кто живёт, работает или каждый день бывает рядом с вашей точкой. Данные абонентов вам не передаём — только результат.</p>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }}>
+          <span className="bl-caption">радиус от точки</span>
+          <Segmented label="Радиус охвата" value={rad} onChange={setRad} options={RADIUS.map(([t], i) => [i, t] as [number, string])} />
+          <span className="bl-caption">когда показать</span>
+          <div className="bl-row">{WHEN.map(([t], i) => <Chip key={t} on={i === when} onClick={() => setWhen(i)}>{t}</Chip>)}</div>
+        </div>
+        <div className="bl-stat"><span className="bl-stat__value"><Num value={Math.round(people * POINTS.length * WHEN[when][2] / 10) * 10} /></span><span className="bl-stat__label">человек в {label} от двух ваших точек{WHEN[when][1]}</span></div>
+      </div>
+    </section>
+  )
+}
+
+// сколько стоит: расчёт по сфере и бюджету + четыре модели оплаты. Средние — из NICHES, как в калькуляторе первой версии
+const MODELS = [
+  { t: 'переход', v: 'от 9 ₽', d: 'за клик на сайт, в Карты или звонок' },
+  { t: 'заявка', v: 'от 350 ₽', d: 'за заявку, которую вы получили' },
+  { t: 'купон', v: '12 %', d: 'с проданного купона, без вложений' },
+  { t: 'подписка', v: '20 %', d: 'с платежей абонента, без вложений' },
+]
+function Pricing() {
+  const [niche, setNiche] = useState(NICHES[0])
+  const [budget, setBudget] = useState(10000)
+  const clicks = budget / niche.cpc, got = clicks * niche.conv
+  return (
+    <section id="price" className="bl-section bl-section--wide">
+      <div className="section-head">
+        <h2 className="bl-display-l">платите за результат,<br />а не за показы</h2>
+        <p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Показы бесплатно. Начать можно с 3 000 ₽, остаток вернём. Первая кампания — с бонусом 3 000 ₽.</p>
+      </div>
+      <div className="v2-price">
+        <div className="v2-calc">
+          <div className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }}>
+            <span className="bl-caption">ваша сфера</span>
+            <div className="bl-row">{NICHES.map(x => <Chip key={x.id} on={x.id === niche.id} onClick={() => setNiche(x)}>{x.t}</Chip>)}</div>
+          </div>
+          <label className="bl-field">
+            <span className="bl-field__label">бюджет в месяц: <b className="bl-medium">{rub(budget)}</b></span>
+            <input className="bl-range" type="range" min={3000} max={100000} step={1000} value={budget} onChange={e => setBudget(+e.target.value)} aria-label="Бюджет в месяц" />
+          </label>
+          <div className="bl-card v2-calc__result" data-theme="invert">
+            <span className="bl-caption">придут к вам за месяц</span>
+            <span className="bl-number-xl"><Num value={got} /> <span className="bl-h3">{niche.unit}</span></span>
+            <span className="bl-caption">{n(clicks)} переходов по {niche.cpc} ₽ · один результат ≈ {rub(budget / got)}</span>
+          </div>
+          <Link className="bl-btn bl-btn--dark" to="/inn" style={{ alignSelf: 'flex-start' }}>точный расчёт по вашим точкам <ArrowRight size={18} /></Link>
+        </div>
+        <ul className="v2-models">
+          {MODELS.map(m => <li key={m.t}><span className="bl-h4">{m.t}</span><b className="bl-h2">{m.v}</b><span className="bl-caption">{m.d}</span></li>)}
         </ul>
       </div>
     </section>
@@ -300,12 +411,12 @@ function AroundPoint() {
 
 function ForEveryone() {
   const s = [
-    { photo: 'case-coffee.jpg', label: 'Кофейня с гостями у стойки', t: 'начните за вечер', d: 'Кофейня «Зерно» запустилась за 10 минут и за месяц получила 280 гостей.', plan: 'автопилот', price: 'от 3 000 ₽' },
-    { photo: 'case-auto.jpg', label: 'Автосервис, смена шин', t: 'растите без агентства', d: 'Сеть автосервисов из трёх точек сама настраивает сигналы и ставки.', plan: 'PRO', price: 'от 30 000 ₽' },
-    { photo: 'case-dev.jpg', label: 'Офис продаж жилого комплекса', t: 'по-крупному', d: 'Застройщик запускает спецпроекты и медиаплан с персональным менеджером.', plan: 'медиаплан', price: 'по запросу' },
+    { photo: 'case-coffee.jpg', label: 'Кофейня с гостями у стойки', t: 'начните за вечер', d: 'Кофейня «Зерно» запустилась за 10 минут. Автопилот сам выбрал, кому и где показать.', v: 280, u: 'гостей за месяц', plan: 'автопилот', price: 'от 3 000 ₽' },
+    { photo: 'case-auto.jpg', label: 'Автосервис, смена шин', t: 'растите без агентства', d: 'Сеть из трёх автосервисов в PRO сама выбирает моменты и ставки — например, первые заморозки.', v: 72, u: 'записи в первые холода', plan: 'PRO', price: 'от 30 000 ₽' },
+    { photo: 'case-dev.jpg', label: 'Офис продаж жилого комплекса', t: 'по-крупному', d: 'Застройщик согласовал медиаплан и спецпроект с персональным менеджером.', v: 178, u: 'визитов в офис продаж', plan: 'медиаплан', price: 'по запросу' },
   ]
   return (
-    <section className="bl-section bl-section--wide">
+    <section id="cases" className="bl-section bl-section--wide">
       <div className="section-head">
         <h2 className="bl-display-l">от кофейни до федеральной сети</h2>
         <Link className="bl-btn" to="/login">подобрать план <ArrowRight size={18} /></Link>
@@ -313,7 +424,9 @@ function ForEveryone() {
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         {s.map((x, i) => (
           <Reveal key={x.t} delay={i * 0.08} as="article" className="v2-story">
-            <Photo name={x.photo} label={x.label} ratio="4 / 3" />
+            <Photo name={x.photo} label={x.label} ratio="4 / 3">
+              <span className="v2-story__result"><b className="bl-h2"><Num value={x.v} from={0} /></b><span className="bl-caption">{x.u}</span></span>
+            </Photo>
             <h3 className="bl-h3">{x.t}</h3>
             <p className="bl-body bl-secondary">{x.d}</p>
             <div className="v2-story__plan"><span>{x.plan}</span><b>{x.price}</b></div>
@@ -324,26 +437,53 @@ function ForEveryone() {
   )
 }
 
+// помощник: кнопки настоящие — «поднять» двигает прогноз на графике, «оставить» отвечает и тоже ждёт решения заново
+const BASE_WEEK = [38, 41, 22, 24, 40, 52, 47]
 function Assistant() {
+  const [choice, setChoice] = useState<'up' | 'keep' | null>(null)
+  const week = BASE_WEEK.map((v, d) => choice === 'up' && (d === 2 || d === 3) ? v + 11 : choice === 'up' ? v + 1 : v)
+  const max = 64
   return (
     <section className="bl-section bl-section--wide v2-split v2-assist">
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
         <h2 className="bl-display-l">помощник, который считает за вас</h2>
-        <p className="bl-lead bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами.</p>
+        <p className="bl-lead bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами — попробуйте.</p>
       </div>
       <div className="v2-chat v2-chat--white">
-        <Reveal className="v2-bubble v2-bubble--me">почему вчера меньше заявок?</Reveal>
-        <Reveal delay={0.2} className="v2-bubble"><Bot size={16} /> Шёл дождь, визиты в обед упали на 18 %. Поднять ставку с 12 до 15 часов на 2 ₽? Это около +9 гостей в неделю.</Reveal>
-        <Reveal delay={0.35} className="bl-row"><span className="bl-btn bl-btn--dark bl-btn--s">поднять</span><span className="bl-btn bl-btn--s">оставить как есть</span></Reveal>
+        <div className="v2-bubble v2-bubble--me">почему в среду меньше гостей?</div>
+        <div className="v2-bubble"><Bot size={16} /> Шёл дождь, визиты в обед упали на 18 %. Поднять ставку с 12 до 15 часов на 2 ₽? Это около +9 гостей в неделю.</div>
+        <div className="v2-week" role="img" aria-label={`Прогноз гостей по дням: ${week.join(', ')}`}>
+          {week.map((v, d) => (
+            <span key={d} className="v2-week__day">
+              <motion.i className={choice === 'up' && (d === 2 || d === 3) ? 'is-up' : ''} animate={{ height: `${(v / max) * 100}%` }} transition={{ type: 'spring', stiffness: 140, damping: 18 }} />
+              <span className="bl-micro">{['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'][d]}</span>
+            </span>
+          ))}
+        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          {choice === null
+            ? <motion.div key="ask" className="bl-row" exit={{ opacity: 0 }}>
+                <button type="button" className="bl-btn bl-btn--dark bl-btn--s" onClick={() => setChoice('up')}>поднять ставку</button>
+                <button type="button" className="bl-btn bl-btn--s" onClick={() => setChoice('keep')}>оставить как есть</button>
+              </motion.div>
+            : <motion.div key={choice} className="v2-bubble" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                <Bot size={16} /> {choice === 'up' ? 'Готово: ставка 11 ₽ в обед, прогноз +23 гостя за среду и четверг. Бюджет недели +1 200 ₽.' : 'Оставил. Если в пятницу снова будет дождь, напомню.'}
+                {' '}<button type="button" className="v2-link" onClick={() => setChoice(null)}>спросить снова</button>
+              </motion.div>}
+        </AnimatePresence>
       </div>
     </section>
   )
 }
 
+// интеграции бегут двумя лентами навстречу, как приложения у Shopify; вход по бизнес-ID стоит над ними
+const INTEGR = [
+  ['ЭДО: Диадок', 'ЭДО: СБИС', 'amoCRM', 'Битрикс24', 'Яндекс Метрика', 'постбэк по click_id', 'AppsFlyer', 'Adjust'],
+  ['API для своих систем', 'выгрузка в Excel', 'оплата по СБП', 'оплата по счёту', 'ОРД: маркировка erid', 'вебхуки о заявках', 'Google Таблицы', 'Telegram-уведомления'],
+]
 function Integrations() {
-  const items = ['ЭДО: Диадок и СБИС', 'заявки в amoCRM и Битрикс24', 'постбэк и сквозная аналитика', 'AppsFlyer и другие MMP', 'API для своих систем', 'оплата по СБП и счёту']
   return (
-    <section className="bl-section bl-section--wide">
+    <section className="bl-section bl-section--wide v2-integr-sec">
       <div className="section-head">
         <h2 className="bl-display-l">подключается к тому,<br />что у вас уже есть</h2>
         <p className="bl-body bl-secondary" style={{ maxWidth: 360 }}>Вход через бизнес-ID: компанию, точки и реквизиты узнаем сами.</p>
@@ -351,7 +491,13 @@ function Integrations() {
       <div className="v2-ids">
         {([['gos', 'Госуслуги'], ['sber', 'СберБизнес ID'], ['alfa', 'Альфа ID для бизнеса']] as const).map(([id, t]) => <span key={id} className="v2-id"><IdBadge id={id} />{t}</span>)}
       </div>
-      <div className="bl-row v2-integr">{items.map(t => <span key={t} className="bl-chip">{t}</span>)}</div>
+      {INTEGR.map((row, n) => (
+        <div key={n} className={`v2-ticker${n ? ' v2-ticker--back' : ''}`}>
+          <div className="v2-ticker__track">
+            {[...row, ...row].map((t, i) => <span key={i} className="bl-chip" aria-hidden={i >= row.length}>{t}</span>)}
+          </div>
+        </div>
+      ))}
     </section>
   )
 }
@@ -369,12 +515,13 @@ function Trust() {
   ]
   return (
     <section className="bl-section bl-section--wide v2-trust" data-theme="invert">
-      <h2 className="bl-display-l">лучше места для рекламы<br />рядом с домом не найти</h2>
+      <span className="v2-glow" aria-hidden="true" />
+      <h2 className="bl-display-l">большая аудитория.<br />всё по закону</h2>
       <div className="bl-grid v2-stats" style={{ ['--bl-cols' as string]: 3 }}>
-        {stats.map(x => <div key={x.t} className="v2-stat"><span className="v2-stat__v"><Num value={x.v} suffix={x.s} from={0} /></span><span className="bl-body bl-secondary">{x.t}</span></div>)}
+        {stats.map((x, n) => <Reveal key={x.t} delay={n * 0.1} className="v2-stat"><span className="v2-stat__v"><Num value={x.v} suffix={x.s} from={0} /></span><span className="bl-body bl-secondary">{x.t}</span></Reveal>)}
       </div>
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
-        {trust.map(x => <div key={x.t} className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></div>)}
+        {trust.map((x, n) => <Reveal key={x.t} delay={0.2 + n * 0.1} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
     </section>
   )
@@ -391,55 +538,116 @@ function Quote() {
         </figcaption>
       </figure>
       <div className="v2-bonus">
-        {[['3 000 ₽', 'на баланс за первую кампанию'], ['0 ₽', 'за показы и подключение'], ['1 день', 'до первых гостей']].map(([v, t]) => (
-          <div key={t} className="v2-bonus__row"><b className="bl-h2">{v}</b><span className="bl-body bl-secondary">{t}</span></div>
+        {([[3000, ' ₽', 'на баланс за первую кампанию'], [0, ' ₽', 'за показы и подключение'], [1, ' день', 'до первых гостей']] as const).map(([v, u, t], n) => (
+          <Reveal key={t} delay={n * 0.1} className="v2-bonus__row"><b className="bl-h2"><Num value={v} suffix={u} from={0} /></b><span className="bl-body bl-secondary">{t}</span></Reveal>
         ))}
       </div>
     </section>
   )
 }
 
+// финал: три шага сменяют друг друга, справа — тот же шаг в интерфейсе вместо фото
+const FINAL_MS = 3600
+const FINAL = [
+  { t: 'введите ИНН или сайт', d: 'узнаем компанию и точки', ui: <><span className="bl-caption">ИНН или сайт</span><span className="v2-mock-input">7701 234 567<span className="v2-caret" /></span><span className="v2-mini__row"><span>ООО «Зерно» · 2 точки</span><Check size={16} /></span></> },
+  { t: 'выберите, кому показать', d: 'или доверьтесь автопилоту', ui: <><span className="bl-caption">кому показать</span><span className="bl-row"><span className="bl-chip is-active">соседи в 1 км</span><span className="bl-chip is-active">утром</span><span className="bl-chip">после оплаты</span></span><b className="bl-h2">24 800</b><span className="bl-caption">подходящих людей</span></> },
+  { t: 'пополните и запустите', d: 'СБП, оферта галочкой', ui: <><span className="bl-caption">к оплате по СБП</span><b className="bl-h2">3 000 ₽</b><span className="v2-mini__row"><span className="v2-mini__ok"><Check size={18} strokeWidth={3} /></span><span>кампания запущена</span></span></> },
+]
 function Final() {
-  const steps = [['введите ИНН или сайт', 'узнаем компанию и точки'], ['выберите, кому показать', 'или доверьтесь автопилоту'], ['пополните и запустите', 'СБП, оферта галочкой']]
+  const a = useAuto(FINAL.length, FINAL_MS)
   return (
-    <section className="bl-section bl-section--wide v2-final" data-theme="invert">
-      <div className="bl-stack" style={{ ['--bl-gap' as string]: '32px' }}>
+    <section id="v2-final" className="bl-section bl-section--wide v2-final" data-theme="invert">
+      <div ref={a.ref} className="bl-stack" style={{ ['--bl-gap' as string]: '32px' }} {...a.hover}>
         <h2 className="bl-display-l">запустите сегодня</h2>
         <ol className="v2-steps">
-          {steps.map(([t, d], i) => <li key={t}><span className="v2-steps__n">0{i + 1}</span><span><b className="bl-h4">{t}</b><span className="bl-caption" style={{ display: 'block' }}>{d}</span></span></li>)}
+          {FINAL.map((x, n) => (
+            <li key={x.t} className={n === a.i ? 'is-on' : ''}>
+              <button type="button" onClick={() => a.pick(n)} aria-pressed={n === a.i}>
+                <span className="v2-steps__n">0{n + 1}</span>
+                <span><b className="bl-h4">{x.t}</b><span className="bl-caption" style={{ display: 'block' }}>{x.d}</span></span>
+              </button>
+              {n === a.i && <Prog i={a.i} ms={FINAL_MS} run={a.run} />}
+            </li>
+          ))}
         </ol>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
           <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
           <Link className="bl-btn bl-btn--ghost" to="/inn">без входа: по ИНН <ArrowRight size={18} /></Link>
         </div>
+        <span className="bl-caption">первая кампания — с бонусом 3 000 ₽ на баланс</span>
       </div>
-      <Photo name="cta.jpg" label="Владелец бизнеса у входа в своё заведение" ratio="4 / 3" className="v2-final__photo" />
+      <div className="v2-final__stage" aria-hidden="true">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={a.i} className="v2-final__card" initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.4 }}>
+            {FINAL[a.i].ui}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </section>
   )
 }
 
+// сомнения, которые останавливают перед кнопкой. Ответы — как в кабинете: оферта, СБП, ЭДО позже, остаток возвращаем
+const FAQ: [string, string][] = [
+  ['сколько нужно денег на старт?', 'От 3 000 ₽. Показы бесплатные: деньги списываются только за переходы, заявки или проданные купоны. Остаток вернём на счёт компании.'],
+  ['нужен ли договор и ЭДО?', 'Нет. Оферту принимаете галочкой при оплате, это и есть договор. ЭДО подключите позже — для закрывающих документов.'],
+  ['когда придут первые клиенты?', 'Модерация занимает пару минут, переходы начинаются в первый час. Визиты в точку видно через день-два.'],
+  ['а если реклама не сработает?', 'Вы платите только за результат, поэтому без результата — без затрат. Кампанию можно остановить в любой момент.'],
+  ['нужен ли сайт?', 'Нет. Хватит карточки в Картах или телефона. Можно продавать купоны прямо в приложении билайна — оплата со счёта телефона.'],
+  ['увижу ли я данные абонентов?', 'Нет. Вы видите результат: переходы, заявки, визиты. Персональные данные остаются у билайна, всё по закону.'],
+]
+function Faq() {
+  return (
+    <section id="faq" className="bl-section bl-section--wide v2-faq">
+      <h2 className="bl-display-l">остались вопросы?</h2>
+      <div className="bl-accordion">
+        {FAQ.map(([q, a], k) => <details key={q} open={k === 0}><summary>{q}</summary><div className="bl-accordion__body">{a}</div></details>)}
+      </div>
+    </section>
+  )
+}
+
+// кнопка в шапке — когда hero и финал с главной кнопкой ушли с экрана: на экране всегда одна жёлтая
+function useHeaderCta() {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const seen = new Map<Element, boolean>()
+    const io = new IntersectionObserver(es => { es.forEach(e => seen.set(e.target, e.isIntersecting)); setShow(![...seen.values()].some(Boolean)) })
+    for (const id of ['v2-hero', 'v2-final']) { const el = document.getElementById(id); if (el) io.observe(el) }
+    return () => io.disconnect()
+  }, [])
+  return show
+}
+const NAV: [string, string][] = [['who', 'кому покажем'], ['price', 'цены'], ['how', 'как запустить'], ['faq', 'вопросы']]
+const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
 export default function LandingV2() {
+  const cta = useHeaderCta()
   return (
     <div className="bl-page wrap v2">
-      <header className="bl-header landing-head">
+      <header className="bl-header landing-head v2-head">
         <div className="bl-header__side"><Brand to="/v2" /></div>
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
-          <Link className="bl-hide-mobile bl-btn" to="/near">витрина</Link>
-          <Link className="bl-hide-mobile bl-btn" to="/">версия 1</Link>
+          {NAV.map(([id, t]) => <button key={id} type="button" className="bl-hide-mobile bl-btn" onClick={() => go(id)}>{t}</button>)}
+          <AnimatePresence initial={false}>
+            {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><Link className="bl-btn bl-btn--primary" to="/login">узнать охват</Link></motion.span>}
+          </AnimatePresence>
           <Link className="bl-btn bl-btn--dark" to="/login">войти</Link>
         </nav>
       </header>
       <main className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
         <Hero />
+        <AroundPoint />
         <Everywhere />
         <Chat />
+        <Pricing />
         <Anywhere />
-        <AroundPoint />
-        <ForEveryone />
         <Assistant />
         <Integrations />
-        <Trust />
+        <ForEveryone />
         <Quote />
+        <Trust />
+        <Faq />
         <Final />
       </main>
       <footer className="footer bl-caption">

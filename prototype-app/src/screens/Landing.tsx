@@ -37,7 +37,7 @@ const PARTNER_SVG: Record<string, ReactNode> = {
   alfabank: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#EF3124" /><path d="M12.4 6h3.2l5 13h-3.1l-1.1-3.1h-4.9L10.4 19H7.4zm-.1 7.6h3.3L14 8.9z" fill="#fff" /><rect x="7.4" y="20.6" width="13.2" height="2" fill="#fff" /></svg>,
   tbank: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#FFDD2D" /><path d="M7 6h14v8.6c0 3.9-3.2 6.4-7 8-3.8-1.6-7-4.1-7-8z" fill="#333" /><path d="M10.2 9.4h7.6v2.3h-2.6V18h-2.4v-6.3h-2.6z" fill="#FFDD2D" /></svg>,
 }
-function PartnerLogo({ id }: { id: string }) {
+export function PartnerLogo({ id }: { id: string }) {
   return <span className="partner-logo" aria-hidden="true">{PARTNER_SVG[id]}</span>
 }
 

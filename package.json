@@ -1,0 +1,26 @@
+{
+  "name": "ad-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server/index.ts",
+    "migrate": "node server/migrate.ts",
+    "test": "DATABASE_URL=postgres://postgres@localhost/ads_platform_test node --test --test-concurrency=1 'server/**/*.test.ts'",
+    "worker": "node server/worker.ts",
+    "check": "tsc -p ."
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.14",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^7.0.2",
+    "yaml": "^2.9.1"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

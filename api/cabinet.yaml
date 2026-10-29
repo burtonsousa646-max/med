@@ -1,0 +1,233 @@
+openapi: 3.1.0
+info:
+  title: Рекламная платформа билайна — API кабинета партнёра
+  version: 0.2.0
+  description: |
+    Контракт кабинета партнёра и входа. Источник правды для интерфейса и сервера:
+    тест server/contract.test.ts проверяет, что каждый маршрут сервера описан здесь и наоборот.
+
+    Авторизация — cookie `sid` (httpOnly), её ставит вход. Компания и роль берутся из сессии,
+    в запросах их не передают. Сменить компанию — POST /auth/company.
+
+    Операции прототипа (prototype-app/api/openapi.yaml) переносятся сюда по мере реализации модулей,
+    без демо-полей (`Session.clock`, cookie `demo`). Деньги в ответах — копейки, поля с суффиксом `Kop`.
+servers:
+  - url: /api
+tags:
+  - { name: вход }
+  - { name: компания }
+
+paths:
+  /auth/providers:
+    get:
+      tags: [вход]
+      summary: Способы входа партнёра
+      security: []
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Provider' } }
+
+  /auth/start:
+    post:
+      tags: [вход]
+      summary: Начать вход через бизнес-ID
+      description: Ставит cookie `oauth_state` на 10 минут и возвращает адрес страницы провайдера.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties: { provider: { $ref: '#/components/schemas/ProviderId' } }
+      responses:
+        '200':
+          description: адрес провайдера
+          content:
+            application/json:
+              schema: { type: object, required: [url], properties: { url: { type: string } } }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /auth/callback/{provider}:
+    get:
+      tags: [вход]
+      summary: Возврат от провайдера
+      description: |
+        Меняет code на данные человека. Если провайдер подтвердил полномочия в организации,
+        компания создаётся по ИНН, человек становится владельцем и подписантом. Ставит cookie `sid`
+        и перенаправляет в кабинет (`APP_URL/cabinet`).
+      security: []
+      parameters:
+        - { name: provider, in: path, required: true, schema: { $ref: '#/components/schemas/ProviderId' } }
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        '302': { description: в кабинет }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /auth/email/start:
+    post:
+      tags: [вход]
+      summary: Отправить код входа на почту
+      description: Код из 6 цифр, живёт 10 минут, повторно — не раньше чем через минуту.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [email], properties: { email: { type: string, format: email } } }
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /auth/email/verify:
+    post:
+      tags: [вход]
+      summary: Войти по коду
+      description: Пять неверных попыток — код сгорает. Ставит cookie `sid`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties: { email: { type: string, format: email }, code: { type: string, pattern: '^\d{6}$' } }
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /auth/me:
+    get:
+      tags: [вход]
+      summary: Кто вошёл
+      responses:
+        '200':
+          description: партнёр или сотрудник
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MePartner'
+                  - $ref: '#/components/schemas/MeStaff'
+        '401': { $ref: '#/components/responses/Error' }
+
+  /auth/company:
+    post:
+      tags: [вход]
+      summary: Выбрать компанию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [companyId], properties: { companyId: { type: string, format: uuid } } }
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /auth/logout:
+    post:
+      tags: [вход]
+      summary: Выйти
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+
+  /cabinet/company:
+    get:
+      tags: [компания]
+      summary: Текущая компания
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompanyBrief' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: sid }
+
+  responses:
+    Ok:
+      description: ok
+      content:
+        application/json:
+          schema: { type: object, required: [ok], properties: { ok: { const: true } } }
+    Error:
+      description: ошибка
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties: { message: { type: string, description: текст для человека } }
+
+    ProviderId: { type: string, enum: [gos, sber, alfa, b2b], description: 'Госуслуги, СберБизнес ID, Альфа ID для бизнеса, ЛК билайн бизнес' }
+    Provider:
+      type: object
+      required: [id, name]
+      properties: { id: { $ref: '#/components/schemas/ProviderId' }, name: { type: string } }
+
+    PartnerRole: { type: string, enum: [owner, staff, accountant, agency], description: 'владелец, сотрудник, бухгалтер, агентство' }
+    MePartner:
+      type: object
+      required: [kind, user, companyId, companies]
+      properties:
+        kind: { const: partner }
+        user:
+          type: object
+          required: [id, name, email, phone]
+          properties: { id: { type: string, format: uuid }, name: { type: string }, email: { type: [string, 'null'] }, phone: { type: [string, 'null'] } }
+        companyId: { type: [string, 'null'], format: uuid, description: 'выбранная компания; null — компании ещё нет' }
+        companies:
+          type: array
+          items:
+            type: object
+            required: [id, name, inn, role, signer]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              inn: { type: string }
+              role: { $ref: '#/components/schemas/PartnerRole' }
+              signer: { type: boolean, description: может принимать оферту и подтверждать оплату }
+    MeStaff:
+      type: object
+      required: [kind, staff]
+      properties:
+        kind: { const: staff }
+        staff:
+          type: object
+          required: [id, email, name, roles]
+          properties:
+            id: { type: string, format: uuid }
+            email: { type: string }
+            name: { type: string }
+            roles: { type: array, items: { type: string, enum: [moderator, manager, finance, admin] } }
+
+    CompanyBrief:
+      type: object
+      required: [id, inn, kpp, ogrn, name, brand, segment, kyc_status]
+      properties:
+        id: { type: string, format: uuid }
+        inn: { type: string }
+        kpp: { type: [string, 'null'] }
+        ogrn: { type: [string, 'null'] }
+        name: { type: string }
+        brand: { type: string }
+        segment: { type: string, enum: [small, medium, large] }
+        kyc_status: { type: string, enum: [pending, verified, rejected, blocked] }
+
+security:
+  - session: []

@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: Рекламная платформа билайна — API бэкофиса
+  version: 0.2.0
+  description: |
+    Для сотрудников билайна: модерация, партнёры, кампании, финансы, справочники, журнал интеграций.
+    Вход — корпоративный SSO (порт staffSso), роли приходят из него при каждом входе: moderator, manager, finance, admin.
+    admin проходит любую проверку роли. Сессия сотрудника живёт 12 часов.
+servers:
+  - url: /api
+tags:
+  - { name: вход }
+  - { name: интеграции }
+
+paths:
+  /auth/staff/start:
+    post:
+      tags: [вход]
+      summary: Начать вход сотрудника через SSO
+      security: []
+      responses:
+        '200':
+          description: адрес SSO
+          content:
+            application/json:
+              schema: { type: object, required: [url], properties: { url: { type: string } } }
+
+  /auth/staff/callback:
+    get:
+      tags: [вход]
+      summary: Возврат от SSO
+      description: Без ролей платформы — 403. Ставит cookie `sid` и перенаправляет в бэкофис (`APP_URL/admin`).
+      security: []
+      parameters:
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        '302': { description: в бэкофис }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /admin/ports:
+    get:
+      tags: [интеграции]
+      summary: Какие адаптеры стоят за портами
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PortStatus' } }
+        '401': { $ref: '#/components/responses/Error' }
+
+components:
+  securitySchemes:
+    session: { type: apiKey, in: cookie, name: sid }
+  responses:
+    Error:
+      description: ошибка
+      content:
+        application/json:
+          schema: { type: object, required: [message], properties: { message: { type: string } } }
+  schemas:
+    PortStatus:
+      type: object
+      required: [port, adapter]
+      properties:
+        port: { type: string, description: имя порта, см. docs/integrations.md }
+        adapter: { type: string, description: 'stub — заглушка, beeline — система билайна' }
+
+security:
+  - session: []

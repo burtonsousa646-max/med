@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: Рекламная платформа билайна — публичный API
+  version: 0.2.0
+  description: |
+    Для систем снаружи кабинета: поверхности билайна (запрос рекламы, маяки показа и клика — день 3),
+    сервер партнёра (постбэк — день 3), внешние системы билайна (вебхуки).
+
+    Вебхуки. Каждая система подписывает тело запроса HMAC-SHA256 своим секретом (`HOOK_SECRET_<СИСТЕМА>`)
+    и передаёт уникальный ID события. Повтор того же ID безопасен: ответ `duplicate: true`, обработки нет.
+    Ошибка обработчика — 500, событие нужно прислать снова.
+servers:
+  - url: /api
+tags:
+  - { name: служебное }
+  - { name: вебхуки }
+
+paths:
+  /health:
+    get:
+      tags: [служебное]
+      summary: Жив ли сервис и какие адаптеры подключены
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, ports]
+                properties:
+                  ok: { const: true }
+                  ports:
+                    type: array
+                    items: { type: object, required: [port, adapter], properties: { port: { type: string }, adapter: { type: string } } }
+
+  /hooks/{system}/{event}:
+    post:
+      tags: [вебхуки]
+      summary: Событие от внешней системы
+      description: |
+        Какие события принимает каждая система — docs/integrations.md.
+        Примеры: payments/payment.succeeded, edo/document.status, pos/coupon.redeemed.
+      parameters:
+        - { name: system, in: path, required: true, schema: { type: string } }
+        - { name: event, in: path, required: true, schema: { type: string } }
+        - { name: X-Event-Id, in: header, required: true, schema: { type: string }, description: уникальный ID события у отправителя }
+        - { name: X-Signature, in: header, required: true, schema: { type: string, pattern: '^sha256=[0-9a-f]{64}$' }, description: HMAC-SHA256 тела в hex }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200':
+          description: принято
+          content:
+            application/json:
+              schema: { type: object, required: [ok, duplicate], properties: { ok: { const: true }, duplicate: { type: boolean } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /stub/idp:
+    get:
+      tags: [служебное]
+      summary: Страница заглушки бизнес-ID
+      description: Только вне production (или с ALLOW_STUB_LOGIN=1). Исчезает из использования, когда idp подключён к провайдерам.
+      responses: { '200': { description: HTML-форма } }
+    post:
+      tags: [служебное]
+      summary: Отправка формы заглушки бизнес-ID
+      responses: { '302': { description: на колбэк входа } }
+  /stub/sso:
+    get:
+      tags: [служебное]
+      summary: Страница заглушки SSO сотрудников
+      responses: { '200': { description: HTML-форма } }
+    post:
+      tags: [служебное]
+      summary: Отправка формы заглушки SSO
+      responses: { '302': { description: на колбэк входа } }
+
+components:
+  responses:
+    Error:
+      description: ошибка
+      content:
+        application/json:
+          schema: { type: object, required: [message], properties: { message: { type: string } } }

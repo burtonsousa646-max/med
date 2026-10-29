@@ -11,7 +11,7 @@ import { PartnerLogo } from './Landing'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 
 /* Лендинг v2: подача и анимации по мотивам shopify.com, всё из дизайн-системы.
-   Порядок — вопросы владельца бизнеса: что это (hero) → кому покажем → где увидят → и в чате →
+   Порядок — вопросы владельца бизнеса: что это (hero) → кто уже с нами → кому покажем → где увидят → и в чате →
    сколько стоит → как запустить и управлять → помощник → интеграции → истории → отзыв → риски → вопросы → запуск. */
 
 const WORDS = ['рядом с домом', 'в день зарплаты', 'после переезда', 'по дороге на работу', 'когда кончился трафик']
@@ -328,6 +328,27 @@ const POINTS = [
   { id: 1, addr: 'Покровка, 12', x: 230, y: 250, active: true },
   { id: 2, addr: 'Плющиха, 22', x: 450, y: 170, active: true },
 ]
+// нам доверяют — сразу после hero, бегущей лентой, как полоса брендов у Shopify. Логотипы из Википедии в public/logos:
+// серые, в цвете при наведении; multiply убирает белый фон у PNG Brandshop. Ряд повторён дважды для бесшовной прокрутки
+const CLIENTS: [string, string][] = [
+  ['pyaterochka.svg', 'Пятёрочка'], ['alfabank.svg', 'Альфа-Банк'], ['tbank.svg', 'Т-Банк'], ['yandex.svg', 'Яндекс'],
+  ['ozon.svg', 'Ozon'], ['cdek.svg', 'СДЭК'], ['brandshop.png', 'Brandshop'],
+]
+function Clients() {
+  return (
+    <section className="bl-section bl-section--wide v2-clients" aria-labelledby="clients-h">
+      <h2 id="clients-h" className="bl-h3">нам доверяют</h2>
+      <div className="v2-ticker v2-ticker--logos">
+        <ul className="v2-ticker__track">
+          {[...CLIENTS, ...CLIENTS].map(([f, t], k) => (
+            <li key={k} className="v2-logo" aria-hidden={k >= CLIENTS.length}><img src={`${import.meta.env.BASE_URL}logos/${f}`} alt={k < CLIENTS.length ? t : ''} /></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
 // кому покажем: радиус и момент выбирает сам посетитель лендинга — круги и число людей меняются вживую.
 // Доли моментов — заглушки, в бою придут из охвата по точкам
 const RADIUS: [string, number, number][] = [['500 м', 60, 4100], ['1 км', 105, 12400], ['3 км', 190, 61000]]
@@ -637,6 +658,7 @@ export default function LandingV2() {
       </header>
       <main className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
         <Hero />
+        <Clients />
         <AroundPoint />
         <Everywhere />
         <Chat />

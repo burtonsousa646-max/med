@@ -1,7 +1,6 @@
 // Партнёры: компания, проверка юрлица, точки продаж, участники и приглашения, согласия, оферта.
 import { Hono } from 'hono'
-import type { TransactionSql } from 'postgres'
-import { sql } from '../db.ts'
+import { sql, type Tx } from '../db.ts'
 import { port } from '../integrations/index.ts'
 import { enqueue, handle } from '../integrations/outbox.ts'
 import { fail, partner, session, sha256, token, type Env } from './identity.ts'
@@ -144,7 +143,7 @@ company.delete('/consents/:kind', async c => {
 })
 
 /** Принять оферту. Только подписант. Используют и кабинет, и отправка кампании. */
-export async function acceptOffer(tx: TransactionSql, companyId: string, userId: string) {
+export async function acceptOffer(tx: Tx, companyId: string, userId: string) {
   const version = (await tx`select value from settings where key = 'offer_version'`)[0].value as string
   const [co] = await tx`update companies set offer_version = ${version}, offer_accepted_at = now()
                         where id = ${companyId} and offer_version is distinct from ${version} returning id`

@@ -14,6 +14,7 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: деньги }
   - { name: вход }
   - { name: компания }
   - { name: участники }
@@ -303,6 +304,72 @@ paths:
         '403': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
 
+
+  /cabinet/balance:
+    get:
+      tags: [деньги]
+      summary: Баланс, операции, неоплаченные счета
+      description: |
+        Суммы — строки с целым числом копеек (bigint не теряет точность в JSON).
+        availableKop = mainKop + bonusKop — сколько можно потратить. Списания идут сначала с бонусов.
+        payoutKop — накопленные выплаты за купоны и подписки. operations — последние 100, сумма со знаком.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Balance' }
+
+  /cabinet/payments:
+    post:
+      tags: [деньги]
+      summary: Пополнить баланс
+      description: |
+        Владелец или бухгалтер, компания проверена. sbp и card — возвращают confirmUrl страницы оплаты,
+        деньги зачисляются по вебхуку шлюза. invoice — выставляет счёт-оферту (номер РП-ГГГГ-NNNNNN),
+        зачисление по выписке банка. Первая успешная оплата даёт бонус. Повтор с тем же idempotencyKey возвращает тот же платёж.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKop, method, idempotencyKey]
+              properties:
+                amountKop: { type: [string, integer], description: 'копейки, не меньше settings.min_topup_kop' }
+                method: { type: string, enum: [sbp, card, invoice] }
+                campaignId: { type: integer, description: 'оплата под кампанию: после зачисления кампания уходит на проверку' }
+                idempotencyKey: { type: string }
+      responses:
+        '200':
+          description: платёж создан
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payment, confirmUrl, invoice]
+                properties:
+                  payment: { $ref: '#/components/schemas/Payment' }
+                  confirmUrl: { type: [string, 'null'], description: 'куда отправить человека для оплаты (sbp, card)' }
+                  invoice: { oneOf: [{ $ref: '#/components/schemas/Invoice' }, { type: 'null' }] }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/payments/{id}:
+    get:
+      tags: [деньги]
+      summary: Статус платежа
+      description: Для экрана возврата со страницы оплаты.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '404': { $ref: '#/components/responses/Error' }
+
 components:
   securitySchemes:
     session: { type: apiKey, in: cookie, name: sid }
@@ -450,6 +517,50 @@ components:
           type: object
           required: [bik, account]
           properties: { bik: { type: string, pattern: '^\d{9}$' }, account: { type: string, description: 20 цифр, пробелы допустимы }, bank: { type: string } }
+
+    Kop: { type: string, pattern: '^-?\d+$', description: целое число копеек строкой }
+    Payment:
+      type: object
+      required: [id, method, amountKop, status, campaignId, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        method: { type: string, enum: [sbp, card, invoice, post] }
+        amountKop: { $ref: '#/components/schemas/Kop' }
+        status: { type: string, enum: [created, pending, succeeded, failed, refunded] }
+        campaignId: { type: [integer, 'null'] }
+        createdAt: { type: string, format: date-time }
+    Invoice:
+      type: object
+      required: [id, number, amountKop, status, dueAt, issuedAt, paidAt]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string, examples: [РП-2026-000001] }
+        amountKop: { $ref: '#/components/schemas/Kop' }
+        status: { type: string, enum: [issued, paid, cancelled] }
+        dueAt: { type: [string, 'null'], format: date-time }
+        issuedAt: { type: string, format: date-time }
+        paidAt: { type: [string, 'null'], format: date-time }
+    Balance:
+      type: object
+      required: [mainKop, bonusKop, payoutKop, availableKop, operations, invoices]
+      properties:
+        mainKop: { $ref: '#/components/schemas/Kop' }
+        bonusKop: { $ref: '#/components/schemas/Kop' }
+        payoutKop: { $ref: '#/components/schemas/Kop' }
+        availableKop: { $ref: '#/components/schemas/Kop' }
+        operations:
+          type: array
+          items:
+            type: object
+            required: [id, kind, memo, campaignId, amountKop, createdAt]
+            properties:
+              id: { type: integer }
+              kind: { type: string, enum: [topup, charge, bonus, payout, refund, adjustment, commission] }
+              memo: { type: string }
+              campaignId: { type: [integer, 'null'] }
+              amountKop: { $ref: '#/components/schemas/Kop' }
+              createdAt: { type: string, format: date-time }
+        invoices: { type: array, items: { $ref: '#/components/schemas/Invoice' } }
 
 security:
   - session: []

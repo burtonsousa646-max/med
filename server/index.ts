@@ -7,6 +7,7 @@ import { checkPorts, portStatus } from './integrations/index.ts'
 import { hooksRouter } from './integrations/hooks.ts'
 import { auth, errorHandler, partner, staff, stubPages, type Env } from './modules/identity.ts'
 import { company, onboarding } from './modules/partners.ts'
+import { billing, billingAdmin, payStub } from './modules/billing.ts'
 import './modules.ts'
 
 export const app = new Hono<Env>().basePath('/api')
@@ -19,16 +20,19 @@ app.get('/health', async c => {
 app.route('/auth', auth)
 app.route('/auth', onboarding)
 app.route('/stub', stubPages)
+app.route('/stub', payStub)
 app.route('/hooks', hooksRouter)
 
 export const cabinet = new Hono<Env>()
 cabinet.use(partner())
 cabinet.route('/company', company)
+cabinet.route('/', billing)
 app.route('/cabinet', cabinet)
 
 export const admin = new Hono<Env>()
 admin.use(staff())
 admin.get('/ports', c => c.json(portStatus()))
+admin.route('/', billingAdmin)
 app.route('/admin', admin)
 
 if (import.meta.main) {

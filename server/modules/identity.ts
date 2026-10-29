@@ -4,8 +4,7 @@ import { createHash, randomBytes, randomInt } from 'node:crypto'
 import { Hono, type Context, type MiddlewareHandler } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
-import type { TransactionSql } from 'postgres'
-import { sql } from '../db.ts'
+import { sql, type Tx } from '../db.ts'
 import { port } from '../integrations/index.ts'
 import { stubCode } from '../integrations/stubs.ts'
 import { enqueue } from '../integrations/outbox.ts'
@@ -89,7 +88,7 @@ export const staff = (...roles: StaffRole[]): MiddlewareHandler<Env> => async (c
 
 // Учётные записи по почте не склеиваем: почта от провайдера может быть не подтверждена, а склейка по ней — захват чужой записи.
 // В users.email попадает только почта, подтверждённая кодом; контакты от провайдера лежат в identities.data.
-async function userByIdentity(tx: TransactionSql, provider: string, subject: string, p: { name: string; email?: string; phone?: string }) {
+async function userByIdentity(tx: Tx, provider: string, subject: string, p: { name: string; email?: string; phone?: string }) {
   const [known] = await tx`select user_id from identities where provider = ${provider} and subject = ${subject} and user_id is not null`
   if (known) return known.user_id as string
   const verifiedEmail = provider === 'email' ? subject : null
@@ -101,7 +100,7 @@ async function userByIdentity(tx: TransactionSql, provider: string, subject: str
 
 // Адаптер idp возвращает company только если провайдер подтвердил полномочия человека в этой организации.
 // Тогда он становится владельцем и подписантом. Остальных в компанию добавляет владелец приглашением.
-async function linkCompany(tx: TransactionSql, userId: string, co: ExternalCompany) {
+async function linkCompany(tx: Tx, userId: string, co: ExternalCompany) {
   const [company] = await tx`insert into companies (inn, kpp, ogrn, name) values (${co.inn}, ${co.kpp ?? null}, ${co.ogrn ?? null}, ${co.name})
                              on conflict (inn) do update set inn = excluded.inn returning id`
   await tx`insert into memberships (company_id, user_id, role, title, signer) values (${company.id}, ${userId}, 'owner', ${co.role ?? ''}, true)

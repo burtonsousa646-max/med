@@ -1,9 +1,7 @@
 // Исходящая очередь. Модуль кладёт задачу в той же транзакции, что и своё изменение; воркер выполняет её с ретраями.
 // Задача берётся в аренду (next_at сдвигается на LEASE), поэтому упавший воркер не теряет её и не держит транзакцию.
-import type { Sql, TransactionSql } from 'postgres'
-import { sql } from '../db.ts'
+import { sql, type Db } from '../db.ts'
 
-type Db = Sql | TransactionSql
 type Handler = (payload: any) => Promise<void>
 
 const handlers = new Map<string, Handler>()

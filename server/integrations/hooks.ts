@@ -3,11 +3,10 @@
 // Секрет — HOOK_SECRET_<СИСТЕМА>; вне production без переменной берётся dev-secret-<система>.
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { Hono } from 'hono'
-import type { TransactionSql } from 'postgres'
-import { sql } from '../db.ts'
+import { sql, type Tx } from '../db.ts'
 import { logCall } from './index.ts'
 
-type HookHandler = (body: any, tx: TransactionSql, eventId: string) => Promise<void>
+type HookHandler = (body: any, tx: Tx, eventId: string) => Promise<void>
 const hooks = new Map<string, HookHandler>()
 
 /** Зарегистрировать обработчик: onHook('payments', 'payment.succeeded', async (body, tx) => { ... }).

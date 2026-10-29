@@ -9,6 +9,7 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: финансы }
   - { name: вход }
   - { name: интеграции }
 
@@ -50,6 +51,50 @@ paths:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/PortStatus' } }
         '401': { $ref: '#/components/responses/Error' }
+
+
+  /admin/invoices/{id}/paid:
+    post:
+      tags: [финансы]
+      summary: Отметить счёт оплаченным
+      description: Роль finance. Для поступлений, которые выписка не сопоставила сама. Повтор ничего не меняет (changed false).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: object, required: [ok, changed], properties: { ok: { const: true }, changed: { type: boolean } } }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /admin/adjustments:
+    post:
+      tags: [финансы]
+      summary: Корректировка баланса партнёра
+      description: Роль finance. Плюс — зачислить, минус — списать. Причина обязательна, всё пишется в аудит.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [companyId, amountKop, account, memo, idempotencyKey]
+              properties:
+                companyId: { type: string, format: uuid }
+                amountKop: { type: [string, integer] }
+                account: { type: string, enum: [main, bonus] }
+                memo: { type: string, minLength: 1 }
+                idempotencyKey: { type: string }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: object, required: [ok, transactionId, fresh], properties: { ok: { const: true }, transactionId: { type: integer }, fresh: { type: boolean, description: 'false — операция с этим ключом уже была' } } }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
 
 components:
   securitySchemes:

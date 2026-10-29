@@ -81,6 +81,23 @@ paths:
       summary: Отправка формы заглушки SSO
       responses: { '302': { description: на колбэк входа } }
 
+
+  /stub/pay/{id}:
+    get:
+      tags: [служебное]
+      summary: Страница заглушки платёжного шлюза
+      description: Только при INT_PAYMENTS=stub и вне production (или ALLOW_STUB_LOGIN=1).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { '200': { description: HTML-страница оплаты } }
+    post:
+      tags: [служебное]
+      summary: Оплатить или отказать на заглушке
+      description: 'result=ok — событие payments/payment.succeeded, иначе payment.failed; затем возврат в кабинет.'
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { '302': { description: в кабинет, на экран баланса } }
+
 components:
   responses:
     Error:

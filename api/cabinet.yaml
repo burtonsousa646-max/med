@@ -16,6 +16,7 @@ servers:
 tags:
   - { name: вход }
   - { name: компания }
+  - { name: участники }
 
 paths:
   /auth/providers:
@@ -139,18 +140,168 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/Ok' }
 
-  /cabinet/company:
-    get:
+  /auth/companies:
+    post:
       tags: [компания]
-      summary: Текущая компания
+      summary: Добавить компанию по ИНН
+      description: |
+        Для вошедших по почте. Человек становится владельцем без права подписи: оферту и оплату подтвердит
+        руководитель, войдя через бизнес-ID. Компания выбирается в сессии, проверка юрлица ставится в очередь.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [inn], properties: { inn: { type: string, pattern: '^\d{10}(\d{2})?$' } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /auth/invitations/{token}/accept:
+    post:
+      tags: [участники]
+      summary: Принять приглашение в компанию
+      description: Токен — из ссылки в письме, одноразовый, живёт 7 дней. Компания выбирается в сессии.
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
       responses:
         '200':
           description: ok
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CompanyBrief' }
+              schema: { type: object, required: [ok, companyId], properties: { ok: { const: true }, companyId: { type: string, format: uuid } } }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company:
+    get:
+      tags: [компания]
+      summary: Текущая компания целиком
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
         '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [компания]
+      summary: Изменить компанию
+      description: Только владелец. Смена реквизитов обновляет контрагента в учётной системе билайна (через очередь).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CompanyPatch' }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/points:
+    post:
+      tags: [компания]
+      summary: Добавить точку продаж
+      description: Владелец или сотрудник. Адрес проходит геокодер; не найден — 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [addr], properties: { addr: { type: string } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/points/{pointId}:
+    patch:
+      tags: [компания]
+      summary: Включить или выключить точку в рекламе
+      description: Хотя бы одна точка остаётся в рекламе, иначе 422.
+      parameters:
+        - { name: pointId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [active], properties: { active: { type: boolean } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/invitations:
+    post:
+      tags: [участники]
+      summary: Пригласить сотрудника или бухгалтера
+      description: Только владелец. Письмо со ссылкой `APP_URL/invite/<token>`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties: { email: { type: string, format: email }, role: { type: string, enum: [staff, accountant] } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/members/{userId}:
+    delete:
+      tags: [участники]
+      summary: Удалить участника
+      description: Только владелец, не себя. Сессии участника в этой компании закрываются.
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/consents:
+    post:
+      tags: [компания]
+      summary: Дать согласие
+      description: 'company — обработка данных компании, signer — данных подписанта, profile — использование профиля для подбора аудитории.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [kind], properties: { kind: { type: string, enum: [company, signer, profile] } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/consents/{kind}:
+    delete:
+      tags: [компания]
+      summary: Отозвать согласие
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string, enum: [company, signer, profile] } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+
+  /cabinet/company/offer:
+    post:
+      tags: [компания]
+      summary: Принять текущую оферту
+      description: Только подписант. Повторное принятие той же версии ничего не меняет. Документ «оферта» появляется в документах.
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /cabinet/company/edo:
+    post:
+      tags: [компания]
+      summary: Подключить ЭДО
+      description: Владелец или бухгалтер. Приглашение уходит оператору ЭДО через очередь.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [operator], properties: { operator: { type: string, examples: [Диадок, СБИС] } } }
+      responses:
+        '200': { $ref: '#/components/responses/Company' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
 
 components:
   securitySchemes:
@@ -167,6 +318,11 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
+    Company:
+      description: компания целиком
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Company' }
 
   schemas:
     Error:
@@ -216,18 +372,84 @@ components:
             name: { type: string }
             roles: { type: array, items: { type: string, enum: [moderator, manager, finance, admin] } }
 
-    CompanyBrief:
+    Company:
       type: object
-      required: [id, inn, kpp, ogrn, name, brand, segment, kyc_status]
+      required: [id, inn, kpp, ogrn, name, brand, segment, kycStatus, kycReason, address, bank, site, phone, notify, edoOperator, autoTopup, offerVersion, offerAcceptedAt, currentOfferVersion, points, members, invitations, consents]
       properties:
         id: { type: string, format: uuid }
         inn: { type: string }
         kpp: { type: [string, 'null'] }
         ogrn: { type: [string, 'null'] }
-        name: { type: string }
+        name: { type: string, description: 'полное название; после проверки — из ЕГРЮЛ' }
+        brand: { type: string, description: как компанию видят абоненты }
+        segment: { type: string, enum: [small, medium, large], description: 'задаёт режим сборки: автопилот, ручная настройка, медиаплан' }
+        kycStatus: { type: string, enum: [pending, verified, rejected, blocked], description: 'проверка юрлица; запуск кампаний — только verified' }
+        kycReason: { type: [string, 'null'], description: почему не проверено }
+        address: { type: [string, 'null'], description: юридический адрес из реестра }
+        bank:
+          oneOf:
+            - type: 'null'
+            - { type: object, required: [bik, account, bank], properties: { bik: { type: string }, account: { type: string }, bank: { type: string } } }
+        site: { type: [string, 'null'] }
+        phone: { type: [string, 'null'] }
+        notify: { $ref: '#/components/schemas/Notify' }
+        edoOperator: { type: [string, 'null'] }
+        autoTopup: { type: boolean }
+        offerVersion: { type: [string, 'null'], description: принятая версия оферты }
+        offerAcceptedAt: { type: [string, 'null'], format: date-time }
+        currentOfferVersion: { type: string, description: 'действующая версия; не совпадает с offerVersion — оферту нужно принять заново' }
+        points: { type: array, items: { $ref: '#/components/schemas/Point' } }
+        members:
+          type: array
+          items:
+            type: object
+            required: [id, name, email, role, title, signer]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              email: { type: [string, 'null'] }
+              role: { $ref: '#/components/schemas/PartnerRole' }
+              title: { type: string }
+              signer: { type: boolean }
+        invitations:
+          type: array
+          items:
+            type: object
+            required: [id, target, role, expiresAt]
+            properties: { id: { type: string, format: uuid }, target: { type: string }, role: { type: string }, expiresAt: { type: string, format: date-time } }
+        consents:
+          type: array
+          items:
+            type: object
+            required: [kind, version, grantedAt]
+            properties: { kind: { type: string }, version: { type: string }, grantedAt: { type: string, format: date-time } }
+    Point:
+      type: object
+      required: [id, addr, normalized, lat, lon, active]
+      properties:
+        id: { type: integer }
+        addr: { type: string, description: как ввёл партнёр }
+        normalized: { type: [string, 'null'], description: как понял геокодер }
+        lat: { type: number }
+        lon: { type: number }
+        active: { type: boolean, description: в рекламе }
+    Notify:
+      type: object
+      required: [sms, mail, tg]
+      properties: { sms: { type: boolean }, mail: { type: boolean }, tg: { type: boolean } }
+    CompanyPatch:
+      type: object
+      properties:
         brand: { type: string }
         segment: { type: string, enum: [small, medium, large] }
-        kyc_status: { type: string, enum: [pending, verified, rejected, blocked] }
+        site: { type: string }
+        phone: { type: string }
+        notify: { $ref: '#/components/schemas/Notify' }
+        autoTopup: { type: boolean }
+        bank:
+          type: object
+          required: [bik, account]
+          properties: { bik: { type: string, pattern: '^\d{9}$' }, account: { type: string, description: 20 цифр, пробелы допустимы }, bank: { type: string } }
 
 security:
   - session: []

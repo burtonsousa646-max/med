@@ -6,6 +6,7 @@ import { sql } from './db.ts'
 import { checkPorts, portStatus } from './integrations/index.ts'
 import { hooksRouter } from './integrations/hooks.ts'
 import { auth, errorHandler, partner, staff, stubPages, type Env } from './modules/identity.ts'
+import { company, onboarding } from './modules/partners.ts'
 import './modules.ts'
 
 export const app = new Hono<Env>().basePath('/api')
@@ -16,15 +17,13 @@ app.get('/health', async c => {
   return c.json({ ok: true, ports: portStatus() })
 })
 app.route('/auth', auth)
+app.route('/auth', onboarding)
 app.route('/stub', stubPages)
 app.route('/hooks', hooksRouter)
 
 export const cabinet = new Hono<Env>()
 cabinet.use(partner())
-cabinet.get('/company', async c => {
-  const [co] = await sql`select id, inn, kpp, ogrn, name, brand, segment, kyc_status from companies where id = ${c.var.partner.companyId}`
-  return c.json(co)
-})
+cabinet.route('/company', company)
 app.route('/cabinet', cabinet)
 
 export const admin = new Hono<Env>()

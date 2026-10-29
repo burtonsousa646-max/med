@@ -8,6 +8,7 @@ import type { TransactionSql } from 'postgres'
 import { sql } from '../db.ts'
 import { port } from '../integrations/index.ts'
 import { stubCode } from '../integrations/stubs.ts'
+import { enqueue } from '../integrations/outbox.ts'
 import type { ExternalCompany, PartnerProvider } from '../integrations/ports.ts'
 
 export type PartnerRole = 'owner' | 'staff' | 'accountant' | 'agency'
@@ -54,7 +55,7 @@ async function startSession(c: Context, who: { userId?: string; staffId?: string
 }
 
 type SessionRow = { token_hash: string; user_id: string | null; staff_id: string | null; company_id: string | null }
-async function session(c: Context) {
+export async function session(c: Context) {
   const t = getCookie(c, 'sid')
   if (!t) return null
   const [s] = await sql<SessionRow[]>`select token_hash, user_id, staff_id, company_id from sessions where token_hash = ${sha256(t)} and expires_at > now()`
@@ -104,7 +105,8 @@ async function linkCompany(tx: TransactionSql, userId: string, co: ExternalCompa
   const [company] = await tx`insert into companies (inn, kpp, ogrn, name) values (${co.inn}, ${co.kpp ?? null}, ${co.ogrn ?? null}, ${co.name})
                              on conflict (inn) do update set inn = excluded.inn returning id`
   await tx`insert into memberships (company_id, user_id, role, title, signer) values (${company.id}, ${userId}, 'owner', ${co.role ?? ''}, true)
-           on conflict do nothing`
+           on conflict (company_id, user_id) do update set role = 'owner', signer = true`
+  await enqueue(tx, 'partners', 'verify', { companyId: company.id }, `kyc:${company.id}`)
   return company.id as string
 }
 

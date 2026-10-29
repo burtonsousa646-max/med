@@ -32,8 +32,7 @@ function validSignature(secret: string, body: string, header: string | undefined
 
 export const hooksRouter = new Hono().post('/:system/:event', async c => {
   const { system, event } = c.req.param()
-  const fn = hooks.get(`${system}/${event}`)
-  if (!fn) return c.json({ message: 'неизвестное событие' }, 404)
+  if (!hooks.has(`${system}/${event}`)) return c.json({ message: 'неизвестное событие' }, 404)
   const secret = hookSecret(system)
   const raw = await c.req.text()
   if (!secret || !validSignature(secret, raw, c.req.header('x-signature'))) {
@@ -48,7 +47,16 @@ export const hooksRouter = new Hono().post('/:system/:event', async c => {
   } catch {
     return c.json({ message: 'тело — не JSON' }, 400)
   }
-  // Отметка о событии и его обработка — в одной транзакции: упадёт обработчик — событие можно прислать снова
+  const fresh = await processHook(system, event, body, eventId)
+  return c.json({ ok: true, duplicate: !fresh })
+})
+
+/** Обработать событие. Возвращает false, если событие с таким ID уже было.
+ * Отметка о событии и обработка — в одной транзакции: упадёт обработчик — событие можно прислать снова.
+ * Страницы заглушек (оплата, выписка) вызывают её напрямую, минуя подпись. */
+export async function processHook(system: string, event: string, body: unknown, eventId: string) {
+  const fn = hooks.get(`${system}/${event}`)
+  if (!fn) throw new Error(`нет обработчика ${system}/${event}`)
   const fresh = await sql.begin(async tx => {
     const [row] = await tx`insert into inbound_events (system, event_id) values (${system}, ${eventId}) on conflict do nothing returning 1`
     if (!row) return false
@@ -56,5 +64,5 @@ export const hooksRouter = new Hono().post('/:system/:event', async c => {
     return true
   })
   logCall(system, 'in', event, true, null, body, { duplicate: !fresh })
-  return c.json({ ok: true, duplicate: !fresh })
-})
+  return fresh
+}

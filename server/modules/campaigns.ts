@@ -7,12 +7,20 @@ import { port } from '../integrations/index.ts'
 import { fail, partner, sha256, token, type Env } from './identity.ts'
 import { acceptOffer, setting } from './partners.ts'
 import { balances, createPayment, kop, onPaid } from './billing.ts'
-import { startModeration } from './moderation.ts'
+import { startModeration, stopHits } from './moderation.ts'
+import { enqueue, handle } from '../integrations/outbox.ts'
 
 const APP_URL = () => process.env.APP_URL ?? 'http://127.0.0.1:5174'
 const PUBLIC_URL = () => process.env.PUBLIC_URL ?? 'http://127.0.0.1:8788'
 
 /* ───────── справочник ───────── */
+
+// Цели автопилота: готовый набор сигналов и мест. Выбор цели в сборке ставит их в кампанию.
+const GOALS = [
+  { id: 'near', t: 'привести соседей в точку', d: 'покажем тем, кто живёт и работает в километре от вас', signals: { live: 'any', work: 'any' }, placements: ['showcase', 'main', 'paid'] },
+  { id: 'rivals', t: 'перехватить клиентов конкурентов', d: 'тем, кто регулярно ходит к конкурентам рядом с вами', signals: { rival: 'any' }, placements: ['showcase', 'paid'] },
+  { id: 'showcase', t: 'оффер в витрине «лучшее рядом»', d: 'карточка в приложении билайна для тех, кто ищет выгоду рядом', signals: {}, placements: ['showcase'] },
+]
 
 export async function catalogView() {
   const offerTypes = await sql`select id, share, fee_pct, data from offer_types order by array_position(array['click','coupon','lead','promo','sub'], id)`
@@ -29,6 +37,7 @@ export async function catalogView() {
       { id: 'invoice', name: 'счёт-оферта', hint: 'зачисление 1–3 дня, запуск после оплаты', largeOnly: false },
       { id: 'post', name: 'постоплата', hint: `лимит ${Number(s.postpay_limit_kop) / 100} ₽, счёт в конце месяца`, largeOnly: true },
     ],
+    goals: GOALS,
     settings: { firstBonusKop: String(s.first_campaign_bonus_kop), wideMarkupPct: s.wide_card_markup_pct, minBudgetMonthKop: String(s.min_budget_month_kop), offerVersion: s.offer_version },
   }
 }
@@ -112,6 +121,8 @@ export async function campaignView(companyId: string, id: string | number) {
                           left join external_refs r on r.entity = 'payment' and r.entity_id = p.id::text and r.system = 'payments'
                           where p.campaign_id = ${c.id} order by p.created_at desc limit 1`
   const d = deal(c, co as never, Number(ot.fee_pct))
+  // черновик: заранее показываем стоп-слова, чтобы партнёр исправил текст до отправки
+  const preview = cr?.status === 'draft' ? stopHits(cr.ad_text, await sql`select pattern, why, fix from stop_words where active`) : []
   return {
     id: Number(c.id), type: c.type, status: c.status, name: c.name || d.name, mode: c.mode, goal: c.goal,
     terms: c.terms, targeting: c.targeting, placements: c.placements, wideCard: c.wide_card,
@@ -120,7 +131,7 @@ export async function campaignView(companyId: string, id: string | number) {
     startsAt: c.starts_at, endsAt: c.ends_at, launchedAt: c.launched_at, createdAt: c.created_at, updatedAt: c.updated_at, version: c.version,
     creative: cr ? { id: Number(cr.id), version: cr.version, adText: cr.ad_text, imageKey: cr.image_key, imageUrl: cr.image_key && port('storage').url(cr.image_key), status: cr.status, erid: cr.erid } : null,
     liveCreative: live ? { id: Number(live.id), version: live.version, erid: live.erid } : null,
-    moderation: mod ? { status: mod.status, reason: mod.reason, hits: mod.auto_result?.hits ?? [] } : null,
+    moderation: mod ? { status: mod.status, reason: mod.reason, hits: mod.auto_result?.hits ?? [] } : preview.length ? { status: 'preview', reason: null, hits: preview } : null,
     approval: appr ? { expiresAt: appr.expires_at, requestedBy: appr.requested_by } : null,
     payment: pay ? { id: pay.id, status: pay.status, method: pay.method, amountKop: String(pay.amount_kop), confirmUrl: pay.confirm_url && (pay.confirm_url.startsWith('/') ? PUBLIC_URL() + pay.confirm_url : pay.confirm_url) } : null,
     deal: { line: d.line, offer: d.offer, cta: d.cta },
@@ -359,6 +370,26 @@ campaigns.post('/approvals/:token/confirm', async c => {
   const b: LaunchBody = await c.req.json<LaunchBody>().catch(() => ({}))
   const payment = await launch(c.var.partner.companyId, a.campaign_id, c.var.partner.userId, b)
   return c.json({ campaign: await campaignView(c.var.partner.companyId, a.campaign_id), payment, approvalUrl: null })
+})
+
+// Спецпроект с менеджером: заявка в Service desk билайна
+campaigns.post('/special-requests', partner('owner', 'staff', 'agency'), async c => {
+  const b = await c.req.json<{ kind: string; task: string; budget: string }>()
+  if (!['game', 'section', 'raffle', 'segment'].includes(b.kind)) fail(422, 'вид спецпроекта: game, section, raffle, segment')
+  if (String(b.task ?? '').trim().length < 10) fail(422, 'опишите задачу хотя бы парой слов')
+  const companyId = c.var.partner.companyId
+  const id = await sql.begin(async tx => {
+    const [r] = await tx`insert into special_requests (company_id, data) values (${companyId}, ${tx.json({ kind: b.kind, task: b.task.trim(), budget: String(b.budget ?? ''), userId: c.var.partner.userId })}) returning id`
+    await enqueue(tx, 'support', 'specialRequest', { requestId: r.id }, `special:${r.id}`)
+    return r.id
+  })
+  return c.json({ ok: true, id: Number(id) })
+})
+
+handle('support', 'specialRequest', async ({ requestId }: { requestId: string }) => {
+  const [r] = await sql`select r.data, c.id as company_id, c.name, c.inn, c.phone from special_requests r join companies c on c.id = r.company_id where r.id = ${requestId}`
+  const { externalId } = await port('support').createTicket({ companyId: r.company_id, topic: `спецпроект: ${r.data.kind}`, text: `${r.data.task}\nбюджет: ${r.data.budget}\n${r.name}, ИНН ${r.inn}`, contact: r.phone ?? '' })
+  await sql`insert into external_refs (entity, entity_id, system, external_id) values ('special_request', ${String(requestId)}, 'support', ${externalId}) on conflict do nothing`
 })
 
 campaigns.post('/campaigns/:id/archive', partner('owner', 'staff', 'agency'), async c => {

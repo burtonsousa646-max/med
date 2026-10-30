@@ -15,6 +15,7 @@
 | [docs/auth.md](docs/auth.md) | Вход партнёров и сотрудников, сессии, роли, изоляция компаний |
 | [docs/partners.md](docs/partners.md) | Компания, проверка юрлица, точки, участники, оферта |
 | [docs/campaigns.md](docs/campaigns.md) | Путь кампании, отправка и оплата, креативы, модерация, маркировка |
+| [docs/web.md](docs/web.md) | Интерфейс кабинета: экраны, как ходит в API, отличия от прототипа |
 | [docs/money.md](docs/money.md) | Баланс, пополнение, защита от задвоения, корректировки, документы и ЭДО |
 | [docs/development.md](docs/development.md) | Запуск, переменные окружения, тесты, правила кода |
 | [api/](api/) | Контракты OpenAPI 3.1: `cabinet.yaml`, `admin.yaml`, `public.yaml` |
@@ -29,15 +30,17 @@ npm run migrate
 npm run dev
 ```
 
-API — http://127.0.0.1:8788/api, проверка — `/api/health`. Подробности, базы и переменные — в [docs/development.md](docs/development.md).
+`npm run dev` поднимает API, воркер и интерфейс. Кабинет — http://127.0.0.1:5174, API — через него же на `/api` (напрямую — порт 8788). Подробности, базы и переменные — в [docs/development.md](docs/development.md).
 
 | Команда | Что делает |
 |---|---|
-| `npm run dev` | API с перезапуском при правках |
+| `npm run dev` | API, воркер и интерфейс с перезапуском при правках |
 | `npm run worker` | фоновый процесс: исходящая очередь, партиции показов |
 | `npm run migrate` | применить новые миграции из `migrations/` |
 | `npm test` | все тесты на базе `ads_platform_test` |
-| `npm run check` | проверка типов |
+| `npm run check` | проверка типов сервера и интерфейса |
+| `npm run build` | сборка интерфейса в `dist/` |
+| `npm run api:types` | типы клиента из `api/cabinet.yaml` |
 
 ## Устройство
 
@@ -49,5 +52,6 @@ server/
   worker.ts     фоновый процесс
   modules/      модули предметной области (identity, partners, campaigns, billing, ...)
   integrations/ порты внешних систем, заглушки, очередь, вебхуки, журнал
+web/            интерфейс кабинета (Vite, React) и дизайн-система со шрифтом
 docs/           документация
 ```

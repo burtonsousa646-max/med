@@ -118,11 +118,15 @@ export const auth = new Hono<Env>()
 
 auth.get('/providers', c => c.json(PROVIDERS))
 
+// Куда вернуть после входа: только путь внутри интерфейса, не чужой адрес
+const safeNext = (next: unknown) => (typeof next === 'string' && /^\/(?![/\\])/.test(next) ? next : '/cabinet')
+
 auth.post('/start', async c => {
-  const { provider } = await c.req.json<{ provider: PartnerProvider }>()
+  const { provider, next } = await c.req.json<{ provider: PartnerProvider; next?: string }>()
   if (!PROVIDERS.some(p => p.id === provider)) fail(422, 'неизвестный способ входа')
   const state = token()
   setCookie(c, 'oauth_state', `${provider}.${state}`, { httpOnly: true, secure: secure(), sameSite: 'Lax', path: '/api/auth', maxAge: 600 })
+  setCookie(c, 'oauth_next', encodeURIComponent(safeNext(next)), { httpOnly: true, secure: secure(), sameSite: 'Lax', path: '/api/auth', maxAge: 600 })
   return c.json({ url: port('idp').authUrl({ provider, state, redirectUri: `${PUBLIC_URL()}/api/auth/callback/${provider}` }) })
 })
 
@@ -137,7 +141,9 @@ auth.get('/callback/:provider', async c => {
     return { userId, companyId: ext.company ? await linkCompany(tx, userId, ext.company) : null }
   })
   await startSession(c, { userId, companyId: companyId ?? (await firstCompany(userId)), provider })
-  return c.redirect(`${APP_URL()}/cabinet`)
+  const next = safeNext(decodeURIComponent(getCookie(c, 'oauth_next') ?? ''))
+  deleteCookie(c, 'oauth_next', { path: '/api/auth' })
+  return c.redirect(`${APP_URL()}${next}`)
 })
 
 auth.post('/email/start', async c => {

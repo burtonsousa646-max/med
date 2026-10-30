@@ -47,7 +47,9 @@ paths:
             schema:
               type: object
               required: [provider]
-              properties: { provider: { $ref: '#/components/schemas/ProviderId' } }
+              properties:
+                provider: { $ref: '#/components/schemas/ProviderId' }
+                next: { type: string, description: 'путь в интерфейсе, куда вернуть после входа, например /approve/<token>; по умолчанию /cabinet' }
       responses:
         '200':
           description: адрес провайдера
@@ -63,7 +65,7 @@ paths:
       description: |
         Меняет code на данные человека. Если провайдер подтвердил полномочия в организации,
         компания создаётся по ИНН, человек становится владельцем и подписантом. Ставит cookie `sid`
-        и перенаправляет в кабинет (`APP_URL/cabinet`).
+        и перенаправляет на `APP_URL` + next из /auth/start (по умолчанию `/cabinet`).
       security: []
       parameters:
         - { name: provider, in: path, required: true, schema: { $ref: '#/components/schemas/ProviderId' } }
@@ -549,6 +551,30 @@ paths:
         '200': { description: HTML для просмотра и печати, content: { text/html: { schema: { type: string } } } }
         '404': { $ref: '#/components/responses/Error' }
 
+  /cabinet/special-requests:
+    post:
+      tags: [кампании]
+      summary: Заявка на спецпроект
+      description: Игра, свой раздел, розыгрыш, свой сегмент — через менеджера. Заявка уходит в Service desk билайна.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, task, budget]
+              properties:
+                kind: { type: string, enum: [game, section, raffle, segment] }
+                task: { type: string, minLength: 10 }
+                budget: { type: string }
+      responses:
+        '200':
+          description: принята
+          content:
+            application/json:
+              schema: { type: object, required: [ok, id], properties: { ok: { const: true }, id: { type: integer } } }
+        '422': { $ref: '#/components/responses/Error' }
+
 components:
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
@@ -756,21 +782,43 @@ components:
       description: 'черновик, ждёт руководителя, ждёт оплату, проверка, отклонена, показывается, пауза, завершена, архив'
     Catalog:
       type: object
-      required: [offerTypes, placements, triggers, payMethods, settings]
+      required: [offerTypes, placements, triggers, payMethods, goals, settings]
       properties:
+        goals:
+          type: array
+          description: цели автопилота — готовые наборы сигналов и мест показа
+          items:
+            type: object
+            required: [id, t, d, signals, placements]
+            properties:
+              id: { type: string }
+              t: { type: string }
+              d: { type: string }
+              signals: { type: object, additionalProperties: { type: string, enum: [any, and, not] } }
+              placements: { type: array, items: { type: string } }
         offerTypes:
           type: array
           items:
             type: object
-            required: [id, share, feePct, t, short, cta, fields, via]
+            required: [id, share, feePct, t, short, cta, d, gets, pay, fit, unit, many, per, payFor, live, wait, fields, via]
             description: 'тексты для кабинета (t, short, cta, d, gets, pay, fit, unit, many, per, payFor, live, wait), поля условий и способ подтверждения'
             properties:
               id: { $ref: '#/components/schemas/OfferType' }
               share: { type: boolean, description: 'true — платит абонент, партнёр получает выплаты' }
               feePct: { type: number }
-              t: { type: string }
+              t: { type: string, description: название }
               short: { type: string }
               cta: { type: string }
+              d: { type: string, description: описание }
+              gets: { type: string, description: что получает клиент }
+              pay: { type: string, description: за что платит партнёр }
+              fit: { type: string, description: кому подходит }
+              unit: { type: string, description: результат во множественном числе }
+              many: { type: string, description: 'то же в родительном падеже: «заявок»' }
+              per: { type: string, description: подпись цены результата }
+              payFor: { type: string }
+              live: { type: string, description: первое событие после запуска }
+              wait: { type: string, description: что ждать в первые дни }
               fields: { type: array, items: { type: object, required: [k, label], properties: { k: { type: string }, label: { type: string }, num: { type: boolean }, suffix: { type: string }, wide: { type: boolean } } } }
               via: { type: object, required: [label, options, hint], properties: { label: { type: string }, options: { type: array, items: { type: string } }, hint: { type: string } } }
             additionalProperties: true
@@ -879,7 +927,7 @@ components:
             - type: object
               required: [status, reason, hits]
               properties:
-                status: { type: string, enum: [auto, queued, approved, rejected] }
+                status: { type: string, enum: [preview, auto, queued, approved, rejected], description: 'preview — черновик, стоп-слова найдены заранее, до отправки' }
                 reason: { type: [string, 'null'], description: причина отказа для партнёра }
                 hits: { type: array, items: { type: object, required: [word, why, fix], properties: { word: { type: string }, why: { type: string }, fix: { type: string } } } }
         approval:

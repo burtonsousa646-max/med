@@ -83,12 +83,12 @@ export async function createPayment(p: { companyId: string; method: 'sbp' | 'car
   if (p.method !== 'invoice' && payment.status === 'created') {
     try {
       const r = await port('payments').create({ paymentId: payment.id, method: p.method as 'sbp' | 'card', amountKop: Number(p.amountKop),
-        description: `Пополнение баланса рекламной платформы`, returnUrl: `${APP_URL()}/cabinet/balance?payment=${payment.id}` })
+        description: `Пополнение баланса рекламной платформы`, returnUrl: returnTo(payment) })
       confirmUrl = r.confirmUrl.startsWith('/') ? PUBLIC_URL() + r.confirmUrl : r.confirmUrl
       await sql.begin(async tx => {
         await tx`update payments set status = 'pending', updated_at = now() where id = ${payment.id}`
         payment.status = 'pending'
-        await tx`insert into external_refs (entity, entity_id, system, external_id, data) values ('payment', ${payment.id}, 'payments', ${r.externalId}, ${tx.json({ confirmUrl })})`
+        await tx`insert into external_refs (entity, entity_id, system, external_id, data) values ('payment', ${payment.id}, 'payments', ${r.externalId}, ${tx.json({ confirmUrl, returnUrl: returnTo(payment) })})`
       })
     } catch (e) {
       await sql`update payments set status = 'failed', failure_reason = ${String((e as Error).message)}, updated_at = now() where id = ${payment.id}`
@@ -123,6 +123,9 @@ export async function markPaid(tx: Tx, paymentId: string, amountKop: bigint, act
   for (const fn of onPaid) await fn(tx, { ...p, status: 'succeeded' })
   return true
 }
+
+// После оплаты — к запуску кампании, если платили под неё, иначе к балансу
+const returnTo = (p: Payment) => p.campaign_id ? `${APP_URL()}/c/${p.campaign_id}/launch?payment=${p.id}` : `${APP_URL()}/cab/balance?payment=${p.id}`
 
 const memoOf = (m: string) => ({ sbp: 'пополнение через СБП', card: 'пополнение картой', invoice: 'оплата по счёту', post: 'постоплата' })[m] ?? 'пополнение'
 
@@ -241,9 +244,9 @@ payStub.get('/pay/:id', async c => {
 payStub.post('/pay/:id', async c => {
   if (!stubAllowed()) fail(404, 'нет такой страницы')
   const id = c.req.param('id')
-  const [p] = await sql`select amount_kop from payments where id = ${id}`
+  const [p] = await sql<Payment[]>`select * from payments where id = ${id}`
   if (!p) fail(404, 'нет такого платежа')
   const ok = (await c.req.parseBody()).result === 'ok'
   await processHook('payments', ok ? 'payment.succeeded' : 'payment.failed', { paymentId: id, amountKop: Number(p.amount_kop), reason: ok ? undefined : 'отказ банка' }, `stub:${id}:${ok ? 'ok' : 'fail'}`)
-  return c.redirect(`${APP_URL()}/cabinet/balance?payment=${id}`)
+  return c.redirect(returnTo(p))
 })

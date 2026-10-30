@@ -1,0 +1,20 @@
+[Unit]
+Description=Рекламная платформа: API
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+User=ads-platform
+Group=ads-platform
+WorkingDirectory=/opt/ads-platform
+EnvironmentFile=/etc/ads-platform.env
+ExecStart=/opt/node22/bin/node server/index.ts
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ads-platform
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

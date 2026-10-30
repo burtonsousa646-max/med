@@ -48,6 +48,8 @@ npm run dev
 | `HOOK_SECRET_<ПОРТ>` | `dev-secret-<порт>` вне production | секрет подписи вебхуков |
 | `STORAGE_DIR` | `var/storage` | папка файлов заглушки хранилища |
 | `SERVE_SECRET` | `dev-serve-secret` вне production | подпись токенов показа и клика; в production обязателен |
+| `STUB_SSO_CODE` | — | код доступа к заглушке SSO сотрудников; в production без него заглушка закрыта |
+| `RATE_LIMIT_IN_TESTS` | — | `1` — включить лимиты частоты в тестах |
 | `SURFACE_KEYS` | — | ключи поверхностей `app:ключ,site:ключ`; заданы — `/public/serve` требует `X-Surface-Key` |
 
 Секреты — только в переменных окружения (на сервере — файл окружения службы), не в коде и не в базе.

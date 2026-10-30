@@ -11,6 +11,10 @@ import { billing, billingAdmin, payStub } from './modules/billing.ts'
 import { campaigns } from './modules/campaigns.ts'
 import { moderationAdmin } from './modules/moderation.ts'
 import { documents, documentsAdmin } from './modules/documents.ts'
+import { servingPublic } from './modules/serving.ts'
+import { trackingCabinet, trackingPublic } from './modules/tracking.ts'
+import { settlementAdmin } from './modules/settlement.ts'
+import { reporting } from './modules/reporting.ts'
 import { port } from './integrations/index.ts'
 import './modules.ts'
 
@@ -26,6 +30,8 @@ app.route('/auth', onboarding)
 app.route('/stub', stubPages)
 app.route('/stub', payStub)
 app.route('/hooks', hooksRouter)
+app.route('/public', servingPublic)
+app.route('/public', trackingPublic)
 
 // Файлы креативов публичны: их показывают абонентам. Документы отдаются только через кабинет.
 app.get('/files/:key{.+}', async c => {
@@ -41,6 +47,8 @@ cabinet.route('/company', company)
 cabinet.route('/', billing)
 cabinet.route('/', campaigns)
 cabinet.route('/', documents)
+cabinet.route('/', trackingCabinet)
+cabinet.route('/', reporting)
 app.route('/cabinet', cabinet)
 
 export const admin = new Hono<Env>()
@@ -49,6 +57,7 @@ admin.get('/ports', c => c.json(portStatus()))
 admin.route('/', billingAdmin)
 admin.route('/', moderationAdmin)
 admin.route('/', documentsAdmin)
+admin.route('/', settlementAdmin)
 app.route('/admin', admin)
 
 if (import.meta.main) {

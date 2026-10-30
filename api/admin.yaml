@@ -164,6 +164,25 @@ paths:
               schema: { type: object, required: [companies, created], properties: { companies: { type: integer }, created: { type: integer, description: сколько документов создано сейчас } } }
         '422': { $ref: '#/components/responses/Error' }
 
+
+  /admin/payouts/run:
+    post:
+      tags: [финансы]
+      summary: Выплаты за месяц вручную
+      description: Роль finance. Обычно воркер делает это первого числа. Остаток счёта выплат каждой компании уходит в учётную систему на её расчётный счёт; без реквизитов выплата failed. Повтор за тот же месяц ничего не делает.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [period], properties: { period: { type: string, pattern: '^\d{4}-\d{2}$' } } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: object, required: [companies, created], properties: { companies: { type: integer }, created: { type: integer } } }
+        '422': { $ref: '#/components/responses/Error' }
+
 components:
   securitySchemes:
     session: { type: apiKey, in: cookie, name: sid }

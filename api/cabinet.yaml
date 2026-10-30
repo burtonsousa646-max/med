@@ -14,6 +14,8 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: статистика }
+  - { name: результаты }
   - { name: документы }
   - { name: кампании }
   - { name: деньги }
@@ -575,6 +577,126 @@ paths:
               schema: { type: object, required: [ok, id], properties: { ok: { const: true }, id: { type: integer } } }
         '422': { $ref: '#/components/responses/Error' }
 
+
+  /cabinet/campaigns/{id}/stats:
+    get:
+      tags: [статистика]
+      summary: Статистика кампании за период
+      description: По умолчанию — последние 14 дней. Показы и клики — из почасовых свёрток (обновляются раз в минуту), результаты и деньги — по событиям.
+      parameters:
+        - { $ref: '#/components/parameters/CampaignId' }
+        - { name: from, in: query, required: false, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Stats' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/conversions:
+    get:
+      tags: [результаты]
+      summary: Результаты кампаний
+      parameters:
+        - { name: campaignId, in: query, required: false, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { $ref: '#/components/schemas/ConversionStatus' } }
+      responses:
+        '200':
+          description: последние 500
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Conversion' } }
+
+  /cabinet/conversions/{id}:
+    patch:
+      tags: [результаты]
+      summary: Засчитать, оспорить или отметить возврат
+      description: Оспорить — до срока на спор. Оплату со счёта телефона билайн подтверждает сам, её не меняют.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [approved, rejected, returned] }, note: { type: string } } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversion' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/conversions/import:
+    post:
+      tags: [результаты]
+      summary: Загрузить результаты файлом CSV
+      description: 'Столбцы click_id;order_id;status;amount (разделитель ; , или табуляция), первая строка может быть заголовком, до 2 МБ. Ошибки строк не останавливают загрузку.'
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema: { type: string }
+      responses:
+        '200':
+          description: итог
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, updated, errors]
+                properties:
+                  created: { type: integer }
+                  updated: { type: integer }
+                  errors: { type: array, items: { type: object, required: [line, message], properties: { line: { type: integer }, message: { type: string } } } }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/tracking:
+    get:
+      tags: [результаты]
+      summary: Подключение сервера партнёра
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [postbackUrl, keys, events, lastEventAt, disputeDays]
+                properties:
+                  postbackUrl: { type: string, description: шаблон адреса с макросами в фигурных скобках }
+                  keys: { type: array, items: { type: object, required: [id, hint, createdAt, lastUsedAt], properties: { id: { type: integer }, hint: { type: string }, createdAt: { type: string, format: date-time }, lastUsedAt: { type: [string, 'null'], format: date-time } } } }
+                  events: { type: integer, description: результатов от партнёра всего }
+                  lastEventAt: { type: [string, 'null'], format: date-time }
+                  disputeDays: { type: object, additionalProperties: { type: integer } }
+
+  /cabinet/tracking/keys:
+    post:
+      tags: [результаты]
+      summary: Новый ключ сервера партнёра
+      description: Только владелец. Ключ показывается один раз, храним хеш. Можно держать несколько, чтобы сменить без простоя.
+      responses:
+        '200':
+          description: ключ
+          content:
+            application/json:
+              schema: { type: object, required: [id, key], properties: { id: { type: integer }, key: { type: string } } }
+        '403': { $ref: '#/components/responses/Error' }
+
+  /cabinet/tracking/keys/{id}:
+    delete:
+      tags: [результаты]
+      summary: Отозвать ключ
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '404': { $ref: '#/components/responses/Error' }
+
 components:
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
@@ -1011,6 +1133,59 @@ components:
         amountKop: { oneOf: [{ $ref: '#/components/schemas/Kop' }, { type: 'null' }] }
         status: { type: string, enum: [draft, issued, sent, delivered, signed, rejected] }
         createdAt: { type: string, format: date-time }
+
+    ConversionStatus: { type: string, enum: [pending, approved, rejected, returned], description: 'ждёт, засчитана, отклонена, возврат' }
+    Conversion:
+      type: object
+      required: [id, campaignId, campaignName, clickId, orderId, kind, amountKop, costKop, status, source, note, disputeUntil, createdAt]
+      properties:
+        id: { type: integer }
+        campaignId: { type: integer }
+        campaignName: { type: string }
+        clickId: { type: [string, 'null'] }
+        orderId: { type: [string, 'null'] }
+        kind: { type: string, enum: [lead, order, redeem, renewal], description: 'заявка, заказ, купон, подписка' }
+        amountKop: { oneOf: [{ $ref: '#/components/schemas/Kop' }, { type: 'null' }], description: сумма заказа или платежа }
+        costKop: { $ref: '#/components/schemas/Kop', description: 'списано с партнёра или начислено ему' }
+        status: { $ref: '#/components/schemas/ConversionStatus' }
+        source: { type: string, enum: [postback, csv, cabinet, form, billing, pos] }
+        note: { type: [string, 'null'] }
+        disputeUntil: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+    Stats:
+      type: object
+      required: [from, to, totals, daily, hourly, placements]
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        totals:
+          type: object
+          required: [impressions, reach, clicks, billableClicks, ctr, spendKop, payoutKop, results]
+          properties:
+            impressions: { type: integer }
+            reach: { type: integer, description: разных абонентов }
+            clicks: { type: integer }
+            billableClicks: { type: integer }
+            ctr: { type: number, description: '%' }
+            spendKop: { $ref: '#/components/schemas/Kop' }
+            payoutKop: { $ref: '#/components/schemas/Kop' }
+            results:
+              type: object
+              required: [pending, approved, rejected, returned]
+              properties: { pending: { type: integer }, approved: { type: integer }, rejected: { type: integer }, returned: { type: integer } }
+        daily:
+          type: array
+          items: { type: object, required: [day, impressions, clicks, conversions], properties: { day: { type: string, format: date-time }, impressions: { type: integer }, clicks: { type: integer }, conversions: { type: integer } } }
+        hourly:
+          type: array
+          description: последние 48 часов
+          items: { type: object, required: [hour, impressions, clicks], properties: { hour: { type: string, format: date-time }, impressions: { type: integer }, clicks: { type: integer } } }
+        placements:
+          type: array
+          items:
+            type: object
+            required: [placement, name, impressions, clicks, ctr, spendKop]
+            properties: { placement: { type: string }, name: { type: string }, impressions: { type: integer }, clicks: { type: integer }, ctr: { type: number }, spendKop: { $ref: '#/components/schemas/Kop' } }
 
 security:
   - session: []

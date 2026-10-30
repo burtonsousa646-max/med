@@ -12,6 +12,8 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: показ }
+  - { name: результаты }
   - { name: служебное }
   - { name: вебхуки }
 
@@ -109,6 +111,144 @@ paths:
       responses:
         '200': { description: картинка }
         '404': { $ref: '#/components/responses/Error' }
+
+
+  /public/serve:
+    post:
+      tags: [показ]
+      summary: Запросить рекламу на место показа
+      description: |
+        Для поверхностей билайна (приложение, сайт, магазин, ЛК B2B). Отбор живых кампаний на это место, фильтры
+        (расписание, деньги, гео — если переданы координаты, частота — не больше 3 показов кампании абоненту за 7 дней,
+        сигналы — если передан MED-ID, согласие на рекламу), скор «ставка × pCTR», аукцион второй цены, одна реклама от компании.
+        Показ не засчитывается, пока поверхность не вызовет impressionUrl — когда карточка реально видна.
+        Заголовок X-Surface-Key обязателен, если на сервере задан SURFACE_KEYS.
+      parameters:
+        - { name: X-Surface-Key, in: header, required: false, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [placement]
+              properties:
+                placement: { type: string, examples: [showcase, main, paid] }
+                medId: { type: string, maxLength: 64, description: 'обезличенный ID абонента (MED-ID) или ID устройства; без него — показ по контексту' }
+                lat: { type: number }
+                lon: { type: number }
+                limit: { type: integer, minimum: 1, description: 'не больше мест в слоте' }
+      responses:
+        '200':
+          description: победители аукциона, лучшие первыми
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ads]
+                properties:
+                  ads:
+                    type: array
+                    items:
+                      type: object
+                      required: [token, campaignId, type, wide, creative, impressionUrl, clickUrl]
+                      properties:
+                        token: { type: string, description: подписанный токен показа, живёт 24 часа }
+                        campaignId: { type: integer }
+                        type: { type: string, enum: [click, coupon, lead, promo, sub] }
+                        wide: { type: boolean, description: широкая карточка в витрине }
+                        creative:
+                          type: object
+                          required: [text, imageUrl, erid, brand, offer, cta, line]
+                          properties:
+                            text: { type: string }
+                            imageUrl: { type: [string, 'null'] }
+                            erid: { type: string, description: маркировка — показывать на креативе обязательно }
+                            brand: { type: string }
+                            offer: { type: string }
+                            cta: { type: string }
+                            line: { type: string }
+                        impressionUrl: { type: string, description: POST — карточка видна }
+                        clickUrl: { type: string, description: 'GET — клик; редирект на сайт партнёра с click_id, ?format=json — для приложения' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /public/i/{token}:
+    post:
+      tags: [показ]
+      summary: Маяк показа
+      description: Повтор того же показа не пишется.
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: записан }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /public/c/{token}:
+    get:
+      tags: [показ]
+      summary: Клик
+      description: |
+        Создаёт click_id и записывает клик. Оплачивается только у «перехода» и только если: не быстрее 0,5 с после выдачи рекламы,
+        не повтор того же абонента по той же кампании за 24 часа, антифрод не считает клик ботом.
+        Редирект на сайт партнёра с utm-метками и click_id; у купона и подписки сайта нет — ответ JSON.
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+        - { name: format, in: query, required: false, schema: { type: string, enum: [json] } }
+      responses:
+        '200':
+          description: '?format=json или нет сайта'
+          content:
+            application/json:
+              schema: { type: object, required: [clickId, url], properties: { clickId: { type: string }, url: { type: [string, 'null'] } } }
+        '302': { description: на сайт партнёра }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /public/act/{clickId}:
+    post:
+      tags: [показ]
+      summary: Действие в приложении после клика
+      description: |
+        Заявка — форма с именем и телефоном, результат «ждёт», контакты уходят партнёру.
+        Купон и подписка — оплата со счёта телефона абонента (порт subscriberBilling), результат засчитан сразу.
+        Клик действует 24 часа.
+      parameters:
+        - { name: clickId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { name: { type: string }, phone: { type: string, description: обязателен для заявки } } }
+      responses:
+        '200':
+          description: результат записан
+          content:
+            application/json:
+              schema: { type: object, required: [ok, conversionId], properties: { ok: { const: true }, conversionId: { type: integer } } }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /public/postback:
+    get:
+      tags: [результаты]
+      summary: Результат с сервера партнёра
+      description: |
+        Вызывает только сервер партнёра: ключ в адресе. Кампанию узнаём по click_id. Повтор с тем же order_id меняет статус
+        (ждёт → засчитана или отклонена; засчитана → возврат), дубля не будет. Для заказа по промокоду нужна сумма amount в рублях.
+      parameters:
+        - { name: key, in: query, required: true, schema: { type: string } }
+        - { name: click_id, in: query, required: true, schema: { type: string } }
+        - { name: order_id, in: query, required: true, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [pending, approved, rejected, returned], default: pending } }
+        - { name: amount, in: query, required: false, schema: { type: string, description: 'сумма заказа в рублях, 1200 или 1200.50' } }
+      responses:
+        '200':
+          description: принято
+          content:
+            application/json:
+              schema: { type: object, required: [ok, conversionId, created], properties: { ok: { const: true }, conversionId: { type: integer }, created: { type: boolean } } }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
 
 components:
   responses:

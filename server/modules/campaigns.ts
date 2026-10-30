@@ -9,6 +9,7 @@ import { acceptOffer, setting } from './partners.ts'
 import { balances, createPayment, kop, onPaid } from './billing.ts'
 import { startModeration, stopHits } from './moderation.ts'
 import { enqueue, handle } from '../integrations/outbox.ts'
+import { notify } from './notifications.ts'
 
 const APP_URL = () => process.env.APP_URL ?? 'http://127.0.0.1:5174'
 const PUBLIC_URL = () => process.env.PUBLIC_URL ?? 'http://127.0.0.1:8788'
@@ -158,8 +159,10 @@ export async function creativeRejected(tx: Tx, creativeId: string | number) {
 
 /** Креатив промаркирован (есть erid): кампания на проверке запускается; у живой начинает показываться новая версия. */
 export async function creativeMarked(tx: Tx, creativeId: string | number) {
-  await tx`update campaigns set status = 'live', launched_at = coalesce(launched_at, now()), updated_at = now()
-           where id = (select campaign_id from creatives where id = ${creativeId}) and status = 'moderation'`
+  const [c] = await tx`update campaigns set status = 'live', launched_at = coalesce(launched_at, now()), updated_at = now()
+                       where id = (select campaign_id from creatives where id = ${creativeId}) and status = 'moderation'
+                       returning id, company_id, name, (select erid from creatives where id = ${creativeId}) as erid`
+  if (c) await notify(tx, c.company_id, 'campaign_live', { campaign: c.name, campaignId: String(c.id), erid: c.erid }, `live:${c.id}`)
 }
 
 // Оплата под кампанию дошла: «ждёт оплату» → проверка

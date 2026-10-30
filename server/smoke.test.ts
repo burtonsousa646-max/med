@@ -37,3 +37,24 @@ test('проводки, не сходящиеся в ноль, отклоняю�
   const [{ s }] = await sql`select sum(balance_kop)::int as s from account_balances`
   assert.equal(s, 0)
 })
+
+test('защитные заголовки и лимит частоты', async () => {
+  const res = await app.request('/api/health')
+  assert.equal(res.headers.get('x-content-type-options'), 'nosniff')
+  process.env.RATE_LIMIT_IN_TESTS = '1'
+  const codes = []
+  for (let i = 0; i < 12; i++) codes.push((await app.request('/api/auth/email/start', { method: 'POST', body: JSON.stringify({ email: `x${i}@ex.ru` }), headers: { 'content-type': 'application/json' } })).status)
+  delete process.env.RATE_LIMIT_IN_TESTS
+  assert.deepEqual(codes.slice(-2), [429, 429])
+})
+
+test('заглушка SSO в production без кода доступа закрыта, с кодом — требует его', async () => {
+  const env = { ...process.env }
+  Object.assign(process.env, { NODE_ENV: 'production', ALLOW_STUB_LOGIN: '1' })
+  assert.equal((await app.request('/api/stub/sso')).status, 404)
+  process.env.STUB_SSO_CODE = 'stand-code-123456'
+  assert.equal((await app.request('/api/stub/sso')).status, 200)
+  const res = await app.request('/api/stub/sso', { method: 'POST', body: new URLSearchParams({ email: 'a@b.ru', name: 'x', roles: 'admin', code: 'wrong', state: 's', redirect_uri: 'http://127.0.0.1:8788/api/auth/staff/callback' }), headers: { 'content-type': 'application/x-www-form-urlencoded' } })
+  assert.equal(res.status, 403)
+  process.env = env
+})

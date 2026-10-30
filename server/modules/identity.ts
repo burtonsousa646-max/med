@@ -1,6 +1,6 @@
 // Вход, сессии, роли. Партнёр входит через бизнес-ID (порт idp) или кодом на почту; сотрудник билайна — через SSO (порт staffSso).
 // В cookie sid — случайный токен, в базе — его SHA-256. Компания и роль берутся из сессии, никогда из запроса.
-import { createHash, randomBytes, randomInt } from 'node:crypto'
+import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 import { Hono, type Context, type MiddlewareHandler } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
@@ -32,6 +32,7 @@ const PUBLIC_URL = () => process.env.PUBLIC_URL ?? 'http://127.0.0.1:8788'
 const APP_URL = () => process.env.APP_URL ?? 'http://127.0.0.1:5174'
 const secure = () => process.env.NODE_ENV === 'production'
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex')
+const safeEqual = (a: string, b: string) => { const x = Buffer.from(sha256(a)), y = Buffer.from(sha256(b)); return timingSafeEqual(x, y) }
 export const token = () => randomBytes(32).toString('base64url')
 
 export const fail = (status: 400 | 401 | 403 | 404 | 409 | 410 | 422 | 429, message: string): never => { throw new HTTPException(status, { message }) }
@@ -231,12 +232,16 @@ auth.get('/staff/callback', async c => {
 
 export const stubPages = new Hono()
 const stubAllowed = () => process.env.NODE_ENV !== 'production' || process.env.ALLOW_STUB_LOGIN === '1'
+// Заглушка SSO выдаёт любые роли, вплоть до admin. На открытом стенде она требует код доступа из STUB_SSO_CODE;
+// в production без кода заглушка SSO закрыта, даже если ALLOW_STUB_LOGIN=1.
+const ssoCode = () => process.env.STUB_SSO_CODE ?? ''
+const ssoAllowed = () => stubAllowed() && (process.env.NODE_ENV !== 'production' || ssoCode().length >= 12)
 const page = (title: string, fields: string, hidden: Record<string, string>) => `<!doctype html><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
 <style>body{font:16px system-ui;max-width:420px;margin:48px auto;padding:0 16px}input,button{display:block;width:100%;margin:8px 0 16px;padding:10px;font:inherit;box-sizing:border-box}</style>
 <h1>${title}</h1><p>Заглушка провайдера: настоящий вход появится при подключении системы.</p>
 <form method="post">${fields}${Object.entries(hidden).map(([k, v]) => `<input type="hidden" name="${k}" value="${escape(v)}">`).join('')}<button>войти</button></form>`
-const escape = (s: string) => s.replace(/[&<>"']/g, ch => `&#${ch.charCodeAt(0)};`)
+const escape = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, ch => `&#${ch.charCodeAt(0)};`)
 const back = (redirect: string, code: string, state: string) => {
   // заглушка возвращает только на свой же адрес колбэка
   if (!redirect.startsWith(`${PUBLIC_URL()}/api/auth/`)) fail(422, 'чужой адрес возврата')
@@ -257,16 +262,18 @@ stubPages.post('/idp', async c => {
   return c.redirect(back(f.redirect_uri, stubCode({ inn: f.inn, name: f.name, email: f.email || undefined }), f.state))
 })
 stubPages.get('/sso', c => {
-  if (!stubAllowed()) fail(404, 'нет такой страницы')
+  if (!ssoAllowed()) fail(404, 'нет такой страницы')
   const { state, redirect_uri } = c.req.query()
   return c.html(page('Вход сотрудника билайна',
     `<label>Почта<input name="email" type="email" required value="moderator@beeline.ru"></label>
      <label>Имя<input name="name" required value="Сергей Модеров"></label>
-     <label>Роли через запятую<input name="roles" value="moderator"></label>`, { state, redirect_uri }))
+     <label>Роли через запятую<input name="roles" value="moderator"></label>
+     ${ssoCode() ? '<label>Код доступа стенда<input name="code" type="password" required autocomplete="off"></label>' : ''}`, { state, redirect_uri }))
 })
 stubPages.post('/sso', async c => {
-  if (!stubAllowed()) fail(404, 'нет такой страницы')
+  if (!ssoAllowed()) fail(404, 'нет такой страницы')
   const f = await c.req.parseBody<Record<string, string>>()
+  if (ssoCode() && !safeEqual(String(f.code ?? ''), ssoCode())) fail(403, 'неверный код доступа')
   const roles = f.roles.split(',').map(r => r.trim()).filter(Boolean)
   return c.redirect(back(f.redirect_uri, stubCode({ email: f.email, name: f.name, roles }), f.state))
 })

@@ -18,9 +18,18 @@ import { settlementAdmin } from './modules/settlement.ts'
 import { reporting } from './modules/reporting.ts'
 import { port } from './integrations/index.ts'
 import './modules.ts'
+import { headers, limitBody, rateLimit } from './security.ts'
 
 export const app = new Hono<Env>().basePath('/api')
 app.onError(errorHandler)
+app.use(headers, limitBody)
+// вход и коды — против перебора; публичный API — против залпов с одного адреса (поверхности ходят со своих серверов, лимит щедрый)
+app.use('/auth/email/*', rateLimit('otp', 10))
+app.use('/auth/start', rateLimit('login', 30))
+app.use('/stub/*', rateLimit('stub', 60))
+app.use('/public/act/*', rateLimit('act', 30))
+app.use('/public/postback', rateLimit('postback', 1200))
+app.use('/public/*', rateLimit('public', 20000))
 
 app.get('/health', async c => {
   await sql`select 1`

@@ -17,8 +17,10 @@ export function handle(system: string, action: string, fn: Handler) {
 
 /** Положить задачу. Повтор с тем же ключом не создаёт вторую. */
 export async function enqueue(db: Db, system: string, action: string, payload: object, idempotencyKey: string) {
+  // ID из базы — bigint, в JSON его нет: кладём строкой
+  const json = JSON.parse(JSON.stringify(payload, (_, v) => (typeof v === 'bigint' ? String(v) : v)))
   await db`insert into outbox (system, action, payload, idempotency_key)
-           values (${system}, ${action}, ${db.json(payload as never)}, ${idempotencyKey})
+           values (${system}, ${action}, ${db.json(json)}, ${idempotencyKey})
            on conflict (idempotency_key) do nothing`
 }
 

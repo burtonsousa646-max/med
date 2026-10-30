@@ -34,7 +34,7 @@ const secure = () => process.env.NODE_ENV === 'production'
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex')
 export const token = () => randomBytes(32).toString('base64url')
 
-export const fail = (status: 400 | 401 | 403 | 404 | 409 | 422 | 429, message: string): never => { throw new HTTPException(status, { message }) }
+export const fail = (status: 400 | 401 | 403 | 404 | 409 | 410 | 422 | 429, message: string): never => { throw new HTTPException(status, { message }) }
 export function errorHandler(e: Error, c: Context) {
   if (e instanceof HTTPException) return c.json({ message: e.message }, e.status)
   if (e instanceof SyntaxError) return c.json({ message: 'тело запроса — не JSON' }, 400)

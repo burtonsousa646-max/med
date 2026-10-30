@@ -9,6 +9,7 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: модерация }
   - { name: финансы }
   - { name: вход }
   - { name: интеграции }
@@ -94,6 +95,54 @@ paths:
             application/json:
               schema: { type: object, required: [ok, transactionId, fresh], properties: { ok: { const: true }, transactionId: { type: integer }, fresh: { type: boolean, description: 'false — операция с этим ключом уже была' } } }
         '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+
+  /admin/moderation:
+    get:
+      tags: [модерация]
+      summary: Ручная очередь модерации
+      description: Роль moderator. Сюда попадает то, где модель попросила человека; стоп-слова и уверенные отказы решаются сами.
+      responses:
+        '200':
+          description: до 100 задач, старые первыми
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, createdAt, adText, imageUrl, version, campaignId, type, company, inn, llm]
+                  properties:
+                    id: { type: integer }
+                    createdAt: { type: string, format: date-time }
+                    adText: { type: string }
+                    imageUrl: { type: [string, 'null'] }
+                    version: { type: integer }
+                    campaignId: { type: integer }
+                    type: { type: string }
+                    company: { type: string }
+                    inn: { type: string }
+                    llm: { type: [object, 'null'], description: вердикт модели с причинами }
+
+  /admin/moderation/{id}:
+    post:
+      tags: [модерация]
+      summary: Решение по креативу
+      description: Отказ — с причиной, её увидит партнёр. Одобрение отправляет креатив в ОРД за erid. Повторное решение — 409.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verdict]
+              properties: { verdict: { type: string, enum: [approved, rejected] }, reason: { type: string } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '409': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
 
 components:

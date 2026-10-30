@@ -14,6 +14,7 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: кампании }
   - { name: деньги }
   - { name: вход }
   - { name: компания }
@@ -370,7 +371,162 @@ paths:
               schema: { $ref: '#/components/schemas/Payment' }
         '404': { $ref: '#/components/responses/Error' }
 
+
+  /cabinet/catalog:
+    get:
+      tags: [кампании]
+      summary: Справочник для сборки кампании
+      description: Типы офферов с текстами и полями условий, места показа, продаваемые сигналы, способы оплаты, параметры.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Catalog' }
+
+  /cabinet/campaigns:
+    get:
+      tags: [кампании]
+      summary: Кампании компании, кроме архивных
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CampaignBrief' } }
+    post:
+      tags: [кампании]
+      summary: Новый черновик
+      description: |
+        Владелец, сотрудник или агентство. Стартовые условия и текст объявления — по типу оффера, режим сборки — по сегменту компании,
+        место показа — «лучшее рядом», бюджет — минимальный, ссылка — сайт компании.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [type], properties: { type: { $ref: '#/components/schemas/OfferType' } } }
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/campaigns/{id}:
+    get:
+      tags: [кампании]
+      summary: Кампания целиком, с креативом, проверкой, оплатой и прогнозом
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [кампании]
+      summary: Изменить кампанию
+      description: |
+        Что можно менять, зависит от статуса. draft и rejected — всё. live и paused — название, места, широкая карточка, ставка,
+        бюджет, дневной лимит, дата окончания, текст и картинка, пауза. Новый текст или картинка у отправленной кампании —
+        новая версия креатива на проверку; живая кампания показывает прошлую версию, пока новую не одобрят.
+        В остальных статусах — 409. Передайте version, чтобы не затереть чужую правку (не совпала — 409).
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CampaignPatch' }
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/campaigns/{id}/image:
+    post:
+      tags: [кампании]
+      summary: Загрузить картинку объявления
+      description: PNG, JPEG или WebP до 2 МБ. Возвращает imageKey — передайте его в PATCH, чтобы поставить картинку в креатив.
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } }
+      responses:
+        '200':
+          description: загружено
+          content:
+            application/json:
+              schema: { type: object, required: [imageKey, imageUrl], properties: { imageKey: { type: string }, imageUrl: { type: string } } }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/campaigns/{id}/submit:
+    post:
+      tags: [кампании]
+      summary: Отправить черновик
+      description: |
+        Компания должна быть проверена. Подписант запускает сам: принимает оферту (acceptOffer), и если на балансе не хватает
+        месячного бюджета — получает платёж на недостающее (не меньше минимального пополнения). Оплатил — кампания на проверке.
+        Купон и подписка денег не требуют. Постоплата — только для крупного бизнеса.
+        Не подписант получает approvalUrl: ссылку для руководителя, письмо уходит подписантам компании.
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LaunchRequest' }
+      responses:
+        '200':
+          description: результат отправки
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LaunchResult' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /cabinet/campaigns/{id}/archive:
+    post:
+      tags: [кампании]
+      summary: Убрать в архив
+      description: Черновик, отклонённую, на паузе или завершённую.
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      responses:
+        '200': { $ref: '#/components/responses/Ok' }
+        '409': { $ref: '#/components/responses/Error' }
+
+  /cabinet/approvals/{token}:
+    get:
+      tags: [кампании]
+      summary: Кампания по ссылке руководителю
+      description: Нужно войти подписантом той же компании. Ссылка живёт 3 дня (410 — устарела).
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/Campaign' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '410': { $ref: '#/components/responses/Error' }
+
+  /cabinet/approvals/{token}/confirm:
+    post:
+      tags: [кампании]
+      summary: Подтвердить и запустить
+      description: Как отправка подписантом.
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LaunchRequest' }
+      responses:
+        '200':
+          description: результат отправки
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LaunchResult' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
 components:
+  parameters:
+    CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
+
   securitySchemes:
     session: { type: apiKey, in: cookie, name: sid }
 
@@ -385,6 +541,11 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
+    Campaign:
+      description: кампания целиком
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Campaign' }
     Company:
       description: компания целиком
       content:
@@ -561,6 +722,208 @@ components:
               amountKop: { $ref: '#/components/schemas/Kop' }
               createdAt: { type: string, format: date-time }
         invoices: { type: array, items: { $ref: '#/components/schemas/Invoice' } }
+
+    OfferType: { type: string, enum: [click, coupon, lead, promo, sub], description: 'переход, купон, заявка, промокод, подписка' }
+    CampaignStatus:
+      type: string
+      enum: [draft, approval, invoice, moderation, rejected, live, paused, finished, archived]
+      description: 'черновик, ждёт руководителя, ждёт оплату, проверка, отклонена, показывается, пауза, завершена, архив'
+    Catalog:
+      type: object
+      required: [offerTypes, placements, triggers, payMethods, settings]
+      properties:
+        offerTypes:
+          type: array
+          items:
+            type: object
+            required: [id, share, feePct, t, short, cta, fields, via]
+            description: 'тексты для кабинета (t, short, cta, d, gets, pay, fit, unit, many, per, payFor, live, wait), поля условий и способ подтверждения'
+            properties:
+              id: { $ref: '#/components/schemas/OfferType' }
+              share: { type: boolean, description: 'true — платит абонент, партнёр получает выплаты' }
+              feePct: { type: number }
+              t: { type: string }
+              short: { type: string }
+              cta: { type: string }
+              fields: { type: array, items: { type: object, required: [k, label], properties: { k: { type: string }, label: { type: string }, num: { type: boolean }, suffix: { type: string }, wide: { type: boolean } } } }
+              via: { type: object, required: [label, options, hint], properties: { label: { type: string }, options: { type: array, items: { type: string } }, hint: { type: string } } }
+            additionalProperties: true
+        placements:
+          type: array
+          items:
+            type: object
+            required: [id, surface, name, format, pricing, baseCtr, slots, minBidKop, needsConsent]
+            properties:
+              id: { type: string }
+              surface: { type: string }
+              name: { type: string }
+              format: { type: string }
+              pricing: { type: string, enum: [cpc, cpm] }
+              baseCtr: { type: [number, 'null'], description: '%' }
+              slots: { type: integer }
+              minBidKop: { $ref: '#/components/schemas/Kop' }
+              needsConsent: { type: boolean }
+        triggers:
+          type: array
+          items:
+            type: object
+            required: [id, group, name, tier, value, minBidKop, reachHint]
+            properties:
+              id: { type: string }
+              group: { type: string }
+              name: { type: string }
+              tier: { type: string, enum: [T1, T2, T3, T4] }
+              value: { type: string, enum: [hot, week, wide] }
+              minBidKop: { $ref: '#/components/schemas/Kop' }
+              reachHint: { type: [integer, 'null'] }
+        payMethods:
+          type: array
+          items: { type: object, required: [id, name, hint, largeOnly], properties: { id: { type: string, enum: [sbp, card, invoice, post] }, name: { type: string }, hint: { type: string }, largeOnly: { type: boolean } } }
+        settings:
+          type: object
+          required: [firstBonusKop, wideMarkupPct, minBudgetMonthKop, offerVersion]
+          properties:
+            firstBonusKop: { $ref: '#/components/schemas/Kop' }
+            wideMarkupPct: { type: number }
+            minBudgetMonthKop: { $ref: '#/components/schemas/Kop' }
+            offerVersion: { type: string }
+    CampaignBrief:
+      type: object
+      required: [id, type, status, name, budgetMonthKop, placements, createdAt, launchedAt]
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/OfferType' }
+        status: { $ref: '#/components/schemas/CampaignStatus' }
+        name: { type: string }
+        budgetMonthKop: { $ref: '#/components/schemas/Kop' }
+        placements: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+        launchedAt: { type: [string, 'null'], format: date-time }
+    Targeting:
+      type: object
+      properties:
+        radiusM: { type: integer, description: 'радиус от активных точек, по умолчанию 1000' }
+        signals: { type: object, additionalProperties: { type: string, enum: [any, and, not] }, description: 'сигнал → любой из, и, кроме' }
+    Campaign:
+      type: object
+      required: [id, type, status, name, mode, goal, terms, targeting, placements, wideCard, bidKop, budgetMonthKop, dailyCapKop, payMethod, landingUrl, trackingUrl, startsAt, endsAt, launchedAt, createdAt, updatedAt, version, creative, liveCreative, moderation, approval, payment, deal, forecast]
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/OfferType' }
+        status: { $ref: '#/components/schemas/CampaignStatus' }
+        name: { type: string }
+        mode: { type: string, enum: [auto, manual, plan, special] }
+        goal: { type: [string, 'null'] }
+        terms: { type: object, additionalProperties: { type: string } }
+        targeting: { $ref: '#/components/schemas/Targeting' }
+        placements: { type: array, items: { type: string } }
+        wideCard: { type: boolean }
+        bidKop: { oneOf: [{ $ref: '#/components/schemas/Kop' }, { type: 'null' }], description: 'null — автоставка' }
+        budgetMonthKop: { $ref: '#/components/schemas/Kop' }
+        dailyCapKop: { oneOf: [{ $ref: '#/components/schemas/Kop' }, { type: 'null' }] }
+        payMethod: { type: [string, 'null'], enum: [sbp, card, invoice, post, null] }
+        landingUrl: { type: [string, 'null'] }
+        trackingUrl: { type: [string, 'null'], description: 'landingUrl с UTM и макросом {click_id}' }
+        startsAt: { type: [string, 'null'], format: date-time }
+        endsAt: { type: [string, 'null'], format: date-time }
+        launchedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+        creative:
+          description: последняя версия креатива
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, version, adText, imageKey, imageUrl, status, erid]
+              properties:
+                id: { type: integer }
+                version: { type: integer }
+                adText: { type: string }
+                imageKey: { type: [string, 'null'] }
+                imageUrl: { type: [string, 'null'] }
+                status: { type: string, enum: [draft, moderation, approved, rejected] }
+                erid: { type: [string, 'null'] }
+        liveCreative:
+          description: какая версия сейчас показывается (одобрена и промаркирована)
+          oneOf: [{ type: 'null' }, { type: object, required: [id, version, erid], properties: { id: { type: integer }, version: { type: integer }, erid: { type: string } } }]
+        moderation:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [status, reason, hits]
+              properties:
+                status: { type: string, enum: [auto, queued, approved, rejected] }
+                reason: { type: [string, 'null'], description: причина отказа для партнёра }
+                hits: { type: array, items: { type: object, required: [word, why, fix], properties: { word: { type: string }, why: { type: string }, fix: { type: string } } } }
+        approval:
+          oneOf: [{ type: 'null' }, { type: object, required: [expiresAt, requestedBy], properties: { expiresAt: { type: string, format: date-time }, requestedBy: { type: [string, 'null'] } } }]
+        payment:
+          description: последний платёж под кампанию
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, status, method, amountKop, confirmUrl]
+              properties: { id: { type: string }, status: { type: string }, method: { type: string }, amountKop: { $ref: '#/components/schemas/Kop' }, confirmUrl: { type: [string, 'null'] } }
+        deal:
+          type: object
+          required: [line, offer, cta]
+          properties: { line: { type: string }, offer: { type: string }, cta: { type: string } }
+        forecast:
+          type: object
+          description: 'оценка на месяц по каталогу и гео; точнее станет с подключением DMP'
+          required: [reach, impressions, clicks, cpcKop, results, perKop, spendKop]
+          properties:
+            reach: { type: integer }
+            impressions: { type: integer }
+            clicks: { type: integer }
+            cpcKop: { $ref: '#/components/schemas/Kop' }
+            results: { type: integer }
+            perKop: { $ref: '#/components/schemas/Kop', description: 'цена результата или выплата за купон и подписку' }
+            spendKop: { $ref: '#/components/schemas/Kop' }
+    CampaignPatch:
+      type: object
+      properties:
+        version: { type: integer }
+        name: { type: string }
+        mode: { type: string, enum: [auto, manual, plan, special] }
+        goal: { type: string }
+        terms: { type: object, additionalProperties: { type: string } }
+        targeting: { $ref: '#/components/schemas/Targeting' }
+        placements: { type: array, minItems: 1, items: { type: string } }
+        wideCard: { type: boolean }
+        bidKop: { type: [string, integer, 'null'], description: 'не ниже минимальной ставки выбранных мест; null — автоставка' }
+        budgetMonthKop: { type: [string, integer], description: не меньше settings.minBudgetMonthKop }
+        dailyCapKop: { type: [string, integer, 'null'] }
+        payMethod: { type: string, enum: [sbp, card, invoice, post] }
+        landingUrl: { type: string, format: uri }
+        startsAt: { type: [string, 'null'], format: date-time }
+        endsAt: { type: [string, 'null'], format: date-time }
+        adText: { type: string, minLength: 1, maxLength: 90 }
+        imageKey: { type: [string, 'null'] }
+        paused: { type: boolean }
+    LaunchRequest:
+      type: object
+      properties:
+        acceptOffer: { type: boolean, description: 'принять действующую оферту, если ещё не принята' }
+        payMethod: { type: string, enum: [sbp, card, invoice, post] }
+        idempotencyKey: { type: string, description: 'обязателен, если нужно доплатить' }
+    LaunchResult:
+      type: object
+      required: [campaign, payment, approvalUrl]
+      properties:
+        campaign: { $ref: '#/components/schemas/Campaign' }
+        payment:
+          description: 'платёж на недостающее; null — денег хватает или они не нужны'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [payment, confirmUrl, invoice]
+              properties:
+                payment: { $ref: '#/components/schemas/Payment' }
+                confirmUrl: { type: [string, 'null'] }
+                invoice: { oneOf: [{ $ref: '#/components/schemas/Invoice' }, { type: 'null' }] }
+        approvalUrl: { type: [string, 'null'], description: 'ссылка руководителю, если отправил не подписант' }
 
 security:
   - session: []

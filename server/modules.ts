@@ -2,3 +2,7 @@
 import './modules/identity.ts'
 import './modules/partners.ts'
 import './modules/billing.ts'
+import './modules/notifications.ts'
+import './modules/campaigns.ts'
+import './modules/moderation.ts'
+import './modules/marking.ts'

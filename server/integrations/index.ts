@@ -23,6 +23,7 @@ const SECRET = /secret|token|password|apikey|^code$|^phone$|^email$|^to$|^body$/
 export function redact(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(redact)
   if (v instanceof Uint8Array) return `<${v.byteLength} байт>`
+  if (typeof v === 'bigint') return String(v)
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, SECRET.test(k) ? '***' : redact(x)]))
   return v
 }

@@ -107,7 +107,12 @@ export const stubs: Ports = {
       return { externalId: id('msg', p.idempotencyKey) }
     },
   },
-  llm: { moderate: async () => ({ verdict: 'ok', confidence: 0.5, reasons: [] }) }, // правила модерации работают и без модели
+  // правила модерации работают и без модели; алкоголь — в ручную очередь (реклама с ограничениями, ст. 21 закона «О рекламе»)
+  llm: {
+    moderate: async ({ text }) => /алкогол|пиво|вино/i.test(text)
+      ? { verdict: 'review', confidence: 0.6, reasons: [{ word: 'алкоголь', why: 'реклама алкоголя ограничена ст. 21 закона «О рекламе»', fix: '' }] }
+      : { verdict: 'ok', confidence: 0.5, reasons: [] },
+  },
   storage: {
     async put({ key, body, contentType }) {
       const path = join(STORAGE_DIR, key)

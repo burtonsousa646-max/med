@@ -98,6 +98,18 @@ paths:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses: { '302': { description: в кабинет, на экран баланса } }
 
+
+  /files/{key}:
+    get:
+      tags: [служебное]
+      summary: Файл креатива
+      description: Только ключи creatives/… — их показывают абонентам. Кэшируется навсегда (ключ меняется при каждой загрузке).
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: картинка }
+        '404': { $ref: '#/components/responses/Error' }
+
 components:
   responses:
     Error:

@@ -14,7 +14,7 @@ test('маршруты сервера = операции контрактов', 
       for (const m of Object.keys(ops).filter(m => ['get', 'post', 'put', 'patch', 'delete'].includes(m))) inContract.add(`${m.toUpperCase()} ${path}`)
   }
   const inCode = new Set(app.routes.filter(r => r.method !== 'ALL')
-    .map(r => `${r.method} ${r.path.replace(/^\/api/, '').replace(/:(\w+)/g, '{$1}')}`))
+    .map(r => `${r.method} ${r.path.replace(/^\/api/, '').replace(/:(\w+)(\{[^}]*\})?/g, '{$1}')}`))
   assert.ok(inCode.size >= 15, 'маршруты не прочитались')
   assert.deepEqual([...inCode].filter(r => !inContract.has(r)), [], 'есть в коде, нет в контракте')
   assert.deepEqual([...inContract].filter(r => !inCode.has(r)), [], 'есть в контракте, нет в коде')

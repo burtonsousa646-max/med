@@ -8,6 +8,9 @@ import { hooksRouter } from './integrations/hooks.ts'
 import { auth, errorHandler, partner, staff, stubPages, type Env } from './modules/identity.ts'
 import { company, onboarding } from './modules/partners.ts'
 import { billing, billingAdmin, payStub } from './modules/billing.ts'
+import { campaigns } from './modules/campaigns.ts'
+import { moderationAdmin } from './modules/moderation.ts'
+import { port } from './integrations/index.ts'
 import './modules.ts'
 
 export const app = new Hono<Env>().basePath('/api')
@@ -23,16 +26,26 @@ app.route('/stub', stubPages)
 app.route('/stub', payStub)
 app.route('/hooks', hooksRouter)
 
+// Файлы креативов публичны: их показывают абонентам. Документы отдаются только через кабинет.
+app.get('/files/:key{.+}', async c => {
+  const key = c.req.param('key')
+  const f = key.startsWith('creatives/') && !key.includes('..') ? await port('storage').get(key) : null
+  if (!f) return c.json({ message: 'нет такого файла' }, 404)
+  return c.body(f.body as never, 200, { 'content-type': f.contentType, 'cache-control': 'public, max-age=31536000, immutable' })
+})
+
 export const cabinet = new Hono<Env>()
 cabinet.use(partner())
 cabinet.route('/company', company)
 cabinet.route('/', billing)
+cabinet.route('/', campaigns)
 app.route('/cabinet', cabinet)
 
 export const admin = new Hono<Env>()
 admin.use(staff())
 admin.get('/ports', c => c.json(portStatus()))
 admin.route('/', billingAdmin)
+admin.route('/', moderationAdmin)
 app.route('/admin', admin)
 
 if (import.meta.main) {

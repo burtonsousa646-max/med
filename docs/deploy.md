@@ -1,6 +1,6 @@
 # Выкладка стенда
 
-Стенд — https://platform.napovtor.ru на VPS проекта, рядом с прототипом (ads.napovtor.ru). Без пароля, закрыт от индексации (заголовок `X-Robots-Tag` и `robots.txt`). Прототип, его служба `ads-proto` (порт 8787), другие сайты nginx и системный Node 20 не трогаются.
+Стенд — https://platform.napovtor.ru на VPS проекта, выложен 30.10.2026, рядом с прототипом (ads.napovtor.ru). Без пароля, закрыт от индексации (заголовок `X-Robots-Tag` и `robots.txt`). Прототип, его служба `ads-proto` (порт 8787), другие сайты nginx и системный Node 20 не трогаются.
 
 ## 1. Что где на сервере
 
@@ -12,7 +12,7 @@
 | копии базы | `/var/lib/ads-platform/backups`, каждый день в 03:30, хранятся 14 дней |
 | службы | `ads-platform-api` (порт 8788), `ads-platform-worker`; пользователь `ads-platform`, только чтение кода |
 | nginx | `/etc/nginx/sites-available/ads-platform`; https — certbot |
-| база | PostgreSQL, база и пользователь `ads_platform`, пароль — только в файле окружения |
+| база | системный PostgreSQL 16 на порту **5433** (5432 занят Postgres в Docker другого приложения — его не трогаем), база и пользователь `ads_platform`, пароль — только в файле окружения |
 | Node | `/opt/node22` (22.18+) |
 
 ## 2. Первая выкладка

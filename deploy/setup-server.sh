@@ -22,6 +22,8 @@ systemctl enable --now postgresql
 id ads-platform >/dev/null 2>&1 || useradd --system --home "$DATA" --shell /usr/sbin/nologin ads-platform
 install -d -o ads-platform -g ads-platform "$DATA" "$DATA/storage" "$DATA/backups"
 install -d "$APP"
+# порт системного кластера: на сервере 5432 может быть занят чужим Postgres (например, в Docker)
+PGPORT=$(sudo -u postgres psql -Atc 'show port')
 
 if [ ! -f "$ENVF" ]; then
   DBPASS=$(openssl rand -hex 24)
@@ -30,7 +32,7 @@ if [ ! -f "$ENVF" ]; then
   umask 077
   cat > "$ENVF" <<EOF
 NODE_ENV=production
-DATABASE_URL=postgres://ads_platform:$DBPASS@127.0.0.1/ads_platform
+DATABASE_URL=postgres://ads_platform:$DBPASS@127.0.0.1:$PGPORT/ads_platform
 API_PORT=$PORT
 PUBLIC_URL=https://$DOMAIN
 APP_URL=https://$DOMAIN
@@ -59,7 +61,8 @@ certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --redirect --register
 
 # ежедневная копия базы, храним 14 дней
 cat > /etc/cron.d/ads-platform-backup <<'EOF'
-30 3 * * * postgres pg_dump -Fc ads_platform > /var/lib/ads-platform/backups/ads_platform-$(date +\%F).dump && find /var/lib/ads-platform/backups -name '*.dump' -mtime +14 -delete
+30 3 * * * postgres pg_dump -p PGPORT -Fc ads_platform > /var/lib/ads-platform/backups/ads_platform-$(date +\%F).dump && find /var/lib/ads-platform/backups -name '*.dump' -mtime +14 -delete
 EOF
+sed -i "s/PGPORT/$PGPORT/" /etc/cron.d/ads-platform-backup
 chown postgres "$DATA/backups"
 echo "сервер готов; дальше — deploy/deploy.sh с вашего компьютера"

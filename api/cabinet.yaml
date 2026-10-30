@@ -14,6 +14,7 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: документы }
   - { name: кампании }
   - { name: деньги }
   - { name: вход }
@@ -523,6 +524,31 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
 
+
+  /cabinet/documents:
+    get:
+      tags: [документы]
+      summary: Документы компании
+      description: |
+        Оферта (при принятии), счёт (при выборе оплаты по счёту), акт и счёт-фактура (первого числа за прошлый месяц,
+        по списаниям). Статусы: issued — сформирован, sent — отправлен в ЭДО, delivered, signed, rejected — по ответу оператора.
+      responses:
+        '200':
+          description: последние 200
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Document' } }
+
+  /cabinet/documents/{id}/file:
+    get:
+      tags: [документы]
+      summary: Печатная форма документа
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: HTML для просмотра и печати, content: { text/html: { schema: { type: string } } } }
+        '404': { $ref: '#/components/responses/Error' }
+
 components:
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
@@ -924,6 +950,19 @@ components:
                 confirmUrl: { type: [string, 'null'] }
                 invoice: { oneOf: [{ $ref: '#/components/schemas/Invoice' }, { type: 'null' }] }
         approvalUrl: { type: [string, 'null'], description: 'ссылка руководителю, если отправил не подписант' }
+
+    Document:
+      type: object
+      required: [id, kind, title, number, period, amountKop, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [offer, invoice, act, sf, agent_report, contract] }
+        title: { type: string }
+        number: { type: [string, 'null'] }
+        period: { type: [string, 'null'], format: date, description: первое число месяца }
+        amountKop: { oneOf: [{ $ref: '#/components/schemas/Kop' }, { type: 'null' }] }
+        status: { type: string, enum: [draft, issued, sent, delivered, signed, rejected] }
+        createdAt: { type: string, format: date-time }
 
 security:
   - session: []

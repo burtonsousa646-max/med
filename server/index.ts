@@ -10,6 +10,7 @@ import { company, onboarding } from './modules/partners.ts'
 import { billing, billingAdmin, payStub } from './modules/billing.ts'
 import { campaigns } from './modules/campaigns.ts'
 import { moderationAdmin } from './modules/moderation.ts'
+import { documents, documentsAdmin } from './modules/documents.ts'
 import { port } from './integrations/index.ts'
 import './modules.ts'
 
@@ -39,6 +40,7 @@ cabinet.use(partner())
 cabinet.route('/company', company)
 cabinet.route('/', billing)
 cabinet.route('/', campaigns)
+cabinet.route('/', documents)
 app.route('/cabinet', cabinet)
 
 export const admin = new Hono<Env>()
@@ -46,6 +48,7 @@ admin.use(staff())
 admin.get('/ports', c => c.json(portStatus()))
 admin.route('/', billingAdmin)
 admin.route('/', moderationAdmin)
+admin.route('/', documentsAdmin)
 app.route('/admin', admin)
 
 if (import.meta.main) {

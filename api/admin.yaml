@@ -145,6 +145,25 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
 
+
+  /admin/documents/close-month:
+    post:
+      tags: [финансы]
+      summary: Закрыть месяц вручную
+      description: Роль finance. Обычно воркер делает это первого числа сам. Повтор не создаёт документы второй раз.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [period], properties: { period: { type: string, pattern: '^\d{4}-\d{2}$', examples: ['2026-10'] } } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: object, required: [companies, created], properties: { companies: { type: integer }, created: { type: integer, description: сколько документов создано сейчас } } }
+        '422': { $ref: '#/components/responses/Error' }
+
 components:
   securitySchemes:
     session: { type: apiKey, in: cookie, name: sid }

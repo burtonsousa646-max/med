@@ -10,7 +10,8 @@
     "worker": "node server/worker.ts",
     "check": "tsc -p . && tsc -p web",
     "api:types": "npx -y -p typescript@5.9.3 -p openapi-typescript@7.13.0 openapi-typescript api/cabinet.yaml -o web/src/api.gen.ts",
-    "build": "tsc -p web && vite build --config web/vite.config.ts"
+    "build": "tsc -p web && vite build --config web/vite.config.ts",
+    "load": "node scripts/load.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

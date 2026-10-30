@@ -47,6 +47,8 @@ npm run dev
 | `INT_<ПОРТ>` | `stub` | адаптер порта, см. [integrations.md](integrations.md) |
 | `HOOK_SECRET_<ПОРТ>` | `dev-secret-<порт>` вне production | секрет подписи вебхуков |
 | `STORAGE_DIR` | `var/storage` | папка файлов заглушки хранилища |
+| `SERVE_SECRET` | `dev-serve-secret` вне production | подпись токенов показа и клика; в production обязателен |
+| `SURFACE_KEYS` | — | ключи поверхностей `app:ключ,site:ключ`; заданы — `/public/serve` требует `X-Surface-Key` |
 
 Секреты — только в переменных окружения (на сервере — файл окружения службы), не в коде и не в базе.
 

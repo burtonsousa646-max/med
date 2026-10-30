@@ -1,6 +1,7 @@
 // API платформы: /api/auth — вход, /api/cabinet — партнёр, /api/admin — сотрудники билайна,
 // /api/public — поверхности и сервер партнёра, /api/hooks — внешние системы.
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
 import { sql } from './db.ts'
 import { checkPorts, portStatus } from './integrations/index.ts'
@@ -30,6 +31,8 @@ app.route('/auth', onboarding)
 app.route('/stub', stubPages)
 app.route('/stub', payStub)
 app.route('/hooks', hooksRouter)
+// Публичный API зовут поверхности с чужих доменов (embed.js на beeline.ru); cookie здесь не используются
+app.use('/public/*', cors({ origin: '*', allowHeaders: ['content-type', 'x-surface-key'] }))
 app.route('/public', servingPublic)
 app.route('/public', trackingPublic)
 

@@ -135,7 +135,7 @@ onHook('payments', 'payment.succeeded', async (body, tx) => {
 
 | Порт | Системы | Методы | Обмен | Волна |
 |---|---|---|---|---|
-| поверхности | приложение «Мой билайн», beeline.ru, Магазин билайна, ЛК B2B, Билайн ТВ | не порт: они вызывают `/api/public` — запрос рекламы, маяк показа, клик (день 3) и JS-сниппет | они → мы | 1 |
+| поверхности | приложение «Мой билайн», beeline.ru, Магазин билайна, ЛК B2B, Билайн ТВ | не порт: они вызывают `/api/public/serve`, маяк показа и клик; сайтам — `embed.js` ([serving.md](serving.md#7-поверхности)); ключ поверхности — `SURFACE_KEYS` | они → мы | 1 |
 | `cvm` | CVM-платформа билайна: пуши, входящие, SMS | `deliver(medId, channel, campaignId, text, url)` | outbox | 2 |
 | `adtech` | Билайн Adtech | `fraudScore(clickId, medId, ip, userAgent, placement)` → 0..1; дальше — OpenRTB и выбор рекламы | синхронно | 2 |
 | `messaging` | SMS-шлюз билайна, почта, Telegram | `send(channel, to, template, params)` | синхронно или outbox | 1 |
@@ -149,7 +149,7 @@ onHook('payments', 'payment.succeeded', async (body, tx) => {
 | Порт | Системы | Методы | Обмен | Волна |
 |---|---|---|---|---|
 | `partnerCrm` | Битрикс24, amoCRM партнёра | `connectUrl(...)` — подключение по OAuth; `pushLead(companyId, system, lead)` | outbox | 2 |
-| результаты партнёра | сервер, CRM, 1С партнёра | не порт: постбэк и загрузка CSV через `/api/public` и кабинет (день 3) | они → мы | 1 |
+| результаты партнёра | сервер, CRM, 1С партнёра | не порт: постбэк `/api/public/postback` по ключу и загрузка CSV в кабинете ([serving.md](serving.md#4-результаты)) | они → мы | 1 |
 | кассы | кассы партнёров | не порт: вебхук `pos/coupon.redeemed` | они → мы | 2 |
 
 ### 4.6 Инфраструктура

@@ -10,6 +10,7 @@ import { queryClient } from './api'
 import { Home, Invite, Login, Onboarding, RequireAuth } from './screens/Entry'
 import { Approve, Checkout, Consent, Launch, Reach } from './screens/Flow'
 import Build from './screens/Build'
+import Near from './screens/Near'
 import { Balance, Campaigns, Company, Connections, Docs, Help, Stats } from './screens/Cabinet'
 import { Brand, Toaster, gap } from './ui'
 
@@ -94,6 +95,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/cab/company" element={auth(<Company />)} />
                 <Route path="/cab/help" element={auth(<Help />)} />
                 <Route path="/offer" element={<Offer />} />
+                <Route path="/near" element={<Near />} />
                 <Route path="/admin/*" element={<Admin />} />
                 <Route path="*" element={<Navigate to="/cabinet" replace />} />
               </Routes>

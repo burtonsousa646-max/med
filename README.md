@@ -13,6 +13,9 @@
 | [docs/integrations.md](docs/integrations.md) | Все порты: методы, заглушки, вебхуки, как подключить систему билайна |
 | [docs/data-model.md](docs/data-model.md) | Таблицы по модулям, инварианты (деньги, версии креативов, события) |
 | [docs/auth.md](docs/auth.md) | Вход партнёров и сотрудников, сессии, роли, изоляция компаний |
+| [docs/partners.md](docs/partners.md) | Компания, проверка юрлица, точки, участники, оферта |
+| [docs/campaigns.md](docs/campaigns.md) | Путь кампании, отправка и оплата, креативы, модерация, маркировка |
+| [docs/money.md](docs/money.md) | Баланс, пополнение, защита от задвоения, корректировки, документы и ЭДО |
 | [docs/development.md](docs/development.md) | Запуск, переменные окружения, тесты, правила кода |
 | [api/](api/) | Контракты OpenAPI 3.1: `cabinet.yaml`, `admin.yaml`, `public.yaml` |
 

@@ -1,6 +1,6 @@
 # Модель данных
 
-PostgreSQL 17. Схема — `migrations/`: `0001_integrations.sql` (общее для интеграций), `0002_core.sql` (ядро), `0003_catalog.sql` (начальные справочники из прототипа).
+PostgreSQL 17. Схема — `migrations/`: `0001_integrations.sql` (общее для интеграций), `0002_core.sql` (ядро), `0003_catalog.sql` (начальные справочники из прототипа), `0004`–`0007` — параметры и поправки модулей дня 2.
 
 Общие правила:
 - деньги — `bigint` в копейках, суффикс `_kop`;
@@ -50,7 +50,7 @@ PostgreSQL 17. Схема — `migrations/`: `0001_integrations.sql` (общее
 | `approvals` | отправка руководителю | токен (хеш) со сроком жизни, кто и когда подтвердил |
 | `special_requests` | заявка на спецпроект | статус и менеджер |
 
-Статусы кампании: `draft` → `approval` (ждёт руководителя) → `invoice` (ждёт оплату счёта) → `moderation` → `live` ⇄ `paused` → `finished` → `archived`; из `moderation` возможен `rejected`, после исправления — снова `moderation`. Правила переходов — в модуле campaigns (день 2).
+Статусы кампании: `draft` → `approval` (ждёт руководителя) → `invoice` (ждёт оплату: шлюз или счёт) → `moderation` → `live` ⇄ `paused` → `finished` → `archived`; из `moderation` возможен `rejected`, после исправления — снова `moderation`. Правила переходов — [campaigns.md](campaigns.md). Статус креатива: `draft` (черновик кампании) → `moderation` → `approved` / `rejected`.
 
 ## moderation
 
@@ -76,7 +76,7 @@ PostgreSQL 17. Схема — `migrations/`: `0001_integrations.sql` (общее
 | начисление партнёру за купоны 5 000, комиссия 20 % | `partner_payout` +4 000, `beeline_revenue` +1 000, `gateway` −5 000 |
 | выплата 4 000 на р/с | `partner_payout` −4 000, `payout_clearing` +4 000 |
 
-Порядок списания (основной или бонусный счёт первым), холды под кампанию и сбор ОРД — правила модуля billing, день 2.
+Списание берёт сначала бонусы, потом основной счёт — [money.md](money.md). Сбор ОРД 3 % и выплаты — день 3.
 
 | Таблица | Что |
 |---|---|

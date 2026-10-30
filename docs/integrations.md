@@ -119,7 +119,7 @@ onHook('payments', 'payment.succeeded', async (body, tx) => {
 | `signature` | ПЭП по SMS, КЭП | `request(phone, text)` → ID запроса; `verify(requestId, code)` | синхронно | 1 |
 | `ord` | ОРД (выбор билайна) → ЕРИР | `registerOrganization`, `registerContract`, `registerCreative` → erid, `reportStats(period, rows)` | outbox | 1 |
 
-Особые значения: `payments` — адрес оплаты ведёт на страницу заглушки `/api/stub/pay/<id>` (день 2); `subscriberBilling.charge` — MED-ID на `broke` получает отказ; `signature.verify` — верный код `0000`; `ord.registerCreative` — erid из 11 символов base58, одинаковый для одного креатива.
+Особые значения: `payments` — адрес оплаты ведёт на страницу заглушки `/api/stub/pay/<id>` с кнопками «оплатить» и «отказ банка»; `subscriberBilling.charge` — MED-ID на `broke` получает отказ; `signature.verify` — верный код `0000`; `ord.registerCreative` — erid из 11 символов base58, одинаковый для одного креатива.
 
 ### 4.3 Данные и аудитории
 
@@ -162,7 +162,7 @@ onHook('payments', 'payment.succeeded', async (body, tx) => {
 | `support` | Service desk билайна | `createTicket(companyId, topic, text, contact)` | outbox | 2 |
 | `observability` | мониторинг билайна | `metric(name, value, tags)` | синхронно, без ожидания | 2 |
 
-Особые значения: `llm` — всегда `ok` с уверенностью 0,5, модерация держится на правилах (стоп-слова); `storage` — файлы на диске в `var/storage` (`STORAGE_DIR`), отдаются по `/api/files/<key>` (день 2).
+Особые значения: `llm` — текст про алкоголь (алкоголь, пиво, вино) — «нужен человек», остальное — `ok` с уверенностью 0,5, модерация держится на правилах (стоп-слова); `storage` — файлы на диске в `var/storage` (`STORAGE_DIR`), файлы креативов отдаются по `/api/files/creatives/…`, документы — только через кабинет.
 
 ## 5. Что спросить у команд билайна
 

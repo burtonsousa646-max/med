@@ -58,7 +58,7 @@ async function load(): Promise<Index> {
     join offer_types ot on ot.id = c.type
     join lateral (select id, ad_text, image_key, erid from creatives where campaign_id = c.id and status = 'approved' and erid is not null
                   order by version desc limit 1) cr on true
-    where c.status = 'live'`
+    where c.status = 'live' and co.kyc_status = 'verified'` // заблокированная или непроверенная компания не показывается
   const ids = rows.map(r => r.id), companies = [...new Set(rows.map(r => r.company_id))]
   const points = companies.length ? await sql`select company_id, lat, lon from points where active and company_id in ${sql(companies)}` : []
   const money = companies.length ? await sql`select company_id, sum(balance_kop)::bigint as available from account_balances

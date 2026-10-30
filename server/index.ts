@@ -16,6 +16,7 @@ import { servingPublic } from './modules/serving.ts'
 import { trackingCabinet, trackingPublic } from './modules/tracking.ts'
 import { settlementAdmin } from './modules/settlement.ts'
 import { reporting } from './modules/reporting.ts'
+import { backoffice } from './modules/backoffice.ts'
 import { port } from './integrations/index.ts'
 import './modules.ts'
 import { headers, limitBody, rateLimit } from './security.ts'
@@ -70,6 +71,7 @@ admin.route('/', billingAdmin)
 admin.route('/', moderationAdmin)
 admin.route('/', documentsAdmin)
 admin.route('/', settlementAdmin)
+admin.route('/', backoffice)
 app.route('/admin', admin)
 
 if (import.meta.main) {

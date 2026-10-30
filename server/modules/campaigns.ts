@@ -292,6 +292,10 @@ async function validate(tx: Tx, cm: Row, b: Record<string, any>) {
 }
 
 async function setPaused(tx: Tx, cm: Row, paused: boolean) {
+  if (!paused && cm.status === 'paused') {
+    const [co] = await tx`select kyc_status from companies where id = ${cm.company_id}`
+    if (co.kyc_status !== 'verified') fail(403, 'компания заблокирована или не проверена — показ недоступен')
+  }
   if (paused && cm.status === 'live') await tx`update campaigns set status = 'paused', updated_at = now() where id = ${cm.id}`
   if (!paused && cm.status === 'paused') await tx`update campaigns set status = 'live', updated_at = now() where id = ${cm.id}`
 }

@@ -9,6 +9,10 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: обзор }
+  - { name: партнёры }
+  - { name: кампании }
+  - { name: справочники }
   - { name: модерация }
   - { name: финансы }
   - { name: вход }
@@ -183,6 +187,240 @@ paths:
               schema: { type: object, required: [companies, created], properties: { companies: { type: integer }, created: { type: integer } } }
         '422': { $ref: '#/components/responses/Error' }
 
+
+  /admin/overview:
+    get:
+      tags: [обзор]
+      summary: Сводка для главной бэкофиса
+      description: Любая роль. Счётчики очередей (проверка юрлиц, модерация, упавшие задачи, счета, спецпроекты), показы и клики за сегодня, выручка билайна за день и месяц, адаптеры портов.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Overview' }
+
+  /admin/companies:
+    get:
+      tags: [партнёры]
+      summary: Партнёры
+      description: Роли manager, finance, moderator. Поиск по началу ИНН или части названия и бренда, фильтр по статусу проверки. До 200 строк.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: kyc, in: query, required: false, schema: { type: string, enum: [pending, verified, rejected, blocked] } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CompanyRow' } }
+
+  /admin/companies/{id}:
+    get:
+      tags: [партнёры]
+      summary: Карточка партнёра
+      description: Реквизиты и результат проверки, участники, кампании, баланс, последние 50 операций, связи с внешними системами.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompanyCard' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /admin/companies/{id}/kyc:
+    post:
+      tags: [партнёры]
+      summary: Решение по проверке юрлица
+      description: |
+        Роль manager. verified — проверено (контрагент уходит в учётную систему); rejected — отказ; blocked — блокировка:
+        живые кампании встают на паузу и сразу уходят из показа, партнёр не может их возобновить. Отказ и блокировка — с причиной.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [verified, rejected, blocked] }, reason: { type: string } } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /admin/campaigns:
+    get:
+      tags: [кампании]
+      summary: Кампании всех партнёров
+      description: Роли manager, moderator, finance. Без архивных, до 300, с тратами на клики за месяц.
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CampaignRow' } }
+
+  /admin/campaigns/{id}/stop:
+    post:
+      tags: [кампании]
+      summary: Остановить кампанию
+      description: Роли manager, moderator. Кампания завершается (партнёр её не возобновит) и сразу уходит из показа; причина уходит партнёру.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 1 } } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /admin/finance:
+    get:
+      tags: [финансы]
+      summary: Финансы платформы
+      description: Роль finance. Итоги счетов двойной записи, неоплаченные счета, последние выплаты, поступления, которые выписка не сопоставила со счетами.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Finance' }
+
+  /admin/placements:
+    get:
+      tags: [справочники]
+      summary: Места показа
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Placement' } }
+
+  /admin/placements/{id}:
+    patch:
+      tags: [справочники]
+      summary: Изменить место показа
+      description: Роль admin. Минимальная ставка, априорный CTR, число мест, включено ли, название. Показ видит изменения сразу.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                minBidKop: { type: [string, integer] }
+                baseCtr: { type: number, minimum: 0, maximum: 100 }
+                slots: { type: integer, minimum: 1, maximum: 20 }
+                active: { type: boolean }
+                name: { type: string }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /admin/settings:
+    get:
+      tags: [справочники]
+      summary: Параметры платформы
+      description: editable — можно ли менять из бэкофиса.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, required: [key, value, editable, updatedAt], properties: { key: { type: string }, value: {}, editable: { type: boolean }, updatedAt: { type: string, format: date-time } } } }
+
+  /admin/settings/{key}:
+    patch:
+      tags: [справочники]
+      summary: Изменить параметр
+      description: 'Роль admin. Меняются: бонус первой оплаты, наценка широкой карточки, минимальный бюджет и пополнение, версия оферты, НДС, сроки спора, доли результата, продавец в документах. Каждое значение проверяется на границы.'
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [value], properties: { value: {} } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /admin/integrations:
+    get:
+      tags: [интеграции]
+      summary: Журнал интеграций и очередь
+      description: Роль admin. Адаптеры портов, последние 200 вызовов и вебхуков (без секретов), задачи очереди — упавшие и ожидающие.
+      parameters:
+        - { name: system, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Integrations' }
+
+  /admin/outbox/{id}/retry:
+    post:
+      tags: [интеграции]
+      summary: Повторить упавшую задачу
+      description: Роль admin. Например, когда система билайна снова доступна.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /admin/special-requests:
+    get:
+      tags: [партнёры]
+      summary: Заявки на спецпроекты
+      description: Роль manager. Новые первыми.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, required: [id, kind, task, budget, status, createdAt, company, inn, phone, manager], properties: { id: { type: integer }, kind: { type: string }, task: { type: string }, budget: { type: string }, status: { type: string, enum: [new, in_work, done, declined] }, createdAt: { type: string, format: date-time }, company: { type: string }, inn: { type: string }, phone: { type: [string, 'null'] }, manager: { type: [string, 'null'] } } } }
+
+  /admin/special-requests/{id}:
+    patch:
+      tags: [партнёры]
+      summary: Статус заявки на спецпроект
+      description: Роль manager. Первый, кто меняет статус, становится менеджером заявки.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [new, in_work, done, declined] } } }
+      responses:
+        '200': { description: ok, content: { application/json: { schema: { type: object, required: [ok], properties: { ok: { const: true } } } } } }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /admin/audit:
+    get:
+      tags: [обзор]
+      summary: Журнал действий
+      description: Роль admin. Последние 300 действий партнёров, сотрудников и системы.
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, required: [id, actorType, actorId, action, entity, entityId, diff, company, createdAt], properties: { id: { type: integer }, actorType: { type: string }, actorId: { type: [string, 'null'] }, action: { type: string }, entity: { type: [string, 'null'] }, entityId: { type: [string, 'null'] }, diff: {}, company: { type: [string, 'null'] }, createdAt: { type: string, format: date-time } } } }
+
 components:
   securitySchemes:
     session: { type: apiKey, in: cookie, name: sid }
@@ -199,6 +437,108 @@ components:
       properties:
         port: { type: string, description: имя порта, см. docs/integrations.md }
         adapter: { type: string, description: 'stub — заглушка, beeline — система билайна' }
+
+    Kop: { type: string, pattern: '^-?\d+$', description: целое число копеек строкой }
+    Overview:
+      type: object
+      required: [companies, kycPending, liveCampaigns, moderationQueued, outboxFailed, invoicesIssued, specialNew, impressionsToday, clicksToday, revenueTodayKop, revenueMonthKop, ports]
+      properties:
+        companies: { type: integer }
+        kycPending: { type: integer }
+        liveCampaigns: { type: integer }
+        moderationQueued: { type: integer }
+        outboxFailed: { type: integer }
+        invoicesIssued: { type: integer }
+        specialNew: { type: integer }
+        impressionsToday: { type: integer }
+        clicksToday: { type: integer }
+        revenueTodayKop: { $ref: '#/components/schemas/Kop' }
+        revenueMonthKop: { $ref: '#/components/schemas/Kop' }
+        ports: { type: array, items: { $ref: '#/components/schemas/PortStatus' } }
+    CompanyRow:
+      type: object
+      required: [id, inn, name, brand, segment, kycStatus, createdAt, liveCampaigns, availableKop]
+      properties:
+        id: { type: string, format: uuid }
+        inn: { type: string }
+        name: { type: string }
+        brand: { type: string }
+        segment: { type: string }
+        kycStatus: { type: string, enum: [pending, verified, rejected, blocked] }
+        createdAt: { type: string, format: date-time }
+        liveCampaigns: { type: integer }
+        availableKop: { $ref: '#/components/schemas/Kop' }
+    CompanyCard:
+      type: object
+      required: [id, inn, kpp, ogrn, name, brand, segment, kycStatus, kycReason, risk, address, b2bManager, phone, site, edoOperator, offerVersion, createdAt, members, campaigns, balance, operations, externalRefs]
+      properties:
+        id: { type: string, format: uuid }
+        inn: { type: string }
+        kpp: { type: [string, 'null'] }
+        ogrn: { type: [string, 'null'] }
+        name: { type: string }
+        brand: { type: string }
+        segment: { type: string }
+        kycStatus: { type: string, enum: [pending, verified, rejected, blocked] }
+        kycReason: { type: [string, 'null'] }
+        risk: { type: [string, 'null'] }
+        address: { type: [string, 'null'] }
+        b2bManager: { type: [object, 'null'], properties: { name: { type: string }, email: { type: string } } }
+        phone: { type: [string, 'null'] }
+        site: { type: [string, 'null'] }
+        edoOperator: { type: [string, 'null'] }
+        offerVersion: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        members: { type: array, items: { type: object, required: [name, email, role, signer], properties: { name: { type: string }, email: { type: [string, 'null'] }, role: { type: string }, signer: { type: boolean } } } }
+        campaigns: { type: array, items: { type: object, required: [id, name, type, status, budgetMonthKop, createdAt], properties: { id: { type: integer }, name: { type: string }, type: { type: string }, status: { type: string }, budgetMonthKop: { $ref: '#/components/schemas/Kop' }, createdAt: { type: string, format: date-time } } } }
+        balance: { type: object, required: [mainKop, bonusKop, payoutKop], properties: { mainKop: { $ref: '#/components/schemas/Kop' }, bonusKop: { $ref: '#/components/schemas/Kop' }, payoutKop: { $ref: '#/components/schemas/Kop' } } }
+        operations: { type: array, items: { type: object, required: [id, kind, memo, amountKop, createdAt], properties: { id: { type: integer }, kind: { type: string }, memo: { type: string }, amountKop: { $ref: '#/components/schemas/Kop' }, createdAt: { type: string, format: date-time } } } }
+        externalRefs: { type: array, items: { type: object, required: [system, externalId], properties: { system: { type: string }, externalId: { type: string } } } }
+    CampaignRow:
+      type: object
+      required: [id, name, type, status, budgetMonthKop, placements, createdAt, launchedAt, companyId, company, inn, spentMonthKop]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { type: string }
+        status: { type: string }
+        budgetMonthKop: { $ref: '#/components/schemas/Kop' }
+        placements: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+        launchedAt: { type: [string, 'null'], format: date-time }
+        companyId: { type: string, format: uuid }
+        company: { type: string }
+        inn: { type: string }
+        spentMonthKop: { $ref: '#/components/schemas/Kop' }
+    Finance:
+      type: object
+      required: [totals, invoices, payouts, unmatched]
+      properties:
+        totals: { type: object, required: [revenueKop, depositsKop, bonusesKop, payoutsDueKop], properties: { revenueKop: { $ref: '#/components/schemas/Kop' }, depositsKop: { $ref: '#/components/schemas/Kop' }, bonusesKop: { $ref: '#/components/schemas/Kop' }, payoutsDueKop: { $ref: '#/components/schemas/Kop' } } }
+        invoices: { type: array, items: { type: object, required: [id, number, amountKop, status, issuedAt, dueAt, company, inn], properties: { id: { type: string, format: uuid }, number: { type: string }, amountKop: { $ref: '#/components/schemas/Kop' }, status: { type: string }, issuedAt: { type: string, format: date-time }, dueAt: { type: [string, 'null'], format: date-time }, company: { type: string }, inn: { type: string } } } }
+        payouts: { type: array, items: { type: object, required: [id, period, netKop, status, createdAt, company, inn], properties: { id: { type: integer }, period: { type: string }, netKop: { $ref: '#/components/schemas/Kop' }, status: { type: string, enum: [accrued, sent, paid, failed] }, createdAt: { type: string, format: date-time }, company: { type: string }, inn: { type: string } } } }
+        unmatched: { type: array, items: { type: object, required: [externalId, amountKop, payerInn, purpose, createdAt], properties: { externalId: { type: string }, amountKop: { type: [string, 'null'] }, payerInn: { type: [string, 'null'] }, purpose: { type: [string, 'null'] }, createdAt: { type: string, format: date-time } } } }
+    Placement:
+      type: object
+      required: [id, surface, name, format, pricing, baseCtr, slots, minBidKop, needsConsent, active]
+      properties:
+        id: { type: string }
+        surface: { type: string }
+        name: { type: string }
+        format: { type: string }
+        pricing: { type: string, enum: [cpc, cpm] }
+        baseCtr: { type: [number, 'null'] }
+        slots: { type: integer }
+        minBidKop: { $ref: '#/components/schemas/Kop' }
+        needsConsent: { type: boolean }
+        active: { type: boolean }
+    Integrations:
+      type: object
+      required: [ports, log, outbox]
+      properties:
+        ports: { type: array, items: { $ref: '#/components/schemas/PortStatus' } }
+        log: { type: array, items: { type: object, required: [id, system, direction, action, ok, ms, request, response, createdAt], properties: { id: { type: integer }, system: { type: string }, direction: { type: string, enum: [in, out] }, action: { type: string }, ok: { type: boolean }, ms: { type: [integer, 'null'] }, request: {}, response: {}, createdAt: { type: string, format: date-time } } } }
+        outbox: { type: array, items: { type: object, required: [id, system, action, status, attempts, lastError, nextAt, createdAt], properties: { id: { type: integer }, system: { type: string }, action: { type: string }, status: { type: string, enum: [pending, done, failed] }, attempts: { type: integer }, lastError: { type: [string, 'null'] }, nextAt: { type: string, format: date-time }, createdAt: { type: string, format: date-time } } } }
 
 security:
   - session: []

@@ -11,6 +11,7 @@ import { Home, Invite, Login, Onboarding, RequireAuth } from './screens/Entry'
 import { Approve, Checkout, Consent, Launch, Reach } from './screens/Flow'
 import Build from './screens/Build'
 import Near from './screens/Near'
+import Admin from './admin/Admin'
 import { Balance, Campaigns, Company, Connections, Docs, Help, Stats } from './screens/Cabinet'
 import { Brand, Toaster, gap } from './ui'
 
@@ -21,22 +22,6 @@ function Offer() {
       <section className="bl-section">
         <h1 className="bl-h1" style={{ marginBottom: 24 }}>оферта на размещение рекламы</h1>
         <p className="bl-body bl-secondary" style={{ maxWidth: 'var(--text-max)' }}>Текст оферты готовят юристы. Предмет — размещение рекламных материалов на поверхностях билайна с оплатой за клики, целевые действия или комиссией с продаж; акцепт — отметка в кабинете подписантом, вошедшим через бизнес-ID; закрывающие документы — через ЭДО.</p>
-      </section>
-    </div>
-  )
-}
-
-// Бэкофис сотрудников билайна — день 4. Пока здесь вход через SSO и ссылка на API.
-function Admin() {
-  // вход сотрудника описан в api/admin.yaml, его типов в клиенте кабинета нет
-  const start = () => fetch('/api/auth/staff/start', { method: 'POST', credentials: 'include' }).then(r => r.json()).then(r => location.assign(r.url))
-  return (
-    <div className="bl-page wrap">
-      <header className="bl-header"><div className="bl-header__side"><Brand to="/admin" /></div></header>
-      <section className="bl-section pad bl-stack" style={{ ...gap('16px'), marginTop: 48, maxWidth: 640 }}>
-        <h1 className="bl-h2">бэкофис рекламной платформы</h1>
-        <p className="bl-body bl-secondary">Для сотрудников билайна: модерация, партнёры, финансы. Экраны появятся следующим шагом, API уже работает.</p>
-        <div><button className="bl-btn bl-btn--primary bl-btn--l" onClick={start}>войти через SSO билайна</button></div>
       </section>
     </div>
   )

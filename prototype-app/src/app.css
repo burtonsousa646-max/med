@@ -597,7 +597,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 
 
 .v2-trust { display: flex; flex-direction: column; gap: var(--space-4xl); }
-.v2-stats { padding: var(--space-3xl) 0; border-block: 1px solid var(--color-background-tertiary-invert); }
 .v2-stat { display: flex; flex-direction: column; gap: var(--space-xs); }
 .v2-stat__v { font: var(--type-display-xl); letter-spacing: -.02em; }
 
@@ -675,6 +674,28 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   background: radial-gradient(closest-side, color-mix(in srgb, var(--color-text-primary-invert) 9%, transparent), transparent); animation: v2-glow 14s ease-in-out infinite alternate; }
 @keyframes v2-glow { to { transform: translate(30%, 20%) scale(1.2); } }
 .v2-trust__item { --bl-gap: 8px; }
+/* аудитория: плитки-стекло на тёмном, толпа точек слева на две строки */
+.v2-aud { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--gutter); }
+.v2-aud__tile { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-xl); padding: var(--space-2xl);
+  border-radius: var(--radius-800); background: color-mix(in srgb, var(--color-text-primary) 5%, transparent); border: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent); }
+.v2-aud__crowd { grid-row: span 2; min-height: 520px; justify-content: flex-end; }
+.v2-crowd { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; mask-image: linear-gradient(#000 25%, transparent 72%); }
+.v2-crowd circle { fill: var(--color-text-primary); transition: r .5s, fill .5s; }
+.v2-crowd circle.is-on { fill: var(--color-brand-primary); }
+.v2-aud__crowd { isolation: isolate; }
+.v2-aud__legend { position: absolute; top: var(--space-2xl); left: var(--space-2xl); display: inline-flex; align-items: center; gap: var(--space-xs); padding: 6px 12px 6px 10px; border-radius: var(--radius-circle); background: color-mix(in srgb, var(--color-background-primary) 80%, transparent); }
+.v2-aud__legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--color-brand-primary); }
+.v2-sigs { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.v2-sig { padding: 6px 12px; border-radius: var(--radius-circle); border: 1px solid color-mix(in srgb, var(--color-text-primary) 14%, transparent); font: var(--type-caption); color: var(--color-text-secondary); transition: background .4s, color .4s, border-color .4s; }
+.v2-sig.is-on { background: var(--color-brand-primary); border-color: var(--color-brand-primary); color: var(--color-constant-01); }
+.v2-launch { position: relative; list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; }
+.v2-launch::before, .v2-launch__bar { content: ""; position: absolute; left: 14px; right: 14px; top: 13px; height: 2px; background: color-mix(in srgb, var(--color-text-primary) 14%, transparent); }
+.v2-launch__bar { display: block; background: var(--color-brand-primary); transform-origin: left; }
+.v2-launch li { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-xs); }
+.v2-launch__dot { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--color-brand-primary); color: var(--color-constant-01); }
+.v2-trust__row { padding-top: var(--space-3xl); border-top: 1px solid var(--color-background-tertiary-invert); }
+@media (max-width: 1023px) { .v2-aud { grid-template-columns: 1fr; } .v2-aud__crowd { grid-row: auto; min-height: 400px; } }
+@media (max-width: 767px) { .v2-aud__tile { padding: var(--space-l); } .v2-aud__legend { top: var(--space-l); left: var(--space-l); } }
 
 /* финал: шаг в интерфейсе */
 .v2-final__stage { display: grid; place-items: center; min-height: 380px; border-radius: var(--radius-800); background: var(--color-background-primary-invert); }

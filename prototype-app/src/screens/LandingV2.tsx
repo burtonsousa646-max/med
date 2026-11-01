@@ -10,8 +10,8 @@ import { NICHES, n, rub } from '../data'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 
 /* Лендинг v2: подача и анимации по мотивам shopify.com, всё из дизайн-системы.
-   Порядок — вопросы владельца бизнеса: что это (hero) → кто уже с нами → кому покажем → где увидят → и в чате →
-   сколько стоит → как запустить и управлять → помощник → истории → отзыв → риски → вопросы → запуск. */
+   Порядок — вопросы владельца бизнеса: что это (hero) → кто уже с нами → какая аудитория → кому покажем → где увидят → и в чате →
+   сколько стоит → как запустить и управлять → помощник → истории → отзыв → вопросы → запуск. */
 
 const WORDS = ['рядом с домом', 'в день зарплаты', 'после переезда', 'по дороге на работу', 'когда кончился трафик']
 
@@ -515,25 +515,68 @@ function Assistant() {
   )
 }
 
-function Trust() {
-  const stats = [
-    { v: 45, s: ' млн', t: 'абонентов билайна' },
-    { v: 19, s: '', t: 'сигналов: место, событие, деньги, момент' },
-    { v: 2, s: ' мин', t: 'на модерацию, ИИ проверяет до оплаты' },
-  ]
+// аудитория: толпа точек — абоненты, жёлтые — те, кому ваша акция подходит прямо сейчас;
+// сигналы загораются по очереди, шаги запуска отмечаются, когда блок на экране
+const COLS = 40, ROWS = 30, GAP = 14
+const lit = (i: number, t: number) => ((Math.imul(i + 1, 2654435761) ^ Math.imul(t + 1, 40503)) >>> 0) % 100 < 4
+const dim = (i: number) => 0.18 + ((Math.imul(i + 7, 2246822519) >>> 0) % 100) / 220 // разная яркость — глубина толпы
+const SIGNALS = ['живёт рядом', 'работает рядом', 'каждый день мимо', 'переехал', 'новая работа', 'скоро отпуск', 'день зарплаты', 'после оплаты', 'крупная покупка', 'кончился трафик', 'утро буднего дня', 'вечер пятницы']
+const LAUNCH = ['ИНН', 'кому', 'оплата', 'в эфире']
+function Audience() {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { amount: 0.3 }), reduce = useReducedMotion()
+  const run = inView && !reduce
+  const [t, setT] = useState(0)
+  useEffect(() => { if (!run) return; const x = setInterval(() => setT(v => v + 1), 1300); return () => clearInterval(x) }, [run])
   const trust = [
-    { i: EyeOff, t: 'данные абонентов не уходят к вам', d: 'Вы видите результат, а не людей. Всё по закону о персональных данных.' },
+    { i: EyeOff, t: 'данные абонентов не уходят к вам', d: 'Вы видите итоги, а не людей. Всё по закону о персональных данных.' },
     { i: FileCheck2, t: 'маркировка — наша забота', d: 'erid и отчёты в ОРД оформим сами.' },
     { i: Wallet, t: 'деньги под контролем', d: 'Лимит в день, возврат остатка на счёт.' },
   ]
   return (
     <section className="bl-section bl-section--wide v2-trust" data-theme="invert">
       <span className="v2-glow" aria-hidden="true" />
-      <h2 className="bl-display-l">большая аудитория.<br />всё по закону</h2>
-      <div className="bl-grid v2-stats" style={{ ['--bl-cols' as string]: 3 }}>
-        {stats.map((x, n) => <Reveal key={x.t} delay={n * 0.1} className="v2-stat"><span className="v2-stat__v"><Num value={x.v} suffix={x.s} from={0} /></span><span className="bl-body bl-secondary">{x.t}</span></Reveal>)}
+      <h2 className="bl-display-l">ваши клиенты уже<br />среди абонентов билайна</h2>
+      <div ref={ref} className="v2-aud">
+        <Reveal className="v2-aud__tile v2-aud__crowd">
+          <svg className="v2-crowd" viewBox={`0 0 ${COLS * GAP} ${ROWS * GAP}`} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+            {Array.from({ length: COLS * ROWS }, (_, i) => {
+              const on = lit(i, t)
+              return <circle key={i} cx={(i % COLS + 0.5) * GAP} cy={(Math.floor(i / COLS) + 0.5) * GAP} r={on ? 4 : 2.2} className={on ? 'is-on' : ''} style={on ? undefined : { opacity: dim(i) }} />
+            })}
+          </svg>
+          <span className="v2-aud__legend bl-caption"><i /> подходят под вашу акцию прямо сейчас</span>
+          <div className="v2-stat">
+            <span className="v2-stat__v"><Num value={45} suffix=" млн" from={0} /></span>
+            <span className="bl-body bl-secondary">абонентов билайна по всей России — и те, кто живёт и работает рядом с вами</span>
+          </div>
+        </Reveal>
+        <Reveal delay={0.1} className="v2-aud__tile">
+          <div className="v2-stat">
+            <span className="v2-stat__v"><Num value={130} from={0} /></span>
+            <span className="bl-body bl-secondary">сигналов, по которым найдём своих: место, событие, деньги, момент</span>
+          </div>
+          <div className="v2-sigs" aria-hidden="true">
+            {SIGNALS.map((x, k) => <span key={x} className={`v2-sig${k === t % SIGNALS.length ? ' is-on' : ''}`}>{x}</span>)}
+          </div>
+        </Reveal>
+        <Reveal delay={0.2} className="v2-aud__tile">
+          <div className="v2-stat">
+            <span className="v2-stat__v"><Num value={5} suffix=" мин" from={0} /></span>
+            <span className="bl-body bl-secondary">на запуск кампании — от ИНН до первых показов</span>
+          </div>
+          <ol className="v2-launch" aria-hidden="true">
+            <motion.span className="v2-launch__bar" initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 2, ease: 'easeInOut', delay: 0.3 }} />
+            {LAUNCH.map((x, k) => (
+              <li key={x}>
+                <motion.span className="v2-launch__dot" initial={{ scale: 0.4, opacity: 0.4 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 + k * 0.6, type: 'spring', stiffness: 300, damping: 18 }}><Check size={14} strokeWidth={3} /></motion.span>
+                <span className="bl-caption">{x}</span>
+              </li>
+            ))}
+          </ol>
+        </Reveal>
       </div>
-      <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
+      <div className="bl-grid v2-trust__row" style={{ ['--bl-cols' as string]: 3 }}>
         {trust.map((x, n) => <Reveal key={x.t} delay={0.2 + n * 0.1} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
       <Go to="/login">запустить самостоятельно</Go>
@@ -656,6 +699,7 @@ export default function LandingV2() {
       <main className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
         <Hero />
         <Clients />
+        <Audience />
         <AroundPoint />
         <Everywhere />
         <Chat />
@@ -664,7 +708,6 @@ export default function LandingV2() {
         <Assistant />
         <ForEveryone />
         <Quote />
-        <Trust />
         <Faq />
         <Final />
       </main>

@@ -91,7 +91,11 @@ export function Photo({ name, label, ratio = '4 / 3', className = '', children }
   return (
     <div className={`photo ${className}`} style={{ aspectRatio: ratio }}>
       {!failed
-        ? <img src={`${import.meta.env.BASE_URL}img/${name}`} alt={label} loading="lazy" onError={() => setFailed(true)} />
+        ? <picture>
+            {/* AVIF рядом с JPG втрое легче. Заменяете фото — удалите старый .avif с тем же именем, иначе покажется он */}
+            <source srcSet={`${import.meta.env.BASE_URL}img/${name.replace(/\.jpg$/, '.avif')}`} type="image/avif" />
+            <img src={`${import.meta.env.BASE_URL}img/${name}`} alt={label} loading="lazy" decoding="async" onError={() => setFailed(true)} />
+          </picture>
         : <div className="photo__stub" role="img" aria-label={label}><span>{label}</span><code>img/{name}</code></div>}
       {children}
     </div>

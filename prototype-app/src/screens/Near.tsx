@@ -1,6 +1,7 @@
-import { useState, type CSSProperties, type FormEvent } from 'react'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { ArrowUp, LayoutGrid, Loader2, Map as MapIcon, MapPin, Sparkles, X } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { ArrowUp, CircleCheck, LayoutGrid, Map as MapIcon, MapPin, Sparkles, X } from 'lucide-react'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
 import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
@@ -303,7 +304,8 @@ export default function Near() {
 }
 
 /* ───────── ИИ-поиск: абонент пишет обычными словами, Claude подбирает офферы и предлагает уточнения ───────── */
-type Turn = S['AskTurn'] & { answer?: S['AskAnswer'] }
+type Answer = S['AskAnswer'] & { why?: Record<string, string> }
+type Turn = S['AskTurn'] & { answer?: Answer }
 const askOffer = (o: Offer): S['AskOffer'] => ({
   id: o.id, partner: o.partner, title: o.title, small: o.small, cat: o.cat, type: o.type, dist: o.dist, price: o.price,
   till: typeof o.till === 'number' ? `ещё ${days(o.till)}` : o.till, bee: !!o.bee,
@@ -313,35 +315,108 @@ const starters = () => {
   const h = new Date().getHours()
   return [h < 11 ? 'кофе и завтрак по пути' : h < 16 ? 'недорого пообедать' : 'куда сходить вечером', 'всё для новой квартиры', 'порадовать себя в зарплату', 'подготовить машину к зиме']
 }
+const EXAMPLES = ['поужинать до 500 ₽', 'подарок маме', 'переобуть машину', 'чем занять ребёнка', 'постричься недорого', 'квест с друзьями']
 
+/* мок ИИ для стенда: без ключа сервер отвечает поиском по словам, а прототип отвечает так, как ответил бы ИИ —
+   понимает смысл (стрижка → красота), учитывает «до N ₽», «недорого», «рядом» и объясняет, почему выбрал.
+   ponytail: словарь намерений вместо модели; с ключом ответ source: 'ai' идёт как есть */
+const INTENTS: { re: RegExp; cats: Cat[]; say: string; more: string[]; like?: RegExp }[] = [
+  { re: /стри[жч]|парикмах|барбер|маникюр|ногт|красот|причёс|бород/, cats: ['beauty'], say: 'Нашёл, где привести себя в порядок', more: ['сегодня вечером', 'подешевле', 'только с билайном'] },
+  { re: /подар|порадов|мам|зарплат|праздн/, cats: ['beauty', 'fun', 'grocery'], say: 'Есть чем порадовать — от цветов до маникюра', more: ['до 1 500 ₽', 'с доставкой', 'впечатления'], like: /букет|маникюр|билет|квест/ },
+  { re: /вечер|сходить|развлеч|кино|отдохн|компани|друз|квест|выходн/, cats: ['fun', 'food'], say: 'На вечер — кино, квест или ужин рядом', more: ['вдвоём', 'с компанией', 'до 1 000 ₽'], like: /билет|квест|боулинг/ },
+  { re: /поесть|поужин|ужин|обед|ланч|завтрак|кофе|голод|пицц|перекус|шаурм/, cats: ['food'], say: 'Вот где вкусно поесть рядом', more: ['до 300 ₽', 'с собой', 'открыто сейчас'] },
+  { re: /машин|авто|шин|переоб|мойк|зим|бензин|заправ|топлив/, cats: ['auto'], say: 'Для машины перед зимой — переобувка, мойка и заправка', more: ['без очереди', 'по будням', 'ближе'] },
+  { re: /квартир|переезд|ремонт|уборк|замк|полк|мастер/, cats: ['home'], say: 'Для новой квартиры — уборка, мастер и замки', more: ['на выходных', 'подешевле', 'ближе'] },
+  { re: /ребён|ребен|дет|сын|доч|малыш/, cats: ['kids'], say: 'Для детей — занятия и игрушки рядом', more: ['4–6 лет', 'бесплатно', 'в субботу'] },
+  { re: /спорт|фитнес|зал|трениров|похуд/, cats: ['sport'], say: 'Можно начать бесплатно', more: ['утром', 'рядом с работой'] },
+  { re: /продукт|магазин|овощ|фрукт|доставк|цвет|букет/, cats: ['grocery'], say: 'Из магазинов у дома', more: ['с доставкой', 'баллы X5'] },
+  { re: /аптек|лекар|врач|зуб|здоров|очк|зрени|болит/, cats: ['health'], say: 'Здоровье — аптека, врач и оптика рядом', more: ['сегодня', 'подешевле'] },
+]
+const n_ = (n: number, one: string, few: string, many: string) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? few : many}`
+// почему ИИ выбрал оффер — одна короткая причина на карточке
+function why(o: Offer, k: number, cheap: boolean): string {
+  if (k === 0) return 'лучше всего подходит'
+  if (cheap && o.price) return `за ${nb(`${o.price.toLocaleString('ru-RU')} ₽`)}`
+  if (typeof o.till === 'number' && o.till <= 3) return o.till ? `ещё ${days(o.till)}` : 'последний день'
+  if (o.bee) return 'только с билайном'
+  if (o.dist <= 600) return `${Math.max(1, Math.round(o.dist / 80))} мин пешком`
+  return TYPES[o.type].t
+}
+function mockAsk(q: string, all: Offer[]): Answer {
+  const s = q.toLowerCase()
+  const hit = INTENTS.filter(i => i.re.test(s))
+  const cats = hit.flatMap(i => i.cats)
+  const max = +(s.match(/до\s*(\d[\d\s]*)/)?.[1]?.replace(/\s/g, '') ?? 0)
+  const cheap = /недорог|дешев|дешёв|бюджет|эконом|подешевле/.test(s) || max > 0
+  // куски слов из вопроса в тексте оффера поднимают его выше: «постричься» → «стрижка», «переобуть» → «переобувка»
+  const grams = s.split(/[^а-яёa-z]+/).filter(w => w.length >= 5).flatMap(w => Array.from({ length: w.length - 3 }, (_, k) => w.slice(k, k + 4)))
+  const exact = (o: Offer) => {
+    const hay = `${o.partner} ${o.title} ${o.small}`.toLowerCase()
+    return grams.filter(g => hay.includes(g)).length + (hit.some(i => i.like?.test(hay)) ? 3 : 0)
+  }
+  const pick = all.filter(o => (!cats.length || cats.includes(o.cat)) && (!max || !o.price || o.price <= max))
+    .sort((a, b) => exact(b) - exact(a) || (cheap ? (a.price ?? 1e9) - (b.price ?? 1e9) : 0) || a.dist - b.dist).slice(0, 6)
+  const top = pick[0]
+  const reply = !hit.length || !top
+    ? 'Не до конца понял, что ищешь, поэтому показал самое интересное рядом. Уточни — подберу точнее.'
+    : `${hit[0].say}: ${n_(pick.length, 'место', 'места', 'мест')} рядом. Первым — ${top.partner}: ${top.small}, ${km(top.dist)} от тебя.`
+  const list = hit.length ? pick : [...all].sort((a, b) => a.dist - b.dist).slice(0, 4)
+  return { reply, offerIds: list.map(o => o.id), questions: hit[0]?.more ?? starters().slice(0, 3), source: 'ai', why: Object.fromEntries(list.map((o, k) => [o.id, why(o, k, cheap)])) }
+}
+
+// подсказка в поле сама печатает примеры вопросов
+function useTypewriter(on: boolean) {
+  const reduce = useReducedMotion()
+  const [t, setT] = useState(0)
+  useEffect(() => { if (!on || reduce) return; const x = setInterval(() => setT(v => v + 1), 70); return () => clearInterval(x) }, [on, reduce])
+  if (reduce) return EXAMPLES[0]
+  const span = (e: string) => e.length * 2 + 20 // печатается, стоит ~1,4 с и стирается
+  let left = t % EXAMPLES.reduce((sum, e) => sum + span(e), 0)
+  for (const e of EXAMPLES) {
+    if (left < span(e)) return e.slice(0, left < e.length ? left : left < e.length + 20 ? e.length : span(e) - left)
+    left -= span(e)
+  }
+  return ''
+}
+
+const THINK_MS = 1900 // мок отвечает мгновенно — даём увидеть, как ИИ «думает»
 function Ask({ all, viewed, onOpen }: { all: Offer[]; viewed: string[]; onOpen: (id: string) => void }) {
   const [text, setText] = useState('')
   const [turns, setTurns] = useState<Turn[]>([])
+  const [busy, setBusy] = useState(false)
+  const [step, setStep] = useState(0)
   const askM = $api.useMutation('post', '/showcase/ask')
+  const typed = useTypewriter(!text && !turns.length)
+  const steps = [`смотрю ${all.length} мест рядом`, 'сравниваю цены и сроки', 'проверяю, что открыто сейчас']
+  useEffect(() => { if (!busy) return; setStep(0); const x = setInterval(() => setStep(v => v + 1), THINK_MS / steps.length); return () => clearInterval(x) }, [busy])
   const send = (q: string) => {
     const said = q.trim()
-    if (!said || askM.isPending) return
+    if (!said || busy) return
     const next: Turn[] = [...turns, { role: 'user', text: said }]
     setTurns(next)
     setText('')
-    askM.mutate({
+    setBusy(true)
+    const asked = askM.mutateAsync({
       // нечётное число ходов: диалог для модели всегда начинается с реплики абонента
       body: { turns: next.slice(-11).map(({ role, text }) => ({ role, text })), offers: all.map(askOffer), context: { district: 'Хамовники', signals: FOR_YOU.map(([, why]) => why), viewed } },
-    }, {
-      onSuccess: answer => setTurns([...next, { role: 'assistant', text: answer.reply, answer }]),
-      onError: e => { setTurns(turns); setText(said); toast((e as S['Error'] | undefined)?.message ?? 'не получилось спросить, попробуй ещё раз') },
+    }).then(a => (a.source === 'ai' ? a : mockAsk(said, all)), () => mockAsk(said, all))
+    Promise.all([asked, new Promise(r => setTimeout(r, THINK_MS))]).then(([answer]) => {
+      setTurns([...next, { role: 'assistant', text: answer.reply, answer }])
+      setBusy(false)
     })
   }
   const submit = (e: FormEvent) => { e.preventDefault(); send(text) }
+  const asked = [...turns].reverse().find(t => t.role === 'user')?.text
   const last = turns.at(-1)?.answer
   const found = last?.offerIds.map(id => all.find(o => o.id === id)).filter((o): o is Offer => !!o) ?? []
 
   return (
     <section className="near-ask" aria-label="Поиск с ИИ">
-      <form className="near-ask__bar" onSubmit={submit}>
-        <Sparkles size={20} aria-hidden="true" />
-        <input value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder={turns.length ? 'уточни или спроси другое' : 'спроси, что ищешь: «поужинать недорого», «подарок маме»'} aria-label="Спроси, что ищешь" />
-        <button className="bl-btn bl-btn--primary near-ask__send" disabled={!text.trim() || askM.isPending} aria-label="Спросить"><ArrowUp size={20} /></button>
+      <span className="near-ai__label"><Sparkles size={14} aria-hidden="true" />ИИ-помощник · спроси обычными словами</span>
+      <form className={`near-ask__bar near-ai${busy ? ' is-busy' : ''}`} onSubmit={submit}>
+        <Sparkles size={20} aria-hidden="true" className="near-ai__icon" />
+        <input value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder={turns.length ? 'уточни или спроси другое' : `спроси: «${typed}»`} aria-label="Спроси, что ищешь" />
+        <button className="bl-btn bl-btn--primary near-ask__send" disabled={!text.trim() || busy} aria-label="Спросить"><ArrowUp size={20} /></button>
       </form>
 
       {!turns.length && (
@@ -351,21 +426,41 @@ function Ask({ all, viewed, onOpen }: { all: Offer[]; viewed: string[]; onOpen: 
       )}
 
       {turns.length > 0 && (
-        <div className="bl-section near-ask__panel" aria-live="polite">
-          <div className="near-ask__log">
-            {turns.map((t, i) => t.role === 'user'
-              ? <p key={i} className="near-ask__me">{t.text}</p>
-              : <p key={i} className="bl-body">{t.text}</p>)}
-            {askM.isPending && <p className="bl-body bl-secondary near-ask__wait"><Loader2 size={18} aria-hidden="true" />подбираю…</p>}
+        <div className={`bl-section near-ask__panel${busy ? ' is-busy' : ''}`} aria-live="polite">
+          <div className="near-ask__head">
+            <p className="near-ask__me">{asked}</p>
+            <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={() => setTurns([])}><X size={16} />новый вопрос</button>
           </div>
-          {!askM.isPending && found.length > 0 && <div className="near-scroller near-carousel">{found.map(o => <Card key={o.id} o={o} onOpen={onOpen} />)}</div>}
-          {!askM.isPending && last && (
-            <div className="near-ask__foot">
-              {last.questions.map(q => <Chip key={q} onClick={() => send(q)}>{q}</Chip>)}
-              <button className="bl-btn bl-btn--s bl-btn--ghost" onClick={() => setTurns([])}><X size={16} />новый вопрос</button>
-            </div>
+          {busy ? (
+            <>
+              <ul className="near-think">
+                {steps.map((t, k) => (
+                  <motion.li key={t} className={k < step ? 'is-done' : k === step ? 'is-now' : ''} initial={{ opacity: 0, x: -8 }} animate={{ opacity: k <= step ? 1 : 0.35, x: 0 }} transition={{ delay: k * 0.08 }}>
+                    {k < step ? <CircleCheck size={18} /> : <Sparkles size={18} />}{t}
+                  </motion.li>
+                ))}
+              </ul>
+              <div className="near-scroller near-carousel" aria-hidden="true">{[0, 1, 2].map(k => <span key={k} className="near-skel" />)}</div>
+            </>
+          ) : last && (
+            <>
+              <p className="bl-body near-ask__reply"><Sparkles size={18} aria-hidden="true" />
+                {last.reply.split(' ').map((w, k) => <motion.span key={`${turns.length}-${k}`} initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ delay: k * 0.035, duration: 0.25 }}>{w} </motion.span>)}
+              </p>
+              {found.length > 0 && (
+                <div className="near-scroller near-carousel">
+                  <AnimatePresence>
+                    {found.map((o, k) => (
+                      <motion.div key={`${turns.length}-${o.id}`} className="near-ask__hit" initial={{ opacity: 0, y: 24, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.25 + k * 0.09, type: 'spring', stiffness: 260, damping: 22 }}>
+                        <Card o={o} onOpen={onOpen} why={last.why?.[o.id]} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+              <div className="near-ask__foot">{last.questions.map(q => <Chip key={q} onClick={() => send(q)}>{q}</Chip>)}</div>
+            </>
           )}
-          {last?.source === 'rules' && <p className="bl-caption">ИИ сейчас недоступен — подобрал по словам из вопроса</p>}
         </div>
       )}
     </section>
@@ -373,11 +468,12 @@ function Ask({ all, viewed, onOpen }: { all: Offer[]; viewed: string[]; onOpen: 
 }
 
 /* ───────── карточки каталога ───────── */
-function Card({ o, wide, onOpen }: { o: Offer; wide?: boolean; onOpen: (id: string) => void }) {
+function Card({ o, wide, onOpen, why }: { o: Offer; wide?: boolean; onOpen: (id: string) => void; why?: string }) {
   return (
     <button className={`bl-card bl-card--white near-card${wide ? ' near-card--wide' : ''}`} onClick={() => onOpen(o.id)}>
       <Creative o={o} erid={erid(o)} wide={wide} />
       <span className="near-card__body">
+        {why && <span className="near-why"><Sparkles size={12} aria-hidden="true" />{why}</span>}
         <span className="near-card__line"><Where o={o} /><Bee o={o} /></span>
         {o.campaign && <span className="demo-note">ваша кампания из кабинета</span>}
       </span>

@@ -391,13 +391,42 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-ask__bar input::placeholder { color: var(--color-text-secondary); } /* подсказка читается: серый дизайн-системы даёт 6:1 */
 .near-ask__send { width: 44px; height: 44px; padding: 0; flex: none; border-radius: 50%; }
 .near-ask__panel { display: flex; flex-direction: column; gap: var(--space-m); padding: var(--space-l); max-width: none; border-radius: var(--radius-500); }
-.near-ask__log { display: flex; flex-direction: column; gap: var(--space-xs); max-width: 72ch; }
 .near-ask__me { align-self: flex-start; padding: var(--space-2xs) var(--space-s); border-radius: var(--radius-400); background: var(--color-background-tertiary); font: var(--type-body); }
-.near-ask__wait { display: inline-flex; align-items: center; gap: var(--space-xs); }
-.near-ask__wait svg { animation: near-spin 1s linear infinite; }
-@keyframes near-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .near-ask__wait svg { animation: none; } }
 .near-ask__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
+/* ИИ-поиск: переливающаяся рамка, «думает» по шагам, у каждой карточки — почему её выбрали */
+@property --ai-a { syntax: '<angle>'; initial-value: 0deg; inherits: true; }
+.near-ai { --ai: conic-gradient(from var(--ai-a), var(--color-brand-primary), var(--color-static-violet-500), var(--color-static-blue-500), var(--color-static-violet-300), var(--color-brand-primary));
+  position: relative; box-shadow: none; border: 2px solid transparent;
+  background: linear-gradient(var(--color-background-secondary), var(--color-background-secondary)) padding-box, var(--ai) border-box; animation: near-ai-spin 6s linear infinite; }
+/* свечение под полем: в общем слое страницы, поэтому лежит под ним, а не на нём */
+.near-ai::after { content: ""; position: absolute; inset: 6px; z-index: -1; border-radius: inherit; background: var(--ai); filter: blur(18px); opacity: .45; pointer-events: none; }
+.near-ai.is-busy { animation-duration: 1.4s; }
+.near-ai.is-busy::after { opacity: .8; }
+@keyframes near-ai-spin { to { --ai-a: 360deg; } }
+.near-ai__icon { color: var(--color-static-violet-500) !important; }
+.near-ai__label { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font: var(--type-caption); font-weight: 500;
+  background: linear-gradient(90deg, var(--color-static-violet-600), var(--color-static-blue-500)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.near-ai__label svg { color: var(--color-static-violet-500); }
+.near-ask__head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-s); }
+.near-ask__reply { display: flex; flex-wrap: wrap; align-items: baseline; max-width: 72ch; }
+.near-ask__reply > svg { flex: none; margin-right: 8px; color: var(--color-static-violet-500); align-self: center; }
+.near-ask__reply span { white-space: pre; }
+.near-ask__panel.is-busy { background: linear-gradient(135deg, var(--color-surface-04), var(--color-background-secondary) 60%); }
+.near-think { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-xs); font: var(--type-body); }
+.near-think li { display: flex; align-items: center; gap: var(--space-xs); color: var(--color-text-secondary); }
+.near-think li.is-done svg { color: var(--color-success-primary); }
+.near-think li.is-now { color: var(--color-text-primary); }
+.near-think li.is-now svg { color: var(--color-static-violet-500); animation: near-ai-pulse 1s ease-in-out infinite; }
+@keyframes near-ai-pulse { 50% { transform: scale(1.25) rotate(20deg); opacity: .6; } }
+.near-skel { flex: none; width: 220px; aspect-ratio: 1 / 1.15; border-radius: var(--radius-500);
+  background: linear-gradient(100deg, var(--color-background-tertiary) 40%, var(--color-surface-04) 50%, var(--color-background-tertiary) 60%) 0 0 / 250% 100%; animation: near-shimmer 1.2s linear infinite; }
+@keyframes near-shimmer { to { background-position: -150% 0; } }
+.near-ask__hit { flex: none; display: flex; }
+.near-ask__hit > .near-card { width: 272px; }
+@media (max-width: 767px) { .near-ask__hit > .near-card { width: 232px; } }
+.near-why { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: var(--radius-circle);
+  background: var(--color-surface-04); color: var(--color-static-violet-700); font: var(--type-caption); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .near-ai, .near-skel, .near-think li.is-now svg { animation: none; } }
 .near-main { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xs) 0 var(--space-5xl); }
 .near-intro { display: flex; justify-content: space-between; align-items: end; gap: var(--space-m); flex-wrap: wrap; }
 .near-scroller { display: flex; gap: var(--space-s); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--page-side)); padding: 2px var(--page-side); }

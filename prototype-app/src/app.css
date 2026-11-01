@@ -6,7 +6,6 @@
 .brand__name { font: var(--type-label); line-height: 18px; }
 .id-badge { display: inline-grid; width: 28px; height: 28px; flex: none; }
 .id-badge svg { width: 100%; height: 100%; }
-.id-btn { justify-content: flex-start; gap: var(--space-m); }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .demo-note { font: var(--type-micro); color: var(--color-text-secondary); display: inline-flex; gap: 6px; align-items: center; }
@@ -287,11 +286,16 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 }
 
 /* кнопки входа в фирменных цветах провайдеров */
-.id-btn { color: #fff; }
-.id-btn--gos { --bl-btn-bg: #0D4CD3; --bl-btn-fg: #fff; }
-.id-btn--sber { --bl-btn-bg: #21A038; --bl-btn-fg: #fff; }
-.id-btn--alfa { --bl-btn-bg: #EF3124; --bl-btn-fg: #fff; }
-.id-btn:disabled { opacity: .6; }
+/* бизнес-ID: белые строки с настоящими логотипами, как SSO-кнопки */
+.id-btn { display: grid; grid-template-columns: 132px 1fr auto; align-items: center; gap: var(--space-m); width: 100%; min-height: 60px; padding: 0 var(--space-l); border: 1px solid var(--color-background-tertiary); border-radius: var(--radius-500);
+  background: var(--color-background-secondary); color: var(--color-text-primary); font: var(--type-label); text-align: left; cursor: pointer; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.id-btn img { height: 22px; width: auto; max-width: 132px; object-fit: contain; object-position: left; }
+.id-btn--sber img { height: 20px; }
+.id-btn:hover:not(:disabled) { border-color: var(--color-text-primary); box-shadow: 0 6px 20px rgba(40, 48, 63, .08); transform: translateY(-1px); }
+.id-btn:focus-visible { outline: 2px solid var(--color-text-link); outline-offset: 2px; }
+.id-btn__go { color: var(--color-text-tertiary); transition: color .2s, transform .2s; }
+.id-btn:hover .id-btn__go { color: var(--color-text-primary); transform: translateX(2px); }
+.id-btn:disabled { opacity: .6; cursor: default; }
 .id-mark { width: 28px; height: 28px; display: grid; place-items: center; flex: none; }
 .id-mark svg, .id-mark img { width: 28px; height: 28px; }
 .or { display: flex; align-items: center; gap: var(--space-s); font: var(--type-caption); color: var(--color-text-secondary); margin: var(--space-xs) 0; }
@@ -320,8 +324,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .partner-logo svg, .partner-logo img { width: 24px; height: 24px; }
 
 /* кнопки входа: значок на белой подложке, чтобы читался на фирменном цвете */
-.id-btn .id-badge { border-radius: 8px; background: #fff; }
-.id-btn__text { flex: 1; text-align: left; }
+.id-btn__text { color: var(--color-text-secondary); }
 .partner-pill { gap: 8px; height: 44px; padding: 0 16px 0 8px; font: var(--type-body-tight); }
 .partner-pill .partner-logo, .partner-pill .partner-logo svg { width: 28px; height: 28px; }
 
@@ -776,3 +779,21 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-logo img[src$="brandshop.png"] { max-height: 46px; }
 .v2-logo:hover img { filter: none; opacity: 1; }
 @media (max-width: 767px) { .v2-logo { width: 150px; height: 80px; } }
+
+/* вход: слева форма на белом, справа превью охвата на цветной подложке */
+.login { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--space-m); padding: var(--space-m); }
+.login__form { --bl-contrast: var(--color-background-primary); display: flex; flex-direction: column; padding: var(--space-xl) var(--space-3xl); border-radius: var(--radius-800); background: var(--color-background-secondary); }
+.login__head { display: flex; justify-content: space-between; align-items: center; }
+.login__body { --bl-gap: 20px; width: 100%; max-width: 440px; margin: auto; padding: var(--space-xl) 0; }
+.login__foot a { color: var(--color-text-link); }
+.login__aside { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: var(--space-xl); }
+.login__preview { width: min(100%, 520px); }
+.login__map { position: relative; aspect-ratio: 16 / 10; }
+.login__map .reach-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+.login__stat { display: flex; flex-direction: column; gap: 2px; padding: var(--space-l) var(--space-xl); border-top: 1px solid var(--color-background-tertiary); }
+.login__perks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-s); width: min(100%, 520px); font: var(--type-body); }
+.login__perks li { display: flex; align-items: center; gap: var(--space-s); }
+.login__check { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
+@media (max-height: 720px) { .login__body { --bl-gap: 14px; } .login__map { aspect-ratio: 2 / 1; } .login__form { padding-block: var(--space-m); } }
+@media (max-width: 767px) { .id-btn { grid-template-columns: 104px 1fr auto; gap: var(--space-s); padding: 0 var(--space-m); } .id-btn img { max-width: 104px; height: 18px; } .id-btn--sber img { height: 16px; } .id-btn__text { font: var(--type-caption); } }
+@media (max-width: 1023px) { .login { grid-template-columns: 1fr; padding: 0; } .login__aside { display: none; } .login__form { border-radius: 0; padding: var(--space-m) var(--space-l); } }

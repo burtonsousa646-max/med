@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, animate, motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useTransform, type MotionValue } from 'motion/react'
-import { ArrowRight, BellRing, Bot, Check, EyeOff, FileCheck2, Globe, LayoutTemplate, MapPin, Pause, Play, Smartphone, Sparkles, Tv, UserPlus, Wallet } from 'lucide-react'
+import { ArrowRight, BellRing, Bot, Briefcase, Check, Clock, CreditCard, EyeOff, FileCheck2, Footprints, Globe, Home, LayoutTemplate, MapPin, Pause, Play, Smartphone, Sparkles, Truck, Tv, UserPlus, Wallet } from 'lucide-react'
 import { PhoneSurface, ReachMap } from '../mock'
 import { Creative, creativeOf, type CreativeData } from '../creative'
 import { Brand, Chip, Num, PartnerLogo, Photo, Reveal, Segmented } from '../ui'
@@ -360,10 +360,16 @@ function Clients() {
   )
 }
 
-// кому покажем: радиус и момент выбирает сам посетитель лендинга — круги и число людей меняются вживую.
+// кому покажем — как продуктовые экраны у Shopify: заголовок, под ним окно кабинета на цветной подложке
+// (настройки слева живые — круги и число людей меняются), ниже три коротких пояснения.
 // Доли моментов — заглушки, в бою придут из охвата по точкам
 const RADIUS: [string, number, number][] = [['500 м', 60, 4100], ['1 км', 105, 12400], ['3 км', 190, 61000]]
-const WHEN: [string, string, number][] = [['всегда', '', 1], ['в день зарплаты', ' · в день зарплаты', 0.18], ['после переезда', ' · недавно переехали', 0.03], ['после оплаты', ' · сразу после оплаты', 0.35]]
+const WHEN: [string, string, number, typeof Wallet][] = [['всегда', '', 1, Clock], ['в день зарплаты', ' · в день зарплаты', 0.18, Wallet], ['после переезда', ' · недавно переехали', 0.03, Truck], ['после оплаты', ' · сразу после оплаты', 0.35, CreditCard]]
+const NEAR = [
+  { i: Home, t: 'живут рядом', d: 'Соседи в радиусе, который вы выбрали.' },
+  { i: Briefcase, t: 'работают рядом', d: 'Заходят в обед и после работы.' },
+  { i: Footprints, t: 'бывают каждый день', d: 'Проходят мимо по дороге домой или в метро.' },
+]
 function AroundPoint() {
   const [n, setN] = useState(0)
   const [rad, setRad] = useState(1)
@@ -372,29 +378,53 @@ function AroundPoint() {
   useEffect(() => { if (reduce) return; const t = setInterval(() => setN(x => x + 1), 2600); return () => clearInterval(t) }, [reduce])
   const [label, r, people] = RADIUS[rad]
   return (
-    <section id="who" className="bl-section bl-section--wide v2-split v2-split--map">
-      <div className="v2-map">
-        <ReachMap points={POINTS} r={r} />
-        <AnimatePresence>
-          <motion.div key={n} className="float-card v2-map__guest" style={{ left: `${18 + (n * 23) % 50}%`, top: `${12 + (n * 37) % 55}%` }}
-            initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}>
-            <span className="guest-dot"><UserPlus size={16} /></span>
-            <span><b className="bl-medium">+1 гость</b><span className="bl-micro" style={{ display: 'block' }}>{['300 м', '650 м', '900 м'][n % 3]} от точки</span></span>
-          </motion.div>
-        </AnimatePresence>
-        <span className="bl-pill-dark v2-map__today">сегодня пришли: <b className="bl-nums">{14 + n}</b></span>
-      </div>
-      <div className="bl-stack" style={{ ['--bl-gap' as string]: '24px' }}>
-        <h2 className="bl-display-l">покажем тем, кто рядом и&nbsp;кому это нужно сейчас</h2>
-        <p className="bl-body bl-secondary">Тем, кто живёт, работает или каждый день бывает рядом с вашей точкой. Данные абонентов вам не передаём — только итоги кампании.</p>
-        <div className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }}>
-          <span className="bl-caption">радиус от точки</span>
-          <Segmented label="Радиус охвата" value={rad} onChange={setRad} options={RADIUS.map(([t], i) => [i, t] as [number, string])} />
-          <span className="bl-caption">когда показать</span>
-          <div className="bl-row">{WHEN.map(([t], i) => <Chip key={t} on={i === when} onClick={() => setWhen(i)}>{t}</Chip>)}</div>
+    <section id="who" className="bl-section bl-section--wide v2-reach">
+      <div className="section-head">
+        <h2 className="bl-display-l">покажем тем, кто рядом<br />и кому это нужно сейчас</h2>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
+          <p className="bl-body bl-secondary">Выберите радиус и момент — охват посчитаем сразу. Данные абонентов вам не передаём, только итоги кампании.</p>
+          <Go to="/login">посчитать для своих точек</Go>
         </div>
-        <div className="bl-stat"><span className="bl-stat__value"><Num value={Math.round(people * POINTS.length * WHEN[when][2] / 10) * 10} /></span><span className="bl-stat__label">человек в {label} от двух ваших точек{WHEN[when][1]}</span></div>
-        <Go to="/login">посчитать для своих точек</Go>
+      </div>
+      <Reveal className="v2-reach__stage">
+        <div className="v2-app">
+          <aside className="v2-app__panel">
+            <div className="v2-app__top"><b className="bl-h4">кому показать</b><span className="bl-caption">кофейня «Зерно» · 2 точки</span></div>
+            <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
+              <span className="bl-caption">радиус от точки</span>
+              <Segmented label="Радиус охвата" value={rad} onChange={setRad} options={RADIUS.map(([t], i) => [i, t] as [number, string])} />
+            </div>
+            <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
+              <span className="bl-caption">когда показать</span>
+              <div className="v2-when" role="radiogroup" aria-label="Когда показать">
+                {WHEN.map(([t, , share, I], i) => (
+                  <button key={t} type="button" role="radio" aria-checked={i === when} className={i === when ? 'is-on' : ''} onClick={() => setWhen(i)}>
+                    <I size={18} /><span>{t}</span><span className="bl-caption">{Math.round(share * 100)} %</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="v2-app__result">
+              <span className="bl-caption">подходящих людей</span>
+              <b className="bl-h1"><Num value={Math.round(people * POINTS.length * WHEN[when][2] / 10) * 10} /></b>
+              <span className="bl-caption">в {label} от двух точек{WHEN[when][1]}</span>
+            </div>
+          </aside>
+          <div className="v2-map">
+            <ReachMap points={POINTS} r={r} />
+            <AnimatePresence>
+              <motion.div key={n} className="float-card v2-map__guest" style={{ left: `${18 + (n * 23) % 50}%`, top: `${12 + (n * 37) % 55}%` }}
+                initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}>
+                <span className="guest-dot"><UserPlus size={16} /></span>
+                <span><b className="bl-medium">+1 гость</b><span className="bl-micro" style={{ display: 'block' }}>{['300 м', '650 м', '900 м'][n % 3]} от точки</span></span>
+              </motion.div>
+            </AnimatePresence>
+            <span className="bl-pill-dark v2-map__today">сегодня пришли: <b className="bl-nums">{14 + n}</b></span>
+          </div>
+        </div>
+      </Reveal>
+      <div className="bl-grid v2-reach__feats" style={{ ['--bl-cols' as string]: 3 }}>
+        {NEAR.map((x, k) => <Reveal key={x.t} delay={k * 0.08} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
     </section>
   )

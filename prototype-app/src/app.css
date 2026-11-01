@@ -586,8 +586,22 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   background: var(--color-background-secondary-invert); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text-primary-invert) 18%, transparent); }
 .v2-tile .partner-logo, .v2-tile .partner-logo svg { width: 40px; height: 40px; }
 
-.v2-split--map { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
-.v2-map { position: relative; border-radius: var(--radius-600); overflow: hidden; aspect-ratio: 4 / 3; }
+.v2-map { position: relative; overflow: hidden; min-height: 460px; }
+.v2-map .reach-map { position: absolute; inset: 0; }
+/* «кому покажем»: окно кабинета на цветной подложке, как продуктовые кадры Shopify */
+.v2-reach__stage { padding: var(--space-4xl); border-radius: var(--radius-800); background: linear-gradient(135deg, var(--color-surface-03), var(--color-surface-04) 55%, var(--color-surface-01)); }
+.v2-app { display: grid; grid-template-columns: 340px minmax(0, 1fr); border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-secondary); box-shadow: 0 30px 80px rgba(40, 48, 63, .14), 0 0 0 1px rgba(40, 48, 63, .05); }
+.v2-app__panel { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xl); border-right: 1px solid var(--color-background-tertiary); }
+.v2-app__top { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--space-m); border-bottom: 1px solid var(--color-background-tertiary); }
+.v2-app .bl-segmented button { white-space: nowrap; }
+.v2-when { display: flex; flex-direction: column; gap: 4px; }
+.v2-when button { display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: var(--space-s); padding: 10px var(--space-s); border: 1px solid transparent; border-radius: var(--radius-400); background: none; font: var(--type-label); color: var(--color-text-primary); text-align: left; cursor: pointer; transition: background .2s, border-color .2s; }
+.v2-when button:hover { background: var(--color-background-primary); }
+.v2-when button.is-on { border-color: var(--color-text-primary); background: var(--color-background-primary); }
+.v2-app__result { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding: var(--space-m) var(--space-l); border-radius: var(--radius-500); background: var(--color-background-primary); }
+.v2-reach__feats { margin-top: var(--space-3xl); }
+@media (max-width: 1023px) { .v2-reach__stage { padding: var(--space-l); } .v2-app { grid-template-columns: 1fr; } .v2-app__panel { border-right: 0; border-bottom: 1px solid var(--color-background-tertiary); } .v2-map { min-height: 0; aspect-ratio: 4 / 3; } }
+@media (max-width: 767px) { .v2-reach__stage { margin-inline: calc(-1 * var(--space-m)); padding: var(--space-s); border-radius: var(--radius-600); } .v2-reach__feats { --bl-cols: 1 !important; } }
 .v2-map .reach-map { width: 100%; height: 100%; display: block; }
 .v2-map__guest { flex-direction: row; align-items: center; gap: var(--space-s); padding: var(--space-s) var(--space-m); }
 
@@ -612,7 +626,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-steps__n { font: var(--type-h2); color: var(--color-text-secondary); min-width: 48px; }
 
 @media (max-width: 1023px) {
-  .v2-split, .v2-split--map, .v2-quote, .v2-final { grid-template-columns: 1fr; gap: var(--space-3xl); }
+  .v2-split, .v2-quote, .v2-final { grid-template-columns: 1fr; gap: var(--space-3xl); }
   .v2-any { grid-template-columns: 1fr; }
 }
 @media (max-width: 767px) {

@@ -723,10 +723,10 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-go { align-self: flex-start; }
 .v2-bonus .v2-go { margin-top: var(--space-l); }
 .v2-clients__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-l); flex-wrap: wrap; }
-.v2-clients { display: flex; flex-direction: column; gap: var(--space-l); padding-block: var(--space-3xl); overflow: hidden; }
+.v2-clients { display: flex; flex-direction: column; gap: var(--space-l); padding-block: var(--space-3xl); overflow: hidden; background: none; } /* без подложки: плитки сами белые на фоне страницы */
 .v2-ticker--logos { margin-bottom: 0; }
 .v2-ticker--logos .v2-ticker__track { list-style: none; margin: 0; padding: 0; animation-duration: 32s; }
-.v2-logo { flex: none; width: 200px; height: 96px; display: grid; place-items: center; padding: var(--space-m); border-radius: var(--radius-500); background: var(--color-background-primary); }
+.v2-logo { flex: none; width: 200px; height: 96px; display: grid; place-items: center; padding: var(--space-m); border-radius: var(--radius-500); background: var(--color-background-secondary); }
 .v2-logo img { max-width: 100%; max-height: 34px; object-fit: contain; filter: grayscale(1); opacity: .6; mix-blend-mode: multiply; transition: filter .3s, opacity .3s; }
 .v2-logo img[src$="brandshop.png"] { max-height: 46px; }
 .v2-logo:hover img { filter: none; opacity: 1; }

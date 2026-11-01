@@ -391,6 +391,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-ask__bar input::placeholder { color: var(--color-text-secondary); } /* подсказка читается: серый дизайн-системы даёт 6:1 */
 .near-ask__send { width: 44px; height: 44px; padding: 0; flex: none; border-radius: 50%; }
 .near-ask__panel { display: flex; flex-direction: column; gap: var(--space-m); padding: var(--space-l); max-width: none; border-radius: var(--radius-500); }
+/* лента в панели доходит до краёв панели, а не экрана, как в ленте страницы */
+.near-ask__panel .near-scroller { margin-inline: calc(-1 * var(--space-l)); padding-inline: var(--space-l); }
 .near-ask__me { align-self: flex-start; padding: var(--space-2xs) var(--space-s); border-radius: var(--radius-400); background: var(--color-background-tertiary); font: var(--type-body); }
 .near-ask__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
 /* ИИ-поиск: переливающаяся рамка, «думает» по шагам, у каждой карточки — почему её выбрали */

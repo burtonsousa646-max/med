@@ -86,6 +86,9 @@ function useAuto(len: number, ms: number) {
 // полоска прогресса под активным шагом, длиной в один шаг
 const Prog = ({ i, ms, run }: { i: number; ms: number; run: boolean }) =>
   <span key={i} className="v2-prog" style={{ animationDuration: `${ms}ms`, animationPlayState: run ? 'running' : 'paused' }} />
+// целевое действие блока. Жёлтая кнопка на экране одна (hero, финал или шапка), поэтому здесь тёмная или ссылка
+const Go = ({ to, ghost, children }: { to: string; ghost?: boolean; children: ReactNode }) =>
+  <Link className={`bl-btn v2-go ${ghost ? 'bl-btn--ghost' : 'bl-btn--dark'}`} to={to}>{children} <ArrowRight size={18} /></Link>
 
 const SURFACES = [
   { k: 'main' as const, t: 'на главной приложения', d: 'Первое, что абонент видит утром, когда проверяет баланс.' },
@@ -112,6 +115,7 @@ function Everywhere() {
               </li>
             ))}
           </ol>
+          <Go to="/login">разместить акцию</Go>
         </div>
         <div className="v2-stage__phone">
           <AnimatePresence mode="wait" initial={false}>
@@ -157,6 +161,7 @@ function Chat() {
           <span className="bl-caption">спросите сами:</span>
           <div className="bl-row">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
         </div>
+        <Go to="/near">открыть «лучшее рядом»</Go>
       </div>
       <div ref={ref} className="v2-chat v2-chat--live" aria-live="polite" aria-label="Пример диалога в витрине">
         <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
@@ -320,6 +325,7 @@ function Anywhere() {
           </article>
         ))}
       </div>
+      <Go to="/login">собрать объявление</Go>
     </section>
   )
 }
@@ -337,7 +343,10 @@ const CLIENTS: [string, string][] = [
 function Clients() {
   return (
     <section className="bl-section bl-section--wide v2-clients" aria-labelledby="clients-h">
-      <h2 id="clients-h" className="bl-h3">нам доверяют</h2>
+      <div className="v2-clients__head">
+        <h2 id="clients-h" className="bl-h3">нам доверяют</h2>
+        <Go ghost to="/login">стать партнёром</Go>
+      </div>
       <div className="v2-ticker v2-ticker--logos">
         <ul className="v2-ticker__track">
           {[...CLIENTS, ...CLIENTS].map(([f, t], k) => (
@@ -383,6 +392,7 @@ function AroundPoint() {
           <div className="bl-row">{WHEN.map(([t], i) => <Chip key={t} on={i === when} onClick={() => setWhen(i)}>{t}</Chip>)}</div>
         </div>
         <div className="bl-stat"><span className="bl-stat__value"><Num value={Math.round(people * POINTS.length * WHEN[when][2] / 10) * 10} /></span><span className="bl-stat__label">человек в {label} от двух ваших точек{WHEN[when][1]}</span></div>
+        <Go to="/inn">посчитать для ваших адресов</Go>
       </div>
     </section>
   )
@@ -469,6 +479,7 @@ function Assistant() {
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
         <h2 className="bl-display-l">помощник, который считает за вас</h2>
         <p className="bl-lead bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами — попробуйте.</p>
+        <Go to="/cab/stats">открыть демо-кабинет</Go>
       </div>
       <div className="v2-chat v2-chat--white">
         <div className="v2-bubble v2-bubble--me">почему в среду меньше гостей?</div>
@@ -507,7 +518,10 @@ function Integrations() {
     <section className="bl-section bl-section--wide v2-integr-sec">
       <div className="section-head">
         <h2 className="bl-display-l">подключается к тому,<br />что у вас уже есть</h2>
-        <p className="bl-body bl-secondary" style={{ maxWidth: 360 }}>Вход через бизнес-ID: компанию, точки и реквизиты узнаем сами.</p>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 360 }}>
+          <p className="bl-body bl-secondary">Вход через бизнес-ID: компанию, точки и реквизиты узнаем сами.</p>
+          <Go to="/login">войти по бизнес-ID</Go>
+        </div>
       </div>
       <div className="v2-ids">
         {([['gos', 'Госуслуги'], ['sber', 'СберБизнес ID'], ['alfa', 'Альфа ID для бизнеса']] as const).map(([id, t]) => <span key={id} className="v2-id"><IdBadge id={id} />{t}</span>)}
@@ -544,6 +558,7 @@ function Trust() {
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         {trust.map((x, n) => <Reveal key={x.t} delay={0.2 + n * 0.1} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
+      <Go to="/inn">попробовать с 3 000 ₽</Go>
     </section>
   )
 }
@@ -562,6 +577,7 @@ function Quote() {
         {([[3000, ' ₽', 'на баланс за первую кампанию'], [0, ' ₽', 'за показы и подключение'], [1, ' день', 'до первых гостей']] as const).map(([v, u, t], n) => (
           <Reveal key={t} delay={n * 0.1} className="v2-bonus__row"><b className="bl-h2"><Num value={v} suffix={u} from={0} /></b><span className="bl-body bl-secondary">{t}</span></Reveal>
         ))}
+        <Go to="/login">получить бонус 3 000 ₽</Go>
       </div>
     </section>
   )
@@ -620,7 +636,11 @@ const FAQ: [string, string][] = [
 function Faq() {
   return (
     <section id="faq" className="bl-section bl-section--wide v2-faq">
-      <h2 className="bl-display-l">остались вопросы?</h2>
+      <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
+        <h2 className="bl-display-l">остались вопросы?</h2>
+        <p className="bl-body bl-secondary">Не нашли ответ — спросите менеджера, он поможет и с первой кампанией.</p>
+        <Go to="/cab/help">задать вопрос</Go>
+      </div>
       <div className="bl-accordion">
         {FAQ.map(([q, a], k) => <details key={q} open={k === 0}><summary>{q}</summary><div className="bl-accordion__body">{a}</div></details>)}
       </div>

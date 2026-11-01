@@ -710,6 +710,9 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: var(--space-5xl); align-items: start; }
 @media (max-width: 1023px) { .v2-price, .v2-faq { grid-template-columns: 1fr; gap: var(--space-3xl); } }
 /* нам доверяют: лента логотипов, пауза при наведении */
+.v2-go { align-self: flex-start; }
+.v2-bonus .v2-go { margin-top: var(--space-l); }
+.v2-clients__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-l); flex-wrap: wrap; }
 .v2-clients { display: flex; flex-direction: column; gap: var(--space-l); padding-block: var(--space-3xl); overflow: hidden; }
 .v2-ticker--logos { margin-bottom: 0; }
 .v2-ticker--logos .v2-ticker__track { list-style: none; margin: 0; padding: 0; animation-duration: 32s; }

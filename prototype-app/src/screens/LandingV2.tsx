@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, animate, motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useTransform, type MotionValue } from 'motion/react'
-import { ArrowRight, BellRing, Bot, Briefcase, Check, Clock, CreditCard, EyeOff, FileCheck2, Footprints, Globe, Home, LayoutTemplate, MapPin, Pause, Play, Smartphone, Sparkles, Truck, Tv, UserPlus, Wallet } from 'lucide-react'
+import { ArrowRight, BellRing, Bot, Briefcase, Check, Clock, Coins, CreditCard, EyeOff, FileCheck2, Footprints, Globe, Home, LayoutTemplate, MapPin, Pause, PenLine, Play, Smartphone, Sparkles, TrendingDown, Truck, Tv, UserPlus, Wallet } from 'lucide-react'
 import { PhoneSurface, ReachMap } from '../mock'
 import { Creative, creativeOf, type CreativeData } from '../creative'
 import { Brand, Chip, Num, PartnerLogo, Photo, Reveal, Segmented } from '../ui'
@@ -103,29 +103,32 @@ function Everywhere() {
   const a = useAuto(SURFACES.length, SURF_MS)
   return (
     <section id="where" className="bl-section bl-section--wide">
-      <div ref={a.ref} className="v2-stage" {...a.hover}>
-        <div className="bl-stack" style={{ ['--bl-gap' as string]: '32px' }}>
+      <div ref={a.ref} {...a.hover}>
+        <div className="section-head">
           <h2 className="bl-display-l">вас увидят там,<br />где абонент проводит день</h2>
-          <ol className="v2-tabs">
-            {SURFACES.map((x, n) => (
-              <li key={x.k} className={n === a.i ? 'is-on' : ''}>
-                <button type="button" onClick={() => a.pick(n)} aria-pressed={n === a.i}>
-                  <span className="bl-h3">{x.t}</span>
-                  {n === a.i && <motion.span className="bl-body bl-secondary" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>{x.d}</motion.span>}
-                </button>
-                {n === a.i && <Prog i={a.i} ms={SURF_MS} run={a.run} />}
-              </li>
-            ))}
-          </ol>
-          <Go to="/login">выбрать, где показать</Go>
+          <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
+            <p className="bl-body bl-secondary">Одна кампания — четыре места в приложении билайна. Показываем там, где решение ближе всего.</p>
+            <Go to="/login">выбрать, где показать</Go>
+          </div>
         </div>
-        <div className="v2-stage__phone">
+        <div className="v2-backdrop v2-backdrop--teal v2-where">
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={a.i} initial={{ opacity: 0, y: 24, rotate: -2 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease: [0.2, 0.7, 0.2, 1] }}>
+            <motion.div key={a.i} initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} transition={{ duration: 0.45, ease: [0.2, 0.7, 0.2, 1] }}>
               <PhoneSurface kind={SURFACES[a.i].k} />
             </motion.div>
           </AnimatePresence>
         </div>
+        <ol className="v2-tabs v2-tabs--row">
+          {SURFACES.map((x, n) => (
+            <li key={x.k} className={n === a.i ? 'is-on' : ''}>
+              <button type="button" onClick={() => a.pick(n)} aria-pressed={n === a.i}>
+                <span className="bl-h4">{x.t}</span>
+                <span className="bl-body bl-secondary">{x.d}</span>
+              </button>
+              {n === a.i && <Prog i={a.i} ms={SURF_MS} run={a.run} />}
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )
@@ -154,31 +157,37 @@ function Chat() {
   useEffect(() => { if (at >= T.next && !reduce) { setS(v => (v + 1) % ASKS.length); setK(0) } }, [at])
   const play = (n: number) => { setS(n); setK(0) }
   return (
-    <section className="bl-section bl-section--wide v2-split">
-      <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
-        <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}><Sparkles size={14} /> новое</span>
-        <h2 className="bl-display-l">и даже когда спрашивают словами</h2>
-        <p className="bl-lead bl-secondary">Абонент спрашивает приложение словами, ИИ подбирает акции рядом. Ваша появится сама, если подходит. Настраивать ничего не нужно.</p>
-        <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
-          <span className="bl-caption">спросите сами:</span>
-          <div className="bl-row">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
+    <section className="bl-section bl-section--wide">
+      <div className="section-head">
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
+          <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}><Sparkles size={14} /> новое</span>
+          <h2 className="bl-display-l">и даже когда<br />спрашивают словами</h2>
         </div>
-        <Go to="/login">разместить акцию в «лучшее рядом»</Go>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
+          <p className="bl-body bl-secondary">Абонент спрашивает приложение словами, ИИ подбирает акции рядом. Ваша появится сама, если подходит. Настраивать ничего не нужно.</p>
+          <Go to="/login">разместить акцию в «лучшее рядом»</Go>
+        </div>
       </div>
-      <div ref={ref} className="v2-chat v2-chat--live" aria-live="polite" aria-label="Пример диалога в витрине">
-        <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
-        <AnimatePresence mode="popLayout">
-          {at >= T.think && at < T.answer && <motion.div key={`t${s}`} className="v2-bubble v2-typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><i /><i /><i /></motion.div>}
-          {at >= T.answer && <motion.div key={`a${s}`} className="v2-bubble" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><Bot size={16} /> {x.a}</motion.div>}
-        </AnimatePresence>
-        <div className="v2-chat__cards">
-          {at >= T.cards && x.ids.map((id, n) => (
-            <motion.div key={`${s}${id}`} initial={{ opacity: 0, scale: 0.9, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: n * 0.12, type: 'spring', stiffness: 260, damping: 22 }}>
-              <Creative o={OFFERS.find(o => o.id === id)!} erid="реклама" />
-            </motion.div>
-          ))}
+      <div className="v2-backdrop v2-backdrop--violet v2-center">
+        <div className="bl-row v2-asks" aria-label="Спросите сами">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
+        <div className="v2-window v2-window--chat">
+          <div className="v2-window__bar"><Sparkles size={16} /> лучшее рядом · поиск словами</div>
+          <div ref={ref} className="v2-chat v2-chat--white v2-chat--live" aria-live="polite" aria-label="Пример диалога в витрине">
+            <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
+            <AnimatePresence mode="popLayout">
+              {at >= T.think && at < T.answer && <motion.div key={`t${s}`} className="v2-bubble v2-typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><i /><i /><i /></motion.div>}
+              {at >= T.answer && <motion.div key={`a${s}`} className="v2-bubble" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><Bot size={16} /> {x.a}</motion.div>}
+            </AnimatePresence>
+            <div className="v2-chat__cards">
+              {at >= T.cards && x.ids.map((id, n) => (
+                <motion.div key={`${s}${id}`} initial={{ opacity: 0, scale: 0.9, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: n * 0.12, type: 'spring', stiffness: 260, damping: 22 }}>
+                  <Creative o={OFFERS.find(o => o.id === id)!} erid="реклама" />
+                </motion.div>
+              ))}
+            </div>
+            {at >= T.cards && <motion.div className="bl-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{x.more.map(m => <span key={m} className="bl-chip">{m}</span>)}</motion.div>}
+          </div>
         </div>
-        {at >= T.cards && <motion.div className="bl-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{x.more.map(m => <span key={m} className="bl-chip">{m}</span>)}</motion.div>}
       </div>
     </section>
   )
@@ -386,8 +395,8 @@ function AroundPoint() {
           <Go to="/login">посчитать для своих точек</Go>
         </div>
       </div>
-      <Reveal className="v2-reach__stage">
-        <div className="v2-app">
+      <Reveal className="v2-backdrop">
+        <div className="v2-window v2-app">
           <aside className="v2-app__panel">
             <div className="v2-app__top"><b className="bl-h4">кому показать</b><span className="bl-caption">кофейня «Зерно» · 2 точки</span></div>
             <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
@@ -423,7 +432,7 @@ function AroundPoint() {
           </div>
         </div>
       </Reveal>
-      <div className="bl-grid v2-reach__feats" style={{ ['--bl-cols' as string]: 3 }}>
+      <div className="bl-grid v2-feats" style={{ ['--bl-cols' as string]: 3 }}>
         {NEAR.map((x, k) => <Reveal key={x.t} delay={k * 0.08} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
     </section>
@@ -445,9 +454,13 @@ function Pricing() {
     <section id="price" className="bl-section bl-section--wide">
       <div className="section-head">
         <h2 className="bl-display-l">платите за действия,<br />а не за показы</h2>
-        <p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Показы бесплатно. Пополнение от 3 000 ₽, остаток вернём. На первую кампанию добавим ещё 3 000 ₽ бонусом.</p>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
+          <p className="bl-body bl-secondary">Показы бесплатно. Пополнение от 3 000 ₽, остаток вернём. На первую кампанию добавим ещё 3 000 ₽ бонусом.</p>
+          <Go to="/login">точный расчёт в кабинете</Go>
+        </div>
       </div>
-      <div className="v2-price">
+      <div className="v2-backdrop v2-backdrop--green">
+      <div className="v2-window v2-price">
         <div className="v2-calc">
           <div className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }}>
             <span className="bl-caption">ваша сфера</span>
@@ -462,7 +475,6 @@ function Pricing() {
             <span className="bl-number-xl"><Num value={got} /> <span className="bl-h3">{niche.unit}</span></span>
             <span className="bl-caption">{n(clicks)} переходов по {niche.cpc} ₽ · в среднем {rub(budget / got)} за каждого</span>
           </div>
-          <Go to="/login">точный расчёт в кабинете</Go>
         </div>
         <ul className="v2-models">
           {MODELS.map((m, k) => (
@@ -472,6 +484,7 @@ function Pricing() {
             </li>
           ))}
         </ul>
+      </div>
       </div>
     </section>
   )
@@ -506,18 +519,28 @@ function ForEveryone() {
 }
 
 // помощник: кнопки настоящие — «поднять» двигает прогноз на графике, «оставить» отвечает и тоже ждёт решения заново
+const HELPS = [
+  { i: TrendingDown, t: 'замечает просадки', d: 'Дождь, праздник, ремонт улицы — скажет, почему гостей стало меньше.' },
+  { i: Coins, t: 'предлагает ставку', d: 'Посчитает, сколько гостей добавит каждый рубль, и спросит вас.' },
+  { i: PenLine, t: 'пишет тексты', d: 'Предложит условие и текст объявления. Поправить можно словами.' },
+]
 const BASE_WEEK = [38, 41, 22, 24, 40, 52, 47]
 function Assistant() {
   const [choice, setChoice] = useState<'up' | 'keep' | null>(null)
   const week = BASE_WEEK.map((v, d) => choice === 'up' && (d === 2 || d === 3) ? v + 11 : v)
   const max = 64
   return (
-    <section className="bl-section bl-section--wide v2-split v2-assist">
-      <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
-        <h2 className="bl-display-l">помощник, который считает за вас</h2>
-        <p className="bl-lead bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами — попробуйте.</p>
+    <section className="bl-section bl-section--wide">
+      <div className="section-head">
+        <h2 className="bl-display-l">помощник,<br />который считает за вас</h2>
+        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
+        <p className="bl-body bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами — попробуйте.</p>
         <Go to="/login">попробовать в своём кабинете</Go>
+        </div>
       </div>
+      <div className="v2-backdrop v2-backdrop--magenta v2-center">
+      <div className="v2-window v2-window--chat">
+      <div className="v2-window__bar"><Bot size={16} /> помощник · кофейня «Зерно»</div>
       <div className="v2-chat v2-chat--white">
         <div className="v2-bubble v2-bubble--me">почему в среду меньше гостей?</div>
         <div className="v2-bubble"><Bot size={16} /> Шёл дождь, гостей в обед пришло почти вдвое меньше. Поднять ставку с 12 до 15 часов на 2 ₽? В среду и четверг это около +22 гостей.</div>
@@ -540,6 +563,11 @@ function Assistant() {
                 {' '}<button type="button" className="v2-link" onClick={() => setChoice(null)}>спросить снова</button>
               </motion.div>}
         </AnimatePresence>
+      </div>
+      </div>
+      </div>
+      <div className="bl-grid v2-feats" style={{ ['--bl-cols' as string]: 3 }}>
+        {HELPS.map((x, k) => <Reveal key={x.t} delay={k * 0.08} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
     </section>
   )

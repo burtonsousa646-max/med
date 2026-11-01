@@ -527,7 +527,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-rot { display: inline-grid; overflow: hidden; vertical-align: bottom; color: var(--color-text-secondary); }
 .v2-rot > span { grid-area: 1 / 1; white-space: nowrap; }
 
-.v2-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-5xl); align-items: center; }
 .v2-chat { display: flex; flex-direction: column; gap: var(--space-s); padding: var(--space-xl); border-radius: var(--radius-600); background: var(--color-background-primary); }
 .v2-chat--white { background: var(--color-background-secondary); }
 .v2-bubble { max-width: 85%; padding: var(--space-s) var(--space-m); border-radius: var(--radius-500); background: var(--color-background-secondary); font: var(--type-body); }
@@ -535,7 +534,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-bubble svg { vertical-align: -2px; margin-right: 4px; }
 .v2-bubble--me { align-self: flex-end; background: var(--color-background-secondary-invert) !important; color: var(--color-text-primary-invert); }
 .v2-chat__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 180px)); gap: var(--space-s); }
-.v2-assist { background: var(--color-surface-04); }
 
 
 /* «будьте везде»: тёмные карточки с интерфейсом, подпись под карточкой, как у Shopify */
@@ -589,8 +587,32 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-map { position: relative; overflow: hidden; min-height: 460px; }
 .v2-map .reach-map { position: absolute; inset: 0; }
 /* «кому покажем»: окно кабинета на цветной подложке, как продуктовые кадры Shopify */
-.v2-reach__stage { padding: var(--space-4xl); border-radius: var(--radius-800); background: linear-gradient(135deg, var(--color-surface-03), var(--color-surface-04) 55%, var(--color-surface-01)); }
-.v2-app { display: grid; grid-template-columns: 340px minmax(0, 1fr); border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-secondary); box-shadow: 0 30px 80px rgba(40, 48, 63, .14), 0 0 0 1px rgba(40, 48, 63, .05); }
+/* продуктовые кадры как у Shopify: цветная подложка, на ней окно интерфейса; у каждого блока свой оттенок */
+.v2-backdrop { --bd-a: var(--color-surface-03); --bd-b: var(--color-surface-04); --bd-c: var(--color-surface-01);
+  padding: var(--space-4xl); border-radius: var(--radius-800); background: linear-gradient(135deg, var(--bd-a), var(--bd-b) 55%, var(--bd-c)); }
+.v2-backdrop--teal { --bd-a: var(--color-surface-02); --bd-b: var(--color-surface-03); --bd-c: var(--color-surface-04); }
+.v2-backdrop--violet { --bd-a: var(--color-surface-04); --bd-b: var(--color-surface-05); --bd-c: var(--color-surface-03); }
+.v2-backdrop--green { --bd-a: var(--color-surface-01); --bd-b: var(--color-surface-02); --bd-c: var(--color-surface-03); }
+.v2-backdrop--magenta { --bd-a: var(--color-surface-05); --bd-b: var(--color-surface-04); --bd-c: var(--color-surface-02); }
+.v2-window { border-radius: var(--radius-600); overflow: hidden; background: var(--color-background-secondary); box-shadow: 0 30px 80px rgba(40, 48, 63, .14), 0 0 0 1px rgba(40, 48, 63, .05); }
+.v2-window__bar { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-s) var(--space-l); border-bottom: 1px solid var(--color-background-tertiary); font: var(--type-caption); color: var(--color-text-secondary); }
+.v2-window--chat { width: min(100%, 680px); }
+.v2-window--chat .v2-chat { border-radius: 0; }
+.v2-center { display: flex; flex-direction: column; align-items: center; gap: var(--space-l); }
+.v2-asks { justify-content: center; }
+.v2-asks .bl-chip:not(.is-active) { background: var(--color-background-secondary); }
+.v2-feats { margin-top: var(--space-3xl); }
+/* «вас увидят»: телефон поднимается из подложки и обрезан снизу, вкладки строкой под ней */
+.v2-where { height: 540px; display: flex; justify-content: center; padding-bottom: 0; overflow: hidden; }
+.v2-where .phone-mock { height: 600px; }
+.v2-tabs.v2-tabs--row { flex-direction: row; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gutter); margin-top: var(--space-xl); }
+.v2-tabs--row button { padding-top: var(--space-l); }
+.v2-tabs--row li:not(.is-on) .bl-secondary { opacity: .7; }
+/* цены: калькулятор и модели в одном окне */
+.v2-window.v2-price { gap: 0; }
+.v2-window.v2-price > * { padding: var(--space-2xl); }
+.v2-window.v2-price .v2-models { border-left: 1px solid var(--color-background-tertiary); justify-content: center; }
+.v2-app { display: grid; grid-template-columns: 340px minmax(0, 1fr); }
 .v2-app__panel { display: flex; flex-direction: column; gap: var(--space-l); padding: var(--space-xl); border-right: 1px solid var(--color-background-tertiary); }
 .v2-app__top { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--space-m); border-bottom: 1px solid var(--color-background-tertiary); }
 .v2-app .bl-segmented button { white-space: nowrap; }
@@ -599,9 +621,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-when button:hover { background: var(--color-background-primary); }
 .v2-when button.is-on { border-color: var(--color-text-primary); background: var(--color-background-primary); }
 .v2-app__result { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding: var(--space-m) var(--space-l); border-radius: var(--radius-500); background: var(--color-background-primary); }
-.v2-reach__feats { margin-top: var(--space-3xl); }
-@media (max-width: 1023px) { .v2-reach__stage { padding: var(--space-l); } .v2-app { grid-template-columns: 1fr; } .v2-app__panel { border-right: 0; border-bottom: 1px solid var(--color-background-tertiary); } .v2-map { min-height: 0; aspect-ratio: 4 / 3; } }
-@media (max-width: 767px) { .v2-reach__stage { margin-inline: calc(-1 * var(--space-m)); padding: var(--space-s); border-radius: var(--radius-600); } .v2-reach__feats { --bl-cols: 1 !important; } }
+@media (max-width: 1023px) { .v2-backdrop { padding: var(--space-l); } .v2-tabs.v2-tabs--row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .v2-window.v2-price .v2-models { border-left: 0; border-top: 1px solid var(--color-background-tertiary); } .v2-where { height: 460px; } .v2-app { grid-template-columns: 1fr; } .v2-app__panel { border-right: 0; border-bottom: 1px solid var(--color-background-tertiary); } .v2-map { min-height: 0; aspect-ratio: 4 / 3; } }
+@media (max-width: 767px) { .v2-backdrop { margin-inline: calc(-1 * var(--space-m)); padding: var(--space-s); border-radius: var(--radius-600); } .v2-feats { --bl-cols: 1 !important; } .v2-tabs.v2-tabs--row { grid-template-columns: 1fr; gap: 0; } .v2-where { padding-top: var(--space-xl); height: 420px; } .v2-window.v2-price > * { padding: var(--space-l); } }
 .v2-map .reach-map { width: 100%; height: 100%; display: block; }
 .v2-map__guest { flex-direction: row; align-items: center; gap: var(--space-s); padding: var(--space-s) var(--space-m); }
 
@@ -626,7 +647,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-steps__n { font: var(--type-h2); color: var(--color-text-secondary); min-width: 48px; }
 
 @media (max-width: 1023px) {
-  .v2-split, .v2-quote, .v2-final { grid-template-columns: 1fr; gap: var(--space-3xl); }
+  .v2-quote, .v2-final { grid-template-columns: 1fr; gap: var(--space-3xl); }
   .v2-any { grid-template-columns: 1fr; }
 }
 @media (max-width: 767px) {
@@ -639,8 +660,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 
 /* ───────── лендинг v2: живые блоки ───────── */
 /* сцена «где увидят»: вкладки слева, один телефон справа */
-.v2-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-5xl); align-items: center; }
-.v2-stage__phone { display: grid; place-items: center; min-height: 600px; border-radius: var(--radius-800); background: var(--color-background-primary); }
 .v2-tabs, .v2-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .v2-tabs li, .v2-steps li { position: relative; border-top: 1px solid var(--color-background-tertiary); }
 .v2-steps li { border-color: var(--color-background-tertiary-invert); }
@@ -725,14 +744,9 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
   .v2-prog { display: none; }
 }
 @media (max-width: 1279px) { .v2-ticker { margin-inline: -40px; } }
-@media (max-width: 1023px) {
-  .v2-stage { grid-template-columns: 1fr; gap: var(--space-3xl); }
-  .v2-stage__phone { min-height: 0; padding: var(--space-xl) 0; }
-}
 @media (max-width: 767px) {
   .v2-ticker { margin-inline: -20px; }
   .v2-chat--live { min-height: 420px; }
-  .v2-stage__phone .phone-mock { width: 240px; height: 480px; }
 }
 
 /* шапка липкая, разделы не прячутся под неё */

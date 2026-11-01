@@ -595,8 +595,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-story .photo { margin-bottom: var(--space-xs); }
 .v2-story__plan { display: flex; justify-content: space-between; margin-top: auto; padding: var(--space-m) var(--space-l); border-radius: var(--radius-circle); background: var(--color-background-primary); }
 
-.v2-ids { display: flex; flex-wrap: wrap; gap: var(--space-s); margin-bottom: var(--space-l); }
-.v2-id { display: inline-flex; align-items: center; gap: var(--space-s); padding: var(--space-s) var(--space-l) var(--space-s) var(--space-s); border-radius: var(--radius-circle); background: var(--color-background-primary); font: var(--type-label); }
 
 .v2-trust { display: flex; flex-direction: column; gap: var(--space-4xl); }
 .v2-stats { padding: var(--space-3xl) 0; border-block: 1px solid var(--color-background-tertiary-invert); }
@@ -668,9 +666,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 /* ленты интеграций */
 .v2-ticker { margin: 0 -80px var(--space-s); overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .v2-ticker__track { display: flex; gap: var(--space-s); width: max-content; animation: v2-ticker 40s linear infinite; }
-.v2-ticker--back .v2-ticker__track { animation-direction: reverse; animation-duration: 46s; }
 .v2-ticker:hover .v2-ticker__track { animation-play-state: paused; }
-.v2-ticker .bl-chip { white-space: nowrap; min-height: 52px; padding-inline: var(--space-l); font: var(--type-body); }
 @keyframes v2-ticker { to { transform: translateX(calc(-50% - var(--space-s) / 2)); } }
 
 /* цифры: мягкое светлое пятно плавает за ними */

@@ -4,14 +4,14 @@ import { AnimatePresence, animate, motion, useAnimationFrame, useInView, useMoti
 import { ArrowRight, BellRing, Bot, Check, EyeOff, FileCheck2, Globe, LayoutTemplate, MapPin, Pause, Play, Smartphone, Sparkles, Tv, UserPlus, Wallet } from 'lucide-react'
 import { PhoneSurface, ReachMap } from '../mock'
 import { Creative, creativeOf, type CreativeData } from '../creative'
-import { Brand, Chip, IdBadge, Num, PartnerLogo, Photo, Reveal, Segmented } from '../ui'
+import { Brand, Chip, Num, PartnerLogo, Photo, Reveal, Segmented } from '../ui'
 import { OFFERS } from './Near'
 import { NICHES, n, rub } from '../data'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 
 /* Лендинг v2: подача и анимации по мотивам shopify.com, всё из дизайн-системы.
    Порядок — вопросы владельца бизнеса: что это (hero) → кто уже с нами → кому покажем → где увидят → и в чате →
-   сколько стоит → как запустить и управлять → помощник → интеграции → истории → отзыв → риски → вопросы → запуск. */
+   сколько стоит → как запустить и управлять → помощник → истории → отзыв → риски → вопросы → запуск. */
 
 const WORDS = ['рядом с домом', 'в день зарплаты', 'после переезда', 'по дороге на работу', 'когда кончился трафик']
 
@@ -515,35 +515,6 @@ function Assistant() {
   )
 }
 
-// интеграции бегут двумя лентами навстречу, как приложения у Shopify; вход по бизнес-ID стоит над ними
-const INTEGR = [
-  ['ЭДО: Диадок', 'ЭДО: СБИС', 'amoCRM', 'Битрикс24', 'Яндекс Метрика', 'постбэк по click_id', 'AppsFlyer', 'Adjust'],
-  ['API для своих систем', 'выгрузка в Excel', 'оплата по СБП', 'оплата по счёту', 'ОРД: маркировка erid', 'вебхуки о заявках', 'Google Таблицы', 'Telegram-уведомления'],
-]
-function Integrations() {
-  return (
-    <section className="bl-section bl-section--wide v2-integr-sec">
-      <div className="section-head">
-        <h2 className="bl-display-l">подключается к тому,<br />что у вас уже есть</h2>
-        <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 360 }}>
-          <p className="bl-body bl-secondary">Вход через бизнес-ID: компанию, точки и реквизиты узнаем сами.</p>
-          <Go to="/login">войти по бизнес-ID</Go>
-        </div>
-      </div>
-      <div className="v2-ids">
-        {([['gos', 'Госуслуги'], ['sber', 'СберБизнес ID'], ['alfa', 'Альфа ID для бизнеса']] as const).map(([id, t]) => <span key={id} className="v2-id"><IdBadge id={id} />{t}</span>)}
-      </div>
-      {INTEGR.map((row, n) => (
-        <div key={n} className={`v2-ticker${n ? ' v2-ticker--back' : ''}`}>
-          <div className="v2-ticker__track">
-            {[...row, ...row].map((t, i) => <span key={i} className="bl-chip" aria-hidden={i >= row.length}>{t}</span>)}
-          </div>
-        </div>
-      ))}
-    </section>
-  )
-}
-
 function Trust() {
   const stats = [
     { v: 45, s: ' млн', t: 'абонентов билайна' },
@@ -691,7 +662,6 @@ export default function LandingV2() {
         <Pricing />
         <Anywhere />
         <Assistant />
-        <Integrations />
         <ForEveryone />
         <Quote />
         <Trust />

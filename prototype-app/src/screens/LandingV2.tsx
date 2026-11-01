@@ -648,6 +648,7 @@ function Quote() {
       <figure className="bl-stack" style={{ ['--bl-gap' as string]: '24px', margin: 0 }}>
         <blockquote className="bl-h1">«Раньше листовки у метро. Теперь новые гости приходят из соседних домов, и я вижу, сколько стоил каждый»</blockquote>
         <figcaption className="bl-row" style={{ ['--bl-gap' as string]: '16px' }}>
+          {/* портрет несуществующего человека: StyleGAN, Викисклад «Woman 1.jpg», общественное достояние */}
           <Photo name="quote-anna.jpg" label="Портрет владелицы кофейни" ratio="1 / 1" className="v2-quote__face" />
           <span className="bl-body bl-secondary">Анна, владелица кофейни «Зерно»<br />пример для прототипа</span>
         </figcaption>

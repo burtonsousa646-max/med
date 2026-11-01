@@ -58,7 +58,7 @@ export function Segmented<T extends string | number>({ value, options, onChange,
   return (
     <div className="bl-segmented" role="radiogroup" aria-label={label}>
       {options.map(([v, t]) => (
-        <button key={String(v)} type="button" role="radio" aria-checked={value === v} aria-selected={value === v} onClick={() => onChange(v)}>{t}</button>
+        <button key={String(v)} type="button" role="radio" aria-checked={value === v} onClick={() => onChange(v)}>{t}</button>
       ))}
     </div>
   )

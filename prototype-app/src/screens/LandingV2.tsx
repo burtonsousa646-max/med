@@ -169,10 +169,10 @@ function Chat() {
         </div>
       </div>
       <div className="v2-backdrop v2-backdrop--violet v2-center">
-        <div className="bl-row v2-asks" aria-label="Спросите сами">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
+        <div className="bl-row v2-asks" role="group" aria-label="Спросите сами">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
         <div className="v2-window v2-window--chat">
           <div className="v2-window__bar"><Sparkles size={16} /> лучшее рядом · поиск словами</div>
-          <div ref={ref} className="v2-chat v2-chat--white v2-chat--live" aria-live="polite" aria-label="Пример диалога в витрине">
+          <div ref={ref} className="v2-chat v2-chat--white v2-chat--live" role="log" aria-live="polite" aria-label="Пример диалога в витрине">
             <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
             <AnimatePresence mode="popLayout">
               {at >= T.think && at < T.answer && <motion.div key={`t${s}`} className="v2-bubble v2-typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><i /><i /><i /></motion.div>}

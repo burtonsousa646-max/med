@@ -486,6 +486,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .near-bee img { width: 18px; height: 18px; flex: none; }
 .near-fy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); }
 .near-banner { flex-direction: row; justify-content: space-between; align-items: center; gap: var(--space-l); padding: var(--space-3xl); border-radius: var(--radius-500); flex-wrap: wrap; }
+.demo-note a, .near-foot a { color: var(--color-text-primary); text-decoration: underline; text-underline-offset: 2px; }
 .near-foot { display: flex; justify-content: space-between; gap: var(--space-l); flex-wrap: wrap; padding: var(--space-3xl) 0 var(--space-6xl); }
 
 .near-sheet__head { display: flex; gap: var(--space-m); align-items: center; padding-right: var(--space-3xl); }

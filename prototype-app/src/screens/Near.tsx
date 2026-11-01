@@ -420,7 +420,7 @@ function Ask({ all, viewed, onOpen }: { all: Offer[]; viewed: string[]; onOpen: 
       </form>
 
       {!turns.length && (
-        <div className="near-scroller near-ask__chips" aria-label="Например">
+        <div className="near-scroller near-ask__chips" role="group" aria-label="Например">
           {starters().map(t => <Chip key={t} onClick={() => send(t)}>{t}</Chip>)}
         </div>
       )}
@@ -539,7 +539,7 @@ function Sheet({ o }: { o: Offer }) {
 
       {o.type === 'promo' && (done
         ? <>
-            <div className="near-code" aria-label={`промокод ${o.code}`}>{o.code}</div>
+            <div className="near-code">{o.code}</div>
             <p className="bl-caption" style={{ textAlign: 'center' }}>{o.site || o.campaign ? 'введи код при оформлении на сайте партнёра' : 'покажи код на кассе или назови его'}</p>
             <div className="near-sheet__btns">
               <button className="bl-btn bl-btn--block" onClick={() => copy(o.code ?? '', 'Промокод')}>скопировать</button>

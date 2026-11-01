@@ -516,6 +516,14 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-hero__pause { position: absolute; top: var(--space-l); right: var(--space-l); }
 @media (max-width: 767px) { .v2-hero:has(.v2-hero__video)::before { background: color-mix(in srgb, var(--color-background-secondary-invert) 78%, transparent); } }
 .v2-hero__text { display: flex; flex-direction: column; gap: var(--space-l); max-width: 920px; }
+/* телефон с объявлением справа; секция тёмная, поэтому внутри телефона возвращаем светлые токены */
+.v2-hero__text { max-width: min(920px, calc(100% - 340px)); }
+.v2-hero__phone { position: absolute; right: var(--space-5xl); bottom: -120px; z-index: 0;
+  --color-background-primary: var(--color-static-grey-25); --color-background-secondary: var(--color-static-white); --color-background-tertiary: var(--color-static-grey-50);
+  --color-text-primary: var(--color-static-grey-800); --color-text-secondary: var(--color-static-grey-600); --color-text-tertiary: var(--color-static-grey-300);
+  --color-icon-primary: var(--color-static-grey-800); --color-icon-secondary: var(--color-static-grey-500); --color-border-secondary: var(--color-static-grey-50);
+  color: var(--color-text-primary); }
+@media (max-width: 1023px) { .v2-hero__phone { display: none; } .v2-hero__text { max-width: 920px; } }
 .v2-rot { display: inline-grid; overflow: hidden; vertical-align: bottom; color: var(--color-text-secondary); }
 .v2-rot > span { grid-area: 1 / 1; white-space: nowrap; }
 
@@ -706,6 +714,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-models { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .v2-models li { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px var(--space-m); padding: var(--space-l) 0; border-top: 1px solid var(--color-background-tertiary); }
 .v2-models li .bl-caption { grid-column: 1 / -1; }
+.v2-models li.is-main { border-top: 0; padding-inline: var(--space-l); border-radius: var(--radius-400); background: var(--color-background-primary); }
+.v2-models .bl-tag { vertical-align: middle; margin-left: var(--space-2xs); }
 /* вопросы */
 .v2-faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: var(--space-5xl); align-items: start; }
 @media (max-width: 1023px) { .v2-price, .v2-faq { grid-template-columns: 1fr; gap: var(--space-3xl); } }

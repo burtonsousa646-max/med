@@ -278,3 +278,13 @@ function DemoMap({ close }: { close: () => void }) {
 }
 
 export function Done({ size = 16 }: { size?: number }) { return <CheckIcon size={size} strokeWidth={2.4} aria-hidden="true" /> }
+
+// Значки в стиле иконок приложений: одинаковый квадрат 28 px, фирменные цвета, название — нашим шрифтом
+const PARTNER_SVG: Record<string, ReactNode> = {
+  avito: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#fff" stroke="#E2E6ED" /><circle cx="17.5" cy="10" r="4.6" fill="#00AAFF" /><circle cx="9.6" cy="10.6" r="2.6" fill="#97CF26" /><circle cx="10.4" cy="18.2" r="3.6" fill="#FF6163" /><circle cx="18" cy="18.8" r="2.8" fill="#A169F7" /></svg>,
+  alfabank: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#EF3124" /><path d="M12.4 6h3.2l5 13h-3.1l-1.1-3.1h-4.9L10.4 19H7.4zm-.1 7.6h3.3L14 8.9z" fill="#fff" /><rect x="7.4" y="20.6" width="13.2" height="2" fill="#fff" /></svg>,
+  tbank: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#FFDD2D" /><path d="M7 6h14v8.6c0 3.9-3.2 6.4-7 8-3.8-1.6-7-4.1-7-8z" fill="#333" /><path d="M10.2 9.4h7.6v2.3h-2.6V18h-2.4v-6.3h-2.6z" fill="#FFDD2D" /></svg>,
+}
+export function PartnerLogo({ id }: { id: string }) {
+  return <span className="partner-logo" aria-hidden="true">{PARTNER_SVG[id]}</span>
+}

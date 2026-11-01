@@ -1,4 +1,4 @@
-import { Component, StrictMode, Suspense, useEffect, type ReactNode } from 'react'
+import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { MotionConfig } from 'motion/react'
@@ -7,13 +7,20 @@ import '../../design-system/tokens.css'
 import '../../design-system/components.css'
 import './app.css'
 import { queryClient, useCampaigns } from './api'
-import Landing from './screens/Landing'
-import LandingV2 from './screens/LandingV2'
-import { Inn, Login } from './screens/Entry'
-import { Approve, Checkout, Consent, Launch, Reach } from './screens/Flow'
-import Build from './screens/Build'
-import Near from './screens/Near'
-import { Balance, Campaigns, Company, Connections, Docs, Help, Stats } from './screens/Cabinet'
+// каждый экран — своим файлом сборки: лендинг не тянет кабинет и графики
+const Landing = lazy(() => import('./screens/Landing'))
+const LandingV2 = lazy(() => import('./screens/LandingV2'))
+const Build = lazy(() => import('./screens/Build'))
+const Near = lazy(() => import('./screens/Near'))
+const entry = () => import('./screens/Entry'), flow = () => import('./screens/Flow'), cab = () => import('./screens/Cabinet')
+const Inn = lazy(() => entry().then(m => ({ default: m.Inn }))), Login = lazy(() => entry().then(m => ({ default: m.Login })))
+const Approve = lazy(() => flow().then(m => ({ default: m.Approve }))), Checkout = lazy(() => flow().then(m => ({ default: m.Checkout })))
+const Consent = lazy(() => flow().then(m => ({ default: m.Consent }))), Launch = lazy(() => flow().then(m => ({ default: m.Launch })))
+const Reach = lazy(() => flow().then(m => ({ default: m.Reach })))
+const Balance = lazy(() => cab().then(m => ({ default: m.Balance }))), Campaigns = lazy(() => cab().then(m => ({ default: m.Campaigns })))
+const Company = lazy(() => cab().then(m => ({ default: m.Company }))), Connections = lazy(() => cab().then(m => ({ default: m.Connections })))
+const Docs = lazy(() => cab().then(m => ({ default: m.Docs }))), Help = lazy(() => cab().then(m => ({ default: m.Help })))
+const Stats = lazy(() => cab().then(m => ({ default: m.Stats })))
 import { Brand, DemoMenu, Toaster, screenName } from './ui'
 
 function Offer() {

@@ -4,10 +4,9 @@ import { AnimatePresence, animate, motion, useAnimationFrame, useInView, useMoti
 import { ArrowRight, BellRing, Bot, Check, EyeOff, FileCheck2, Globe, LayoutTemplate, MapPin, Pause, Play, Smartphone, Sparkles, Tv, UserPlus, Wallet } from 'lucide-react'
 import { PhoneSurface, ReachMap } from '../mock'
 import { Creative, creativeOf, type CreativeData } from '../creative'
-import { Brand, Chip, IdBadge, Num, Photo, Reveal, Segmented } from '../ui'
+import { Brand, Chip, IdBadge, Num, PartnerLogo, Photo, Reveal, Segmented } from '../ui'
 import { OFFERS } from './Near'
 import { NICHES, n, rub } from '../data'
-import { PartnerLogo } from './Landing'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 
 /* Лендинг v2: подача и анимации по мотивам shopify.com, всё из дизайн-системы.
@@ -62,12 +61,15 @@ function Hero() {
       <HeroVideo />
       <div className="v2-hero__text">
         <h1 className="bl-display-xl">пусть вас выбирают<br /><Rotator /></h1>
-        <p className="bl-lead bl-secondary">Покажем вашу акцию абонентам билайна, которые живут или бывают рядом, — в приложении и в момент, когда им это нужно. Платите только за результат.</p>
+        <p className="bl-lead bl-secondary">Покажем вашу акцию абонентам билайна, которые живут или бывают рядом, — в приложении и в момент, когда им это нужно. Показы бесплатно: платите за переходы, заявки или продажи.</p>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
           <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
-          <Link className="bl-btn bl-btn--ghost" to="/near">как это видит абонент <ArrowRight size={18} /></Link>
         </div>
       </div>
+      {/* так абонент увидит вашу акцию — вместо ссылки на витрину */}
+      <motion.div className="v2-hero__phone" aria-hidden="true" initial={{ opacity: 0, y: 40, rotate: 4 }} animate={{ opacity: 1, y: 0, rotate: -3 }} transition={{ delay: 0.3, duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}>
+        <PhoneSurface kind="main" />
+      </motion.div>
     </section>
   )
 }
@@ -115,7 +117,7 @@ function Everywhere() {
               </li>
             ))}
           </ol>
-          <Go to="/login">разместить акцию</Go>
+          <Go to="/login">выбрать, где показать</Go>
         </div>
         <div className="v2-stage__phone">
           <AnimatePresence mode="wait" initial={false}>
@@ -161,7 +163,7 @@ function Chat() {
           <span className="bl-caption">спросите сами:</span>
           <div className="bl-row">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
         </div>
-        <Go to="/near">открыть «лучшее рядом»</Go>
+        <Go to="/login">разместить акцию в «лучшее рядом»</Go>
       </div>
       <div ref={ref} className="v2-chat v2-chat--live" aria-live="polite" aria-label="Пример диалога в витрине">
         <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
@@ -310,8 +312,8 @@ function Anywhere() {
   }, [])
   const items = [
     { ui: (on: boolean) => <Builder run={run && on} />, t: 'объявление за 5 минут', d: <>Дайте ссылку на сайт или Карты — <Link to="/login">ИИ соберёт объявление</Link> сам. Поправить можно словами.</> },
-    { ui: (on: boolean) => <Hub active={on} run={run} />, t: 'всё в одном кабинете', d: <><Link to="/cab/campaigns">Кампании</Link>, <Link to="/cab/balance">баланс</Link>, заявки и <Link to="/cab/docs">документы</Link>. Статистика каждый день.</> },
-    { ui: (on: boolean) => <Channels active={on} run={run} />, t: 'одна кампания — все каналы', d: <>Приложение билайна, <Link to="/near">раздел «лучшее рядом»</Link>, ТВ и пуши. И у партнёров: Авито, Альфа-Банк, Т-Банк.</> },
+    { ui: (on: boolean) => <Hub active={on} run={run} />, t: 'всё в одном кабинете', d: 'Кампании, баланс, заявки и документы. Статистика каждый день.' },
+    { ui: (on: boolean) => <Channels active={on} run={run} />, t: 'одна кампания — все каналы', d: 'Приложение билайна, раздел «лучшее рядом», ТВ и пуши. И у партнёров: Авито, Альфа-Банк, Т-Банк.' },
   ]
   return (
     <section id="how" className="bl-section bl-section--wide v2-anywhere" data-theme="invert">
@@ -325,7 +327,7 @@ function Anywhere() {
           </article>
         ))}
       </div>
-      <Go to="/login">собрать объявление</Go>
+      <Go to="/login">собрать объявление самому</Go>
     </section>
   )
 }
@@ -384,7 +386,7 @@ function AroundPoint() {
       </div>
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '24px' }}>
         <h2 className="bl-display-l">покажем тем, кто рядом и&nbsp;кому это нужно сейчас</h2>
-        <p className="bl-body bl-secondary">Тем, кто живёт, работает или каждый день бывает рядом с вашей точкой. Данные абонентов вам не передаём — только результат.</p>
+        <p className="bl-body bl-secondary">Тем, кто живёт, работает или каждый день бывает рядом с вашей точкой. Данные абонентов вам не передаём — только итоги кампании.</p>
         <div className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }}>
           <span className="bl-caption">радиус от точки</span>
           <Segmented label="Радиус охвата" value={rad} onChange={setRad} options={RADIUS.map(([t], i) => [i, t] as [number, string])} />
@@ -392,7 +394,7 @@ function AroundPoint() {
           <div className="bl-row">{WHEN.map(([t], i) => <Chip key={t} on={i === when} onClick={() => setWhen(i)}>{t}</Chip>)}</div>
         </div>
         <div className="bl-stat"><span className="bl-stat__value"><Num value={Math.round(people * POINTS.length * WHEN[when][2] / 10) * 10} /></span><span className="bl-stat__label">человек в {label} от двух ваших точек{WHEN[when][1]}</span></div>
-        <Go to="/inn">посчитать для ваших адресов</Go>
+        <Go to="/login">посчитать для своих точек</Go>
       </div>
     </section>
   )
@@ -400,10 +402,10 @@ function AroundPoint() {
 
 // сколько стоит: расчёт по сфере и бюджету + четыре модели оплаты. Средние — из NICHES, как в калькуляторе первой версии
 const MODELS = [
-  { t: 'переход', v: 'от 9 ₽', d: 'за клик на сайт, в Карты или звонок' },
+  { t: 'переход', v: 'от 9 ₽', d: 'за клик на сайт, в Карты или звонок', tag: 'чаще всего' },
   { t: 'заявка', v: 'от 350 ₽', d: 'за заявку, которую вы получили' },
-  { t: 'купон', v: '12 %', d: 'с проданного купона, без вложений' },
-  { t: 'подписка', v: '20 %', d: 'с платежей абонента, без вложений' },
+  { t: 'купон', v: '12 %', d: 'с проданного купона', tag: 'без вложений' },
+  { t: 'подписка', v: '20 %', d: 'с платежей абонента', tag: 'без вложений' },
 ]
 function Pricing() {
   const [niche, setNiche] = useState(NICHES[0])
@@ -412,8 +414,8 @@ function Pricing() {
   return (
     <section id="price" className="bl-section bl-section--wide">
       <div className="section-head">
-        <h2 className="bl-display-l">платите за результат,<br />а не за показы</h2>
-        <p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Показы бесплатно. Начать можно с 3 000 ₽, остаток вернём. Первая кампания — с бонусом 3 000 ₽.</p>
+        <h2 className="bl-display-l">платите за действия,<br />а не за показы</h2>
+        <p className="bl-body bl-secondary" style={{ maxWidth: 380 }}>Показы бесплатно. Пополнение от 3 000 ₽, остаток вернём. На первую кампанию добавим ещё 3 000 ₽ бонусом.</p>
       </div>
       <div className="v2-price">
         <div className="v2-calc">
@@ -428,12 +430,17 @@ function Pricing() {
           <div className="bl-card v2-calc__result" data-theme="invert">
             <span className="bl-caption">придут к вам за месяц</span>
             <span className="bl-number-xl"><Num value={got} /> <span className="bl-h3">{niche.unit}</span></span>
-            <span className="bl-caption">{n(clicks)} переходов по {niche.cpc} ₽ · один результат ≈ {rub(budget / got)}</span>
+            <span className="bl-caption">{n(clicks)} переходов по {niche.cpc} ₽ · в среднем {rub(budget / got)} за каждого</span>
           </div>
-          <Link className="bl-btn bl-btn--dark" to="/inn" style={{ alignSelf: 'flex-start' }}>точный расчёт по вашим точкам <ArrowRight size={18} /></Link>
+          <Go to="/login">точный расчёт в кабинете</Go>
         </div>
         <ul className="v2-models">
-          {MODELS.map(m => <li key={m.t}><span className="bl-h4">{m.t}</span><b className="bl-h2">{m.v}</b><span className="bl-caption">{m.d}</span></li>)}
+          {MODELS.map((m, k) => (
+            <li key={m.t} className={k ? '' : 'is-main'}>
+              <span className="bl-h4">{m.t} {m.tag && <span className={`bl-tag ${k ? 'bl-tag--soft-green' : 'bl-tag--brand'}`}>{m.tag}</span>}</span>
+              <b className="bl-h2">{m.v}</b><span className="bl-caption">{m.d}</span>
+            </li>
+          ))}
         </ul>
       </div>
     </section>
@@ -442,15 +449,15 @@ function Pricing() {
 
 function ForEveryone() {
   const s = [
-    { photo: 'case-coffee.jpg', label: 'Кофейня с гостями у стойки', t: 'начните за вечер', d: 'Кофейня «Зерно» запустилась за 10 минут. Автопилот сам выбрал, кому и где показать.', v: 280, u: 'гостей за месяц', plan: 'автопилот', price: 'от 3 000 ₽' },
-    { photo: 'case-auto.jpg', label: 'Автосервис, смена шин', t: 'растите без агентства', d: 'Сеть из трёх автосервисов в PRO сама выбирает моменты и ставки — например, первые заморозки.', v: 72, u: 'записи в первые холода', plan: 'PRO', price: 'от 30 000 ₽' },
-    { photo: 'case-dev.jpg', label: 'Офис продаж жилого комплекса', t: 'по-крупному', d: 'Застройщик согласовал медиаплан и спецпроект с персональным менеджером.', v: 178, u: 'визитов в офис продаж', plan: 'медиаплан', price: 'по запросу' },
+    { photo: 'case-coffee.jpg', label: 'Кофейня с гостями у стойки', t: 'начните за вечер', d: 'Кофейня «Зерно» запустилась за 10 минут. Автопилот сам выбрал, кому и где показать.', v: 289, u: 'гостей за месяц', plan: 'автопилот', price: '10 000 ₽ в месяц' },
+    { photo: 'case-auto.jpg', label: 'Автосервис, смена шин', t: 'растите без агентства', d: 'Сеть из трёх автосервисов сама выбирает моменты и ставки — например, первые заморозки.', v: 72, u: 'записи за две недели холодов', plan: 'вручную', price: '5 600 ₽ за две недели' },
+    { photo: 'case-dev.jpg', label: 'Офис продаж жилого комплекса', t: 'по-крупному', d: 'Застройщик согласовал медиаплан и спецпроект с персональным менеджером.', v: 178, u: 'визитов в офис продаж за месяц', plan: 'медиаплан', price: '125 000 ₽ в месяц' },
   ]
   return (
     <section id="cases" className="bl-section bl-section--wide">
       <div className="section-head">
         <h2 className="bl-display-l">от кофейни до федеральной сети</h2>
-        <Link className="bl-btn" to="/login">подобрать план <ArrowRight size={18} /></Link>
+        <Link className="bl-btn" to="/login">запустить свою кампанию <ArrowRight size={18} /></Link>
       </div>
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         {s.map((x, i) => (
@@ -472,18 +479,18 @@ function ForEveryone() {
 const BASE_WEEK = [38, 41, 22, 24, 40, 52, 47]
 function Assistant() {
   const [choice, setChoice] = useState<'up' | 'keep' | null>(null)
-  const week = BASE_WEEK.map((v, d) => choice === 'up' && (d === 2 || d === 3) ? v + 11 : choice === 'up' ? v + 1 : v)
+  const week = BASE_WEEK.map((v, d) => choice === 'up' && (d === 2 || d === 3) ? v + 11 : v)
   const max = 64
   return (
     <section className="bl-section bl-section--wide v2-split v2-assist">
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
         <h2 className="bl-display-l">помощник, который считает за вас</h2>
         <p className="bl-lead bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами — попробуйте.</p>
-        <Go to="/cab/stats">открыть демо-кабинет</Go>
+        <Go to="/login">попробовать в своём кабинете</Go>
       </div>
       <div className="v2-chat v2-chat--white">
         <div className="v2-bubble v2-bubble--me">почему в среду меньше гостей?</div>
-        <div className="v2-bubble"><Bot size={16} /> Шёл дождь, визиты в обед упали на 18 %. Поднять ставку с 12 до 15 часов на 2 ₽? Это около +9 гостей в неделю.</div>
+        <div className="v2-bubble"><Bot size={16} /> Шёл дождь, гостей в обед пришло почти вдвое меньше. Поднять ставку с 12 до 15 часов на 2 ₽? В среду и четверг это около +22 гостей.</div>
         <div className="v2-week" role="img" aria-label={`Прогноз гостей по дням: ${week.join(', ')}`}>
           {week.map((v, d) => (
             <span key={d} className="v2-week__day">
@@ -499,7 +506,7 @@ function Assistant() {
                 <button type="button" className="bl-btn bl-btn--s" onClick={() => setChoice('keep')}>оставить как есть</button>
               </motion.div>
             : <motion.div key={choice} className="v2-bubble" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                <Bot size={16} /> {choice === 'up' ? 'Готово: ставка 11 ₽ в обед, прогноз +23 гостя за среду и четверг. Бюджет недели +1 200 ₽.' : 'Оставил. Если в пятницу снова будет дождь, напомню.'}
+                <Bot size={16} /> {choice === 'up' ? 'Готово: ставка 11 ₽ в обед, прогноз +22 гостя за среду и четверг. Бюджет недели +1 200 ₽.' : 'Оставил. Если в пятницу снова будет дождь, напомню.'}
                 {' '}<button type="button" className="v2-link" onClick={() => setChoice(null)}>спросить снова</button>
               </motion.div>}
         </AnimatePresence>
@@ -558,7 +565,7 @@ function Trust() {
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         {trust.map((x, n) => <Reveal key={x.t} delay={0.2 + n * 0.1} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
-      <Go to="/inn">попробовать с 3 000 ₽</Go>
+      <Go to="/login">запустить самостоятельно</Go>
     </section>
   )
 }
@@ -609,9 +616,8 @@ function Final() {
         </ol>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
           <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
-          <Link className="bl-btn bl-btn--ghost" to="/inn">без входа: по ИНН <ArrowRight size={18} /></Link>
         </div>
-        <span className="bl-caption">первая кампания — с бонусом 3 000 ₽ на баланс</span>
+        <span className="bl-caption">вход через Госуслуги или бизнес-ID — компанию и точки узнаем сами</span>
       </div>
       <div className="v2-final__stage" aria-hidden="true">
         <AnimatePresence mode="wait" initial={false}>
@@ -629,7 +635,7 @@ const FAQ: [string, string][] = [
   ['сколько нужно денег на старт?', 'От 3 000 ₽. Показы бесплатные: деньги списываются только за переходы, заявки или проданные купоны. Остаток вернём на счёт компании.'],
   ['нужен ли договор и ЭДО?', 'Нет. Оферту принимаете галочкой при оплате, это и есть договор. ЭДО подключите позже — для закрывающих документов.'],
   ['когда придут первые клиенты?', 'Модерация занимает пару минут, переходы начинаются в первый час. Визиты в точку видно через день-два.'],
-  ['а если реклама не сработает?', 'Вы платите только за результат, поэтому без результата — без затрат. Кампанию можно остановить в любой момент.'],
+  ['а если реклама не сработает?', 'Показы бесплатные, деньги списываются только за действия абонентов: переходы, заявки, проданные купоны. Нет действий — нет списаний. Дневной лимит ставите сами, кампанию можно остановить в любой момент.'],
   ['нужен ли сайт?', 'Нет. Хватит карточки в Картах или телефона. Можно продавать купоны прямо в приложении билайна — оплата со счёта телефона.'],
   ['увижу ли я данные абонентов?', 'Нет. Вы видите результат: переходы, заявки, визиты. Персональные данные остаются у билайна, всё по закону.'],
 ]
@@ -638,8 +644,8 @@ function Faq() {
     <section id="faq" className="bl-section bl-section--wide v2-faq">
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
         <h2 className="bl-display-l">остались вопросы?</h2>
-        <p className="bl-body bl-secondary">Не нашли ответ — спросите менеджера, он поможет и с первой кампанией.</p>
-        <Go to="/cab/help">задать вопрос</Go>
+        <p className="bl-body bl-secondary">Не нашли ответ — в кабинете на каждом шаге подсказывает помощник, а в разделе помощи есть ответы на остальное.</p>
+        <Go to="/login">зарегистрироваться</Go>
       </div>
       <div className="bl-accordion">
         {FAQ.map(([q, a], k) => <details key={q} open={k === 0}><summary>{q}</summary><div className="bl-accordion__body">{a}</div></details>)}

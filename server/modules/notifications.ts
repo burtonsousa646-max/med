@@ -12,7 +12,7 @@ type Template = { subject: string; text: (p: Record<string, string>) => string; 
 
 /** Тексты сообщений. Адаптер почты или SMS билайна берёт готовый текст из render(), а не собирает его сам. */
 export const TEMPLATES: Record<string, Template> = {
-  login_code: { subject: 'Код входа', text: p => `Код для входа в рекламную платформу билайна: ${p.code}. Никому его не сообщайте.`, to: 'all' },
+  login_code: { subject: 'Код входа', text: p => `Код для входа в рекламную платформу билайна: ${p.code}. Никому его не сообщайте.`, sms: p => `Билайн: код входа ${p.code}. Никому не сообщайте`, to: 'all' },
   invitation: { subject: 'Приглашение в компанию', text: p => `Вас пригласили в ${p.company} в рекламной платформе билайна. Принять: ${p.url}`, to: 'all' },
   approval_request: { subject: 'Подтвердите запуск рекламы', text: p => `Сотрудник собрал кампанию «${p.campaign}» и просит подтвердить запуск: ${p.url}`, to: 'all' },
   campaign_live: { subject: 'Кампания запущена', text: p => `Кампания «${p.campaign}» прошла проверку, получила erid ${p.erid} и участвует в показах. Статистика: ${APP_URL()}/cab/stats/${p.campaignId}`, sms: p => `Билайн: кампания «${p.campaign}» запущена`, to: 'team' },

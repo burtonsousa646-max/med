@@ -43,7 +43,7 @@ test('защитные заголовки и лимит частоты', async (
   assert.equal(res.headers.get('x-content-type-options'), 'nosniff')
   process.env.RATE_LIMIT_IN_TESTS = '1'
   const codes = []
-  for (let i = 0; i < 12; i++) codes.push((await app.request('/api/auth/email/start', { method: 'POST', body: JSON.stringify({ email: `x${i}@ex.ru` }), headers: { 'content-type': 'application/json' } })).status)
+  for (let i = 0; i < 12; i++) codes.push((await app.request('/api/auth/phone/start', { method: 'POST', body: JSON.stringify({ phone: `+7900000000${i % 10}` }), headers: { 'content-type': 'application/json' } })).status)
   delete process.env.RATE_LIMIT_IN_TESTS
   assert.deepEqual(codes.slice(-2), [429, 429])
 })

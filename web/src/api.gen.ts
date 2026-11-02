@@ -135,7 +135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/email/start": {
+    "/auth/phone/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -145,8 +145,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Отправить код входа на почту
-         * @description Код из 6 цифр, живёт 10 минут, повторно — не раньше чем через минуту.
+         * Отправить код входа в SMS
+         * @description Номер мобильный российский, в любом виде (8…, +7…, 9…). Код из 6 цифр, живёт 10 минут, повторно — не раньше чем через минуту. Пока SMS — заглушка, на стенде код приходит в ответе `devCode`.
          */
         post: {
             parameters: {
@@ -158,13 +158,25 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /** Format: email */
-                        email: string;
+                        /** @example +7 900 123-45-67 */
+                        phone: string;
                     };
                 };
             };
             responses: {
-                200: components["responses"]["Ok"];
+                /** @description код отправлен */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ok: boolean;
+                            /** @description только на стенде с заглушкой SMS */
+                            devCode?: string;
+                        };
+                    };
+                };
                 422: components["responses"]["Error"];
                 429: components["responses"]["Error"];
             };
@@ -175,7 +187,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/email/verify": {
+    "/auth/phone/verify": {
         parameters: {
             query?: never;
             header?: never;
@@ -185,8 +197,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Войти по коду
-         * @description Пять неверных попыток — код сгорает. Ставит cookie `sid`.
+         * Войти по коду из SMS
+         * @description Пять неверных попыток — код сгорает. Ставит cookie `sid`, номер записывается как подтверждённый.
          */
         post: {
             parameters: {
@@ -198,8 +210,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /** Format: email */
-                        email: string;
+                        phone: string;
                         code: string;
                     };
                 };
@@ -1826,6 +1837,7 @@ export interface components {
                 id: string;
                 name: string;
                 email: string | null;
+                phone: string | null;
                 role: components["schemas"]["PartnerRole"];
                 title: string;
                 signer: boolean;

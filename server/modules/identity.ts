@@ -1,4 +1,4 @@
-// Вход, сессии, роли. Партнёр входит через бизнес-ID (порт idp) или кодом на почту; сотрудник билайна — через SSO (порт staffSso).
+// Вход, сессии, роли. Партнёр входит через бизнес-ID (порт idp) или кодом в SMS; сотрудник билайна — через SSO (порт staffSso).
 // В cookie sid — случайный токен, в базе — его SHA-256. Компания и роль берутся из сессии, никогда из запроса.
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 import { Hono, type Context, type MiddlewareHandler } from 'hono'
@@ -88,12 +88,11 @@ export const staff = (...roles: StaffRole[]): MiddlewareHandler<Env> => async (c
 /* ───────── пользователи и компании ───────── */
 
 // Учётные записи по почте не склеиваем: почта от провайдера может быть не подтверждена, а склейка по ней — захват чужой записи.
-// В users.email попадает только почта, подтверждённая кодом; контакты от провайдера лежат в identities.data.
+// В users.phone попадает только номер, подтверждённый кодом из SMS; контакты от провайдера лежат в identities.data.
 async function userByIdentity(tx: Tx, provider: string, subject: string, p: { name: string; email?: string; phone?: string }) {
   const [known] = await tx`select user_id from identities where provider = ${provider} and subject = ${subject} and user_id is not null`
   if (known) return known.user_id as string
-  const verifiedEmail = provider === 'email' ? subject : null
-  const [user] = await tx`insert into users (name, email) values (${p.name}, ${verifiedEmail}) returning id`
+  const [user] = await tx`insert into users (name, phone) values (${p.name}, ${provider === 'phone' ? subject : null}) returning id`
   await tx`insert into identities (provider, subject, user_id, data)
            values (${provider}, ${subject}, ${user.id}, ${tx.json({ email: p.email ?? null, phone: p.phone ?? null })})`
   return user.id as string
@@ -147,32 +146,36 @@ auth.get('/callback/:provider', async c => {
   return c.redirect(`${APP_URL()}${next}`)
 })
 
-auth.post('/email/start', async c => {
-  const email = String((await c.req.json()).email ?? '').trim().toLowerCase()
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fail(422, 'проверьте почту')
-  const [recent] = await sql`select 1 from otp_codes where target = ${email} and created_at > now() - ${OTP_RESEND_S + ' seconds'}::interval`
+// +7XXXXXXXXXX: из «8 (900) 123-45-67», «+7 900…», «900…»; только мобильные
+const phone = (v: unknown) => { const d = String(v ?? '').replace(/\D/g, '').replace(/^[78](?=\d{10}$)/, ''); return /^9\d{9}$/.test(d) ? '+7' + d : '' }
+
+// Пока messaging — заглушка, на стенде код отдаём в ответе (devCode), иначе войти по телефону нельзя.
+auth.post('/phone/start', async c => {
+  const to = phone((await c.req.json()).phone)
+  if (!to) fail(422, 'проверьте номер: нужен мобильный, +7 9XX')
+  const [recent] = await sql`select 1 from otp_codes where target = ${to} and created_at > now() - ${OTP_RESEND_S + ' seconds'}::interval`
   if (recent) fail(429, 'код уже отправлен, подождите минуту')
   const code = String(randomInt(0, 1e6)).padStart(6, '0')
   const [row] = await sql`insert into otp_codes (target, purpose, code_hash, expires_at)
-                          values (${email}, 'login', ${sha256(email + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval) returning id`
-  await port('messaging').send({ channel: 'email', to: email, template: 'login_code', params: { code }, idempotencyKey: `otp:${row.id}` })
-  return c.json({ ok: true })
+                          values (${to}, 'login', ${sha256(to + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval) returning id`
+  await port('messaging').send({ channel: 'sms', to, template: 'login_code', params: { code }, idempotencyKey: `otp:${row.id}` })
+  return c.json(stubAllowed() && (process.env.INT_MESSAGING ?? 'stub') === 'stub' ? { ok: true, devCode: code } : { ok: true })
 })
 
-auth.post('/email/verify', async c => {
-  const body = await c.req.json<{ email: string; code: string }>()
-  const email = String(body.email ?? '').trim().toLowerCase()
-  const [otp] = await sql`select id, code_hash, attempts from otp_codes
-                          where target = ${email} and purpose = 'login' and used_at is null and expires_at > now()
-                          order by created_at desc limit 1`
+auth.post('/phone/verify', async c => {
+  const body = await c.req.json<{ phone: string; code: string }>()
+  const to = phone(body.phone)
+  const [otp] = to ? await sql`select id, code_hash, attempts from otp_codes
+                               where target = ${to} and purpose = 'login' and used_at is null and expires_at > now()
+                               order by created_at desc limit 1` : []
   if (!otp || otp.attempts >= OTP_MAX_ATTEMPTS) fail(422, 'код устарел, запросите новый')
-  if (otp.code_hash !== sha256(email + String(body.code ?? ''))) {
+  if (otp.code_hash !== sha256(to + String(body.code ?? ''))) {
     await sql`update otp_codes set attempts = attempts + 1 where id = ${otp.id}`
     fail(422, 'неверный код')
   }
   await sql`update otp_codes set used_at = now() where id = ${otp.id}`
-  const userId = await sql.begin(tx => userByIdentity(tx, 'email', email, { name: '', email }))
-  await startSession(c, { userId, companyId: await firstCompany(userId), provider: 'email' })
+  const userId = await sql.begin(tx => userByIdentity(tx, 'phone', to, { name: '', phone: to }))
+  await startSession(c, { userId, companyId: await firstCompany(userId), provider: 'phone' })
   return c.json({ ok: true })
 })
 

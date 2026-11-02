@@ -40,6 +40,10 @@ export function client() {
       const toCallback = await form('/api/stub/idp', { inn, name, email: '', state: hidden(html, 'state'), redirect_uri: hidden(html, 'redirect_uri') })
       return req(toCallback.headers.get('location')!)
     },
+    async loginPhone(phone: string) {
+      const { devCode } = await (await req('/api/auth/phone/start', { method: 'POST', json: { phone } })).json()
+      return req('/api/auth/phone/verify', { method: 'POST', json: { phone, code: devCode } })
+    },
     async loginStaff(roles: string, email = 'moderator@beeline.ru') {
       const { url } = await (await req('/api/auth/staff/start', { method: 'POST' })).json()
       const html = await (await req(url)).text()

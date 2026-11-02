@@ -43,7 +43,7 @@ handle('accounting', 'syncCounterparty', async ({ companyId }: { companyId: stri
 export async function companyView(companyId: string) {
   const [co] = await sql`select * from companies where id = ${companyId}`
   const points = await sql`select id, addr, normalized, lat, lon, active from points where company_id = ${companyId} order by id`
-  const members = await sql`select u.id, u.name, u.email, m.role, m.title, m.signer from memberships m join users u on u.id = m.user_id
+  const members = await sql`select u.id, u.name, u.email, u.phone, m.role, m.title, m.signer from memberships m join users u on u.id = m.user_id
                             where m.company_id = ${companyId} order by m.created_at`
   const invitations = await sql`select id, target, role, expires_at as "expiresAt" from invitations
                                 where company_id = ${companyId} and accepted_at is null and expires_at > now() order by created_at`
@@ -188,7 +188,7 @@ async function userOf(c: Parameters<typeof session>[0]) {
   return s!
 }
 
-// Вошёл по почте и добавляет компанию по ИНН: владелец, но не подписант — оферту примет руководитель через бизнес-ID.
+// Вошёл по SMS и добавляет компанию по ИНН: владелец, но не подписант — оферту примет руководитель через бизнес-ID.
 onboarding.post('/companies', async c => {
   const s = await userOf(c)
   const inn = String((await c.req.json()).inn ?? '').trim()

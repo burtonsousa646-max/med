@@ -75,16 +75,7 @@ export function Chip({ on, onClick, children }: { on?: boolean; onClick?: () => 
   return <button type="button" className={`bl-chip${on ? ' is-active' : ''}`} aria-pressed={on} onClick={onClick}>{children}</button>
 }
 
-// Значки провайдеров в стиле иконок приложений, по мотивам оригиналов
 export type IdProvider = 'gos' | 'sber' | 'alfa'
-const ID_ICONS: Record<IdProvider, ReactNode> = {
-  gos: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#fff" stroke="#E2E6ED" /><path d="M8 7h12v3.6h-8.2V21H8z" fill="#0D4CD3" /><path d="M14.4 13.4H20V21h-5.6z" fill="#EE3F58" /></svg>,
-  sber: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#21A038" /><path d="M21.6 11.2a8 8 0 1 1-2.9-4" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /><path d="m9.4 13.6 3.2 3 8.4-8.2" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>,
-  alfa: <svg viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#EF3124" /><path d="M12.4 6h3.2l5 13h-3.1l-1.1-3.1h-4.9L10.4 19H7.4zm-.1 7.6h3.3L14 8.9z" fill="#fff" /><rect x="7.4" y="20.6" width="13.2" height="2" fill="#fff" /></svg>,
-}
-export function IdBadge({ id }: { id: IdProvider }) {
-  return <span className="id-badge" aria-hidden="true">{ID_ICONS[id]}</span>
-}
 
 export const copy = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast(`${what} скопирован`), () => toast('Не получилось скопировать, выделите вручную'))
 

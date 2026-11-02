@@ -129,8 +129,7 @@ test('сотрудник отправляет руководителю: пись
   await boss.req('/api/cabinet/company/invitations', { method: 'POST', json: { email: 'smm@example.ru', role: 'staff' } })
   const inv = stubState.messages.findLast(m => m.template === 'invitation')!.params.url.split('/invite/')[1]
   const smm = client()
-  await smm.req('/api/auth/email/start', { method: 'POST', json: { email: 'smm@example.ru' } })
-  await smm.req('/api/auth/email/verify', { method: 'POST', json: { email: 'smm@example.ru', code: stubState.messages.findLast(m => m.template === 'login_code')!.params.code } })
+  await smm.loginPhone('+79005550003')
   await smm.req(`/api/auth/invitations/${inv}/accept`, { method: 'POST' })
 
   const c = await create(smm)

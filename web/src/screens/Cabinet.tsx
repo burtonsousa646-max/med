@@ -381,9 +381,9 @@ export function Company() {
         <section className="bl-section pad bl-stack" style={{ maxWidth: 'none', ...gap('16px') }}>
           <h2 className="bl-h3">люди и доступ</h2>
           {co.members.map(m => (
-            <div key={m.id} className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{m.name || m.email}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{[m.title, m.signer && 'подписант'].filter(Boolean).join(' · ')}</span></span>
+            <div key={m.id} className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{m.name || m.email || m.phone}</span><span className="bl-cell__sub" style={{ display: 'block' }}>{[m.title, m.signer && 'подписант'].filter(Boolean).join(' · ')}</span></span>
               <span className="bl-tag">{ROLE[m.role]}</span>
-              {owner && m.id !== selfId && m.role !== 'owner' && <button className="bl-icon-btn bl-icon-btn--s" aria-label={`Удалить ${m.name || m.email}`} onClick={() => remove.mutate({ params: { path: { userId: m.id } } })}><Trash2 size={16} /></button>}
+              {owner && m.id !== selfId && m.role !== 'owner' && <button className="bl-icon-btn bl-icon-btn--s" aria-label={`Удалить ${m.name || m.email || m.phone}`} onClick={() => remove.mutate({ params: { path: { userId: m.id } } })}><Trash2 size={16} /></button>}
             </div>
           ))}
           {co.invitations.map(i => <div key={i.id} className="bl-cell"><span className="bl-cell__main"><span className="bl-cell__title">{i.target}</span><span className="bl-cell__sub" style={{ display: 'block' }}>приглашение до {day(i.expiresAt)}</span></span><span className="bl-tag">{ROLE[i.role as 'staff']}</span></div>)}

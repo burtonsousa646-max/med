@@ -1,4 +1,4 @@
-// Вход и доступ: бизнес-ID, код на почту, SSO сотрудников, изоляция компаний.
+// Вход и доступ: бизнес-ID, код в SMS, SSO сотрудников, изоляция компаний.
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { sql } from '../db.ts'
@@ -38,17 +38,21 @@ test('колбэк без своего state не пускает', async () => {
   assert.equal(res.status, 422)
 })
 
-test('вход по коду на почту: неверный код, верный, без компании кабинет закрыт', async () => {
+test('вход по SMS: номер в любом виде, неверный код, верный, повтор — 429', async () => {
   const a = client()
-  assert.equal((await a.req('/api/auth/email/start', { method: 'POST', json: { email: 'Buh@Example.ru' } })).status, 200)
-  assert.equal((await a.req('/api/auth/email/start', { method: 'POST', json: { email: 'buh@example.ru' } })).status, 429)
+  assert.equal((await a.req('/api/auth/phone/start', { method: 'POST', json: { phone: '+7 495 123-45-67' } })).status, 422)
+  const sent = await a.req('/api/auth/phone/start', { method: 'POST', json: { phone: '8 (900) 123-45-67' } })
+  assert.equal(sent.status, 200)
+  assert.equal((await a.req('/api/auth/phone/start', { method: 'POST', json: { phone: '9001234567' } })).status, 429)
   const code = stubState.messages.findLast(m => m.template === 'login_code')!.params.code
-  assert.equal((await a.req('/api/auth/email/verify', { method: 'POST', json: { email: 'buh@example.ru', code: '000000' === code ? '111111' : '000000' } })).status, 422)
-  assert.equal((await a.req('/api/auth/email/verify', { method: 'POST', json: { email: 'buh@example.ru', code } })).status, 200)
-  assert.equal((await a.req('/api/cabinet/company')).status, 403)
-  assert.equal((await (await a.req('/api/auth/me')).json()).user.email, 'buh@example.ru')
+  assert.equal((await sent.json()).devCode, code)
+  assert.equal(stubState.messages.findLast(m => m.template === 'login_code')!.to, '+79001234567')
+  assert.equal((await a.req('/api/auth/phone/verify', { method: 'POST', json: { phone: '9001234567', code: '000000' === code ? '111111' : '000000' } })).status, 422)
+  assert.equal((await a.req('/api/auth/phone/verify', { method: 'POST', json: { phone: '+79001234567', code } })).status, 200)
+  assert.equal((await a.req('/api/cabinet/company')).status, 403) // без компании кабинет закрыт
+  assert.equal((await (await a.req('/api/auth/me')).json()).user.phone, '+79001234567')
   // код одноразовый
-  assert.equal((await client().req('/api/auth/email/verify', { method: 'POST', json: { email: 'buh@example.ru', code } })).status, 422)
+  assert.equal((await client().req('/api/auth/phone/verify', { method: 'POST', json: { phone: '+79001234567', code } })).status, 422)
 })
 
 test('сотрудник билайна: роли из SSO, партнёру бэкофис закрыт', async () => {

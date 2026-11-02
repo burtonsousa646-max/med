@@ -77,27 +77,31 @@ paths:
         '302': { description: в кабинет }
         '422': { $ref: '#/components/responses/Error' }
 
-  /auth/email/start:
+  /auth/phone/start:
     post:
       tags: [вход]
-      summary: Отправить код входа на почту
-      description: Код из 6 цифр, живёт 10 минут, повторно — не раньше чем через минуту.
+      summary: Отправить код входа в SMS
+      description: Номер мобильный российский, в любом виде (8…, +7…, 9…). Код из 6 цифр, живёт 10 минут, повторно — не раньше чем через минуту. Пока SMS — заглушка, на стенде код приходит в ответе `devCode`.
       security: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [email], properties: { email: { type: string, format: email } } }
+            schema: { type: object, required: [phone], properties: { phone: { type: string, example: '+7 900 123-45-67' } } }
       responses:
-        '200': { $ref: '#/components/responses/Ok' }
+        '200':
+          description: код отправлен
+          content:
+            application/json:
+              schema: { type: object, required: [ok], properties: { ok: { type: boolean }, devCode: { type: string, description: 'только на стенде с заглушкой SMS' } } }
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
 
-  /auth/email/verify:
+  /auth/phone/verify:
     post:
       tags: [вход]
-      summary: Войти по коду
-      description: Пять неверных попыток — код сгорает. Ставит cookie `sid`.
+      summary: Войти по коду из SMS
+      description: Пять неверных попыток — код сгорает. Ставит cookie `sid`, номер записывается как подтверждённый.
       security: []
       requestBody:
         required: true
@@ -105,8 +109,8 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, code]
-              properties: { email: { type: string, format: email }, code: { type: string, pattern: '^\d{6}$' } }
+              required: [phone, code]
+              properties: { phone: { type: string }, code: { type: string, pattern: '^\d{6}$' } }
       responses:
         '200': { $ref: '#/components/responses/Ok' }
         '422': { $ref: '#/components/responses/Error' }
@@ -805,11 +809,12 @@ components:
           type: array
           items:
             type: object
-            required: [id, name, email, role, title, signer]
+            required: [id, name, email, phone, role, title, signer]
             properties:
               id: { type: string, format: uuid }
               name: { type: string }
               email: { type: [string, 'null'] }
+              phone: { type: [string, 'null'] }
               role: { $ref: '#/components/schemas/PartnerRole' }
               title: { type: string }
               signer: { type: boolean }

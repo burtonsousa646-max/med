@@ -38,7 +38,7 @@ test('точки: геокодер, нельзя выключить послед
   assert.equal((await a.req('/api/cabinet/company/points', { method: 'POST', json: { addr: '  ' } })).status, 422)
 })
 
-test('приглашение бухгалтера: письмо, вход по почте, принятие, права', async () => {
+test('приглашение бухгалтера: письмо, вход по SMS, принятие, права', async () => {
   const owner = client()
   await owner.loginPartner('7701234567')
   assert.equal((await owner.req('/api/cabinet/company/invitations', { method: 'POST', json: { email: 'buh@example.ru', role: 'owner' } })).status, 422)
@@ -47,15 +47,13 @@ test('приглашение бухгалтера: письмо, вход по �
   const t = url.split('/invite/')[1]
 
   const buh = client()
-  await buh.req('/api/auth/email/start', { method: 'POST', json: { email: 'buh@example.ru' } })
-  const code = stubState.messages.findLast(m => m.template === 'login_code')!.params.code
-  await buh.req('/api/auth/email/verify', { method: 'POST', json: { email: 'buh@example.ru', code } })
+  await buh.loginPhone('+79005550001')
   assert.equal((await buh.req(`/api/auth/invitations/${t}/accept`, { method: 'POST' })).status, 200)
   assert.equal((await client().req(`/api/auth/invitations/${t}/accept`, { method: 'POST' })).status, 401)
   assert.equal((await buh.req(`/api/auth/invitations/${t}/accept`, { method: 'POST' })).status, 404) // одноразовое
 
   const co = await (await buh.req('/api/cabinet/company')).json()
-  assert.equal(co.members.find((m: any) => m.email === 'buh@example.ru').role, 'accountant')
+  assert.equal(co.members.find((m: any) => m.phone === '+79005550001').role, 'accountant')
   // бухгалтер не меняет реквизиты и не приглашает, но подключает ЭДО
   assert.equal((await buh.req('/api/cabinet/company', { method: 'PATCH', json: { brand: 'x' } })).status, 403)
   assert.equal((await buh.req('/api/cabinet/company/invitations', { method: 'POST', json: { email: 'a@b.ru', role: 'staff' } })).status, 403)
@@ -64,7 +62,7 @@ test('приглашение бухгалтера: письмо, вход по �
   assert.equal((await buh.req('/api/cabinet/company/offer', { method: 'POST' })).status, 403)
 
   // владелец удаляет бухгалтера — его сессия в компании закрыта
-  const buhId = co.members.find((m: any) => m.email === 'buh@example.ru').id
+  const buhId = co.members.find((m: any) => m.phone === '+79005550001').id
   await owner.req(`/api/cabinet/company/members/${buhId}`, { method: 'DELETE' })
   assert.equal((await buh.req('/api/cabinet/company')).status, 401)
 })
@@ -88,11 +86,9 @@ test('оферта: подписант принимает, документ по
   assert.equal(n, 1)
 })
 
-test('вошёл по почте и добавил компанию: владелец без права подписи; занятый ИНН — 409', async () => {
+test('вошёл по SMS и добавил компанию: владелец без права подписи; занятый ИНН — 409', async () => {
   const a = client()
-  await a.req('/api/auth/email/start', { method: 'POST', json: { email: 'new@example.ru' } })
-  const code = stubState.messages.findLast(m => m.template === 'login_code')!.params.code
-  await a.req('/api/auth/email/verify', { method: 'POST', json: { email: 'new@example.ru', code } })
+  await a.loginPhone('+79005550002')
   assert.equal((await a.req('/api/auth/companies', { method: 'POST', json: { inn: '7701234567' } })).status, 409)
   const co = await (await a.req('/api/auth/companies', { method: 'POST', json: { inn: '7709999999' } })).json()
   assert.equal(co.members[0].signer, false)

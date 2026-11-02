@@ -1,4 +1,4 @@
-import { Component, StrictMode, Suspense, useEffect, type ReactNode } from 'react'
+import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { MotionConfig } from 'motion/react'
@@ -12,6 +12,8 @@ import { Approve, Checkout, Consent, Launch, Reach } from './screens/Flow'
 import Build from './screens/Build'
 import Near from './screens/Near'
 import Admin from './admin/Admin'
+// лендинг тяжёлый (видео, анимации) — отдельным куском, кабинет его не грузит
+const Landing = lazy(() => import('./screens/Landing'))
 import { Balance, Campaigns, Company, Connections, Docs, Help, Stats } from './screens/Cabinet'
 import { Brand, Toaster, gap } from './ui'
 
@@ -61,6 +63,7 @@ createRoot(document.getElementById('root')!).render(
           <Failsafe>
             <Suspense fallback={<div className="bl-page wrap" aria-busy="true" />}>
               <Routes>
+                <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/onboarding" element={auth(<Onboarding />, false)} />
                 <Route path="/invite/:token" element={auth(<Invite />, false)} />

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { motion } from 'motion/react'
-import { ArrowRight, Check, Loader2, MapPin } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Loader2, MapPin } from 'lucide-react'
 import { $api, act, client, queryClient, useCompany, useMe, type OfferType, type S } from '../api'
 import { Brand, gap, toast, type IdProvider } from '../ui'
 import { ReachMap } from '../mock'
@@ -88,7 +88,7 @@ export function Login() {
   return (
     <div className="login">
       <div className="login__form">
-        <header className="login__head"><Brand to="/login" /></header>
+        <header className="login__head"><Brand to="/" /><Link className="bl-btn bl-btn--ghost" to="/"><ArrowLeft size={18} />на главную</Link></header>
         <motion.main className="login__body bl-stack" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <div className="bl-stack" style={gap('8px')}>
             <h1 className="bl-h1">вход в кабинет</h1>

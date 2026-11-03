@@ -12,6 +12,9 @@ const Landing = lazy(() => import('./screens/Landing'))
 const LandingV2 = lazy(() => import('./screens/LandingV2'))
 const Build = lazy(() => import('./screens/Build'))
 const Near = lazy(() => import('./screens/Near'))
+const mvp = () => import('./screens/Mvp')
+const MvpLogin = lazy(() => mvp().then(m => ({ default: m.MvpLogin }))), MvpNew = lazy(() => mvp().then(m => ({ default: m.MvpNew })))
+const MvpPromo = lazy(() => mvp().then(m => ({ default: m.MvpPromo }))), MvpDone = lazy(() => mvp().then(m => ({ default: m.MvpDone })))
 const entry = () => import('./screens/Entry'), flow = () => import('./screens/Flow'), cab = () => import('./screens/Cabinet')
 const Inn = lazy(() => entry().then(m => ({ default: m.Inn }))), Login = lazy(() => entry().then(m => ({ default: m.Login })))
 const Approve = lazy(() => flow().then(m => ({ default: m.Approve }))), Checkout = lazy(() => flow().then(m => ({ default: m.Checkout })))
@@ -47,7 +50,7 @@ function OnRoute() {
   useEffect(() => {
     scrollTo(0, 0)
     const name = screenName(pathname)?.replace(/^[\d.]+ · /, '')
-    document.title = pathname === '/' || pathname === '/v2' ? 'Рекламная платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? 'кабинет'} · рекламная платформа билайна`
+    document.title = pathname === '/' || pathname === '/v2' || pathname === '/mvp' ? 'Рекламная платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · рекламная платформа билайна`
   }, [pathname])
   return null
 }
@@ -79,6 +82,11 @@ createRoot(document.getElementById('root')!).render(
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/v2" element={<LandingV2 />} />
+                <Route path="/mvp" element={<LandingV2 />} />
+                <Route path="/mvp/login" element={<MvpLogin />} />
+                <Route path="/mvp/new" element={<MvpNew />} />
+                <Route path="/mvp/new/promo" element={<MvpPromo />} />
+                <Route path="/mvp/done" element={<MvpDone />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/inn" element={<Inn />} />
                 <Route path="/consent" element={<Consent />} />

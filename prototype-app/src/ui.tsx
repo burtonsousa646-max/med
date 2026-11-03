@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { animate, motion, useInView, useReducedMotion, AnimatePresence } from 'motion/react'
 import { Check as CheckIcon, X } from 'lucide-react'
 import logoUrl from '../../design-system/assets/beeline-logo.svg'
@@ -238,6 +238,8 @@ export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathn
 
 export function DemoMenu() {
   const [open, setOpen] = useState(false)
+  // в MVP карты экранов нет: там свой короткий путь
+  if (useLocation().pathname.startsWith('/mvp')) return null
   return (
     <>
       <button className="bl-pill-dark demo-fab" onClick={() => setOpen(true)} aria-haspopup="dialog">экраны прототипа</button>

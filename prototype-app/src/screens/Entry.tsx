@@ -103,17 +103,23 @@ export function Login() {
           <p className="bl-caption login__foot"><Link to={`/inn?type=${type}`}>ввести ИНН или сайт без входа</Link> · договор и ЭДО не нужны</p>
         </motion.main>
       </div>
-      <aside className="v2-backdrop login__aside" aria-hidden="true">
-        <motion.div className="v2-window login__preview" initial={{ opacity: 0, y: 30, rotate: 1.5 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.15, duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}>
-          <div className="v2-window__bar"><MapPin size={16} /> охват · кофейня «Зерно»</div>
-          <div className="login__map"><ReachMap points={DEMO_POINTS} r={105} /></div>
-          <div className="login__stat"><b className="bl-h1">24 800</b><span className="bl-caption">подходящих людей в 1 км от двух точек</span></div>
-        </motion.div>
-        <ul className="login__perks">
-          {PERKS.map(x => <li key={x}><span className="login__check"><Check size={14} strokeWidth={3} /></span>{x}</li>)}
-        </ul>
-      </aside>
+      <LoginAside perks={PERKS} />
     </div>
+  )
+}
+
+export function LoginAside({ perks }: { perks: string[] }) {
+  return (
+    <aside className="v2-backdrop login__aside" aria-hidden="true">
+      <motion.div className="v2-window login__preview" initial={{ opacity: 0, y: 30, rotate: 1.5 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.15, duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}>
+        <div className="v2-window__bar"><MapPin size={16} /> охват · кофейня «Зерно»</div>
+        <div className="login__map"><ReachMap points={DEMO_POINTS} r={105} /></div>
+        <div className="login__stat"><b className="bl-h1">24 800</b><span className="bl-caption">подходящих людей в 1 км от двух точек</span></div>
+      </motion.div>
+      <ul className="login__perks">
+        {perks.map(x => <li key={x}><span className="login__check"><Check size={14} strokeWidth={3} /></span>{x}</li>)}
+      </ul>
+    </aside>
   )
 }
 

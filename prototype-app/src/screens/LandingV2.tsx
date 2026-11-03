@@ -13,6 +13,10 @@ import logoUrl from '../../../design-system/assets/beeline-logo.svg'
    Порядок — вопросы владельца бизнеса: что это (hero) → кто уже с нами → какая аудитория → кому покажем → где увидят → и в чате →
    сколько стоит → как запустить и управлять → помощник → истории → отзыв → вопросы → запуск. */
 
+// Лендинг открыт и как MVP (/mvp): тогда все кнопки ведут на вход MVP
+const mvp = () => location.hash.startsWith('#/mvp')
+const login = () => (mvp() ? '/mvp/login' : '/login')
+
 const WORDS = ['рядом с домом', 'в день зарплаты', 'после переезда', 'по дороге на работу', 'когда кончился трафик']
 
 function Rotator() {
@@ -63,7 +67,7 @@ function Hero() {
         <h1 className="bl-display-xl">пусть вас выбирают<br /><Rotator /></h1>
         <p className="bl-lead bl-secondary">Покажем вашу акцию абонентам билайна, которые живут или бывают рядом, — в приложении и в момент, когда им это нужно. Показы бесплатно: платите за переходы, заявки или продажи.</p>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
-          <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
+          <Link className="bl-btn bl-btn--primary bl-btn--xl" to={login()}>узнать охват</Link>
         </div>
       </div>
       {/* так абонент увидит вашу акцию — вместо ссылки на витрину */}
@@ -108,7 +112,7 @@ function Everywhere() {
           <h2 className="bl-display-l">вас увидят там,<br />где абонент проводит день</h2>
           <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
             <p className="bl-body bl-secondary">Одна кампания — четыре места в приложении билайна. Показываем там, где решение ближе всего.</p>
-            <Go to="/login">выбрать, где показать</Go>
+            <Go to={login()}>выбрать, где показать</Go>
           </div>
         </div>
         <div className="v2-backdrop v2-backdrop--teal v2-where">
@@ -165,7 +169,7 @@ function Chat() {
         </div>
         <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
           <p className="bl-body bl-secondary">Абонент спрашивает приложение словами, ИИ подбирает акции рядом. Ваша появится сама, если подходит. Настраивать ничего не нужно.</p>
-          <Go to="/login">разместить акцию в «лучшее рядом»</Go>
+          <Go to={login()}>разместить акцию в «лучшее рядом»</Go>
         </div>
       </div>
       <div className="v2-backdrop v2-backdrop--violet v2-center">
@@ -320,7 +324,7 @@ function Anywhere() {
     return () => m.removeEventListener('change', f)
   }, [])
   const items = [
-    { ui: (on: boolean) => <Builder run={run && on} />, t: 'объявление за 5 минут', d: <>Дайте ссылку на сайт или Карты — <Link to="/login">ИИ соберёт объявление</Link> сам. Поправить можно словами.</> },
+    { ui: (on: boolean) => <Builder run={run && on} />, t: 'объявление за 5 минут', d: <>Дайте ссылку на сайт или Карты — <Link to={login()}>ИИ соберёт объявление</Link> сам. Поправить можно словами.</> },
     { ui: (on: boolean) => <Hub active={on} run={run} />, t: 'всё в одном кабинете', d: 'Кампании, баланс, заявки и документы. Статистика каждый день.' },
     { ui: (on: boolean) => <Channels active={on} run={run} />, t: 'одна кампания — все каналы', d: 'Приложение билайна, раздел «лучшее рядом», ТВ и пуши. И у партнёров: Авито, Альфа-Банк, Т-Банк.' },
   ]
@@ -336,7 +340,7 @@ function Anywhere() {
           </article>
         ))}
       </div>
-      <Go to="/login">собрать объявление самому</Go>
+      <Go to={login()}>собрать объявление самому</Go>
     </section>
   )
 }
@@ -356,7 +360,7 @@ function Clients() {
     <section className="bl-section bl-section--wide v2-clients" aria-labelledby="clients-h">
       <div className="v2-clients__head">
         <h2 id="clients-h" className="bl-h3">нам доверяют</h2>
-        <Go ghost to="/login">стать партнёром</Go>
+        <Go ghost to={login()}>стать партнёром</Go>
       </div>
       <div className="v2-ticker v2-ticker--logos">
         <ul className="v2-ticker__track">
@@ -392,7 +396,7 @@ function AroundPoint() {
         <h2 className="bl-display-l">покажем тем, кто рядом<br />и кому это нужно сейчас</h2>
         <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
           <p className="bl-body bl-secondary">Выберите радиус и момент — охват посчитаем сразу. Данные абонентов вам не передаём, только итоги кампании.</p>
-          <Go to="/login">посчитать для своих точек</Go>
+          <Go to={login()}>посчитать для своих точек</Go>
         </div>
       </div>
       <Reveal className="v2-backdrop">
@@ -456,7 +460,7 @@ function Pricing() {
         <h2 className="bl-display-l">платите за действия,<br />а не за показы</h2>
         <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
           <p className="bl-body bl-secondary">Показы бесплатно. Пополнение от 3 000 ₽, остаток вернём. На первую кампанию добавим ещё 3 000 ₽ бонусом.</p>
-          <Go to="/login">точный расчёт в кабинете</Go>
+          <Go to={login()}>точный расчёт в кабинете</Go>
         </div>
       </div>
       <div className="v2-backdrop v2-backdrop--green">
@@ -500,7 +504,7 @@ function ForEveryone() {
     <section id="cases" className="bl-section bl-section--wide">
       <div className="section-head">
         <h2 className="bl-display-l">от кофейни до федеральной сети</h2>
-        <Link className="bl-btn" to="/login">запустить свою кампанию <ArrowRight size={18} /></Link>
+        <Link className="bl-btn" to={login()}>запустить свою кампанию <ArrowRight size={18} /></Link>
       </div>
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         {s.map((x, i) => (
@@ -535,7 +539,7 @@ function Assistant() {
         <h2 className="bl-display-l">помощник,<br />который считает за вас</h2>
         <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
         <p className="bl-body bl-secondary">ИИ в кабинете замечает просадки, предлагает ставку и пишет тексты. Решение всегда за вами — попробуйте.</p>
-        <Go to="/login">попробовать в своём кабинете</Go>
+        <Go to={login()}>попробовать в своём кабинете</Go>
         </div>
       </div>
       <div className="v2-backdrop v2-backdrop--magenta v2-center">
@@ -637,7 +641,7 @@ function Audience() {
       <div className="bl-grid v2-trust__row" style={{ ['--bl-cols' as string]: 3 }}>
         {trust.map((x, n) => <Reveal key={x.t} delay={0.2 + n * 0.1} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
-      <Go to="/login">запустить самостоятельно</Go>
+      <Go to={login()}>запустить самостоятельно</Go>
     </section>
   )
 }
@@ -657,7 +661,7 @@ function Quote() {
         {([[3000, ' ₽', 'на баланс за первую кампанию'], [0, ' ₽', 'за показы и подключение'], [1, ' день', 'до первых гостей']] as const).map(([v, u, t], n) => (
           <Reveal key={t} delay={n * 0.1} className="v2-bonus__row"><b className="bl-h2"><Num value={v} suffix={u} from={0} /></b><span className="bl-body bl-secondary">{t}</span></Reveal>
         ))}
-        <Go to="/login">получить бонус 3 000 ₽</Go>
+        <Go to={login()}>получить бонус 3 000 ₽</Go>
       </div>
     </section>
   )
@@ -688,7 +692,7 @@ function Final() {
           ))}
         </ol>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
-          <Link className="bl-btn bl-btn--primary bl-btn--xl" to="/login">узнать охват</Link>
+          <Link className="bl-btn bl-btn--primary bl-btn--xl" to={login()}>узнать охват</Link>
         </div>
         <span className="bl-caption">вход через Госуслуги или бизнес-ID — компанию и точки узнаем сами</span>
       </div>
@@ -718,7 +722,7 @@ function Faq() {
       <div className="bl-stack" style={{ ['--bl-gap' as string]: '20px' }}>
         <h2 className="bl-display-l">остались вопросы?</h2>
         <p className="bl-body bl-secondary">Не нашли ответ — в кабинете на каждом шаге подсказывает помощник, а в разделе помощи есть ответы на остальное.</p>
-        <Go to="/login">зарегистрироваться</Go>
+        <Go to={login()}>зарегистрироваться</Go>
       </div>
       <div className="bl-accordion">
         {FAQ.map(([q, a], k) => <details key={q} open={k === 0}><summary>{q}</summary><div className="bl-accordion__body">{a}</div></details>)}
@@ -746,13 +750,13 @@ export default function LandingV2() {
   return (
     <div className="bl-page wrap v2">
       <header className="bl-header landing-head v2-head">
-        <div className="bl-header__side"><Brand to="/v2" /></div>
+        <div className="bl-header__side"><Brand to={mvp() ? '/mvp' : '/v2'} /></div>
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
           {NAV.map(([id, t]) => <button key={id} type="button" className="bl-hide-mobile bl-btn" onClick={() => go(id)}>{t}</button>)}
           <AnimatePresence initial={false}>
-            {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><Link className="bl-btn bl-btn--primary" to="/login">узнать охват</Link></motion.span>}
+            {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><Link className="bl-btn bl-btn--primary" to={login()}>узнать охват</Link></motion.span>}
           </AnimatePresence>
-          <Link className="bl-btn bl-btn--dark" to="/login">войти</Link>
+          <Link className="bl-btn bl-btn--dark" to={login()}>войти</Link>
         </nav>
       </header>
       <main className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>

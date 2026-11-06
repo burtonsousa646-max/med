@@ -16,6 +16,10 @@ docs/               документация прототипа, не меняе
 package.json        корень монорепо: общие скрипты и dev-зависимости
 pnpm-workspace.yaml пакеты монорепо
 commitlint.config.mjs правила сообщений коммитов — см. ai/rules/common.md
+eslint.config.mjs   линтер для всего репозитория
+prettier.config.mjs форматирование для всего репозитория
+.editorconfig       базовые настройки редактора
+.nvmrc              версия Node.js
 AGENTS.md           точка входа для ИИ-агентов
 CLAUDE.md           ссылка на AGENTS.md
 ```
@@ -37,6 +41,27 @@ packages:
 - Общие пакеты подключаются как `workspace:*`.
 - Задачи по пакетам запускаются средствами pnpm, отдельный оркестратор не используется: `pnpm -r <script>` — во всех пакетах, `pnpm --filter <package> <script>` — в одном пакете, `pnpm --filter "...[origin/main]" <script>` — только в изменённых пакетах и тех, кто от них зависит.
 - Имена пакетов: `@platform/<name>` — например, `@platform/campaigns-service`, `@platform/design-system`.
+- Install-скрипты зависимостей по умолчанию запрещены. Разрешённые перечислены в `allowBuilds` в `pnpm-workspace.yaml`, новые добавляются через `pnpm approve-builds <package>`.
+
+### Команды из корня
+
+| Команда | Что делает |
+|---|---|
+| `pnpm lint` / `pnpm lint:fix` | ESLint по всему репозиторию |
+| `pnpm format` / `pnpm format:check` | Prettier по всему репозиторию, кроме Markdown |
+| `pnpm typecheck` | проверка типов во всех пакетах |
+| `pnpm test` | тесты во всех пакетах |
+| `pnpm build` | сборка всех пакетов |
+| `pnpm env:up` / `pnpm env:down` | локальное окружение из `deploy/` |
+
+`typecheck`, `test` и `build` запускают одноимённые скрипты пакетов: каждый пакет должен их объявить.
+
+### Общие настройки
+
+- **ESLint и Prettier** — одни на весь репозиторий, в корне. Пакеты своих конфигов не заводят.
+- **Markdown** Prettier не форматирует: выравнивание таблиц перерисовывает всю таблицу при правке одной ячейки.
+- **TypeScript, Vite и Vitest** — пресеты в пакетах `@platform/web-config` и `@platform/server-tooling`. Пакет расширяет пресет, а не копирует настройки.
+- Пресеты TypeScript самодостаточны и не ссылаются на файлы в корне: путь в `extends` разрешается через `node_modules`, и Vite не находит относительные пути за пределами пакета.
 
 ## `api/` — контракты
 
@@ -79,8 +104,21 @@ server/apps/<name>-service/
     schema.prisma         схема своей базы
     migrations/           миграции своей базы
   test/                   интеграционные тесты
+  tsconfig.json           проверка типов и линтер: src/, test/, конфиги
+  tsconfig.build.json     сборка: только src/ без тестов
+  vitest.config.ts
   Dockerfile
   package.json
+```
+
+```jsonc
+// tsconfig.json
+{ "extends": "@platform/server-tooling/tsconfig/service.json", "include": ["src", "test", "vitest.config.ts"] }
+// tsconfig.build.json
+{ "extends": "@platform/server-tooling/tsconfig/build.json" }
+// vitest.config.ts
+import { defineTestConfig } from '@platform/server-tooling/vitest'
+export default defineTestConfig()
 ```
 
 - Модульные тесты лежат рядом с кодом: `*.spec.ts`.
@@ -114,6 +152,7 @@ Gateway не содержит бизнес-логики: он проверяет
 | `feature-flags` | клиент Unleash |
 | `queue` | общая настройка BullMQ |
 | `testing` | помощники для тестов |
+| `tooling` | пресеты TypeScript (`service`, `build`, `lib`) и Vitest со SWC для декораторов NestJS |
 
 В общие пакеты не кладётся бизнес-логика: она живёт в сервисах.
 
@@ -139,9 +178,24 @@ web/apps/<name>/
     components/           компоненты, общие для этого приложения
     store/                состояние TanStack Store
     main.tsx              точка монтирования
+  index.html
+  tsconfig.json
   vite.config.ts          настройка Module Federation
+  vitest.config.ts
   package.json
 ```
+
+```ts
+// vite.config.ts
+import { defineAppConfig } from '@platform/web-config/vite'
+export default defineAppConfig({ name: 'cabinet', port: 5201, exposes: { './App': './src/App.tsx' } })
+// vitest.config.ts
+import { defineTestConfig } from '@platform/web-config/vitest'
+export default defineTestConfig()
+// tsconfig.json: { "extends": "@platform/web-config/tsconfig/app.json", "include": ["src", "vite.config.ts", "vitest.config.ts"] }
+```
+
+`defineAppConfig` подключает React, Vanilla Extract и Module Federation. Библиотеки `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query` и `@tanstack/react-store` хост и микрофронтенды делят в одном экземпляре, поэтому каждое приложение ставит их у себя.
 
 Подробная структура внутри `src/` — в `ai/rules/frontend.md`.
 
@@ -153,17 +207,21 @@ web/apps/<name>/
 | `api-client` | клиент и типы, сгенерированные из `api/openapi/` |
 | `feature-flags` | клиент Unleash для React |
 | `observability` | Grafana Faro |
-| `config` | общие настройки ESLint, Prettier, TypeScript, Vite и Vitest |
+| `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
 
 ## `deploy/` — окружение
 
 ```
 deploy/
-  docker-compose.yml      локальное окружение: базы сервисов, Redis, Unleash, стек наблюдаемости
-  postgres/               инициализация баз — по одной на сервис
-  observability/          конфигурация Alloy, Prometheus, Loki, Tempo, Grafana и Alertmanager
-  unleash/                начальные feature toggles
+  docker-compose.yml      локальное окружение: PostgreSQL, Redis, Unleash
+  .env.example            порты и доступы; копируется в deploy/.env
+  postgres/init/          создание баз — по одной на сервис и для Unleash
+  observability/          конфигурация стека наблюдаемости — после подтверждения раздела в tech-stack.md
+  unleash/                начальные feature toggles — когда появятся первые
 ```
+
+- PostgreSQL слушает порт 5433, чтобы не конфликтовать с локальным PostgreSQL прототипа.
+- У каждого сервиса своя база в общем локальном PostgreSQL. Новая база добавляется в `postgres/init/01-databases.sql`; скрипт выполняется только при первом создании тома.
 
 Dockerfile сервисов и frontend лежат рядом с их кодом, а не в `deploy/`.
 

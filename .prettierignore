@@ -1,0 +1,8 @@
+prototype/
+docs/
+pnpm-lock.yaml
+**/dist/
+**/coverage/
+**/generated/
+**/*.gen.ts
+**/*.md

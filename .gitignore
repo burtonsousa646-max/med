@@ -5,3 +5,5 @@ dist/
 .env
 var/
 .claude/
+coverage/
+*.tsbuildinfo

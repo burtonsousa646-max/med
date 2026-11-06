@@ -1,0 +1,33 @@
+{
+  "name": "@platform/web-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Общие настройки TypeScript, Vite и Vitest для frontend-приложений и пакетов",
+  "type": "module",
+  "exports": {
+    "./tsconfig/app.json": "./tsconfig/app.json",
+    "./tsconfig/lib.json": "./tsconfig/lib.json",
+    "./vite": {
+      "types": "./vite.d.ts",
+      "default": "./vite.js"
+    },
+    "./vitest": {
+      "types": "./vitest.d.ts",
+      "default": "./vitest.js"
+    },
+    "./vitest/setup": "./vitest.setup.js",
+    "./test-types": {
+      "types": "./test-types.d.ts"
+    }
+  },
+  "dependencies": {
+    "@module-federation/vite": "^1.23.10",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@vanilla-extract/vite-plugin": "^5.2.6",
+    "@vitejs/plugin-react": "^6.2.1",
+    "jsdom": "^31.0.0",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

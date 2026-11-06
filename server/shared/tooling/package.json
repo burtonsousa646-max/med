@@ -1,0 +1,21 @@
+{
+  "name": "@platform/server-tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Общие настройки TypeScript и Vitest для сервисов и пакетов backend",
+  "type": "module",
+  "exports": {
+    "./tsconfig/service.json": "./tsconfig/service.json",
+    "./tsconfig/build.json": "./tsconfig/build.json",
+    "./tsconfig/lib.json": "./tsconfig/lib.json",
+    "./vitest": {
+      "types": "./vitest.d.ts",
+      "default": "./vitest.js"
+    }
+  },
+  "dependencies": {
+    "@swc/core": "^1.16.22",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^5.1.0"
+  }
+}

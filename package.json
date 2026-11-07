@@ -18,7 +18,9 @@
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
     "env:up": "docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d",
-    "env:down": "docker compose -f deploy/docker-compose.yml --env-file deploy/.env down"
+    "env:down": "docker compose -f deploy/docker-compose.yml --env-file deploy/.env down",
+    "ai:adapters": "node ai/adapters/generate.mjs",
+    "ai:adapters:check": "node ai/adapters/generate.mjs --check"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

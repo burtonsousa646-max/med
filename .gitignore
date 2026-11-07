@@ -4,6 +4,5 @@ dist/
 *.log
 .env
 var/
-.claude/
 coverage/
 *.tsbuildinfo

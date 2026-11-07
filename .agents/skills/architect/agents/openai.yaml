@@ -1,0 +1,4 @@
+# Сгенерировано ai/adapters/generate.mjs из ai/agents/architect.md — не править руками.
+# Роль вызывается только явно: $architect
+policy:
+  allow_implicit_invocation: false

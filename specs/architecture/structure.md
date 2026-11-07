@@ -23,6 +23,9 @@ prettier.config.mjs форматирование для всего репози�
 .nvmrc              версия Node.js
 AGENTS.md           точка входа для ИИ-агентов
 CLAUDE.md           ссылка на AGENTS.md
+.claude/commands/   команды ролей для Claude Code — генерируются из ai/agents/
+.agents/skills/     навыки ролей для Codex и Kimi Code — генерируются из ai/agents/
+.gemini/commands/   команды ролей для Gemini CLI — генерируются из ai/agents/
 ```
 
 ## Монорепо

@@ -10,6 +10,7 @@ specs/              вся документация и спецификации 
 api/                контракты: OpenAPI и .proto
 server/             backend: микросервисы и общие пакеты
 web/                frontend: микрофронтенды и общие пакеты
+tests/              автотесты API и e2e — пишет тестировщик
 deploy/             локальное окружение и инфраструктура: docker-compose, конфигурация зависимостей
 prototype/          прототип, эталон поведения при переносе, не меняется
 docs/               документация прототипа, не меняется
@@ -35,6 +36,8 @@ packages:
   - server/shared/*
   - web/apps/*
   - web/packages/*
+  - tests/*
+  - api
 ```
 
 - Зависимости ставятся только через pnpm; `npm` и `yarn` не используются, lock-файл один — `pnpm-lock.yaml` в корне.
@@ -68,14 +71,26 @@ packages:
 ```
 api/
   openapi/
-    <name>.yaml           внешний API, который отдаёт API Gateway
+    <name>.yaml                 внешний API, который отдаёт API Gateway
   proto/
-    <service>/v1/*.proto  gRPC-контракты сервисов, версионируются по каталогу
+    <service>/v1/*.proto        gRPC-контракты сервисов, версионируются по каталогу
+  pacts/
+    http/                       pact-файлы HTTP: микрофронтенд → api-gateway
+    grpc/                       pact-файлы gRPC: api-gateway или сервис → сервис
+  contract-tests/
+    consumers/<consumer>/       тесты потребителей на Pact JS — создают pact-файлы
+    providers/<provider>/       проверка поставщиков по pact-файлам
+  package.json                  @platform/api — пакет workspace для контрактных тестов
 ```
 
 - Контракты — источник правды. Код сервисов и клиенты frontend генерируются из них, а не наоборот.
-- Контракты меняет архитектор, разработчики их только реализуют.
-- Сгенерированный код в `api/` не кладётся: он генерируется в пакеты потребителей.
+- OpenAPI и `.proto` меняет архитектор, разработчики их только реализуют.
+- Контрактные тесты пишут разработчики:
+  - `consumers/<микрофронтенд>/` — frontend-разработчик;
+  - `consumers/api-gateway/`, `consumers/<name>-service/` и `providers/` — backend-разработчик.
+- Pact-файлы не правятся руками: их создают тесты потребителей. Pact-файлы коммитятся вместе с тестом, который их изменил.
+- Сгенерированный из контрактов код в `api/` не кладётся: он генерируется в пакеты потребителей.
+- Имя pact-файла: `<consumer>-<provider>.json`, например `cabinet-api-gateway.json`.
 
 ## `server/` — backend
 
@@ -208,6 +223,21 @@ export default defineTestConfig()
 | `feature-flags` | клиент Unleash для React |
 | `observability` | Grafana Faro |
 | `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
+
+## `tests/` — автотесты и e2e
+
+```
+tests/
+  api/                    автотесты API через API Gateway — Playwright, пакет @platform/api-tests
+    specs/<NNN-slug>/     тесты фичи
+    package.json
+  e2e/                    сценарии пользователя — Playwright, пакет @platform/e2e
+    specs/<NNN-slug>/     тесты фичи
+    package.json
+```
+
+- Тесты сгруппированы по фичам: каталог совпадает с `specs/features/NNN-slug/`, в названии теста — номер `TC` из `test-plan.md`.
+- Контрактные тесты и pact-файлы лежат в `api/`. Модульные, визуальные и интеграционные тесты — в пакетах, которые они проверяют.
 
 ## `deploy/` — окружение
 

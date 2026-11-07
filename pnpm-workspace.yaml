@@ -3,6 +3,8 @@ packages:
   - server/shared/*
   - web/apps/*
   - web/packages/*
+  - tests/*
+  - api
 allowBuilds:
   '@swc/core': true
   esbuild: true

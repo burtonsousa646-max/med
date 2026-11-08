@@ -2,6 +2,7 @@
 description: Архитектор — Решает, как устроена платформа и фича, — ведёт целевую архитектуру и ADR, проектирует сервисы, данные и контракты, пишет дизайн фичи и режет его на задачи для разработчиков.
 argument-hint: <задача>
 disable-model-invocation: true
+model: opus
 ---
 
 <!-- Сгенерировано ai/adapters/generate.mjs из ai/agents/architect.md — не править руками. -->

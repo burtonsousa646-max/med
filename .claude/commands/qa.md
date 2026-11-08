@@ -2,6 +2,7 @@
 description: Тестировщик — Проверяет, что фича делает то, что описано в требованиях, — пишет план тестов, автотесты API и e2e, проверяет фичу, заводит дефекты и даёт рекомендацию о приёмке.
 argument-hint: <задача>
 disable-model-invocation: true
+model: sonnet
 ---
 
 <!-- Сгенерировано ai/adapters/generate.mjs из ai/agents/qa.md — не править руками. -->

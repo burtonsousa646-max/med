@@ -2,6 +2,7 @@
 description: Backend-разработчик — Реализует сервисы, API, схему данных и интеграции платформы по спецификации фичи — требованиям, дизайну и задачам; переносит сервисы прототипа на новую платформу.
 argument-hint: <задача>
 disable-model-invocation: true
+model: sonnet
 ---
 
 <!-- Сгенерировано ai/adapters/generate.mjs из ai/agents/backend-developer.md — не править руками. -->

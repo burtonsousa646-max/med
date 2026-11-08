@@ -11,7 +11,9 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const agentsDir = join(root, 'ai', 'agents')
 const rulesDir = join(root, 'ai', 'rules')
+const modelsFile = join(root, 'ai', 'config', 'models.yaml')
 const check = process.argv.includes('--check')
+const TIERS = ['reasoning', 'standard', 'fast']
 
 const MARKER = 'Сгенерировано ai/adapters/generate.mjs'
 const HEADER = `${MARKER} из ai/agents/{id}.md — не править руками.`
@@ -42,13 +44,38 @@ function parseFrontmatter(text, file) {
     }
   }
 
-  for (const key of ['id', 'name', 'description', 'rules']) {
+  for (const key of ['id', 'name', 'description', 'tier', 'rules']) {
     if (!fields[key]) throw new Error(`${file}: во frontmatter нет поля ${key}`)
+  }
+  if (!TIERS.includes(fields.tier)) {
+    throw new Error(`${file}: tier должен быть одним из: ${TIERS.join(', ')}`)
   }
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fields.id)) {
     throw new Error(`${file}: id должен быть в kebab-case латиницей`)
   }
   return fields
+}
+
+/** Читает ai/config/models.yaml: инструмент → уровень → модель. Пустое значение — модель по умолчанию. */
+function parseModels(text) {
+  const models = {}
+  let tool = null
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\s+#.*$/, '').replace(/^#.*$/, '')
+    if (line.trim() === '') continue
+    const top = /^([a-z0-9-]+):\s*$/.exec(line)
+    if (top) {
+      tool = top[1]
+      models[tool] = {}
+      continue
+    }
+    const nested = /^ {2}([a-z]+):\s*(\S*)\s*$/.exec(line)
+    if (!nested || !tool) throw new Error(`ai/config/models.yaml: не разобрать строку «${raw}»`)
+    if (!TIERS.includes(nested[1]))
+      throw new Error(`ai/config/models.yaml: неизвестный уровень ${nested[1]}`)
+    models[tool][nested[1]] = nested[2]
+  }
+  return models
 }
 
 /** Текст обёртки, общий для всех инструментов. */
@@ -73,12 +100,13 @@ ${task}
 `
 }
 
-function claudeCommand(agent) {
+function claudeCommand(agent, models) {
+  const model = models['claude-code']?.[agent.tier]
   return `---
 description: ${agent.name} — ${agent.description}
 argument-hint: <задача>
 disable-model-invocation: true
----
+${model ? `model: ${model}\n` : ''}---
 
 <!-- ${HEADER.replace('{id}', agent.id)} -->
 
@@ -116,7 +144,10 @@ ${prompt}"""
 
 /** Каталоги, которые генератор ведёт целиком. */
 const outputs = [
-  { dir: join(root, '.claude', 'commands'), files: (a) => [[`${a.id}.md`, claudeCommand(a)]] },
+  {
+    dir: join(root, '.claude', 'commands'),
+    files: (a, models) => [[`${a.id}.md`, claudeCommand(a, models)]],
+  },
   {
     dir: join(root, '.agents', 'skills'),
     files: (a) => [
@@ -142,6 +173,7 @@ async function listFiles(dir) {
 async function main() {
   const agentFiles = (await readdir(agentsDir)).filter((f) => f.endsWith('.md')).sort()
   const knownRules = new Set((await readdir(rulesDir)).map((f) => f.replace(/\.md$/, '')))
+  const models = parseModels(await readFile(modelsFile, 'utf8'))
 
   const agents = []
   for (const file of agentFiles) {
@@ -156,7 +188,7 @@ async function main() {
 
   const problems = []
   for (const { dir, files } of outputs) {
-    const expected = new Map(agents.flatMap(files))
+    const expected = new Map(agents.flatMap((a) => files(a, models)))
     const actual = await listFiles(dir)
 
     for (const [path, content] of expected) {

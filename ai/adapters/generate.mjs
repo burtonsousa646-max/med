@@ -69,7 +69,7 @@ function parseModels(text) {
       models[tool] = {}
       continue
     }
-    const nested = /^ {2}([a-z]+):\s*(\S*)\s*$/.exec(line)
+    const nested = /^ {2}([a-z]+):\s*(.*?)\s*$/.exec(line)
     if (!nested || !tool) throw new Error(`ai/config/models.yaml: не разобрать строку «${raw}»`)
     if (!TIERS.includes(nested[1]))
       throw new Error(`ai/config/models.yaml: неизвестный уровень ${nested[1]}`)

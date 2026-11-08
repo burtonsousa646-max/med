@@ -2,10 +2,11 @@
   "name": "@platform/api-client",
   "version": "0.0.0",
   "private": true,
-  "description": "Клиент API для микрофронтендов: openapi-fetch с типами из api/openapi/",
+  "description": "Клиент API для web-приложений: openapi-fetch с типами из api/openapi/<app>.yaml, ApiProvider и useApi",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./generated/*": "./src/generated/*.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
@@ -16,8 +17,16 @@
   },
   "devDependencies": {
     "@platform/web-config": "workspace:*",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "~6.0.3",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.3.1"
   }
 }

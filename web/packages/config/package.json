@@ -4,6 +4,9 @@
   "private": true,
   "description": "Общие настройки TypeScript, Vite, Vitest, Storybook и визуальных тестов для host и module web-приложений",
   "type": "module",
+  "bin": {
+    "platform-visual": "./visual/run.mjs"
+  },
   "exports": {
     "./tsconfig/app.json": "./tsconfig/app.json",
     "./tsconfig/lib.json": "./tsconfig/lib.json",

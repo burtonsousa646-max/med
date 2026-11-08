@@ -84,8 +84,23 @@ api/
   contract-tests/
     consumers/<consumer>/       тесты потребителей на Pact JS — создают pact-файлы
     providers/<provider>/       проверка поставщиков по pact-файлам
-  package.json                  @platform/api — пакет workspace для контрактных тестов
+  redocly.yaml                  правила проверки OpenAPI
+  buf.yaml                      модуль protobuf, правила проверки и поиска ломающих изменений
+  buf.gen.yaml                  генерация кода из .proto в @platform/contracts
+  scripts/contracts.mjs         команды lint, breaking, generate
+  vitest.config.ts              контрактные тесты: contract-tests/**/*.pact.test.ts
+  package.json                  @platform/api — пакет workspace
 ```
+
+| Команда | Что делает |
+|---|---|
+| `pnpm --filter @platform/api lint` | Redocly — `api/openapi/*.yaml`, Buf — `api/proto/` |
+| `pnpm --filter @platform/api breaking` | Buf ищет ломающие изменения `.proto` относительно `main`; другую базу задаёт `CONTRACTS_BASE` |
+| `pnpm --filter @platform/api generate` | типы из OpenAPI — в `web/packages/api-client` и `server/apps/api-gateway`, код из `.proto` — в `server/shared/contracts` |
+| `pnpm --filter @platform/api test:contract` | тесты потребителей и проверка поставщиков на Pact JS |
+
+- Если контрактов или пакета-получателя ещё нет, команда пропускает этот шаг и сообщает об этом, а не падает.
+- Файл контрактного теста — `*.pact.test.ts`. Тесты запускаются по одному файлу: тесты потребителей пишут pact-файлы, проверка поставщиков их читает.
 
 - Контракты — источник правды. Код сервисов и клиенты frontend генерируются из них, а не наоборот.
 - OpenAPI и `.proto` меняет архитектор, разработчики их только реализуют.
@@ -125,19 +140,25 @@ server/apps/<name>-service/
   test/                   интеграционные тесты
   tsconfig.json           проверка типов и линтер: src/, test/, конфиги
   tsconfig.build.json     сборка: только src/ без тестов
-  vitest.config.ts
+  vitest.config.ts        модульные тесты — скрипт test
+  vitest.integration.config.ts  интеграционные тесты — скрипт test:integration
   Dockerfile
   package.json
 ```
 
 ```jsonc
 // tsconfig.json
-{ "extends": "@platform/server-tooling/tsconfig/service.json", "include": ["src", "test", "vitest.config.ts"] }
+{ "extends": "@platform/server-tooling/tsconfig/service.json", "include": ["src", "test", "vitest.config.ts", "vitest.integration.config.ts"] }
 // tsconfig.build.json
 { "extends": "@platform/server-tooling/tsconfig/build.json" }
-// vitest.config.ts
+// vitest.config.ts — src/**/*.spec.ts
 import { defineTestConfig } from '@platform/server-tooling/vitest'
 export default defineTestConfig()
+// vitest.integration.config.ts — test/**/*.test.ts, файлы по одному
+import { defineIntegrationTestConfig } from '@platform/server-tooling/vitest'
+export default defineIntegrationTestConfig()
+// package.json
+"test": "vitest run", "test:integration": "vitest run --config vitest.integration.config.ts"
 ```
 
 - Модульные тесты лежат рядом с кодом: `*.spec.ts`.
@@ -171,7 +192,7 @@ Gateway не содержит бизнес-логики: он проверяет
 | `feature-flags` | клиент Unleash |
 | `queue` | общая настройка BullMQ |
 | `testing` | помощники для тестов |
-| `tooling` | пресеты TypeScript (`service`, `build`, `lib`) и Vitest со SWC для декораторов NestJS |
+| `tooling` | пресеты TypeScript (`service`, `build`, `lib`) и Vitest со SWC для декораторов NestJS: `defineTestConfig` — модульные, `defineIntegrationTestConfig` — интеграционные |
 
 В общие пакеты не кладётся бизнес-логика: она живёт в сервисах.
 
@@ -192,7 +213,8 @@ web/
 ```
 web/apps/<name>/
   src/
-    routes/               маршруты TanStack Router
+    routes/               маршруты TanStack Router — файловый роутинг
+    routeTree.gen.ts      дерево маршрутов — генерируется плагином роутера, руками не правится
     modules/              функциональные модули приложения
     components/           компоненты, общие для этого приложения
     store/                состояние TanStack Store
@@ -214,7 +236,7 @@ export default defineTestConfig()
 // tsconfig.json: { "extends": "@platform/web-config/tsconfig/app.json", "include": ["src", "vite.config.ts", "vitest.config.ts"] }
 ```
 
-`defineAppConfig` подключает React, Vanilla Extract и Module Federation. Библиотеки `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query` и `@tanstack/react-store` хост и микрофронтенды делят в одном экземпляре, поэтому каждое приложение ставит их у себя.
+`defineAppConfig` подключает файловый роутинг TanStack Router с разбиением кода по маршрутам, React, Vanilla Extract и Module Federation. `defineTestConfig` — модульные тесты `src/**/*.test.{ts,tsx}`. Библиотеки `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query` и `@tanstack/react-store` хост и микрофронтенды делят в одном экземпляре, поэтому каждое приложение ставит их у себя.
 
 Подробная структура внутри `src/` — в `ai/rules/frontend.md`.
 

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": []
   },
-  "include": ["*.d.ts"]
+  "include": ["*.d.ts", "storybook/*.d.ts", "visual/*.d.ts"]
 }

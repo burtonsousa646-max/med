@@ -13,6 +13,9 @@ export default defineConfig(
     'docs/',
     '**/node_modules/',
     '**/dist/',
+    '**/storybook-static/',
+    '**/test-results/',
+    '**/playwright-report/',
     '**/coverage/',
     '**/generated/',
     '**/*.gen.ts',
@@ -47,6 +50,12 @@ export default defineConfig(
     files: ['**/*.{js,mjs,cjs}'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
+  },
+
+  // Визуальные тесты: функции в page.waitForFunction и page.evaluate выполняются в браузере
+  {
+    files: ['web/packages/config/visual/**/*.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
 
   // Frontend

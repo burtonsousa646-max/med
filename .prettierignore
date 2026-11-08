@@ -2,6 +2,9 @@ prototype/
 docs/
 pnpm-lock.yaml
 **/dist/
+**/storybook-static/
+**/test-results/
+**/playwright-report/
 **/coverage/
 **/generated/
 **/*.gen.ts

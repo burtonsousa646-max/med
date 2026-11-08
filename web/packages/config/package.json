@@ -2,7 +2,7 @@
   "name": "@platform/web-config",
   "version": "0.0.0",
   "private": true,
-  "description": "Общие настройки TypeScript, Vite и Vitest для frontend-приложений и пакетов",
+  "description": "Общие настройки TypeScript, Vite, Vitest, Storybook и визуальных тестов для host и module web-приложений",
   "type": "module",
   "exports": {
     "./tsconfig/app.json": "./tsconfig/app.json",
@@ -18,16 +18,31 @@
     "./vitest/setup": "./vitest.setup.js",
     "./test-types": {
       "types": "./test-types.d.ts"
+    },
+    "./storybook": {
+      "types": "./storybook/main.d.ts",
+      "default": "./storybook/main.js"
+    },
+    "./visual": {
+      "types": "./visual/index.d.ts",
+      "default": "./visual/playwright.config.js"
+    },
+    "./storybook/preview": {
+      "types": "./storybook/preview.d.ts",
+      "default": "./storybook/preview.js"
     }
   },
   "dependencies": {
     "@module-federation/vite": "^1.23.10",
+    "@playwright/test": "^1.65.0",
+    "@storybook/react-vite": "^10.6.6",
     "@tanstack/router-plugin": "^1.168.48",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@vanilla-extract/vite-plugin": "^5.2.6",
     "@vitejs/plugin-react": "^6.2.1",
     "jsdom": "^31.0.0",
+    "storybook": "^10.6.6",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
   }

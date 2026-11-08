@@ -1,4 +1,11 @@
 # Генерация кода из api/proto/ для NestJS — в пакет @platform/contracts.
+#
+# В режиме NestJS ts-proto генерирует только интерфейсы сообщений, клиентов и контроллеров.
+# Сериализацию во время работы выполняет @grpc/proto-loader по самим .proto-файлам, поэтому
+# типы должны совпадать с тем, что отдаёт proto-loader с опциями PROTO_LOADER_OPTIONS из @platform/contracts:
+#   int64  → string  (proto-loader не умеет bigint): forceLong=string  ↔ longs: String
+#   enum   → string                                : stringEnums=true  ↔ enums: String
+#   Timestamp → { seconds, nanos }                 : useDate=false
 version: v2
 clean: true
 plugins:
@@ -9,4 +16,5 @@ plugins:
       - importSuffix=.js
       - esModuleInterop=true
       - useDate=false
-      - forceLong=bigint
+      - forceLong=string
+      - stringEnums=true

@@ -22,7 +22,7 @@ ai/
 |---|---|---|---|
 | Аналитик | `agents/analyst.md` | reasoning | `specs/product/`, `requirements.md` |
 | Архитектор | `agents/architect.md` | reasoning | `design.md`, `tasks.md`, `specs/architecture/`, контракты в `api/`, общие настройки |
-| Frontend-разработчик | `agents/frontend-developer.md` | standard | `web/`, контрактные тесты микрофронтендов |
+| Frontend-разработчик | `agents/frontend-developer.md` | standard | `web/`, контрактные тесты web-приложений |
 | Backend-разработчик | `agents/backend-developer.md` | standard | `server/`, контрактные тесты gateway и сервисов |
 | Тестировщик | `agents/qa.md` | standard | `test-plan.md`, `tests/` |
 
@@ -35,7 +35,7 @@ ai/
 | `rules/architecture.md` | сервисы, взаимодействие, чистая архитектура, зависимости пакетов, флаги | архитектор, разработчики |
 | `rules/api-contracts.md` | OpenAPI, protobuf, совместимость, генерация, контрактные тесты | архитектор, разработчики, тестировщик |
 | `rules/backend.md` | код сервисов и gateway, Prisma, gRPC, очереди | архитектор, backend |
-| `rules/frontend.md` | код микрофронтендов, запросы, состояние, стили, доступность | архитектор, frontend |
+| `rules/frontend.md` | host и module web-приложений, запросы, состояние, стили, доступность | архитектор, frontend |
 | `rules/testing.md` | уровни тестов, кто что пишет, правила тестов | архитектор, разработчики, тестировщик |
 | `rules/security.md` | доступ, входные данные, секреты, персональные данные | архитектор, разработчики, тестировщик |
 

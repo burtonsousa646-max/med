@@ -12,7 +12,7 @@ Contract-first: сначала контракт, потом код.
 
 ## OpenAPI — внешний API
 
-Версия — OpenAPI 3.1. Один файл на API в `api/openapi/<name>.yaml`, например `cabinet.yaml`, `backoffice.yaml`, `public.yaml`.
+Версия — OpenAPI 3.1. Один файл на web-приложение: `api/openapi/<app>.yaml`, например `cabinet.yaml`, `backoffice.yaml`. Файл описывает всё, что это приложение запрашивает у API Gateway. API для внешних клиентов — отдельным файлом, например `public.yaml`.
 
 ### Пути и операции
 
@@ -107,7 +107,7 @@ Error:
 
 | Из чего | Что | Куда | Инструмент |
 |---|---|---|---|
-| `api/openapi/*.yaml` | типы и клиент для frontend | `web/packages/api-client/src/generated/` | openapi-typescript, openapi-fetch |
+| `api/openapi/<app>.yaml` | типы web-приложения; клиент — openapi-fetch, один экземпляр на приложение в host | `web/packages/api-client/src/generated/<app>.ts` | openapi-typescript |
 | `api/openapi/*.yaml` | типы для gateway | `server/apps/api-gateway/src/generated/` | openapi-typescript |
 | `api/proto/**/*.proto` | типы, клиенты и интерфейсы контроллеров NestJS | `server/shared/contracts/src/generated/` | Buf + ts-proto |
 
@@ -120,7 +120,7 @@ Consumer-driven контракты на Pact JS. Тесты — `api/contract-te
 
 | Потребитель → поставщик | Тест потребителя | Pact-файлы | Проверка поставщика |
 |---|---|---|---|
-| микрофронтенд → api-gateway | `consumers/<микрофронтенд>/` — frontend-разработчик | `pacts/http/` | `providers/api-gateway/` — backend-разработчик |
+| web-приложение → api-gateway | `consumers/<app>/` — frontend-разработчик | `pacts/http/` | `providers/api-gateway/` — backend-разработчик |
 | api-gateway → сервис | `consumers/api-gateway/` — backend-разработчик | `pacts/grpc/` | `providers/<name>-service/` — backend-разработчик |
 | сервис → сервис | `consumers/<name>-service/` — backend-разработчик | `pacts/grpc/` | `providers/<name>-service/` — backend-разработчик |
 

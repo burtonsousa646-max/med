@@ -6,9 +6,8 @@
 
 ```
 браузер
-  └─ shell (хост Module Federation)
-       └─ микрофронтенды
-            │ HTTP, OpenAPI
+  └─ web-приложение: host ── module, module …   (Module Federation)
+            │ HTTP, OpenAPI приложения
             ▼
         api-gateway ── единственный внешний вход
             │ gRPC
@@ -68,13 +67,15 @@ infrastructure ───────┘
 - Типы Prisma и сгенерированные типы gRPC не выходят за `infrastructure` и `presentation`: на границе они преобразуются в доменные типы.
 - Правила кода сервиса — `ai/rules/backend.md`.
 
-## Микрофронтенды
+## Web-приложения: host и module
 
-- **Граница микрофронтенда — бизнес-область** для пользователя: кабинет партнёра, бэкофис, витрина.
-- `shell` отвечает за вход, навигацию, загрузку микрофронтендов и общую обработку ошибок.
-- Микрофронтенды не импортируют код друг друга. Общее — только через пакеты `web/packages/`.
+- **Web-приложение** — отдельный продукт для своих пользователей: кабинет партнёра, бэкофис. У каждого свой файл OpenAPI `api/openapi/<app>.yaml` и свой экземпляр клиента API; клиент ходит только в API Gateway.
+- **Host** — оболочка web-приложения в Module Federation, по одному на приложение. Инициализирует общее для приложения: клиент API, `QueryClient`, общий store, провайдер feature toggles и другие провайдеры, — отвечает за вход, навигацию, загрузку module и общую обработку ошибок.
+- **Module** — функциональная часть web-приложения: отдельная сборка, которую загружает host. Граница module — бизнес-область внутри приложения: кампании, баланс, документы.
+- Module получает клиент API, `QueryClient`, общий store и провайдеры от host и не создаёт своих.
+- Module не импортирует код host и других module. Общее — только через провайдеры host и пакеты `web/packages/`.
 - Общие библиотеки в одном экземпляре — только те, что перечислены в пресете Vite `@platform/web-config/vite`.
-- Новый микрофронтенд — через ADR.
+- Новое web-приложение и новый module — через ADR.
 - Правила кода — `ai/rules/frontend.md`.
 
 ## Зависимости между пакетами
@@ -83,7 +84,8 @@ infrastructure ───────┘
 |---|---|---|
 | `server/apps/*` | `server/shared/*` | другие `server/apps/*`, `web/*` |
 | `server/shared/*` | другие `server/shared/*` | `server/apps/*`, `web/*` |
-| `web/apps/*` | `web/packages/*` | другие `web/apps/*`, `server/*` |
+| `web/apps/<app>/host` | `web/packages/*` | module и другие web-приложения, `server/*` |
+| `web/apps/<app>/modules/*` | `web/packages/*` | host, другие module, другие web-приложения, `server/*` |
 | `web/packages/*` | другие `web/packages/*` | `web/apps/*`, `server/*` |
 | `api` | пакеты, которые проверяют контрактные тесты | — |
 | `tests/*` | `web/packages/api-client` и общие пакеты для тестов | код сервисов и приложений напрямую |
@@ -98,7 +100,7 @@ infrastructure ───────┘
 |---|---|---|
 | `typecheck` | проверка типов | все с TypeScript |
 | `test` | модульные тесты | все с кодом |
-| `test:visual` | визуальные тесты | `web/apps/*`, `web/packages/design-system` |
+| `test:visual` | визуальные тесты | host и module web-приложений |
 | `test:integration` | интеграционные тесты | `server/apps/*` |
 | `test:contract` | контрактные тесты | `api` |
 | `build` | сборка | приложения, сервисы, пакеты со сборкой |

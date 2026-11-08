@@ -6,8 +6,8 @@
 
 | Уровень | Кто | Где лежит | Команда |
 |---|---|---|---|
-| Модульный — frontend | frontend-разработчик | рядом с кодом, `*.test.tsx` | `pnpm --filter @platform/<app> test` |
-| Визуальный | frontend-разработчик | рядом с кодом, `*.visual.ts` | `pnpm --filter @platform/<app> test:visual` |
+| Модульный — frontend | frontend-разработчик | рядом с кодом, `*.test.tsx` | `pnpm --filter <пакет host или module> test` |
+| Визуальный | frontend-разработчик | рядом с компонентом в `components/`, `*.visual.tsx` | `pnpm --filter <пакет host или module> test:visual` |
 | Модульный — backend | backend-разработчик | рядом с кодом, `*.spec.ts` | `pnpm --filter @platform/<service> test` |
 | Интеграционный | backend-разработчик | `test/` сервиса, `*.test.ts` | `pnpm --filter @platform/<service> test:integration` |
 | Контрактный | frontend- и backend-разработчики | `api/contract-tests/` | `pnpm --filter @platform/api test:contract` |
@@ -40,8 +40,10 @@
 
 ## Визуальные тесты
 
-- Playwright со сравнением скриншотов (`toHaveScreenshot`).
-- Снимаются компоненты дизайн-системы во всех вариантах и ключевые состояния экранов: данные, пусто, ошибка, загрузка.
+- Снимаются UI-компоненты, а не страницы: компоненты из `src/components/` host — общие компоненты приложения, и из `src/components/` module.
+- Каждый компонент снимается во всех вариантах и состояниях: данные, пусто, ошибка, загрузка, нет прав.
+- Дизайн-система пока вне рамок визуальных тестов.
+- Браузер — Playwright. Как монтируется компонент — Vitest Browser Mode или Playwright Component Testing — решение ADR, открытый вопрос в `specs/architecture/tech-stack.md`.
 - Данные для скриншота — фиксированные; анимации отключены; время и случайность зафиксированы.
 - Эталонные скриншоты обновляются только осознанно — когда изменение внешнего вида предусмотрено задачей — и коммитятся вместе с ним.
 - Где хранить эталоны и в каком образе их снимать — открытый вопрос в `specs/architecture/tech-stack.md`.

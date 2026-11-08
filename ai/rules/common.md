@@ -85,7 +85,7 @@ Agent: <id роли>
 ### Область
 
 Имя пакета без префикса `@platform/` или каталог верхнего уровня:
-- сервисы и приложения: `campaigns-service`, `api-gateway`, `shell`, `cabinet`;
+- сервисы, host и module: `campaigns-service`, `api-gateway`, `cabinet-host`, `cabinet-campaigns`;
 - общие пакеты: `design-system`, `logger`;
 - остальное: `api`, `deploy`, `ai`, `specs`.
 

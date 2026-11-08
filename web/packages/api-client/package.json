@@ -1,0 +1,23 @@
+{
+  "name": "@platform/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Клиент API для микрофронтендов: openapi-fetch с типами из api/openapi/",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "@platform/web-config": "workspace:*",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

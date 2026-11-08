@@ -308,8 +308,8 @@ tsconfig.json                 "include": ["src", ".storybook/*.ts", "playwright.
 ```jsonc
 // package.json — скрипты
 "storybook": "storybook dev -p 6006 --ci",
-"test:visual": "storybook build --quiet -o storybook-static && playwright test -c playwright.visual.config.ts --pass-with-no-tests",
-"test:visual:update": "storybook build --quiet -o storybook-static && playwright test -c playwright.visual.config.ts --pass-with-no-tests --update-snapshots"
+"test:visual": "storybook build --quiet -o storybook-static && platform-visual",
+"test:visual:update": "storybook build --quiet -o storybook-static && platform-visual --update-snapshots"
 // devDependencies: @platform/web-config, storybook, @storybook/react-vite, @playwright/test
 ```
 
@@ -317,6 +317,13 @@ tsconfig.json                 "include": ["src", ".storybook/*.ts", "playwright.
 - Телеметрия Storybook выключена.
 - `.storybook/*.ts` в `tsconfig.json` указывается шаблоном: каталог, начинающийся с точки, TypeScript сам не включает.
 - Собранный Storybook (`storybook-static/`) и отчёты Playwright в git не попадают.
+
+**Визуальные тесты запускаются в Docker** — одинаково на Mac и в CI. Отрисовка шрифтов на macOS и Linux отличается, поэтому эталоны снимаются и сравниваются только в официальном образе Playwright `mcr.microsoft.com/playwright:v<версия @playwright/test>-noble`.
+
+- `platform-visual` — команда из `@platform/web-config`: запускает Playwright в образе, монтируя репозиторий по тому же пути.
+- Storybook собирается на машине: статическая сборка от платформы не зависит, а `node_modules` с macOS в Linux-контейнере не запускаются.
+- На Mac нужен запущенный Docker Desktop. В CI — Docker, либо job запускается прямо в образе Playwright с `VISUAL_DOCKER=0`.
+- `platform-visual --dry-run` показывает команду `docker run`, не запуская её.
 
 ### Общие пакеты `web/packages/`
 

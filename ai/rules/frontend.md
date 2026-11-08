@@ -206,6 +206,7 @@ const { data: campaign } = useSuspenseQuery(campaignQuery(api, campaignId))
 | `pnpm --filter <пакет> test` | модульные тесты |
 | `pnpm --filter <пакет> storybook` | Storybook для разработки компонентов |
 | `pnpm --filter <пакет> test:visual` | визуальные тесты stories — Storybook + Playwright |
+| `pnpm --filter <пакет> test:visual:update` | обновить эталоны в `snapshots/` — только если изменение внешнего вида предусмотрено задачей |
 | `pnpm --filter <пакет> build` | сборка |
 | `pnpm --filter @platform/api test:contract` | контрактные тесты |
 | `pnpm lint` | линтер по всему репозиторию |

@@ -102,6 +102,7 @@ infrastructure ───────┘
 | `test` | модульные тесты | все с кодом |
 | `storybook` | Storybook для разработки компонентов | host и module web-приложений |
 | `test:visual` | визуальные тесты stories — Storybook + Playwright | host и module web-приложений |
+| `test:visual:update` | обновить эталоны визуальных тестов | host и module web-приложений |
 | `test:integration` | интеграционные тесты | `server/apps/*` |
 | `test:contract` | контрактные тесты | `api` |
 | `build` | сборка | приложения, сервисы, пакеты со сборкой |

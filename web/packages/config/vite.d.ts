@@ -1,13 +1,13 @@
 import type { UserConfig } from 'vite'
 
 export interface AppConfigOptions {
-  /** Имя приложения в Module Federation, например `shell` или `cabinet`. */
+  /** Имя сборки в Module Federation: `<app>_host` или `<app>_<module>`, например `cabinet_host`. */
   name: string
   /** Порт dev-сервера. */
   port: number
-  /** Модули, которые отдаёт микрофронтенд. */
+  /** Что отдаёт module, например корневой компонент. */
   exposes?: Record<string, string>
-  /** Микрофронтенды, которые подключает хост. */
+  /** Module, которые загружает host. */
   remotes?: Record<string, string>
   /** Дополнительные настройки приложения. */
   overrides?: UserConfig

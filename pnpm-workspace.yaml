@@ -1,7 +1,8 @@
 packages:
   - server/apps/*
   - server/shared/*
-  - web/apps/*
+  - web/apps/*/host
+  - web/apps/*/modules/*
   - web/packages/*
   - tests/*
   - api

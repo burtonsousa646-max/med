@@ -5,21 +5,23 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig, mergeConfig } from 'vite'
 
-// Библиотеки, которые хост и микрофронтенды делят в одном экземпляре.
+// Библиотеки, которые host и module web-приложения делят в одном экземпляре.
+// Сюда входят пакеты, через контекст которых host передаёт module клиент API, store и провайдеры.
 const SHARED = [
   'react',
   'react-dom',
   '@tanstack/react-router',
   '@tanstack/react-query',
   '@tanstack/react-store',
+  '@platform/api-client',
 ]
 
 /**
  * @param {object} options
- * @param {string} options.name имя приложения в Module Federation, например `shell` или `cabinet`
+ * @param {string} options.name имя сборки в Module Federation: `<app>_host` или `<app>_<module>`, например `cabinet_host`, `cabinet_campaigns`
  * @param {number} options.port порт dev-сервера
- * @param {Record<string, string>} [options.exposes] модули, которые отдаёт микрофронтенд
- * @param {Record<string, string>} [options.remotes] микрофронтенды, которые подключает хост
+ * @param {Record<string, string>} [options.exposes] что отдаёт module, например корневой компонент
+ * @param {Record<string, string>} [options.remotes] module, которые загружает host
  * @param {import('vite').UserConfig} [options.overrides] дополнительные настройки приложения
  * @returns {import('vite').UserConfig}
  */

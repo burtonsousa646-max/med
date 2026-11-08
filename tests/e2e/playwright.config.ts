@@ -3,7 +3,7 @@
 // Браузер ставится один раз: pnpm --filter @platform/e2e browsers
 import { defineConfig, devices } from '@playwright/test'
 
-// Адрес frontend (shell); на стенде задаётся переменной окружения. Боевое окружение запрещено.
+// Адрес host web-приложения; на стенде задаётся переменной окружения. Боевое окружение запрещено.
 const baseURL = process.env.APP_URL ?? 'http://127.0.0.1:5200/'
 
 export default defineConfig({

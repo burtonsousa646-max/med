@@ -9,10 +9,10 @@ ai/                 агенты, правила, workflow и шаблоны д�
 specs/              вся документация и спецификации платформы
 api/                контракты: OpenAPI и .proto
 server/             backend: микросервисы и общие пакеты
-web/                frontend: микрофронтенды и общие пакеты
+web/                frontend: web-приложения — host и module — и общие пакеты
 tests/              автотесты API и e2e — пишет тестировщик
 deploy/             локальное окружение и инфраструктура: docker-compose, конфигурация зависимостей
-prototype/          прототип, эталон поведения при переносе, не меняется
+prototype/          прототип — источник только CJM, не меняется
 docs/               документация прототипа, не меняется
 package.json        корень монорепо: общие скрипты и dev-зависимости
 pnpm-workspace.yaml пакеты монорепо
@@ -38,7 +38,8 @@ GEMINI.md           ссылка на AGENTS.md для Gemini CLI
 packages:
   - server/apps/*
   - server/shared/*
-  - web/apps/*
+  - web/apps/*/host
+  - web/apps/*/modules/*
   - web/packages/*
   - tests/*
   - api
@@ -79,7 +80,7 @@ api/
   proto/
     <service>/v1/*.proto        gRPC-контракты сервисов, версионируются по каталогу
   pacts/
-    http/                       pact-файлы HTTP: микрофронтенд → api-gateway
+    http/                       pact-файлы HTTP: web-приложение → api-gateway
     grpc/                       pact-файлы gRPC: api-gateway или сервис → сервис
   contract-tests/
     consumers/<consumer>/       тесты потребителей на Pact JS — создают pact-файлы
@@ -105,7 +106,7 @@ api/
 - Контракты — источник правды. Код сервисов и клиенты frontend генерируются из них, а не наоборот.
 - OpenAPI и `.proto` меняет архитектор, разработчики их только реализуют.
 - Контрактные тесты пишут разработчики:
-  - `consumers/<микрофронтенд>/` — frontend-разработчик;
+  - `consumers/<app>/` — frontend-разработчик;
   - `consumers/api-gateway/`, `consumers/<name>-service/` и `providers/` — backend-разработчик.
 - Pact-файлы не правятся руками: их создают тесты потребителей. Pact-файлы коммитятся вместе с тестом, который их изменил.
 - Сгенерированный из контрактов код в `api/` не кладётся: он генерируется в пакеты потребителей.
@@ -206,51 +207,88 @@ Gateway не содержит бизнес-логики: он проверяет
 ```
 web/
   apps/
-    shell/                хост Module Federation: вход, навигация, загрузка микрофронтендов
-    <name>/               микрофронтенд — отдельное SPA
+    <app>/                    web-приложение: кабинет партнёра, бэкофис …
+      host/                   host — оболочка приложения в Module Federation
+      modules/
+        <module>/             module — функциональная часть приложения, отдельная сборка
   packages/
-    <package>/            общий пакет для приложений
-  Dockerfile              один контейнер на весь frontend
+    <package>/                общий пакет для web-приложений
+  Dockerfile                  один контейнер на весь frontend: host и module всех приложений
 ```
 
-### Приложение
+Термины:
+- **web-приложение** — отдельный продукт для своих пользователей. У каждого свой файл OpenAPI `api/openapi/<app>.yaml` и один экземпляр клиента API; клиент ходит только в API Gateway.
+- **host** — оболочка web-приложения, по одному на приложение. Инициализирует общее для приложения: клиент API, `QueryClient`, общий store, провайдер feature toggles и другие провайдеры, — и загружает module.
+- **module** — функциональная часть web-приложения: кампании, баланс, документы. Получает клиент API, `QueryClient`, store и провайдеры от host и не создаёт своих.
+
+Пакеты: `@platform/<app>-host`, `@platform/<app>-<module>`. Подробные правила — `ai/rules/frontend.md`.
+
+### Host
 
 ```
-web/apps/<name>/
+web/apps/<app>/host/
   src/
-    routes/               маршруты TanStack Router — файловый роутинг
-    routeTree.gen.ts      дерево маршрутов — генерируется плагином роутера, руками не правится
-    modules/              функциональные модули приложения
-    components/           компоненты, общие для этого приложения
-    store/                состояние TanStack Store
-    main.tsx              точка монтирования
+    providers/                QueryClientProvider, ApiProvider, общий store, feature toggles, граница ошибок
+    routes/                   маршруты host — файловый роутинг
+    routeTree.gen.ts          дерево маршрутов — генерируется плагином роутера, руками не правится
+    components/               общие компоненты приложения: оболочка, навигация, ошибки
+    store/                    общий store приложения
+    api.ts                    единственный экземпляр клиента API приложения
+    main.tsx                  точка монтирования
   index.html
   tsconfig.json
-  vite.config.ts          настройка Module Federation
+  vite.config.ts
+  vitest.config.ts
+  package.json
+```
+
+### Module
+
+```
+web/apps/<app>/modules/<module>/
+  src/
+    routes/                   маршруты module — файловый роутинг
+    routeTree.gen.ts
+    components/               компоненты module
+    hooks/
+    api/                      запросы и мутации TanStack Query: keys.ts, <entity>Queries.ts, useXxxMutation.ts
+    store/                    состояние module, если оно не общее
+    model/                    типы и чистые функции
+  tsconfig.json
+  vite.config.ts
   vitest.config.ts
   package.json
 ```
 
 ```ts
+// host: src/api.ts
+import { createApi } from '@platform/api-client'
+import type { paths } from '@platform/api-client/generated/cabinet'
+export const api = createApi<paths>()
+
+// module: где нужен клиент
+import { useApi } from '@platform/api-client'
+const api = useApi<paths>()
+
 // vite.config.ts
 import { defineAppConfig } from '@platform/web-config/vite'
-export default defineAppConfig({ name: 'cabinet', port: 5201, exposes: { './App': './src/App.tsx' } })
+export default defineAppConfig({ name: 'cabinet_campaigns', port: 5211, exposes: { './Module': './src/Module.tsx' } })
 // vitest.config.ts
 import { defineTestConfig } from '@platform/web-config/vitest'
 export default defineTestConfig()
 // tsconfig.json: { "extends": "@platform/web-config/tsconfig/app.json", "include": ["src", "vite.config.ts", "vitest.config.ts"] }
 ```
 
-`defineAppConfig` подключает файловый роутинг TanStack Router с разбиением кода по маршрутам, React, Vanilla Extract и Module Federation. `defineTestConfig` — модульные тесты `src/**/*.test.{ts,tsx}`. Библиотеки `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query` и `@tanstack/react-store` хост и микрофронтенды делят в одном экземпляре, поэтому каждое приложение ставит их у себя.
+`defineAppConfig` подключает файловый роутинг TanStack Router с разбиением кода по маршрутам, React, Vanilla Extract и Module Federation. Библиотеки `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-store` и `@platform/api-client` host и module делят в одном экземпляре: через них host передаёт module клиент API, store и провайдеры. Host и module ставят их у себя в `dependencies`.
 
-Подробная структура внутри `src/` — в `ai/rules/frontend.md`.
+Как module отдаёт себя host и как маршруты module встраиваются в маршруты host — открытый вопрос в `tech-stack.md`.
 
 ### Общие пакеты `web/packages/`
 
 | Пакет | Что в нём |
 |---|---|
-| `design-system` | токены и компоненты на Vanilla Extract |
-| `api-client` | клиент на openapi-fetch: `createApi<paths>()`, `unwrap`, `ApiRequestError`; типы — в `src/generated/` из `api/openapi/` |
+| `design-system` | токены и компоненты на Vanilla Extract — пока вне рамок |
+| `api-client` | клиент на openapi-fetch: `createApi<paths>()` для host, `ApiProvider` и `useApi<paths>()` для module, `unwrap`, `ApiRequestError`; типы — `@platform/api-client/generated/<app>` из `api/openapi/<app>.yaml` |
 | `feature-flags` | клиент Unleash для React |
 | `observability` | Grafana Faro |
 | `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
@@ -297,17 +335,9 @@ Dockerfile сервисов и frontend лежат рядом с их кодом
 
 ## `prototype/` — прототип
 
-Прототип целиком лежит в `prototype/` со своими `package.json`, миграциями и скриптами и запускается из этого каталога. Он не входит в workspace новой платформы.
+Прототип целиком лежит в `prototype/` и запускается из этого каталога: `cd prototype && npm install && npm run dev`. Он не входит в workspace новой платформы.
 
-| Что | Где |
-|---|---|
-| контракты | `prototype/api/` |
-| сервер и воркер | `prototype/server/` |
-| интерфейс | `prototype/web/` |
-| схема базы | `prototype/migrations/` |
-| выкладка стенда | `prototype/deploy/` |
-
-Агенты читают файлы прототипа, но не меняют их. Ссылки на пути в `docs/` указаны относительно `prototype/`.
+Из прототипа берётся только CJM — путь пользователя. Его техническая реализация не изучается и не переносится: архитектура, код и данные платформы проектируются с нуля — `ai/rules/sdd.md`, раздел «Прототип: только CJM». Прототип и `docs/` не меняются.
 
 ## Открытые вопросы
 

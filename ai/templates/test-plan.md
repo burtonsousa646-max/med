@@ -35,7 +35,7 @@ design: design.md
 | Уровень | Что проверяется в фиче | Инструмент | Кто пишет |
 |---|---|---|---|
 | Модульный — frontend | компоненты, хуки, состояние | Vitest, Testing Library | frontend-разработчик |
-| Визуальный | внешний вид UI-компонентов из `components/` host и module | Playwright, сравнение скриншотов | frontend-разработчик |
+| Визуальный | внешний вид UI-компонентов из `components/` host и module — по stories | Storybook + Playwright, сравнение скриншотов | frontend-разработчик |
 | Контрактный — frontend | запросы web-приложения к API Gateway как потребителя | Pact JS | frontend-разработчик |
 | Модульный — backend | домен и сценарии сервиса | Vitest | backend-разработчик |
 | Контрактный — backend | gateway и сервисы выполняют контракты потребителей; gRPC и события | Pact JS | backend-разработчик |

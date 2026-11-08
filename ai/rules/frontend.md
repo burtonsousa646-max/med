@@ -4,7 +4,7 @@
 
 ## Стек
 
-React, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Store, Vanilla Extract, Module Federation. Подробно — `specs/architecture/tech-stack.md`. Зависимости, которых нет в стеке, добавляются только через ADR.
+React, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Store, Vanilla Extract, Module Federation, Storybook. Подробно — `specs/architecture/tech-stack.md`. Зависимости, которых нет в стеке, добавляются только через ADR.
 
 ## Термины
 
@@ -12,7 +12,7 @@ React, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Store, Vanill
 |---|---|
 | **web-приложение** | отдельный продукт для своих пользователей: кабинет партнёра, бэкофис. У каждого — свой файл OpenAPI `api/openapi/<app>.yaml` и свой экземпляр клиента API |
 | **host** | оболочка web-приложения в Module Federation. Открывается первым, инициализирует общие провайдеры приложения и загружает module |
-| **module** | функциональная часть web-приложения в Module Federation: отдельная сборка, которую загружает host. Например, кампании, баланс, документы |
+| **module** | функциональная часть web-приложения: отдельная сборка, которую host загружает через Module Federation. Например, кампании, баланс, документы |
 
 У каждого web-приложения свой host и свои module.
 
@@ -53,7 +53,7 @@ Host инициализирует всё общее для приложения,
 
 - Module не создаёт свой клиент API, `QueryClient`, общий store и провайдеры: он получает их от host через провайдеры.
 - Module не импортирует код host и других module. Связь — только через адрес (маршрут), провайдеры host и общие пакеты `web/packages/`.
-- Module отдаёт через Module Federation корневой компонент; что именно и как его маршруты встраиваются в host — решение ADR, открытый вопрос в `specs/architecture/tech-stack.md`.
+- Module встраивается в host через Module Federation: module отдаёт корневой компонент `./Module`, host подключает module как remote и показывает его на своём маршруте.
 
 ### Общие правила
 
@@ -63,10 +63,11 @@ Host инициализирует всё общее для приложения,
 
 ## Имена
 
-- Компоненты — PascalCase, файл совпадает с именем: `CampaignCard.tsx`.
+- Компоненты — PascalCase, каждый в своей папке, файл совпадает с именем: `components/CampaignCard/CampaignCard.tsx`.
 - Хуки — `useXxx`, файл `useXxx.ts`.
 - Стили — рядом с компонентом: `CampaignCard.css.ts`.
-- Тесты — рядом с кодом: модульные — `CampaignCard.test.tsx`, визуальные — `CampaignCard.visual.tsx`.
+- Stories — рядом с компонентом: `CampaignCard.stories.tsx`.
+- Модульные тесты — рядом с кодом: `CampaignCard.test.tsx`. Визуальные тесты отдельными файлами не пишутся: их источник — stories.
 - Экспорт — именованный. Экспорт по умолчанию — только там, где его требует инструмент.
 
 ## Компоненты
@@ -76,6 +77,16 @@ Host инициализирует всё общее для приложения,
 - Логика, не связанная с отображением, — в хуках и чистых функциях `model/`, а не в теле компонента.
 - Списки — с устойчивым `key` из данных, не из индекса.
 - `components/` host — общие компоненты приложения; `components/` module — компоненты этого module.
+
+## Storybook
+
+Компоненты разрабатываются в Storybook.
+
+- У каждого компонента в `components/` host и module есть stories — файл `<Component>.stories.tsx` рядом с компонентом.
+- Stories покрывают все варианты и состояния компонента: данные, пусто, ошибка, загрузка, нет прав, длинные тексты.
+- Данные в stories — фиксированные, из props; к API stories не обращаются.
+- Каждая story — это и визуальный тест: Playwright снимает её скриншот и сравнивает с эталоном — `ai/rules/testing.md`, раздел «Визуальные тесты».
+- Новый или изменённый компонент без stories — задача не готова.
 
 ## Данные с сервера
 
@@ -193,7 +204,8 @@ const { data: campaign } = useSuspenseQuery(campaignQuery(api, campaignId))
 | `pnpm --filter @platform/api generate` | генерация типов из OpenAPI |
 | `pnpm --filter <пакет> typecheck` | проверка типов |
 | `pnpm --filter <пакет> test` | модульные тесты |
-| `pnpm --filter <пакет> test:visual` | визуальные тесты |
+| `pnpm --filter <пакет> storybook` | Storybook для разработки компонентов |
+| `pnpm --filter <пакет> test:visual` | визуальные тесты stories — Storybook + Playwright |
 | `pnpm --filter <пакет> build` | сборка |
 | `pnpm --filter @platform/api test:contract` | контрактные тесты |
 | `pnpm lint` | линтер по всему репозиторию |

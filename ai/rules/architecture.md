@@ -100,7 +100,8 @@ infrastructure ───────┘
 |---|---|---|
 | `typecheck` | проверка типов | все с TypeScript |
 | `test` | модульные тесты | все с кодом |
-| `test:visual` | визуальные тесты | host и module web-приложений |
+| `storybook` | Storybook для разработки компонентов | host и module web-приложений |
+| `test:visual` | визуальные тесты stories — Storybook + Playwright | host и module web-приложений |
 | `test:integration` | интеграционные тесты | `server/apps/*` |
 | `test:contract` | контрактные тесты | `api` |
 | `build` | сборка | приложения, сервисы, пакеты со сборкой |

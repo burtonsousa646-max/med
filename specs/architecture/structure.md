@@ -291,9 +291,32 @@ components/CampaignCard/
   CampaignCard.css.ts         стили — Vanilla Extract
   CampaignCard.stories.tsx    stories — разработка в Storybook и визуальные тесты
   CampaignCard.test.tsx       модульные тесты
+  snapshots/                  эталонные скриншоты stories: <имя экспорта story>.png
 ```
 
-Компоненты разрабатываются в Storybook: `pnpm --filter <пакет> storybook`. Визуальные тесты — `pnpm --filter <пакет> test:visual`: Playwright снимает скриншот каждой story и сравнивает с эталоном.
+Компоненты разрабатываются в Storybook. Визуальные тесты: Playwright открывает каждую story собранного Storybook, снимает скриншот и сравнивает с эталоном в `snapshots/` папки компонента.
+
+Настройки Storybook и визуальных тестов в host и module — из пресетов `@platform/web-config`:
+
+```
+.storybook/main.ts            export default defineStorybookConfig()     — @platform/web-config/storybook
+.storybook/preview.ts         export default preview                     — @platform/web-config/storybook/preview
+playwright.visual.config.ts   export default defineVisualConfig()        — @platform/web-config/visual
+tsconfig.json                 "include": ["src", ".storybook/*.ts", "playwright.visual.config.ts", …]
+```
+
+```jsonc
+// package.json — скрипты
+"storybook": "storybook dev -p 6006 --ci",
+"test:visual": "storybook build --quiet -o storybook-static && playwright test -c playwright.visual.config.ts --pass-with-no-tests",
+"test:visual:update": "storybook build --quiet -o storybook-static && playwright test -c playwright.visual.config.ts --pass-with-no-tests --update-snapshots"
+// devDependencies: @platform/web-config, storybook, @storybook/react-vite, @playwright/test
+```
+
+- Сборка Storybook использует свою конфигурацию Vite — React и Vanilla Extract без Module Federation и роутера.
+- Телеметрия Storybook выключена.
+- `.storybook/*.ts` в `tsconfig.json` указывается шаблоном: каталог, начинающийся с точки, TypeScript сам не включает.
+- Собранный Storybook (`storybook-static/`) и отчёты Playwright в git не попадают.
 
 ### Общие пакеты `web/packages/`
 

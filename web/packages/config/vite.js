@@ -1,5 +1,6 @@
-// Общая настройка Vite для приложений: React, Vanilla Extract, Module Federation.
+// Общая настройка Vite для приложений: TanStack Router, React, Vanilla Extract, Module Federation.
 import { federation } from '@module-federation/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig, mergeConfig } from 'vite'
@@ -27,6 +28,14 @@ export function defineAppConfig({ name, port, exposes = {}, remotes = {}, overri
     defineConfig({
       base: `/${name}/`,
       plugins: [
+        // Файловый роутинг: маршруты — src/routes/, дерево маршрутов — src/routeTree.gen.ts (генерируется).
+        // Должен стоять перед плагином React.
+        tanstackRouter({
+          target: 'react',
+          routesDirectory: './src/routes',
+          generatedRouteTree: './src/routeTree.gen.ts',
+          autoCodeSplitting: true,
+        }),
         react(),
         vanillaExtractPlugin(),
         federation({

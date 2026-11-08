@@ -6,5 +6,7 @@ packages:
   - tests/*
   - api
 allowBuilds:
+  '@bufbuild/buf': true
+  '@scarf/scarf': false
   '@swc/core': true
   esbuild: true

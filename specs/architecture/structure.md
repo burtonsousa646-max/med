@@ -231,7 +231,7 @@ web/apps/<app>/host/
     providers/                QueryClientProvider, ApiProvider, общий store, feature toggles, граница ошибок
     routes/                   маршруты host — файловый роутинг
     routeTree.gen.ts          дерево маршрутов — генерируется плагином роутера, руками не правится
-    components/               общие компоненты приложения: оболочка, навигация, ошибки
+    components/               общие компоненты приложения: оболочка, навигация, ошибки — у каждого stories
     store/                    общий store приложения
     api.ts                    единственный экземпляр клиента API приложения
     main.tsx                  точка монтирования
@@ -249,7 +249,7 @@ web/apps/<app>/modules/<module>/
   src/
     routes/                   маршруты module — файловый роутинг
     routeTree.gen.ts
-    components/               компоненты module
+    components/               компоненты module — у каждого stories
     hooks/
     api/                      запросы и мутации TanStack Query: keys.ts, <entity>Queries.ts, useXxxMutation.ts
     store/                    состояние module, если оно не общее
@@ -281,7 +281,19 @@ export default defineTestConfig()
 
 `defineAppConfig` подключает файловый роутинг TanStack Router с разбиением кода по маршрутам, React, Vanilla Extract и Module Federation. Библиотеки `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-store` и `@platform/api-client` host и module делят в одном экземпляре: через них host передаёт module клиент API, store и провайдеры. Host и module ставят их у себя в `dependencies`.
 
-Как module отдаёт себя host и как маршруты module встраиваются в маршруты host — открытый вопрос в `tech-stack.md`.
+Module встраивается в host через Module Federation: module отдаёт корневой компонент `./Module`, host подключает module как remote и показывает его на своём маршруте.
+
+Компонент и его файлы лежат рядом:
+
+```
+components/CampaignCard/
+  CampaignCard.tsx            компонент
+  CampaignCard.css.ts         стили — Vanilla Extract
+  CampaignCard.stories.tsx    stories — разработка в Storybook и визуальные тесты
+  CampaignCard.test.tsx       модульные тесты
+```
+
+Компоненты разрабатываются в Storybook: `pnpm --filter <пакет> storybook`. Визуальные тесты — `pnpm --filter <пакет> test:visual`: Playwright снимает скриншот каждой story и сравнивает с эталоном.
 
 ### Общие пакеты `web/packages/`
 

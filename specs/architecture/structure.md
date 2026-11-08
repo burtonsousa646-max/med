@@ -184,7 +184,7 @@ Gateway не содержит бизнес-логики: он проверяет
 
 | Пакет | Что в нём |
 |---|---|
-| `contracts` | код, сгенерированный из `api/proto/` |
+| `contracts` | интерфейсы gRPC, сгенерированные из `api/proto/`; `protoPath()` и `PROTO_LOADER_OPTIONS` для `@grpc/proto-loader` |
 | `config` | чтение и проверка конфигурации из переменных окружения |
 | `logger` | настроенный pino |
 | `observability` | OpenTelemetry: метрики и трассировки |
@@ -195,6 +195,11 @@ Gateway не содержит бизнес-логики: он проверяет
 | `tooling` | пресеты TypeScript (`service`, `build`, `lib`) и Vitest со SWC для декораторов NestJS: `defineTestConfig` — модульные, `defineIntegrationTestConfig` — интеграционные |
 
 В общие пакеты не кладётся бизнес-логика: она живёт в сервисах.
+
+**`@platform/contracts`**
+- Импорт — по пути proto-файла: `@platform/contracts/campaigns/v1/campaigns`. Перед использованием пакет собирается: `pnpm --filter @platform/contracts build`, сборка копирует `api/proto/` в пакет.
+- ts-proto в режиме NestJS генерирует только интерфейсы; сериализацию выполняет `@grpc/proto-loader` по `.proto` с опциями `PROTO_LOADER_OPTIONS`. Типы и данные совпадают: поля в camelCase, `int64` — строкой, перечисления — строками.
+- Деньги приходят строкой копеек и переводятся в `bigint` на границе сервиса — в `presentation/` и gRPC-клиентах `infrastructure/grpc/`.
 
 ## `web/` — frontend
 
@@ -245,7 +250,7 @@ export default defineTestConfig()
 | Пакет | Что в нём |
 |---|---|
 | `design-system` | токены и компоненты на Vanilla Extract |
-| `api-client` | клиент и типы, сгенерированные из `api/openapi/` |
+| `api-client` | клиент на openapi-fetch: `createApi<paths>()`, `unwrap`, `ApiRequestError`; типы — в `src/generated/` из `api/openapi/` |
 | `feature-flags` | клиент Unleash для React |
 | `observability` | Grafana Faro |
 | `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
@@ -261,6 +266,15 @@ tests/
     specs/<NNN-slug>/     тесты фичи
     package.json
 ```
+
+| Команда | Что делает |
+|---|---|
+| `pnpm --filter @platform/api-tests test` | автотесты API; адрес gateway — `API_URL` |
+| `pnpm --filter @platform/e2e test` | e2e в Chromium; адрес frontend — `APP_URL` |
+| `pnpm --filter @platform/e2e browsers` | поставить браузер для e2e — один раз |
+
+- Повторов нет: нестабильный тест чинится, а не прячется за повтором.
+- Отчёты Playwright — `test-results/` и `playwright-report/` — в git не попадают.
 
 - Тесты сгруппированы по фичам: каталог совпадает с `specs/features/NNN-slug/`, в названии теста — номер `TC` из `test-plan.md`.
 - Контрактные тесты и pact-файлы лежат в `api/`. Модульные, визуальные и интеграционные тесты — в пакетах, которые они проверяют.

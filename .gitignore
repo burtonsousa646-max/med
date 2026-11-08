@@ -6,3 +6,5 @@ dist/
 var/
 coverage/
 *.tsbuildinfo
+test-results/
+playwright-report/

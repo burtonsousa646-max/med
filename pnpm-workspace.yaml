@@ -1,0 +1,14 @@
+packages:
+  - server/apps/*
+  - server/shared/*
+  - web/apps/*/host
+  - web/apps/*/modules/*
+  - web/packages/*
+  - tests/*
+  - api
+allowBuilds:
+  '@bufbuild/buf': true
+  '@scarf/scarf': false
+  '@swc/core': true
+  esbuild: true
+  protobufjs: false

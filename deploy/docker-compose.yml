@@ -1,0 +1,51 @@
+# Локальное окружение платформы: PostgreSQL, Redis, Unleash.
+# Запуск из корня: cp deploy/.env.example deploy/.env && pnpm env:up
+# Стек наблюдаемости добавляется после подтверждения раздела в specs/architecture/tech-stack.md.
+name: platform
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-platform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-platform}
+      POSTGRES_DB: ${POSTGRES_USER:-platform}
+    ports:
+      - '${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  unleash:
+    image: unleashorg/unleash-server:8
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-platform}:${POSTGRES_PASSWORD:-platform}@postgres:5432/unleash
+      DATABASE_SSL: 'false'
+      LOG_LEVEL: warn
+    ports:
+      - '${UNLEASH_PORT:-4242}:4242'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:

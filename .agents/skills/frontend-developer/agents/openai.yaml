@@ -1,0 +1,4 @@
+# Сгенерировано ai/adapters/generate.mjs из ai/agents/frontend-developer.md — не править руками.
+# Роль вызывается только явно: $frontend-developer
+policy:
+  allow_implicit_invocation: false

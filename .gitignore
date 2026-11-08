@@ -4,4 +4,8 @@ dist/
 *.log
 .env
 var/
-.claude/
+coverage/
+*.tsbuildinfo
+test-results/
+playwright-report/
+storybook-static/

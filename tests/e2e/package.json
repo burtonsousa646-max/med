@@ -1,0 +1,17 @@
+{
+  "name": "@platform/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "E2E — сценарии пользователя через frontend, gateway и сервисы — пишет тестировщик",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "playwright test --pass-with-no-tests",
+    "browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "typescript": "~6.0.3"
+  }
+}

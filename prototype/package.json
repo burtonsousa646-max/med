@@ -1,0 +1,43 @@
+{
+  "name": "ad-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "PUBLIC_URL=http://127.0.0.1:5174 APP_URL=http://127.0.0.1:5174 node --watch server/index.ts & PUBLIC_URL=http://127.0.0.1:5174 APP_URL=http://127.0.0.1:5174 node --watch server/worker.ts & vite --config web/vite.config.ts",
+    "migrate": "node server/migrate.ts",
+    "test": "DATABASE_URL=postgres://postgres@localhost/ads_platform_test node --test --test-concurrency=1 'server/**/*.test.ts'",
+    "worker": "node server/worker.ts",
+    "check": "tsc -p . && tsc -p web",
+    "api:types": "npx -y -p typescript@5.9.3 -p openapi-typescript@7.13.0 openapi-typescript api/cabinet.yaml -o web/src/api.gen.ts && npx -y -p typescript@5.9.3 -p openapi-typescript@7.13.0 openapi-typescript api/admin.yaml -o web/src/admin.gen.ts",
+    "build": "tsc -p web && vite build --config web/vite.config.ts",
+    "load": "node scripts/load.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "@tanstack/react-query": "^5.104.5",
+    "hono": "^4.13.14",
+    "lucide-react": "^1.61.0",
+    "motion": "^14.5.0",
+    "openapi-fetch": "^0.17.0",
+    "openapi-react-query": "^0.5.4",
+    "postgres": "^3.4.9",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-is": "^19.3.1",
+    "react-router": "^8.5.0",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "yaml": "^2.9.1"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

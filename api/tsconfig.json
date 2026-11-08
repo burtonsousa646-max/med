@@ -1,0 +1,7 @@
+{
+  "extends": "@platform/server-tooling/tsconfig/service.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom"]
+  },
+  "include": ["contract-tests", "vitest.config.ts"]
+}

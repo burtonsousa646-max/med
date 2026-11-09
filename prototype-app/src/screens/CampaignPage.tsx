@@ -33,16 +33,17 @@ export default function CampaignPage() {
     const token = ++revision.current
     unsaved.current = true
     setStorage('saving')
-    void saveCampaignDraft(value).then(() => {
+    return saveCampaignDraft(value).then(() => {
       if (token === revision.current) { unsaved.current = false; setStorage('saved') }
-    }).catch(() => { if (token === revision.current) setStorage('error') })
+      return true
+    }).catch(() => { if (token === revision.current) setStorage('error'); return false })
   }, [])
 
   return <div className="v3-v2-theme campaign-page-theme">
     <div className="campaign-page-shell">
       <header className="campaign-page-header"><Brand to="/v4"/><Link className="bl-btn" to="/v4"><ArrowLeft size={18}/>к лендингу</Link></header>
-      <p className="campaign-page-storage bl-caption" role="status">{storage === 'error' ? 'Не удалось сохранить черновик в браузере. Оставьте страницу открытой, чтобы не потерять изменения.' : storage === 'loading' ? 'Открываем ваш черновик…' : storage === 'saving' ? 'Сохраняем черновик…' : 'Черновик сохранён в этом браузере. Его можно продолжить позже.'}</p>
-      {draft ? <CampaignWizard open onClose={() => navigate('/v4')} presentation="page" initialDraft={draft} onDraftChange={save}/> : <main className="campaign-page-loading" aria-busy="true" aria-label="Загрузка черновика"><div/><div/><div/></main>}
+      {storage === 'error' && <p className="campaign-page-storage bl-caption" role="status">Не удалось сохранить черновик в браузере. Оставьте страницу открытой, чтобы не потерять изменения.</p>}
+      {draft ? <CampaignWizard open onClose={() => navigate('/v4')} presentation="page" initialDraft={draft} onDraftChange={save} storageState={storage}/> : <main className="campaign-page-loading" aria-busy="true" aria-label="Загрузка черновика"><div/><div/><div/></main>}
     </div>
   </div>
 }

@@ -23,3 +23,10 @@ test('URLs restore a visited step and cannot skip unfinished setup', () => {
   assert.equal(campaignStage(undefined, { stage: 2, reached: 3 }), 2)
   assert.equal(campaignStage('unknown', { stage: 2, reached: 3 }), 2)
 })
+
+test('success preserves completed drafts and legacy URLs without skipping setup', () => {
+  assert.equal(campaignStage('success', { stage: 3, reached: 3 }), 3)
+  assert.equal(campaignStage('success', { stage: 4, reached: 4 }), 4)
+  assert.equal(campaignStage('preview', { stage: 4, reached: 4 }), 4)
+  assert.equal(isCampaignDraft({ ...emptyCampaignDraft(), stage: 4, reached: 4 }), true)
+})

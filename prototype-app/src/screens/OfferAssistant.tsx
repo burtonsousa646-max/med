@@ -9,7 +9,6 @@ type Recognition = {
   onerror: (() => void) | null; onend: (() => void) | null
   start(): void; abort(): void; stop(): void
 }
-const examples = ['Сделай фон фиолетовым', 'Второй кофе в подарок', 'Увеличь чашку']
 
 export function OfferAssistant({ offer, active, onChange, onWorking }: {
   offer: OfferDraft; active: boolean; onChange: (offer: OfferDraft) => void; onWorking: (working: boolean) => void
@@ -20,10 +19,13 @@ export function OfferAssistant({ offer, active, onChange, onWorking }: {
   const [listening, setListening] = useState(false)
   const [message, setMessage] = useState('')
   const [previous, setPrevious] = useState<OfferDraft | null>(null)
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
   const applied = useRef<OfferDraft | null>(null)
   const timer = useRef<number | null>(null)
   const speech = useRef<Recognition | null>(null)
   const input = useRef<HTMLTextAreaElement>(null)
+  const log = useRef<HTMLDivElement>(null)
+  useEffect(() => { log.current?.scrollTo({ top: log.current.scrollHeight, behavior: 'instant' }) }, [messages])
   useEffect(() => {
     if (applied.current && offer !== applied.current) { applied.current = null; setPrevious(null) }
   }, [offer])
@@ -33,17 +35,22 @@ export function OfferAssistant({ offer, active, onChange, onWorking }: {
   }, [active, onWorking])
 
   function apply(value = prompt) {
-    if (timer.current || !value.trim()) return
+    if (!active || timer.current || !value.trim()) return
     speech.current?.abort()
+    setMessages(current => [...current.slice(-10), { role: 'user', text: value.trim() }])
     const result = reviseOffer(value, offer)
-    if (!result) { setMessage('Попробуйте изменить цвет фона, размер чашки, скидку или промокод. Остальное можно поправить вручную.'); return }
+    if (!result) {
+      const reply = 'Могу изменить фон, размер чашки, скидку, промокод или заголовок в кавычках. Остальное доступно в ручном редакторе.'
+      setMessages(current => [...current, { role: 'assistant', text: reply }]); setMessage(''); setPrompt(''); return
+    }
     input.current?.focus({ preventScroll: true })
     setPrompt(value); setMessage('Примеряем вашу идею…'); setWorking(true); onWorking(true)
     timer.current = window.setTimeout(() => {
       setPrevious(offer); applied.current = result.offer; onChange(result.offer)
       timer.current = window.setTimeout(() => {
         timer.current = null; setWorking(false); onWorking(false)
-        setMessage(result.message); setPrompt(''); input.current?.focus({ preventScroll: true })
+        setMessages(current => [...current, { role: 'assistant', text: result.message + '. Можно продолжить правки или перейти к выбору клиентов.' }])
+        setMessage(''); setPrompt(''); input.current?.focus({ preventScroll: true })
       }, reduce ? 50 : 900)
     }, reduce ? 50 : 450)
   }
@@ -61,13 +68,20 @@ export function OfferAssistant({ offer, active, onChange, onWorking }: {
     try { speech.current = recognition; recognition.start(); setListening(true); setMessage('Слушаю. Затем проверьте текст и нажмите стрелку.') }
     catch { speech.current = null; setListening(false); setMessage('Диктовка недоступна. Можно написать пожелание.') }
   }
+  const examples = [
+    { label: 'Другой цвет', request: offer.tone === 'blue' ? 'Сделай фон фиолетовым' : 'Сделай фон синим' },
+    { label: 'Скидка 25%', request: 'Сделай скидку 25%' },
+  ]
   return <section className="offer-assistant" aria-label="Изменить оффер с ИИ" data-working={working} data-listening={listening}>
-    <div className="offer-assistant-heading"><span><Sparkles size={18}/></span><div><h4>скажите, что изменить</h4><p>Ваша идея — новый вариант на экране.</p></div></div>
+    <div className="offer-assistant-heading"><span><Sparkles size={18}/></span><div><h4>Что изменить?</h4><p>Напишите или скажите голосом.</p></div></div>
+    {messages.length > 0 && <div ref={log} className="offer-chat-log" role="log" aria-label="Переписка с дизайнером" aria-live="polite">
+      {messages.map((message, index) => <p key={index} className="offer-chat-message" data-role={message.role}><span className="offer-chat-author">{message.role === 'user' ? 'вы' : 'дизайнер'}</span>{message.text}</p>)}
+    </div>}
     <div className="offer-assistant-input">
-      <textarea ref={input} aria-label="Что изменить в оффере" placeholder="Например, сделай скидку 25% и фон фиолетовым" value={prompt} maxLength={400} rows={3} readOnly={working} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); apply() } }}/>
+      <textarea ref={input} aria-label="Что изменить в оффере" placeholder="Например: скидка 25%, фон синий, чашку крупнее" value={prompt} maxLength={400} rows={2} readOnly={working || !active} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); apply() } }}/>
       <div className="offer-assistant-tools"><button type="button" className="offer-mic" title="Диктовка использует распознавание речи браузера" aria-label={listening ? 'Остановить диктовку' : 'Надиктовать правку'} aria-pressed={listening} disabled={working} onClick={dictate}>{listening ? <Square size={15}/> : <Mic size={17}/>}<span>{listening ? 'слушаю' : 'сказать голосом'}</span>{listening && <i className="offer-wave" aria-hidden="true">{[0,1,2,3,4].map(i => <i key={i} style={{animationDelay:`${i * 90}ms`}}/>)}</i>}</button><button type="button" className="offer-send" aria-label="Применить правку" disabled={working || listening || !prompt.trim()} onClick={() => apply()}><ArrowUp size={20}/></button></div>
     </div>
-    <div className="offer-assistant-examples" aria-label="Примеры правок">{examples.map(example => <button key={example} type="button" disabled={working || listening} onClick={() => apply(example)}>{example}<span aria-hidden="true">↗</span></button>)}</div>
-    <div className="offer-assistant-feedback" role="status">{message && <><span>{working ? <Sparkles size={15}/> : previous ? <Check size={15}/> : null}{message}</span>{previous && !working && <button type="button" onClick={() => { onChange(previous); setPrevious(null); setMessage('Вернули предыдущий вариант') }}><Undo2 size={14}/>отменить</button>}</>}</div>
+    <div className="offer-assistant-examples" aria-label="Примеры правок">{examples.map(example => <button key={example.label} type="button" disabled={working || listening} onClick={() => apply(example.request)}>{example.label}</button>)}</div>
+    <div className="offer-assistant-feedback" role="status">{message && <span>{working ? <Sparkles size={15}/> : <Check size={15}/>} {message}</span>}{previous && !working && <button type="button" onClick={() => { onChange(previous); setPrevious(null); setMessage('Вернули предыдущий вариант') }}><Undo2 size={14}/>отменить правку</button>}</div>
   </section>
 }

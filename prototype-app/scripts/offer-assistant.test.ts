@@ -4,9 +4,9 @@ import { emptyOffer, reviseOffer } from '../src/screens/offer-assistant-demo.ts'
 
 const draft = { ...emptyOffer, title: 'Мой текст', discount: '20', promo: 'ЗЕРНО', until: '2026-12-01' }
 test('color and size preserve manually entered offer fields', () => {
-  const result = reviseOffer('Сделай фон фиолетовым и увеличь чашку', draft)!
-  assert.deepEqual(result.offer, { ...draft, tone: 'violet', zoom: true })
-  assert.equal(draft.tone, 'green')
+  const result = reviseOffer('Сделай фон синим и увеличь чашку', draft)!
+  assert.deepEqual(result.offer, { ...draft, tone: 'blue', zoom: true })
+  assert.equal(draft.tone, 'violet')
 })
 test('gift and discount stay mutually consistent', () => {
   const gift = reviseOffer('Второй кофе в подарок', draft)!.offer

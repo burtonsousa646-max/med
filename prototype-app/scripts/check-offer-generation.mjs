@@ -10,6 +10,7 @@ export function assertOfferGeneration() {
   if (reduced) {
     assert(getComputedStyle(loader).display === 'none', 'Reduced motion shows the result directly')
   } else {
+    assert(getComputedStyle(loader).animationDuration === (loader.dataset.quick === 'true' ? '1.2s' : '30s'), 'Generation and revision use their intended durations')
     const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
     assert(pixels.some((value, index) => index % 4 === 3 && value > 0), 'Dot field has rendered')
     const bounds = loader.getBoundingClientRect()

@@ -1,7 +1,7 @@
 import type { Business } from '../../shared/campaign-business'
 import { emptyOffer, type OfferDraft } from './offer-assistant-demo.ts'
 
-export const campaignStages = ['business', 'details', 'offer', 'audience', 'preview'] as const
+export const campaignStages = ['business', 'details', 'offer', 'audience', 'success'] as const
 export type CampaignDraft = {
   business: Business; addresses: string[]; online: boolean; offer: OfferDraft;
   offerImage: File | null; logoImage: File | null; audience: number[]; triggers: string;
@@ -35,7 +35,7 @@ export function isCampaignDraft(value: unknown): value is CampaignDraft {
 }
 
 export function campaignStage(requested: string | undefined, draft: Pick<CampaignDraft, 'stage' | 'reached'>) {
-  const index = campaignStages.indexOf(requested as typeof campaignStages[number])
+  const index = campaignStages.indexOf((requested === 'preview' ? 'success' : requested) as typeof campaignStages[number])
   return index >= 0 && index <= draft.reached ? index : Math.min(draft.stage, draft.reached)
 }
 

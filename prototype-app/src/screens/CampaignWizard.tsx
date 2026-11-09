@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { ArrowLeft, ArrowRight, Check, ImagePlus, Mic, PencilLine, Sparkles, Users, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, ImagePlus, Mic, PencilLine, RotateCcw, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion, useAnimationControls, useReducedMotion } from 'motion/react'
 import { useNavigate, useParams } from 'react-router'
 import { campaignStage, campaignStages, emptyCampaignDraft, type CampaignDraft } from './campaign-draft'
@@ -9,17 +9,18 @@ import { OfferReveal, useOfferGeneration } from './OfferGeneration'
 import { OfferAssistant } from './OfferAssistant'
 import { emptyOffer, type OfferDraft } from './offer-assistant-demo'
 import { BusinessSetup, type BusinessPhase } from './BusinessSetup'
+import { AudienceSetup, CampaignSuccess, type AudienceSummary } from './CampaignAudience'
 import { innError, phoneError, textError, localDate } from '../../shared/campaign-business'
 import { Creative, creativeOf } from '../creative'
-import { DEMO_BUSINESS, DEMO_PROFILE, type DemoBusinessProfile } from './campaign-demo'
+import { DEMO_PROFILE, type DemoBusinessProfile } from './campaign-demo'
 import './business-setup.css'
 import './campaign-wizard.css'
 
 const steps = ['ваш бизнес', 'дизайн оффера', 'выбор клиентов']
 const introductions = [
   ['начнём с вашего бизнеса', 'Расскажите о себе. С этого начинается знакомство с будущими клиентами.'],
-  ['ваш бизнес. ваша реклама.', 'Из вашего бизнеса — в предложение, которое заметят. Дальше добавьте своё.'],
-  ['кому вы будете интересны?', 'Выберите аудиторию и момент, когда ваше предложение будет кстати.'],
+  ['Ваш оффер готов', 'Проверьте предложение. Изменить текст и оформление можно в чате.'],
+  ['Найдём ваших клиентов', 'Выберите, где и кому будет интересно ваше предложение.'],
 ]
 const groups = [
   { title: 'геолокация', choices: ['рядом с точкой', 'весь город', 'вся Россия'] },
@@ -88,9 +89,9 @@ function useImage(file: File | null) {
   return src
 }
 
-export default function CampaignWizard({ open, onClose, presentation = 'dialog', initialDraft, onDraftChange }: {
+export default function CampaignWizard({ open, onClose, presentation = 'dialog', initialDraft, onDraftChange, storageState }: {
   open: boolean; onClose: () => void; presentation?: 'dialog' | 'page'; initialDraft?: CampaignDraft;
-  onDraftChange?: (draft: CampaignDraft) => void;
+  onDraftChange?: (draft: CampaignDraft) => Promise<boolean>; storageState?: 'loading' | 'saving' | 'saved' | 'error';
 }) {
   const page = presentation === 'page'
   const routerNavigate = useNavigate()
@@ -106,6 +107,8 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const direction = useRef(1)
   const [busy, setBusy] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [finalizing, setFinalizing] = useState(false)
+  const [finishError, setFinishError] = useState('')
   const [filled, setFilled] = useState(initial.filled)
   const [generating, setGenerating] = useState(false)
   const [revising, setRevising] = useState(false)
@@ -126,7 +129,11 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const lookup = useRef<number | null>(null)
   const generatedTitle = useRef(initial.generatedTitle)
   const form = useRef<HTMLFormElement>(null)
-  const [offer, setOffer] = useState<OfferDraft>(initial.offer)
+  const [offer, setOffer] = useState<OfferDraft>({ ...initial.offer, tone: initial.offer.tone === 'green' ? 'violet' : initial.offer.tone })
+  const [editing, setEditing] = useState(false)
+  const manualId = useId()
+  const assistant = useRef<HTMLDivElement>(null)
+  const manual = useRef<HTMLDetailsElement>(null)
   const [offerImage, setOfferImage] = useState<File | null>(initial.offerImage)
   const [logoImage, setLogoImage] = useState<File | null>(initial.logoImage)
   const [audience, setAudience] = useState(initial.audience)
@@ -137,7 +144,14 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const logo = useImage(logoImage)
   const name = business.name.trim() || 'ваш бизнес'
   const title = offer.title.trim() || 'скидка на первый заказ'
-  const audienceLabels = groups.map(({ choices }, i) => choices[audience[i]])
+  const audienceSummary: AudienceSummary = {
+    place: audience[0] === 0 ? `${business.city} · рядом с точками` : audience[0] === 1 ? business.city.trim() || 'Город не указан' : 'Вся Россия',
+    people: groups.slice(1, 4).flatMap((group, index) => audience[index + 1] ? [group.choices[audience[index + 1]]] : []).join(' · ') || 'Все клиенты',
+    moment: ['В любой момент', 'После переезда', 'В день зарплаты'][audience[4]],
+  }
+  const creative = { ...creativeOf(name, `−${offer.discount || '20'}% на первую покупку`, 0), tone: offer.tone,
+    small: /^Скидка \d+% на первую покупку$/.test(title) ? 'на первую покупку' : title, ...(offer.gift ? { big: '1 + 1' } : {}) }
+  const preview = <div className="campaign-summary-creative"><Creative o={creative} erid="реклама" wide/>{image && <img src={image} alt={title}/>}</div>
   const finishGeneration = useCallback(() => {
     setGenerating(false)
     requestAnimationFrame(() => stepHeading.current?.focus({ preventScroll: true }))
@@ -145,11 +159,14 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const generation = useOfferGeneration(generating && step === 1 && open && !closing && !busy, finishGeneration)
   const generationStatus = [business.website ? 'изучаю сайт' : 'изучаю ваш бизнес', image ? 'использую ваше изображение' : 'подбираю изображение', logo ? 'добавляю ваш логотип' : 'собираю фирменный стиль', 'последние штрихи'][generation.phase]
   const currentStage = complete ? 4 : step === 0 ? businessPhase === 'identify' ? 0 : 1 : step + 1
+  const currentDraft: CampaignDraft = { business, addresses, online, offer, offerImage, logoImage, audience, triggers,
+    confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile: Boolean(profile),
+    stage: currentStage, reached: Math.max(reached, currentStage) }
+
+  useEffect(() => { setEditing(false) }, [step, complete])
 
   useEffect(() => {
-    onDraftChange?.({ business, addresses, online, offer, offerImage, logoImage, audience, triggers,
-      confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile: Boolean(profile),
-      stage: currentStage, reached: Math.max(reached, currentStage) })
+    void onDraftChange?.(currentDraft)
   }, [business, addresses, online, offer, offerImage, logoImage, audience, triggers, filled, profile, currentStage, reached, onDraftChange])
 
   useLayoutEffect(() => {
@@ -157,6 +174,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     let allowed = reached
     if (confirmedInn.current !== business.inn || innError(business.inn) || phoneError(business.phone)) allowed = 0
     else if (textError(business.name) || textError(business.category, '', 3) || (!online && (textError(business.city) || addresses.some(address => textError(address, '', 5))))) allowed = Math.min(allowed, 1)
+    else if (audience[0] === 1 && textError(business.city)) allowed = Math.min(allowed, 3)
     const target = campaignStage(routeStage, { stage: Math.min(currentStage, allowed), reached: allowed })
     if (routeStage !== campaignStages[target]) routerNavigate(`/v4/create/${campaignStages[target]}`, { replace: true })
     if (target === currentStage) return
@@ -270,10 +288,10 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   function validate() {
     const valid = form.current?.checkValidity() ?? false
     if (!valid) {
-      const invalid = form.current?.querySelector<HTMLElement>(':invalid')
+      const invalid = form.current?.querySelector<HTMLElement>('input:invalid, textarea:invalid, select:invalid')
       const details = invalid?.closest('details')
       if (details) details.open = true
-      invalid?.focus()
+      requestAnimationFrame(() => invalid?.focus())
     }
     return valid
   }
@@ -300,10 +318,6 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
       direction.current = 1
       setBusinessPhase('review')
     }, 850)
-  }
-
-  function tryExample() {
-    setBusiness({ ...DEMO_BUSINESS, name: '', category: '', city: '' })
   }
 
   function confirmBusinessIdentity() {
@@ -339,6 +353,23 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     setOffer({ ...offer, discount, title, gift: false })
   }
 
+  function editOffer() {
+    if (!manual.current) return
+    const opening = !manual.current.open
+    manual.current.open = opening
+    if (opening) {
+      manual.current.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'nearest' })
+      manual.current.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true })
+    }
+  }
+
+  function voiceOffer() {
+    assistant.current?.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' })
+    const mic = assistant.current?.querySelector<HTMLButtonElement>('.offer-mic')
+    mic?.focus({ preventScroll: true })
+    mic?.click()
+  }
+
   function dictate() {
     if (speech.current) return
     const browser = window as Window & { SpeechRecognition?: new () => LocalSpeech; webkitSpeechRecognition?: new () => LocalSpeech }
@@ -366,9 +397,9 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     }
   }
 
-  function next(event: FormEvent<HTMLFormElement>) {
+  async function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (locked.current || searching || (step === 1 && (generating || revising))) return
+    if (locked.current || searching || finalizing || (step === 1 && (generating || revising))) return
     if (complete) { void requestClose(); return }
     if (!validate()) return
     if (step === 0 && businessPhase === 'identify') { void findBusiness(); return }
@@ -377,8 +408,14 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
       if (!filled) { fillOffer(); setGenerating(true) }
       if (online) setAudience(current => current.map((value,i)=>i===0?2:value))
     }
-    if (step < steps.length - 1) void navigate(step + 1)
-    else void navigate(2, true)
+    if (step < steps.length - 1) { void navigate(step + 1); return }
+    setFinishError('')
+    setFinalizing(true)
+    try {
+      if (onDraftChange && !await onDraftChange({ ...currentDraft, stage: 4, reached: 4 })) throw new Error('Save failed')
+      await navigate(2, true)
+    } catch { setFinishError('Не удалось сохранить настройки. Попробуйте завершить ещё раз.') }
+    finally { setFinalizing(false) }
   }
 
   const Surface = page ? motion.main : motion.dialog
@@ -388,28 +425,39 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
       <form ref={form} className="v3-dialog__form" onSubmit={next} noValidate>
         <header className="v3-dialog__head">
           <div className="v3-dialog__top">
-            <div className="v3-dialog__brand"><span aria-hidden="true"><PencilLine size={18} /></span><Title id="v3-dialog-title" className="bl-h2" ref={heading} tabIndex={-1}>{complete ? 'черновик кампании' : 'настройка кампании'}</Title><span className="campaign-demo-label">демонстрация</span></div>
+            <div className="v3-dialog__brand"><span aria-hidden="true"><PencilLine size={18} /></span><Title id="v3-dialog-title" className="bl-h2" ref={heading} tabIndex={-1}>{complete ? 'настройка завершена' : 'настройка кампании'}</Title></div>
             {!page && <button type="button" className="bl-icon-btn" aria-label="Закрыть окно" onClick={() => void requestClose()}><X size={22} aria-hidden="true" /></button>}
           </div>
           <LayoutGroup id="campaign-progress"><ol className="v3-progress" aria-label="Шаги настройки">{steps.map((label, i) => (
             <li key={label} aria-current={i === step && !complete ? 'step' : undefined} className={i < step || complete ? 'is-done' : ''}>
-              <button type="button" disabled={busy || searching || (i > step && !complete)} onClick={() => void navigate(i)}>{i === step && <motion.span className="v3-step-indicator" layoutId="progress-line" transition={reduce ? { duration: 0 } : settle} />}<span className="v3-progress__number" aria-hidden="true">{i < step || complete ? <motion.span className="v3-progress-check" initial={reduce ? false : { scale: .5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}><Check size={14} /></motion.span> : '0' + (i + 1)}</span>{label}</button>
+              <button type="button" disabled={busy || searching || finalizing || (i > step && !complete)} onClick={() => void navigate(i)}>{i === step && <motion.span className="v3-step-indicator" layoutId="progress-line" transition={reduce ? { duration: 0 } : settle} />}<span className="v3-progress__number" aria-hidden="true">{i < step || complete ? <motion.span className="v3-progress-check" initial={reduce ? false : { scale: .5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}><Check size={14} /></motion.span> : '0' + (i + 1)}</span>{label}</button>
             </li>
           ))}</ol></LayoutGroup>
         </header>
 
         <div className="v3-dialog__body" ref={scroller}>
           <motion.div className="v3-dialog__scene" initial={false} animate={sceneMotion} inert={busy}>
-          {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : introductions[step][0]}</h3><p>{step === 0 ? businessPhase === 'identify' ? 'Два поля — и перейдём к вашему предложению. Можно начать с готового примера.' : 'Уточните название и сферу бизнеса — по ним подготовим предложение.' : introductions[step][1]}</p></div><span>0{step + 1} / 03</span></div>}
-          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onExample={tryExample} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={setAddresses} online={online} onOnline={setOnline} />}
-          {!complete && step > 0 && !generating && <div className="v3-campaign-context"><span><Check size={14}/> {name}</span><span>{online ? 'онлайн' : business.city + ' · точек: ' + addresses.filter(a=>a.trim()).length}</span></div>}
+          {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : step === 1 && generating ? 'Собираем ваш оффер' : introductions[step][0]}</h3><p>{step === 0 ? 'Сформируем оффер на основе информации о компании' : step === 1 && generating ? 'Подготавливаем предложение для вашей компании.' : introductions[step][1]}</p></div><span>0{step + 1} / 03</span></div>}
+          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={setAddresses} online={online} onOnline={setOnline} />}
+          {!complete && step === 1 && !generating && <div className="v3-campaign-context"><span><Check size={14}/> {name}</span><span>{online ? 'онлайн' : business.city + ' · точек: ' + addresses.filter(a=>a.trim()).length}</span></div>}
 
           {!complete && step === 1 && <div className="v3-dialog__split campaign-offer-editor" data-generating={generating} data-phase={generation.phase}>
-              <div className="campaign-offer-control-space">
-                <div className="offer-preparing-note" aria-hidden={!generating}><span className="offer-source-mark">{name.replace(/^.*«(.+)»$/, '$1')}</span><p>Собираю первый вариант<br/>для вашего бизнеса</p><small>Затем можно поправить словами<br/>или настроить детали вручную.</small></div>
-                <div className="v3-fields campaign-offer-controls" inert={generating} aria-hidden={generating}>
-                <OfferAssistant offer={offer} active={open && !closing && !busy && !generating} onChange={value => { generatedTitle.current = /^Скидка \d+% на первую покупку$/.test(value.title) ? value.title : ''; setOffer(value) }} onWorking={setRevising}/>
-                <details className="campaign-manual"><summary><PencilLine size={16}/> изменить вручную <span>текст, фото и условия</span></summary><fieldset className="v3-fields" disabled={revising}>
+              <section className="v3-preview-column offer-workspace" aria-label="Визуальный редактор оффера">
+                <div className="offer-workspace-toolbar" role="toolbar" aria-label="Действия с оффером">
+                  <button type="button" disabled={revising || generating} onClick={() => { setGenerating(true); stepHeading.current?.focus({preventScroll:true}) }}><RotateCcw size={16}/>собрать заново</button>
+                  <button type="button" disabled={revising || generating} aria-controls={manualId} aria-expanded={editing} onClick={editOffer}><PencilLine size={16}/>{editing ? 'готово' : 'редактировать'}</button>
+                </div>
+                <div className="v3-offer-stage" data-theme="invert" data-revising={revising} data-zoom={offer.zoom}>
+                  <div className="v3-offer-card" aria-busy={generating || revising}>
+                    <div className="v3-preview-media"><div className="v3-offer-placeholder"><Creative o={creative} erid="реклама" wide/></div>{image && <motion.img key={image} className="v3-offer-card__image" src={image} alt="" initial={reduce ? false : { opacity: 0, scale: 1.025 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: reduce ? 0 : .4, ease: glide }} />}{(generating || revising) && <OfferReveal quick={!generating} paused={!generation.visible || busy}/>}</div>
+                    {(logo || offer.promo || offer.until) && <div className="v3-offer-card__copy">
+                      {logo && <div className="v3-offer-card__brand"><img src={logo} alt={name}/></div>}
+                      {offer.promo && <span className="bl-chip">Промокод: {offer.promo}</span>}
+                      {offer.until && <span className="bl-caption">до {offer.until.split('-').reverse().join('.')}</span>}
+                    </div>}
+                  </div>
+                </div>
+                <details ref={manual} id={manualId} className="campaign-manual" onToggle={event => setEditing(event.currentTarget.open)}><summary hidden>Параметры оффера</summary><fieldset className="v3-fields" disabled={revising || generating}>
                 <Field label="заголовок" placeholder="скидка на первый заказ" value={offer.title} onChange={e => setOffer({ ...offer, title: e.target.value })} maxLength={90} required error={textError(offer.title,'Заголовок',5)} />
                 <div className="v3-fields__pair"><FileField label="изображение" file={offerImage} onChange={setOfferImage} />
                 <FileField label="ваш логотип" file={logoImage} onChange={setLogoImage} /></div>
@@ -419,65 +467,30 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
                 </div>
                 <Field label="действует до" type="date" min={localDate()} error={offer.until && offer.until < localDate() ? 'Выберите сегодня или будущую дату.' : ''} value={offer.until} onChange={e => setOffer({ ...offer, until: e.target.value })} />
                 </fieldset></details>
+                <button type="button" className="offer-voice-shortcut" disabled={generating || revising} onClick={voiceOffer}><Mic size={16}/>Изменить голосом</button>
+                <div className="offer-canvas-status"><span role="status" aria-live="polite"><span className="offer-status-icon" aria-hidden="true">{generating || revising ? <Sparkles size={15}/> : <Check size={15}/>}</span><MovingLabel>{generating ? generationStatus : revising ? 'обновляю предложение' : storageState === 'error' ? 'Не удалось сохранить изменения' : storageState === 'saving' ? 'Сохраняем…' : page ? 'Изменения сохранены' : 'Все изменения применены'}</MovingLabel></span>{generating && <button type="button" onClick={finishGeneration}>показать результат</button>}</div>
+              </section>
+              <div className="campaign-offer-control-space">
+                <div className="offer-preparing-note" aria-hidden={!generating}><span className="offer-source-mark">{name.replace(/^.*«(.+)»$/, '$1')}</span><p>Собираю первый вариант<br/>для вашего бизнеса</p><small>Затем можно поправить словами<br/>или настроить детали вручную.</small></div>
+                <div ref={assistant} className="v3-fields campaign-offer-controls" inert={generating} aria-hidden={generating}>
+                <OfferAssistant offer={offer} active={open && !closing && !busy && !generating} onChange={value => { generatedTitle.current = /^Скидка \d+% на первую покупку$/.test(value.title) ? value.title : ''; setOffer(value) }} onWorking={setRevising}/>
+
                 </div>
-              </div>
-              <div className="v3-preview-column">
-                <div className="campaign-ai-result"><span>предложение для ваших клиентов</span><button type="button" className="v3-text-button" disabled={revising || generating} onClick={() => { setGenerating(true); stepHeading.current?.focus({preventScroll:true}) }}>повторить сборку</button></div>
-                <div className="v3-offer-stage" data-theme="invert" data-revising={revising} data-zoom={offer.zoom}>
-                  <div className="v3-offer-card" aria-busy={generating || revising}>
-                    <div className="v3-preview-media"><div className="v3-offer-placeholder"><Creative o={{...creativeOf(name, `−${offer.discount || '20'}% на первую покупку`, 0), tone: offer.tone, ...(offer.gift ? {big:'1 + 1',small:'второй кофе в подарок'} : {})}} erid="реклама" wide/></div>{image && <motion.img key={image} className="v3-offer-card__image" src={image} alt="" initial={reduce ? false : { opacity: 0, scale: 1.025 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: reduce ? 0 : .4, ease: glide }} />}{(generating || revising) && <OfferReveal quick={!generating} paused={!generation.visible || busy}/>}</div>
-                    <div className="v3-offer-card__copy">
-                      <div className="v3-offer-card__brand">{logo && <img src={logo} alt="" />}<span className="bl-caption">{name}</span></div>
-                      <b className="bl-h3">{title}</b>
-                      {(offer.promo || offer.discount) && <div className="bl-row">{offer.discount && <span className="bl-tag bl-tag--brand">−{offer.discount}%</span>}{offer.promo && <span className="bl-chip">{offer.promo}</span>}</div>}
-                      {offer.until && <span className="bl-caption">до {offer.until.split('-').reverse().join('.')}</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="offer-canvas-status"><span role="status" aria-live="polite"><span className="offer-status-icon" aria-hidden="true">{generating || revising ? <Sparkles size={15}/> : <Check size={15}/>}</span><MovingLabel>{generating ? generationStatus : revising ? 'обновляю предложение' : 'готово к вашим идеям'}</MovingLabel></span>{generating && <button type="button" onClick={finishGeneration}>показать результат</button>}</div>
               </div>
             </div>}
 
-          {!complete && step === 2 && (
-            <div className="v3-dialog__split v3-audience">
-              <div className="v3-fields">
-                {groups.map(({ title: group, choices }, i) => <fieldset className="v3-choice" key={group}>
-                  <legend className="bl-field__label">{group}</legend>
-                  <LayoutGroup id={'audience-' + i}><div>{choices.map((choice, index) => <motion.button key={choice} type="button" className="bl-btn" disabled={online && i === 0 && index === 0} aria-pressed={audience[i] === index} onClick={() => setAudience(current => current.map((value, k) => i === k ? index : value))} whileTap={reduce ? undefined : { scale: .97 }}>{audience[i] === index && <motion.span className="v3-choice-highlight" layoutId="choice" transition={reduce ? { duration: 0 } : settle} />}<span>{choice}</span></motion.button>)}</div></LayoutGroup>
-                </fieldset>)}
-                <div className="v3-fields v3-fields--tight">
-                  <label className="bl-field"><span className="bl-field__label">какие ещё триггеры нужны?</span><textarea className="bl-input" rows={2} maxLength={400} placeholder="например, ищут завтрак по дороге на работу" value={triggers} onChange={e => setTriggers(e.target.value)} /></label>
-                  <button type="button" className="v3-text-button" onClick={dictate} disabled={listening}><Mic size={16} aria-hidden="true" />{listening ? 'слушаю…' : 'надиктовать'}</button>
-                  <span role="status" className="bl-caption bl-secondary">{voiceMessage}</span>
-                </div>
-              </div>
-              <aside className="v3-audience-card" data-theme="invert">
-                <span className="bl-tag bl-tag--brand">сегмент показа</span><div className="v3-audience-graphic" aria-hidden="true"><span><Users size={25} strokeWidth={1.5} /></span></div>
-                <h3 className="bl-h2">ваши будущие клиенты</h3>
-                <dl>{groups.map(({ title: group }, i) => <div key={group}><dt className="bl-caption bl-secondary">{group}</dt><dd><MovingLabel>{audienceLabels[i]}</MovingLabel></dd></div>)}</dl>
-                {triggers.trim() && <p className="bl-caption v3-trigger-copy">{triggers}</p>}
-              </aside>
-            </div>
-          )}
-
-          {complete && <div className="v3-complete">
-            <motion.span className="v3-complete__icon" initial={reduce ? false : { scale: .75, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={settle}><Check size={26} className="v3-success-path" aria-hidden="true" /></motion.span>
-            <h3 ref={stepHeading} tabIndex={-1} className="bl-h1">черновик готов</h3>
-            <p className="bl-body bl-secondary">Проверьте, что получилось. Это пример настройки кампании.</p>
-            <dl>{[
-              ['бизнес', business.name], ['телефон', business.phone], ['точки', online ? 'онлайн' : addresses.filter(a=>a.trim()).join('; ')], ['оффер', offer.title],
-              ['скидка', offer.discount ? `${offer.discount}%` : ''], ['промокод', offer.promo], ['действует до', offer.until ? offer.until.split('-').reverse().join('.') : ''],
-              ...groups.map(({ title: label }, i) => [label, audienceLabels[i]]),
-              ['пожелания', triggers.trim()],
-            ].filter(([, value]) => value).map(([label, value]) => <div key={label}><dt className="bl-caption bl-secondary">{label}</dt><dd>{value}</dd></div>)}</dl>
-          </div>}
+          {!complete && step === 2 && <>
+            <AudienceSetup groups={groups} values={audience} onChange={setAudience} city={business.city} onCityChange={city => setBusiness(current => ({ ...current, city }))} online={online} addresses={addresses} triggers={triggers} onTriggers={setTriggers} onDictate={dictate} listening={listening} voiceMessage={voiceMessage} disabled={finalizing} summary={audienceSummary} preview={preview}/>
+            {finishError && <p className="campaign-finish-error" role="alert">{finishError}</p>}
+          </>}
+          {complete && <CampaignSuccess headingRef={stepHeading} preview={preview} name={name} offerTitle={title} summary={audienceSummary} saved={page && storageState === 'saved'}/>}
           </motion.div>
         </div>
 
         <footer className="v3-dialog__actions">
-          <span className="v3-dialog__footer-note">{complete ? 'демонстрация завершена' : step === 1 ? 'всё можно изменить перед запуском' : step === 0 && businessPhase === 'identify' ? 'без регистрации и запуска рекламы' : `шаг 0${step + 1} из 03`}</span>
-          {(step > 0 || complete || businessPhase === 'review') && <button type="button" className="bl-btn" disabled={busy} onClick={() => { if (step === 0 && businessPhase === 'review') { direction.current = -1; setBusinessPhase('identify') } else void navigate(complete ? step : step - 1) }}><ArrowLeft size={17} aria-hidden="true" /> {complete ? 'к настройкам' : 'назад'}</button>}
-          <motion.button type="submit" className="bl-btn bl-btn--dark" disabled={busy || searching || (step === 1 && (generating || revising))} whileTap={reduce ? undefined : { scale: .97 }}><MovingLabel>{complete ? page ? 'к лендингу' : 'закрыть' : step === 1 && generating ? 'готовим предложение…' : searching ? 'ищем бизнес…' : step === 0 ? businessPhase === 'identify' ? 'найти бизнес' : 'собрать оффер' : step === 2 ? 'посмотреть черновик' : 'выбрать клиентов'}</MovingLabel>{!complete && <ArrowRight size={18} aria-hidden="true" />}</motion.button>
+          <span className="v3-dialog__footer-note">{complete ? 'Вы завершили все три шага' : step === 1 ? 'всё можно изменить перед запуском' : step === 0 && businessPhase === 'identify' ? 'без регистрации и запуска рекламы' : `шаг 0${step + 1} из 03`}</span>
+          {(step > 0 || complete || businessPhase === 'review') && <button type="button" className="bl-btn" disabled={busy || finalizing} onClick={() => { if (step === 0 && businessPhase === 'review') { direction.current = -1; setBusinessPhase('identify') } else void navigate(complete ? step : step - 1) }}><ArrowLeft size={17} aria-hidden="true" /> {complete ? 'Изменить настройки' : 'назад'}</button>}
+          <motion.button type="submit" className="bl-btn bl-btn--dark" disabled={busy || searching || finalizing || (step === 1 && (generating || revising))} whileTap={reduce ? undefined : { scale: .97 }}><MovingLabel>{complete ? 'Готово' : finalizing ? 'Сохраняем настройки…' : step === 1 && generating ? 'готовим предложение…' : searching ? 'ищем бизнес…' : step === 0 ? businessPhase === 'identify' ? 'найти бизнес' : 'собрать оффер' : step === 2 ? 'Завершить настройку' : 'Дальше: выбрать клиентов'}</MovingLabel>{!complete && <ArrowRight size={18} aria-hidden="true" />}</motion.button>
         </footer>
       </form>
     </Surface>

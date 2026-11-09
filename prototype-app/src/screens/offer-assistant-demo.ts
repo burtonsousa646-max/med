@@ -1,7 +1,7 @@
 import type { Tone } from '../creative'
 
 export type OfferDraft = { title: string; promo: string; discount: string; until: string; tone: Tone; gift: boolean; zoom: boolean }
-export const emptyOffer: OfferDraft = { title: '', promo: '', discount: '', until: '', tone: 'green', gift: false, zoom: false }
+export const emptyOffer: OfferDraft = { title: '', promo: '', discount: '', until: '', tone: 'violet', gift: false, zoom: false }
 
 // shortcut: supported demo commands only; replace with model output before production.
 export function reviseOffer(request: string, current: OfferDraft): { offer: OfferDraft; message: string } | null {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useReducedMotion } from 'motion/react'
 import './offer-generation.css'
 
@@ -18,7 +18,7 @@ export function useOfferGeneration(active: boolean, onComplete: () => void) {
     const timer = window.setTimeout(() => {
       if (reduce || phase === 3) onComplete()
       else setPhase(value => value + 1)
-    }, reduce ? 150 : [1100, 1200, 1300, 650][phase])
+    }, reduce ? 150 : [8000, 9000, 9000, 4000][phase])
     return () => window.clearTimeout(timer)
   }, [active, phase, reduce, visible, onComplete])
   return { phase, visible }
@@ -40,7 +40,7 @@ export function OfferReveal({ quick, paused }: { quick: boolean; paused: boolean
     const context = element?.getContext('2d')
     if (!element || !context || paused || reduce) return
     const ink = getComputedStyle(element).color
-    const duration = quick ? 1200 : 4250
+    const duration = quick ? 1200 : 30000
     let width = 0, height = 0, frame = 0, lastDraw = 0
     function resize() {
       const ratio = Math.min(window.devicePixelRatio || 1, 2)
@@ -88,7 +88,7 @@ export function OfferReveal({ quick, paused }: { quick: boolean; paused: boolean
     frame = requestAnimationFrame(draw)
     return () => { observer.disconnect(); cancelAnimationFrame(frame); previous.current = null }
   }, [quick, paused, reduce])
-  return <div className="offer-reveal offer-generation" data-quick={quick} data-paused={paused} aria-hidden="true">
+  return <div className="offer-reveal offer-generation" style={{ '--generation-duration': quick ? '1200ms' : '30000ms' } as CSSProperties} data-quick={quick} data-paused={paused} aria-hidden="true">
     <canvas ref={canvas}/>
     <span className="offer-generation-percent">{progress}%</span>
   </div>

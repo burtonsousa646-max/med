@@ -8,7 +8,9 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 FROM dependencies AS build
 COPY design-system /app/design-system
 COPY prototype-app/ ./
-RUN npm test && node --test scripts/campaign-draft.test.ts scripts/offer-assistant.test.ts && npm run build
+ARG VITE_METRIKA_ID=
+ENV VITE_METRIKA_ID=$VITE_METRIKA_ID
+RUN npm test && node --test scripts/*.test.ts && npm run build
 
 FROM node:22-bookworm-slim AS api-dependencies
 WORKDIR /app/prototype-app

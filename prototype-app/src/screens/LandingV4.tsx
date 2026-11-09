@@ -1,4 +1,5 @@
-import { useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { analytics, type EventParams } from '../analytics'
 import { Link, useNavigate } from 'react-router'
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react'
 import { ArrowRight, Check } from 'lucide-react'
@@ -64,7 +65,7 @@ function Placements() {
     <div className="section-head"><h2 className="bl-display-l">где покажем</h2><p className="bl-body bl-secondary">В приложении билайна и на площадках партнёров</p></div>
     <div className="v4-placement-layout">
       <div className="v4-placement-controls">
-        {SURFACES.map((surface, index) => <button key={surface.k} type="button" aria-pressed={selected === index} aria-controls="v4-placement-phone" className={`v4-placement-choice${selected === index ? ' is-selected' : ''}`} onClick={() => setSelected(index)}>
+        {SURFACES.map((surface, index) => <button key={surface.k} type="button" aria-pressed={selected === index} aria-controls="v4-placement-phone" className={`v4-placement-choice${selected === index ? ' is-selected' : ''}`} onClick={() => { if (selected !== index) analytics.event('v4_placement_select', { placement: surface.k }); setSelected(index) }}>
           <span className="v4-placement-number">0{index + 1}</span><span><span className="bl-h3">{surface.t}</span><span className="bl-body bl-secondary">{surface.d}</span></span><ArrowRight size={20}/>
         </button>)}
         <CampaignAction className="bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction>
@@ -96,13 +97,35 @@ export default function LandingV4() {
   const start = useNavigate()
   const showCta = useHeaderCta()
   const reduce = useReducedMotion()
+  const seen = useRef(new Set<string>())
+  useEffect(() => {
+    const names: Record<string, EventParams['section']> = { 'v2-hero': 'hero', how: 'how', where: 'where', 'v2-final': 'final' }
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const section = names[entry.target.id] ?? 'metrics'
+        if (entry.isIntersecting && !seen.current.has(section)) {
+          seen.current.add(section)
+          analytics.event('v4_section_view', { section })
+        }
+      }
+    }, { rootMargin: '-20% 0px', threshold: 0 })
+    document.querySelectorAll('.v4-content > section').forEach(section => observer.observe(section))
+    return () => observer.disconnect()
+  }, [])
   function navigate(id: string) {
+    if (id === 'how' || id === 'where') analytics.event('v4_navigation_click', { target: id })
     const target = document.getElementById(id)
     target?.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' })
     target?.setAttribute('tabindex', '-1')
     target?.focus({ preventScroll: true })
   }
-  return <div className="v3-v2-theme v4-theme"><LaunchContext.Provider value={() => start('/v4/create')}>
+  return <div className="v3-v2-theme v4-theme" onClickCapture={event => {
+    const target = event.target instanceof Element ? event.target : null
+    if (!target?.closest('[data-campaign-start]')) return
+    const section = target.closest('section')?.id
+    const source = target.closest('header') ? 'header' : section === 'v2-hero' ? 'hero' : section === 'how' ? 'how' : section === 'where' ? 'where' : section === 'v2-final' ? 'final' : 'direct'
+    analytics.event('v4_cta_click', { source })
+  }}><LaunchContext.Provider value={() => start('/v4/create')}>
     <div className="bl-page wrap v2 v4">
       <a className="v2-skip-link" href="#v4-content" onClick={event => { event.preventDefault(); navigate('v4-content') }}>к содержимому</a>
       <header className="bl-header landing-head v2-head">
@@ -111,7 +134,7 @@ export default function LandingV4() {
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
           <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
           {showCta && <CampaignAction className="bl-btn bl-btn--primary">запустить сейчас</CampaignAction>}
-          <Link className="bl-btn bl-btn--dark" to="/login?from=v4">войти</Link>
+          <Link className="bl-btn bl-btn--dark" to="/login?from=v4" onClick={() => analytics.event('v4_navigation_click', { source: 'header', target: 'login' })}>войти</Link>
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
@@ -121,7 +144,7 @@ export default function LandingV4() {
         {/* Временно скрыто: <ForEveryone calm/> */}
         <Final/>
       </main>
-      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><Link to="/v4/offer">оферта</Link><Link to="/v4/privacy">обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
+      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><Link to="/v4/offer" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'offer_document' })}>оферта</Link><Link to="/v4/privacy" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'privacy_document' })}>обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
     </div>
   </LaunchContext.Provider></div>
 }

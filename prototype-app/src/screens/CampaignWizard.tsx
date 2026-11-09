@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Mic, PencilLine, RotateCcw, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion, useAnimationControls, useReducedMotion } from 'motion/react'
 import { useNavigate, useParams } from 'react-router'
+import { analytics, type AnalyticsPage, type EventParams, type Goal } from '../analytics'
 import { campaignAllowedStage, campaignStage, campaignStages, emptyCampaignDraft, type CampaignDraft } from './campaign-draft'
 import { MovingLabel, glide, settle } from './LandingMotion'
 import { Field } from './CampaignField'
@@ -40,13 +41,14 @@ type LocalSpeech = {
   abort(): void
 }
 
-function FileField({ label, file, onChange }: { label: string; file: File | null; onChange: (file: File | null) => void }) {
+function FileField({ label, file, onChange, track = false }: { label: string; file: File | null; onChange: (file: File | null) => void; track?: boolean }) {
   const reduce = useReducedMotion()
   const feedbackId = useId()
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const version = useRef(0)
+  const upload = (result: 'success' | 'error', reason?: EventParams['reason']) => { if (track) analytics.event('v4_upload_result', { field: label === 'изображение' ? 'image' : 'logo', result, reason }) }
   useEffect(() => () => { version.current++ }, [])
   const feedback = (message: string) => { setError(message); input.current?.setCustomValidity(message) }
   return <div className="bl-field v3-upload-field">
@@ -60,8 +62,8 @@ function FileField({ label, file, onChange }: { label: string; file: File | null
         if (!selected) return
         const token = ++version.current
         setChecking(false)
-        if (!['image/png','image/jpeg','image/webp','image/avif'].includes(selected.type)) { feedback('Выберите PNG, JPG, WebP или AVIF'); return }
-        if (selected.size > 5 * 1024 * 1024) { feedback('Размер файла до 5 МБ'); return }
+        if (!['image/png','image/jpeg','image/webp','image/avif'].includes(selected.type)) { feedback('Выберите PNG, JPG, WebP или AVIF'); upload('error', 'type'); return }
+        if (selected.size > 5 * 1024 * 1024) { feedback('Размер файла до 5 МБ'); upload('error', 'size'); return }
         setChecking(true)
         input.current?.setCustomValidity('Проверяем изображение')
         const url = URL.createObjectURL(selected)
@@ -69,8 +71,8 @@ function FileField({ label, file, onChange }: { label: string; file: File | null
           const img = new Image(); img.src = url; await img.decode()
           if (version.current !== token) return
           if (!img.naturalWidth || !img.naturalHeight) throw new Error('Empty image')
-          feedback(''); onChange(selected)
-        } catch { if(version.current === token) feedback('Не удалось открыть изображение. Выберите другой файл') }
+          feedback(''); onChange(selected); upload('success')
+        } catch { if(version.current === token) { feedback('Не удалось открыть изображение. Выберите другой файл'); upload('error', 'decode') } }
         finally { URL.revokeObjectURL(url); if(version.current === token) setChecking(false) }
       }} />
     </span></label>
@@ -94,9 +96,11 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   onDraftChange?: (draft: CampaignDraft) => Promise<boolean>; storageState?: 'loading' | 'saving' | 'saved' | 'error';
 }) {
   const page = presentation === 'page'
+  const track = useCallback((goal: Goal, params: EventParams = {}) => { if (page) analytics.event(goal, params) }, [page])
   const routerNavigate = useNavigate()
   const { stage: routeStage } = useParams()
   const initial = initialDraft ?? emptyCampaignDraft()
+  const resumed = initial.reached > 0 || Boolean(initial.business.inn || initial.business.phone)
   const initialStage = page ? campaignStage(routeStage, initial) : 0
   const [reached, setReached] = useState(initial.reached)
   const reduce = useReducedMotion()
@@ -134,6 +138,9 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const manualId = useId()
   const assistant = useRef<HTMLDivElement>(null)
   const manual = useRef<HTMLDetailsElement>(null)
+  const interacted = useRef(false)
+  const fieldValues = useRef(new WeakMap<HTMLInputElement | HTMLTextAreaElement, string>())
+  const generationRun = useRef<{ started: number; kind: 'first' | 'rebuild' } | null>(null)
   const [offerImage, setOfferImage] = useState<File | null>(initial.offerImage)
   const [logoImage, setLogoImage] = useState<File | null>(initial.logoImage)
   const [audience, setAudience] = useState(initial.audience)
@@ -157,16 +164,24 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     big: offer.gift ? '1 + 1' : offer.discount ? `−${offer.discount}%` : title,
     small: offer.gift || offer.discount ? /^Скидка \d+% на первую покупку$/.test(title) ? 'на первую покупку' : title : '' }
   const preview = <div className="campaign-summary-creative"><Creative o={creative} image={image} erid="реклама" wide/></div>
-  const finishGeneration = useCallback(() => {
+  const finishGeneration = useCallback((method: 'automatic' | 'skip' = 'automatic') => {
+    if (generationRun.current) track('v4_generation_complete', { step: 'offer', generation: generationRun.current.kind, method, duration_ms: Date.now() - generationRun.current.started })
+    generationRun.current = null
     setGenerating(false)
     requestAnimationFrame(() => stepHeading.current?.focus({ preventScroll: true }))
-  }, [])
+  }, [track])
   const generation = useOfferGeneration(generating && step === 1 && open && !closing && !busy, finishGeneration)
   const generationStatus = [business.website ? 'изучаю сайт' : 'изучаю ваш бизнес', image ? 'использую ваше изображение' : 'подбираю изображение', logo ? 'добавляю ваш логотип' : 'подбираю цвета', 'проверяем результат'][generation.phase]
   const currentStage = complete ? 4 : step === 0 ? businessPhase === 'identify' ? 0 : 1 : step + 1
   const currentDraft: CampaignDraft = { business, addresses, online, offer, offerImage, logoImage, audience, triggers,
     confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile: Boolean(profile),
     stage: currentStage, reached: Math.max(reached, currentStage) }
+  const stepName = campaignStages[currentStage]
+  const offerFlags = { has_image: Boolean(offerImage), has_logo: Boolean(logoImage), has_promo: Boolean(offer.promo), has_discount: Boolean(offer.discount), tone: offer.tone }
+
+  useEffect(() => {
+    if (page && !busy && !closing && routeStage === stepName) analytics.view(`/v4/create/${stepName}` as AnalyticsPage, { step: stepName, resumed })
+  }, [page, busy, closing, routeStage, stepName, resumed])
 
   useEffect(() => { setEditing(false) }, [step, complete])
 
@@ -177,6 +192,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   useLayoutEffect(() => {
     if (!page) return
     const target = campaignStage(routeStage, currentDraft)
+    if (routeStage && campaignStages.indexOf((routeStage === 'preview' ? 'success' : routeStage) as typeof campaignStages[number]) > target) track('v4_route_blocked', { step: campaignStages[target], reason: 'invalid' })
     if (routeStage !== campaignStages[target]) routerNavigate(`/v4/create/${campaignStages[target]}`, { replace: true })
     if (target === currentStage) return
     epoch.current++
@@ -193,6 +209,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   }, [routeStage, page, routerNavigate])
 
   function setBusinessPhase(phase: BusinessPhase) {
+    if (phase === 'identify' && businessPhase !== phase) track('v4_step_back', { step: 'details', target_step: 'business' })
     updateBusinessPhase(phase)
     if (page) {
       setReached(value => Math.max(value, phase === 'review' ? 1 : 0))
@@ -238,6 +255,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   async function requestClose() {
     if (closing) return
+    track('v4_flow_exit', { step: stepName, source: complete ? 'success' : 'back', target: 'landing' })
     if (page) { close(); return }
     cancelLookup()
     epoch.current++
@@ -255,6 +273,8 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     target = Math.max(0, Math.min(2, stage - 1))
     done = stage === 4
     if (locked.current || (target === step && done === complete)) return
+    if (stage < currentStage) track('v4_step_back', { step: stepName, target_step: campaignStages[stage] })
+    if (generating && target !== step && generationRun.current) track('v4_generation_leave', { generation: generationRun.current.kind, duration_ms: Date.now() - generationRun.current.started })
     locked.current = true
     setBusy(true)
     setRevising(false)
@@ -293,6 +313,9 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     const valid = form.current?.checkValidity() ?? false
     if (!valid) {
       const invalid = form.current?.querySelector<HTMLElement>('input:invalid, textarea:invalid, select:invalid')
+      const field = invalid as HTMLInputElement | undefined
+      track('v4_field_error', { step: stepName, field: (field?.dataset.analyticsField || field?.name || 'unknown') as EventParams['field'],
+        reason: !field?.value.trim() ? 'required' : field.validity.rangeOverflow || field.validity.rangeUnderflow || field.validity.stepMismatch ? 'range' : field.validity.tooLong || field.validity.tooShort ? 'length' : 'invalid', error_count: form.current?.querySelectorAll('input:invalid, textarea:invalid, select:invalid').length ?? 0 })
       const details = invalid?.closest('details')
       if (details) details.open = true
       requestAnimationFrame(() => invalid?.focus())
@@ -301,6 +324,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   }
 
   function cancelLookup(restoreFocus = false) {
+    if (lookup.current !== null) track('v4_lookup_cancel', { step: 'business' })
     if (lookup.current !== null) window.clearTimeout(lookup.current)
     lookup.current = null
     setSearching(false)
@@ -311,6 +335,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   function findBusiness() {
     if (!validate() || lookup.current) return
+    track('v4_lookup_start', { step: 'business' })
     setSearching(true)
     lookup.current = window.setTimeout(() => {
       lookup.current = null
@@ -319,6 +344,8 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
       setBusiness(current => ({ ...current, name: DEMO_PROFILE.name, category: DEMO_PROFILE.category, city: DEMO_PROFILE.city }))
       setAddresses([DEMO_PROFILE.registeredAddress])
       setSearching(false)
+      track('v4_lookup_result', { result: 'success', method: 'lookup' })
+      track('v4_identify_complete', { method: 'lookup' })
       direction.current = 1
       setBusinessPhase('review')
     }, 850)
@@ -326,6 +353,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   function confirmBusinessIdentity() {
     if (confirmedInn.current === business.inn) return
+    if (confirmedInn.current) track('v4_company_change')
     confirmedInn.current = business.inn
     setProfile(null)
     setBusiness(current => ({ ...current, name: '', category: '', city: '' }))
@@ -340,6 +368,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   function manualEntry() {
     if (!validate() || searching) return
     confirmBusinessIdentity()
+    track('v4_identify_complete', { method: 'manual' })
     direction.current = 1
     setBusinessPhase('review')
   }
@@ -351,6 +380,12 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     generatedTitle.current = suggestion
   }
 
+  function beginGeneration(kind: 'first' | 'rebuild') {
+    generationRun.current = { started: Date.now(), kind }
+    track('v4_generation_start', { step: 'offer', generation: kind, ...offerFlags })
+    setGenerating(true)
+  }
+
   function changeDiscount(discount: string) {
     const title = offer.title === generatedTitle.current ? discount ? `Скидка ${discount}% на первую покупку` : '' : offer.title
     if (offer.title === generatedTitle.current) generatedTitle.current = title
@@ -360,6 +395,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   function editOffer() {
     if (!manual.current) return
     const opening = !manual.current.open
+    track('v4_offer_edit', { action: opening ? 'open' : 'close' })
     manual.current.open = opening
     if (opening) {
       manual.current.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'nearest' })
@@ -376,27 +412,32 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   function dictate() {
     if (speech.current) return
+    track('v4_voice_start', { step: 'audience' })
     const browser = window as Window & { SpeechRecognition?: new () => LocalSpeech; webkitSpeechRecognition?: new () => LocalSpeech }
     const Recognition = browser.SpeechRecognition ?? browser.webkitSpeechRecognition
     const recognition = Recognition ? new Recognition() : null
     if (!recognition || !('processLocally' in recognition)) {
+      track('v4_voice_result', { step: 'audience', result: 'error', reason: 'unsupported' })
       setVoiceMessage('В этом браузере голосовой ввод недоступен. Напишите пожелание')
       return
     }
     recognition.lang = 'ru-RU'
+    let heard = false, failed = false
     recognition.processLocally = true
     recognition.onresult = ({ results }) => {
       const value = results[0]?.[0]?.transcript.trim()
-      if (value) setTriggers(current => [current.trim(), value].filter(Boolean).join(' ').slice(0, 400))
+      if (value) { heard = true; setTriggers(current => [current.trim(), value].filter(Boolean).join(' ').slice(0, 400)) }
     }
-    recognition.onerror = () => setVoiceMessage('Не удалось распознать речь. Напишите пожелание')
-    recognition.onend = () => { speech.current = null; setListening(false) }
+    recognition.onerror = () => { failed = true; track('v4_voice_result', { step: 'audience', result: 'error', reason: 'recognition' }); setVoiceMessage('Не удалось распознать речь. Напишите пожелание') }
+    recognition.onend = () => { if (!failed) track('v4_voice_result', { step: 'audience', result: heard ? 'success' : 'empty' }); speech.current = null; setListening(false) }
     try {
       recognition.start()
       speech.current = recognition
       setListening(true)
       setVoiceMessage('')
     } catch {
+      failed = true
+      track('v4_voice_result', { step: 'audience', result: 'error', reason: 'recognition' })
       setVoiceMessage('Голосовой ввод недоступен. Напишите пожелание')
     }
   }
@@ -409,17 +450,21 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     if (step === 0 && businessPhase === 'identify') { void findBusiness(); return }
     if (step === 0) {
       if (innError(business.inn) || phoneError(business.phone)) { setBusinessPhase('identify'); return }
-      if (!filled) { fillOffer(); setGenerating(true) }
+      track('v4_business_complete', { online, address_count: online ? 0 : addresses.length })
+      if (!filled) { fillOffer(); beginGeneration('first') }
       if (online) setAudience(current => current.map((value,i)=>i===0?2:value))
     }
-    if (step < steps.length - 1) { void navigate(step + 1); return }
+    if (step < steps.length - 1) { if (step === 1) track('v4_offer_complete', offerFlags); void navigate(step + 1); return }
     if (campaignAllowedStage(currentDraft) < 4) { void navigate(2, true); return }
     setFinishError('')
     setFinalizing(true)
+    track('v4_save_start', { step: 'audience' })
     try {
       if (onDraftChange && !await onDraftChange({ ...currentDraft, stage: 4, reached: 4 })) throw new Error('Save failed')
+      track('v4_save_result', { result: 'success' })
+      track('v4_setup_complete', { ...offerFlags, online, has_wishes: Boolean(triggers.trim()), address_count: online ? 0 : addresses.length, resumed })
       await navigate(2, true)
-    } catch { setFinishError('Не удалось сохранить настройки. Нажмите «Завершить настройку» ещё раз') }
+    } catch { track('v4_save_result', { result: 'error', reason: 'storage' }); setFinishError('Не удалось сохранить настройки. Нажмите «Завершить настройку» ещё раз') }
     finally { setFinalizing(false) }
   }
 
@@ -427,7 +472,17 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const Title = page ? 'h1' : 'h2'
   return (
     <Surface ref={page ? undefined : dialog} className={`v3-dialog campaign-demo${page ? ' campaign-page' : ''}`} data-closing={closing} aria-labelledby="v3-dialog-title" initial={false} animate={page ? undefined : dialogMotion} onClose={page ? undefined : close} onKeyDown={page ? undefined : containFocus} onCancel={page ? undefined : event => { event.preventDefault(); void requestClose() }}>
-      <form ref={form} className="v3-dialog__form" onSubmit={next} noValidate>
+      <form ref={form} className="v3-dialog__form ym-hide-content ym-disable-keys" onSubmit={next} noValidate onFocusCapture={event => {
+        const field = event.target
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return
+        fieldValues.current.set(field, field.value)
+        if (!interacted.current) { interacted.current = true; track('v4_flow_start', { step: stepName, resumed }) }
+      }} onBlurCapture={event => {
+        const field = event.target
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) || fieldValues.current.get(field) === field.value) return
+        if (step === 1 && field.dataset.analyticsField) track('v4_offer_field_change', { field: field.dataset.analyticsField as EventParams['field'] })
+        if (step === 2 && field.dataset.analyticsField === 'wishes') track('v4_wishes_change', { has_wishes: Boolean(field.value.trim()) })
+      }}>
         <header className="v3-dialog__head">
           <div className="v3-dialog__top">
             <div className="v3-dialog__brand"><span aria-hidden="true"><PencilLine size={18} /></span><Title id="v3-dialog-title" className="bl-h2" ref={heading} tabIndex={-1}>{complete ? 'настройка завершена' : 'настройка кампании'}</Title></div>
@@ -443,13 +498,13 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
         <div className="v3-dialog__body" ref={scroller}>
           <motion.div className="v3-dialog__scene" initial={false} animate={sceneMotion} inert={busy}>
           {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : step === 1 && generating ? 'Собираем ваш оффер' : introductions[step][0]}</h3><p>{step === 0 ? 'Сформируем оффер на основе информации о компании' : step === 1 && generating ? 'Готовим текст и изображение для вашей акции' : introductions[step][1]}</p></div><span>0{step + 1} / 03</span></div>}
-          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={setAddresses} online={online} onOnline={setOnline} />}
+          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} />}
           {!complete && step === 1 && !generating && <div className="v3-campaign-context"><span><Check size={14}/> {name}</span><span>{online ? 'онлайн' : business.city + ' · точек: ' + addresses.filter(a=>a.trim()).length}</span></div>}
 
           {!complete && step === 1 && <div className="v3-dialog__split campaign-offer-editor" data-generating={generating} data-phase={generation.phase}>
               <section className="v3-preview-column offer-workspace" aria-label="Визуальный редактор оффера">
                 <div className="offer-workspace-toolbar" role="toolbar" aria-label="Действия с оффером">
-                  <button type="button" disabled={revising || generating} onClick={() => { setGenerating(true); stepHeading.current?.focus({preventScroll:true}) }}><RotateCcw size={16}/>собрать заново</button>
+                  <button type="button" disabled={revising || generating} onClick={() => { beginGeneration('rebuild'); stepHeading.current?.focus({preventScroll:true}) }}><RotateCcw size={16}/>собрать заново</button>
                   <button type="button" disabled={revising || generating} aria-controls={manualId} aria-expanded={editing} onClick={editOffer}><PencilLine size={16}/>{editing ? 'готово' : 'редактировать'}</button>
                 </div>
                 <div className="v3-offer-stage" data-theme="invert" data-revising={revising} data-zoom={offer.zoom}>
@@ -463,29 +518,33 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
                   </div>
                 </div>
                 <details ref={manual} id={manualId} className="campaign-manual" onToggle={event => setEditing(event.currentTarget.open)}><summary hidden>Параметры оффера</summary><fieldset className="v3-fields" disabled={revising || generating}>
-                <Field label="заголовок" placeholder="скидка на первый заказ" value={offer.title} onChange={e => setOffer({ ...offer, title: e.target.value })} maxLength={90} required error={errors.title} />
-                <div className="v3-fields__pair"><FileField label="изображение" file={offerImage} onChange={setOfferImage} />
-                <FileField label="ваш логотип" file={logoImage} onChange={setLogoImage} /></div>
+                <Field label="заголовок" data-analytics-field="title" placeholder="скидка на первый заказ" value={offer.title} onChange={e => setOffer({ ...offer, title: e.target.value })} maxLength={90} required error={errors.title} />
+                <div className="v3-fields__pair"><FileField label="изображение" track={page} file={offerImage} onChange={setOfferImage} />
+                <FileField label="ваш логотип" track={page} file={logoImage} onChange={setLogoImage} /></div>
                 <div className="v3-fields__pair">
-                  <Field label="промокод" placeholder="ПРИВЕТ" value={offer.promo} onChange={e => setOffer({ ...offer, promo: e.target.value })} maxLength={24} error={errors.promo} />
-                  <Field label="скидка, %" type="number" min={1} max={99} step={1} error={errors.discount} placeholder="20" value={offer.discount} onChange={e => changeDiscount(e.target.value)} />
+                  <Field label="промокод" data-analytics-field="promo" placeholder="ПРИВЕТ" value={offer.promo} onChange={e => setOffer({ ...offer, promo: e.target.value })} maxLength={24} error={errors.promo} />
+                  <Field label="скидка, %" data-analytics-field="discount" type="number" min={1} max={99} step={1} error={errors.discount} placeholder="20" value={offer.discount} onChange={e => changeDiscount(e.target.value)} />
                 </div>
-                <Field label="действует до" type="date" min={localDate()} error={errors.until} value={offer.until} onChange={e => setOffer({ ...offer, until: e.target.value })} />
+                <Field label="действует до" data-analytics-field="until" type="date" min={localDate()} error={errors.until} value={offer.until} onChange={e => setOffer({ ...offer, until: e.target.value })} />
                 </fieldset></details>
                 <button type="button" className="offer-voice-shortcut" disabled={generating || revising} onClick={voiceOffer}><Mic size={16}/>Изменить голосом</button>
-                <div className="offer-canvas-status"><span role="status" aria-live="polite"><span className="offer-status-icon" aria-hidden="true">{generating || revising ? <Sparkles size={15}/> : <Check size={15}/>}</span><MovingLabel>{generating ? generationStatus : revising ? 'обновляю предложение' : storageState === 'error' ? 'Не удалось сохранить изменения' : storageState === 'saving' ? 'Сохраняем…' : page ? 'Изменения сохранены' : 'Все изменения применены'}</MovingLabel></span>{generating && <button type="button" onClick={finishGeneration}>показать результат</button>}</div>
+                <div className="offer-canvas-status"><span role="status" aria-live="polite"><span className="offer-status-icon" aria-hidden="true">{generating || revising ? <Sparkles size={15}/> : <Check size={15}/>}</span><MovingLabel>{generating ? generationStatus : revising ? 'обновляю предложение' : storageState === 'error' ? 'Не удалось сохранить изменения' : storageState === 'saving' ? 'Сохраняем…' : page ? 'Изменения сохранены' : 'Все изменения применены'}</MovingLabel></span>{generating && <button type="button" onClick={() => finishGeneration('skip')}>показать результат</button>}</div>
               </section>
               <div className="campaign-offer-control-space">
                 <div className="offer-preparing-note" aria-hidden={!generating}><span className="offer-source-mark">{name.replace(/^.*«(.+)»$/, '$1')}</span><p>Собираю первый вариант<br/>для вашего бизнеса</p><small>Потом можно изменить текст<br/>или настроить детали вручную</small></div>
                 <div ref={assistant} className="v3-fields campaign-offer-controls" inert={generating} aria-hidden={generating}>
-                <OfferAssistant offer={offer} active={open && !closing && !busy && !generating} onChange={value => { generatedTitle.current = /^Скидка \d+% на первую покупку$/.test(value.title) ? value.title : ''; setOffer(value) }} onWorking={setRevising}/>
+                <OfferAssistant track={page} offer={offer} active={open && !closing && !busy && !generating} onChange={value => { generatedTitle.current = /^Скидка \d+% на первую покупку$/.test(value.title) ? value.title : ''; setOffer(value) }} onWorking={setRevising}/>
 
                 </div>
               </div>
             </div>}
 
           {!complete && step === 2 && <>
-            <AudienceSetup groups={groups} values={audience} onChange={setAudience} city={business.city} onCityChange={city => setBusiness(current => ({ ...current, city }))} online={online} addresses={addresses} triggers={triggers} onTriggers={setTriggers} onDictate={dictate} listening={listening} voiceMessage={voiceMessage} disabled={finalizing} summary={audienceSummary} preview={preview}/>
+            <AudienceSetup groups={groups} values={audience} onChange={value => {
+              const group = value.findIndex((choice, index) => choice !== audience[index])
+              if (group >= 0) track('v4_audience_select', { group: (['geography', 'gender', 'age', 'income', 'moment'] as const)[group], choice: value[group] })
+              setAudience(value)
+            }} city={business.city} onCityChange={city => setBusiness(current => ({ ...current, city }))} online={online} addresses={addresses} triggers={triggers} onTriggers={setTriggers} onDictate={dictate} listening={listening} voiceMessage={voiceMessage} disabled={finalizing} summary={audienceSummary} preview={preview}/>
             {finishError && <p className="campaign-finish-error" role="alert">{finishError}</p>}
           </>}
           {complete && <CampaignSuccess headingRef={stepHeading} preview={preview} name={name} offerTitle={title} summary={audienceSummary} saved={page && storageState === 'saved'}/>}

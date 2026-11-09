@@ -1,0 +1,669 @@
+{
+  "checks": {
+    "eventCount": 61,
+    "uniqueGoals": [
+      "v4_offer_view",
+      "v4_draft_restore",
+      "v4_step_back",
+      "v4_step_leave",
+      "v4_details_view",
+      "v4_business_view",
+      "v4_flow_start",
+      "v4_field_error",
+      "v4_company_change",
+      "v4_identify_complete",
+      "v4_business_complete",
+      "v4_generation_start",
+      "v4_generation_complete",
+      "v4_offer_edit",
+      "v4_offer_field_change",
+      "v4_assistant_request",
+      "v4_assistant_result",
+      "v4_assistant_undo",
+      "v4_upload_result",
+      "v4_offer_complete",
+      "v4_audience_view",
+      "v4_audience_select",
+      "v4_wishes_change",
+      "v4_save_start",
+      "v4_save_result",
+      "v4_setup_complete",
+      "v4_success_view",
+      "v4_flow_exit",
+      "v4_landing_view",
+      "v4_section_view",
+      "v4_cta_click"
+    ],
+    "completionCount": 1,
+    "successViewCount": 3,
+    "privateValuesAbsent": true,
+    "ctaSource": "hero",
+    "counterScript": 0
+  },
+  "layout": [
+    "PASS: campaign demo layout and focus at 390px",
+    "PASS: campaign demo layout and focus at 1440px"
+  ],
+  "events": [
+    {
+      "method": "hit",
+      "target": "/#/v4/create/offer",
+      "params": {
+        "title": "Дизайн оффера",
+        "referer": ""
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_draft_restore",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "result": "success",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_back",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "target_step": "details"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "duration_ms": 769
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/details",
+      "params": {
+        "title": "Данные компании",
+        "referer": "/#/v4/create/offer"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_details_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "details",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_back",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "details",
+        "target_step": "business"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "details",
+        "duration_ms": 7434
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/business",
+      "params": {
+        "title": "Информация о компании",
+        "referer": "/#/v4/create/details"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_business_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "business",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_flow_start",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "business",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_field_error",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "business",
+        "field": "inn",
+        "reason": "required",
+        "error_count": 1
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_company_change",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "business"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_identify_complete",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "business",
+        "method": "manual"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "business",
+        "duration_ms": 12434
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/details",
+      "params": {
+        "title": "Данные компании",
+        "referer": "/#/v4/create/business"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_details_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "details",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_business_complete",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "details",
+        "online": false,
+        "address_count": 1
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_generation_start",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "generation": "first",
+        "has_image": false,
+        "has_logo": false,
+        "has_promo": false,
+        "has_discount": false,
+        "tone": "violet"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "details",
+        "duration_ms": 66365
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/offer",
+      "params": {
+        "title": "Дизайн оффера",
+        "referer": "/#/v4/create/details"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_generation_complete",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "generation": "first",
+        "method": "skip",
+        "duration_ms": 20531
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_edit",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "action": "open"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_field_change",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "field": "promo"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_edit",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "action": "close"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_assistant_request",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "method": "text"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_assistant_result",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "method": "text",
+        "result": "error",
+        "reason": "unsupported"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_assistant_request",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "method": "example"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_assistant_result",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "method": "example",
+        "result": "success",
+        "tone": "violet",
+        "has_discount": true,
+        "has_promo": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_assistant_undo",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_edit",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "action": "open"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_upload_result",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "field": "image",
+        "result": "error",
+        "reason": "type"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_upload_result",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "field": "image",
+        "result": "success"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_edit",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "action": "close"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_offer_complete",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "has_image": true,
+        "has_logo": false,
+        "has_promo": true,
+        "has_discount": true,
+        "tone": "violet"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "offer",
+        "duration_ms": 110716
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/audience",
+      "params": {
+        "title": "Выбор клиентов",
+        "referer": "/#/v4/create/offer"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_audience_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_audience_select",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "group": "geography",
+        "choice": 2
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_audience_select",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "group": "moment",
+        "choice": 2
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_wishes_change",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "has_wishes": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_save_start",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_save_result",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "result": "success"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_setup_complete",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "has_image": true,
+        "has_logo": false,
+        "has_promo": true,
+        "has_discount": true,
+        "tone": "violet",
+        "online": false,
+        "has_wishes": true,
+        "address_count": 1,
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "audience",
+        "duration_ms": 35467
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/success",
+      "params": {
+        "title": "Настройка завершена",
+        "referer": "/#/v4/create/audience"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_success_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "resumed": true
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/success",
+      "params": {
+        "title": "Настройка завершена",
+        "referer": ""
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_success_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_draft_restore",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "result": "success",
+        "resumed": true
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_flow_exit",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "target": "landing",
+        "source": "header"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_step_leave",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "duration_ms": 36246
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4",
+      "params": {
+        "title": "Партнёрская платформа",
+        "referer": "/#/v4/create/success"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_landing_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_section_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "section": "hero"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_cta_click",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "source": "hero"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_draft_restore",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "result": "success",
+        "resumed": true
+      }
+    },
+    {
+      "method": "hit",
+      "target": "/#/v4/create/success",
+      "params": {
+        "title": "Настройка завершена",
+        "referer": "/#/v4"
+      }
+    },
+    {
+      "method": "reachGoal",
+      "target": "v4_success_view",
+      "params": {
+        "product": "campaign_v4",
+        "schema": 1,
+        "step": "success",
+        "resumed": true
+      }
+    }
+  ]
+}

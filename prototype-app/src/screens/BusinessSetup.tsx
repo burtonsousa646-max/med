@@ -36,9 +36,9 @@ export function BusinessSetup({phase,business,onChange,profile,searching,onCance
   </div> : <div className="v3-business-review">
     <div className="v3-fields">
       <div className="v3-source-note"><span>{profile ? <Check size={14}/> : <Building2 size={14}/>} данные бизнеса</span><small>ИНН {business.inn} · {business.phone}</small></div>
-      <Field label="название для клиентов" value={business.name} maxLength={80} onChange={e=>update('name',e.target.value)} required error={textError(business.name,'Название')} hint="Можно указать название на вывеске"/>
-      <Field label="чем занимаетесь" value={business.category} maxLength={100} onChange={e=>update('category',e.target.value)} required error={textError(business.category,'Сфера бизнеса',3)} placeholder="например, кофе и завтраки" hint="По этим данным подготовим текст предложения"/>
-      <Field label="город" value={business.city} maxLength={80} autoComplete="address-level2" onChange={e=>update('city',e.target.value)} required={!online} error={!online ? textError(business.city,'Город') : ''} placeholder="Город, где работает ваш бизнес"/>
+      <Field label="название для клиентов" data-analytics-field="name" value={business.name} maxLength={80} onChange={e=>update('name',e.target.value)} required error={textError(business.name,'Название')} hint="Можно указать название на вывеске"/>
+      <Field label="чем занимаетесь" data-analytics-field="category" value={business.category} maxLength={100} onChange={e=>update('category',e.target.value)} required error={textError(business.category,'Сфера бизнеса',3)} placeholder="например, кофе и завтраки" hint="По этим данным подготовим текст предложения"/>
+      <Field label="город" data-analytics-field="city" value={business.city} maxLength={80} autoComplete="address-level2" onChange={e=>update('city',e.target.value)} required={!online} error={!online ? textError(business.city,'Город') : ''} placeholder="Город, где работает ваш бизнес"/>
     </div>
     <section className="v3-business-locations">
       <div className="v3-location-title"><MapPin size={22}/><div><h4>куда пригласим клиентов?</h4><p>Добавьте адреса, по которым будете принимать клиентов</p></div></div>
@@ -46,7 +46,7 @@ export function BusinessSetup({phase,business,onChange,profile,searching,onCance
       {!online && <>
         {profile?.registeredAddress && !addresses.includes(profile.registeredAddress) && <div className="v3-registered-address"><span>адрес бизнеса</span><p>{profile.registeredAddress}</p><small>Здесь можно принять клиентов?</small><button type="button" className="v3-text-button" onClick={()=>onAddresses([...addresses.filter(a=>a.trim()),profile.registeredAddress].slice(0,10))}><Plus size={15}/> добавить эту точку</button></div>}
         <div className="v3-location-list">{addresses.map((address,index)=><motion.div className="v3-location-row" key={index} initial={reduce ? false : {opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:reduce ? 0:.2}}>
-          <span className="v3-location-number">{String(index+1).padStart(2,'0')}</span><Field label={'адрес точки ' + (index+1)} value={address} maxLength={200} onChange={e=>onAddresses(addresses.map((a,i)=>i===index?e.target.value:a))} placeholder="улица, дом" required error={textError(address,'Адрес',5) || (addresses.some((a,i)=>i!==index&&a.trim().toLowerCase()===address.trim().toLowerCase())?'Этот адрес уже добавлен':'')}/>
+          <span className="v3-location-number">{String(index+1).padStart(2,'0')}</span><Field data-analytics-field="address" label={'адрес точки ' + (index+1)} value={address} maxLength={200} onChange={e=>onAddresses(addresses.map((a,i)=>i===index?e.target.value:a))} placeholder="улица, дом" required error={textError(address,'Адрес',5) || (addresses.some((a,i)=>i!==index&&a.trim().toLowerCase()===address.trim().toLowerCase())?'Этот адрес уже добавлен':'')}/>
           {addresses.length>1&&<button type="button" className="bl-icon-btn" aria-label={'Удалить точку '+(index+1)} onClick={()=>onAddresses(addresses.filter((_,i)=>i!==index))}><X size={16}/></button>}
         </motion.div>)}</div>
         {addresses.length<10&&<button type="button" className="v3-text-button" onClick={()=>onAddresses([...addresses,''])}><Plus size={16}/> ещё точка</button>}

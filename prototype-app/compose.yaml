@@ -40,6 +40,8 @@ services:
       context: ..
       dockerfile: prototype-app/Dockerfile
       target: web
+      args:
+        VITE_METRIKA_ID: ${VITE_METRIKA_ID:-}
     environment:
       SITE_ADDRESS: :8080
     ports:

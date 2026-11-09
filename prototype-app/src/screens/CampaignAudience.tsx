@@ -30,7 +30,7 @@ export function AudienceSetup({ groups, values, onChange, city, onCityChange, on
           <input type="radio" name={id + '-geo'} checked={values[0] === index} disabled={online && index === 0} onChange={() => select(0, index)}/>
           <Icon size={22} aria-hidden="true"/><span><b>{title}</b><small>{detail}</small></span><span className="audience-radio-mark" aria-hidden="true">{values[0] === index && <Check size={14}/>}</span>
         </label>)}</div>
-        {values[0] === 1 && <Field label="город показа" value={city} onChange={event => onCityChange(event.target.value)} autoComplete="address-level2" maxLength={80} required error={textError(city, 'Город')} placeholder="Укажите город"/>}
+        {values[0] === 1 && <Field label="город показа" data-analytics-field="city" value={city} onChange={event => onCityChange(event.target.value)} autoComplete="address-level2" maxLength={80} required error={textError(city, 'Город')} placeholder="Укажите город"/>}
       </fieldset>
       <fieldset className="audience-moment" disabled={disabled}>
         <legend>Когда предложение будет кстати?</legend>
@@ -48,7 +48,7 @@ export function AudienceSetup({ groups, values, onChange, city, onCityChange, on
         </fieldset>)}</div>
       </details>
       <fieldset className="audience-wishes" disabled={disabled}>
-        <label><span>Что ещё учесть? <small>необязательно</small></span><textarea className="bl-input" rows={2} maxLength={400} placeholder="Например, показать акцию тем, кто ищет, где позавтракать" value={triggers} onChange={event => onTriggers(event.target.value)}/></label>
+        <label><span>Что ещё учесть? <small>необязательно</small></span><textarea className="bl-input ym-disable-keys" data-analytics-field="wishes" rows={2} maxLength={400} placeholder="Например, показать акцию тем, кто ищет, где позавтракать" value={triggers} onChange={event => onTriggers(event.target.value)}/></label>
         <button type="button" className="v3-text-button" onClick={onDictate} disabled={listening}><Mic size={16}/>{listening ? 'Слушаю…' : 'Сказать голосом'}</button>
         {voiceMessage && <p role="status">{voiceMessage}</p>}
       </fieldset>

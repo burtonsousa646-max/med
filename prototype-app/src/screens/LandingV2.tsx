@@ -28,7 +28,7 @@ export const LaunchContext = createContext<(() => void) | undefined>(undefined)
 export function CampaignAction({ to = login(), className, children, describedBy }: { to?: string; className?: string; children: ReactNode; describedBy?: string }) {
   const launch = useContext(LaunchContext)
   return launch
-    ? <button type="button" className={className} onClick={launch} aria-haspopup="dialog" aria-describedby={describedBy}>{children === 'узнать охват' ? 'запустить сейчас' : children}</button>
+    ? <button type="button" data-campaign-start className={className} onClick={launch} aria-haspopup="dialog" aria-describedby={describedBy}>{children === 'узнать охват' ? 'запустить сейчас' : children}</button>
     : <Link to={to} className={className} aria-describedby={describedBy}>{children}</Link>
 }
 

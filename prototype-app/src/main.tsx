@@ -2,6 +2,7 @@ import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { MotionConfig } from 'motion/react'
+import { analytics, pages, type AnalyticsPage } from './analytics'
 import { QueryClientProvider } from '@tanstack/react-query'
 import '../../design-system/tokens.css'
 import '../../design-system/components.css'
@@ -59,7 +60,12 @@ function LatestStats() {
 
 // Новый экран открывается сверху, а заголовок вкладки называет экран
 function OnRoute() {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
+  useEffect(() => {
+    if (pathname.startsWith('/v4/create')) return // Wizard sends only validated, visible steps.
+    const tracked = Object.hasOwn(pages, pathname) && (pathname !== '/login' || new URLSearchParams(search).get('from') === 'v4')
+    analytics.view(tracked ? pathname as AnalyticsPage : null)
+  }, [pathname, search])
   useEffect(() => {
     scrollTo(0, 0)
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')

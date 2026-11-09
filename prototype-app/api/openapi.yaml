@@ -23,6 +23,7 @@ info:
 servers:
   - url: /api
 tags:
+  - { name: служебные }
   - { name: справочники }
   - { name: сессия }
   - { name: компания }
@@ -32,6 +33,53 @@ tags:
   - { name: отслеживание }
 
 paths:
+  /health:
+    get:
+      tags: [служебные]
+      summary: Готовность API и SQLite без создания демо-сессии
+      operationId: getHealth
+      responses:
+        '200':
+          description: API и база доступны
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [ok] }
+        '500': { $ref: '#/components/responses/Error' }
+  /business/lookup:
+    post:
+      tags: [компания]
+      summary: Найти действующий бизнес по ИНН для лендинга V3
+      description: Серверный поиск через DaData. Телефон не передаётся. Юридический адрес возвращается отдельно и не считается подтверждённой точкой кампании. Без DADATA_API_KEY возвращает 503.
+      operationId: lookupBusiness
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inn]
+              properties:
+                inn: { type: string, pattern: '^(\d{10}|\d{12})$' }
+      responses:
+        '200':
+          description: Сведения о найденном бизнесе
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profile]
+                properties:
+                  profile: { $ref: '#/components/schemas/BusinessProfile' }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /catalog:
     get:
       tags: [справочники]
@@ -418,6 +466,16 @@ components:
     Conversion: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Conversion' } } } }
 
   schemas:
+    BusinessProfile:
+      type: object
+      required: [inn, name, category, city, registeredAddress, source]
+      properties:
+        inn: { type: string }
+        name: { type: string }
+        category: { type: string }
+        city: { type: string }
+        registeredAddress: { type: string }
+        source: { type: string, enum: [dadata] }
     Error:
       type: object
       required: [message]

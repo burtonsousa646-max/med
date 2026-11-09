@@ -23,7 +23,7 @@ Not checked: real mobile hardware, Safari, OS reduced-motion runtime or real cam
 
 ## Campaign wizard demo
 
-The wizard uses local fixtures from `src/screens/campaign-demo.ts`; business lookup no longer calls the API. Existing server code is retained but not used by this flow. The example button fills sample INN and phone values; a cancellable local delay demonstrates lookup before editable business details and address appear. All inputs, image files and the draft stay in memory. Closing cancels lookup; a page reload clears the draft.
+The wizard uses local fixtures from `src/screens/campaign-demo.ts`; business lookup no longer calls the API. Existing server code is retained but not used by this flow. The example button fills sample INN and phone values; a cancellable local delay demonstrates lookup before editable business details and address appear. V3 keeps its in-memory modal. V4 now opens the separate page described below; its draft and image files are stored locally in IndexedDB.
 
 The first step is compact, with a real creative preview, inline validation and focus feedback. Offer discount and the suggested title stay synchronized; custom titles are preserved. The final summary includes discount, promo code and date. Browser checks covered the complete demo, back navigation, errors, cancellation, dynamic preview and 320/375/1280 px layout. Reusable assertions: `scripts/check-campaign-demo.mjs`. File upload and local speech recognition were not exercised in this pass.
 
@@ -40,3 +40,13 @@ The first step is compact, with a real creative preview, inline validation and f
 Проверка команд: Node 22 `node --test scripts/offer-assistant.test.ts`. Проверки браузера: сборка, изменение условия/фона, составная команда, отмена, сохранение ручных полей на ширине 1280px. Новый мобильный сценарий в этой итерации не подтверждён: браузер не применил запрошенную ширину 390px. Голос с реальным микрофоном требует ручной проверки.
 
 Проверка единого экрана: браузерные assertions подтвердили совпадение x/y/width/height карточки во время и после генерации, блокировку редактирования до готовности, доступный статус и отсутствие горизонтального переполнения на 1280px. Правка применяется под размытием, затем проявляется результат. Статусы зависят от имеющихся данных: без сайта и логотипа не утверждаем, что они были извлечены.
+
+## Отдельная страница оформления · 9 ноября 2026
+
+Все кнопки «запустить сейчас» в V4 ведут на `/#/v4/create`. Общий `CampaignWizard` поддерживает страницу и прежнее окно V3 без дублирования формы. Адреса `business`, `details`, `offer`, `audience`, `preview` отражают три шага, проверку бизнеса и итоговый черновик. Работают переходы браузера назад/вперёд; незавершённые шаги нельзя пропустить прямой ссылкой. В шапке есть возврат к лендингу, действия закреплены снизу, прокручивается вся страница.
+
+Один черновик, включая загруженные изображения, сохраняется в IndexedDB этого браузера. Возврат на лендинг и обновление страницы сохраняют заполненные поля и достигнутый шаг. Состояние сохранения показано над формой; при ошибке хранения есть сообщение, при перезагрузке с несохранёнными данными браузер предупреждает о выходе. Серверного сохранения и привязки к аккаунту нет.
+
+Анимация по референсу [21st.dev image generation loader](https://21st.dev/@syeddhasnainn/components/image-generation-loader): два движущихся облака на сетке точек и демонстрационный процент постепенно открывают тот же креатив. Canvas ограничен 30 кадрами/с и DPR 2; скрытая вкладка приостанавливает анимацию, reduced motion сразу показывает результат. Сохранены пропуск и повторная сборка. Проценты вычисляются по демо-таймеру, реального генеративного API нет.
+
+Проверено в изолированном Chrome: CTA V4, валидация, все шаги, Back/Forward, возобновление с лендинга, восстановление текста/промокода/изображения после reload, запрет прямого пропуска шагов, размеры 320/390/768/1440px, неизменная геометрия креатива в координатах документа, прежнее окно V3 и Escape. Новые unit-проверки: `scripts/campaign-draft.test.ts`; браузерные assertions: `scripts/check-campaign-demo.mjs`, `scripts/check-offer-generation.mjs`. Реальные устройства и Safari требуют отдельной проверки.

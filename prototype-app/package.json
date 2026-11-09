@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch --disable-warning=ExperimentalWarning server/index.ts & vite",
     "server": "node --disable-warning=ExperimentalWarning server/index.ts",
-    "test": "node --disable-warning=ExperimentalWarning --test server/flow.test.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test server/*.test.ts",
     "api:types": "npx -y -p typescript@5.9.3 -p openapi-typescript@7.13.0 openapi-typescript api/openapi.yaml -o src/api.gen.ts",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"

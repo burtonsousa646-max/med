@@ -1,12 +1,13 @@
 // Evaluate in the browser after each settled wizard step.
 export function assertCampaignDemo() {
   const assert = (ok, message) => { if (!ok) throw new Error(message) }
-  const dialog = document.querySelector('dialog.campaign-demo[open]')
-  assert(dialog, 'Demo wizard is open')
+  const dialog = document.querySelector('dialog.campaign-demo[open], main.campaign-page')
+  assert(dialog, 'Campaign flow is visible')
   assert(getComputedStyle(dialog).opacity === '1', 'Dialog is visible after the transition')
   const body = dialog.querySelector('.v3-dialog__body')
   assert(body.scrollWidth <= body.clientWidth + 1, 'No horizontal overflow in the form')
   assert(dialog.contains(document.activeElement), 'Focus stays inside the dialog')
+  if (dialog.matches('main')) assert(!document.querySelector('dialog[open]'), 'Page flow has no modal dialog')
   assert(dialog.querySelectorAll('.v3-progress li').length === 3, 'Three setup steps remain')
   const footer = dialog.querySelector('footer').getBoundingClientRect()
   assert(footer.bottom <= innerHeight && footer.top > 0, 'Next action remains visible')
@@ -19,7 +20,7 @@ export function assertCampaignDemo() {
     assert(controls.hasAttribute('inert') === generating, 'Editing is enabled only when the offer is ready')
     if (generating) {
       assert(dialog.querySelector('button[type="submit"]').disabled, 'Cannot advance during generation')
-      assert(editor.querySelectorAll('.offer-reveal > span').length === 48, 'Image reveal stays inside the existing card')
+      assert(editor.querySelector('.offer-generation canvas'), 'Dot generation stays inside the existing card')
       assert(editor.querySelector('.offer-canvas-status [role="status"]').textContent.trim(), 'Generation has a concise accessible status')
     }
   }

@@ -172,12 +172,6 @@
 .offer-canvas-status > button { border: 0; padding: 8px 0; background: none; color: var(--v3-muted); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
 .offer-canvas-status > button:hover { color: var(--v3-ink); }
 .offer-canvas-status > button:focus-visible { outline: 2px solid var(--v3-ink); outline-offset: 4px; }
-.offer-reveal { display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(6,1fr); position: absolute; inset: -16px; pointer-events: none; z-index: 3; overflow: hidden; backdrop-filter: blur(18px); animation: offer-resolve 4100ms cubic-bezier(.22,1,.36,1) both; }
-.offer-reveal > span { margin: -1px; background: #e3ece7e6; filter: blur(12px); animation: offer-develop 1700ms cubic-bezier(.22,1,.36,1) both; }
-.offer-reveal[data-quick=true] { animation-duration: 1300ms; }
-.offer-reveal[data-quick=true] > span { background: #f3f1e9b3; animation-duration: 700ms; }
-.offer-reveal[data-paused=true], .offer-reveal[data-paused=true] > span { animation-play-state: paused; }
-@keyframes offer-develop { 0% { opacity: 1; } 100% { opacity: 0; } }
 [data-generating=true] .v3-offer-card__copy { opacity: .25; }
 [data-generating=true][data-phase="2"] .v3-offer-card__copy,
 [data-generating=true][data-phase="3"] .v3-offer-card__copy { opacity: 1; }
@@ -193,7 +187,6 @@
  .campaign-demo:has(.campaign-offer-editor) .v3-dialog__footer-note { display: none; }
 }
 @media(prefers-reduced-motion:reduce) {
- .offer-reveal { display: none; }
  .campaign-demo *, .campaign-demo *::before { animation: none !important; transition: none !important; }
 }
 
@@ -202,5 +195,3 @@
 }
 
 .offer-assistant-feedback:empty { display: none; }
-
-@keyframes offer-resolve { 0%,30% { opacity: 1; } 75% { opacity: .35; } 100% { opacity: 0; } }

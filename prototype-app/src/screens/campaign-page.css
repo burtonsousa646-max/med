@@ -1,0 +1,46 @@
+/* The existing campaign flow becomes a document, with one page scrollbar. */
+.campaign-page-theme { min-height: 100svh; background: var(--color-static-grey-25); }
+.campaign-page-shell { width: min(1152px, 100%); margin-inline: auto; padding: 0 32px; }
+.campaign-page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 24px; }
+.campaign-page-header .bl-btn { display: inline-flex; align-items: center; gap: 8px; }
+.campaign-page-storage { color: var(--color-static-grey-600); margin: 0 0 16px; min-height: 16px; text-wrap: pretty; }
+.v3-v2-theme .campaign-demo.campaign-page { display: block; width: 100%; max-width: none; height: auto; min-height: calc(100svh - 144px); margin: 0; padding: 0; border: 0; border-radius: 24px 24px 0 0; box-shadow: none; overflow: visible; }
+.campaign-page .v3-dialog__form { min-height: inherit; height: auto; grid-template-rows: auto 1fr auto; overflow: visible; }
+.campaign-demo.campaign-page .v3-dialog__head { padding: 24px 32px 0; border: 0; border-radius: 24px 24px 0 0; }
+.v3-v2-theme .campaign-demo.campaign-page .v3-dialog__top h1 { font-size: 20px; line-height: 28px; margin: 0; }
+.campaign-page h1:focus { outline: none; }
+.campaign-page .v3-dialog__brand { flex-wrap: wrap; }
+.campaign-demo.campaign-page .v3-progress { margin-top: 24px; gap: 32px; }
+.campaign-demo.campaign-page .v3-progress li { font-size: 14px; line-height: 20px; padding-bottom: 12px; }
+.campaign-demo.campaign-page .v3-dialog__body { overflow: visible; padding: 32px; }
+.v3-v2-theme .campaign-demo.campaign-page .v3-step-intro { margin-bottom: 32px; }
+.v3-v2-theme .campaign-demo.campaign-page .v3-step-intro h3 { font-size: 36px; line-height: 40px; }
+.v3-v2-theme .campaign-demo.campaign-page .v3-step-intro p { font-size: 16px; line-height: 24px; margin-top: 12px; }
+.campaign-demo.campaign-page .v3-dialog__scene { animation: none; }
+.campaign-demo.campaign-page .v3-dialog__actions { position: sticky; bottom: 0; z-index: 5; flex-wrap: wrap; padding: 16px 32px max(16px, env(safe-area-inset-bottom)); }
+.campaign-page .v3-dialog__actions .bl-btn { min-height: 48px; }
+.campaign-demo.campaign-page .campaign-offer-editor { gap: 32px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.campaign-demo.campaign-page .campaign-offer-editor .v3-preview-media { aspect-ratio: 1.85; }
+.campaign-demo.campaign-page .campaign-offer-editor .v3-offer-card__copy { padding: 24px; gap: 12px; }
+.campaign-page .v3-complete { max-width: 720px; margin-inline: auto; }
+.campaign-page-loading { min-height: 480px; padding: 32px; background: var(--color-static-white); border-radius: 24px; display: grid; align-content: start; gap: 24px; }
+.campaign-page-loading div { height: 48px; border-radius: 8px; background: var(--color-static-grey-50); }
+.campaign-page-loading div:last-child { height: 192px; }
+@media (max-width: 700px) {
+  .campaign-page-shell { padding-inline: 0; }
+  .campaign-page-header { padding: 16px; gap: 8px; }
+  .campaign-page-header .brand__name { font-size: 12px; }
+  .campaign-page-header .bl-btn { padding-inline: 8px; font-size: 14px; }
+  .campaign-page-storage { padding-inline: 16px; margin-bottom: 12px; }
+  .v3-v2-theme .campaign-demo.campaign-page { border-radius: 16px 16px 0 0; }
+  .campaign-demo.campaign-page .v3-dialog__head { padding: 24px 16px 0; border-radius: 16px 16px 0 0; }
+  .campaign-demo.campaign-page .v3-progress { gap: 12px; margin-top: 16px; }
+  .campaign-demo.campaign-page .v3-progress li { font-size: 12px; line-height: 16px; }
+  .campaign-demo.campaign-page .v3-dialog__body { padding: 24px 16px; }
+  .v3-v2-theme .campaign-demo.campaign-page .v3-step-intro h3 { font-size: 30px; line-height: 36px; }
+  .v3-v2-theme .campaign-demo.campaign-page .v3-step-intro { margin-bottom: 24px; }
+  .campaign-demo.campaign-page .campaign-offer-editor { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .campaign-demo.campaign-page .campaign-offer-editor .v3-offer-card__copy { padding: 16px; }
+  .campaign-demo.campaign-page .v3-dialog__actions { padding: 12px 16px max(12px, env(safe-area-inset-bottom)); }
+  .campaign-page .v3-dialog__actions .bl-btn { padding-inline: 12px; font-size: 14px; }
+}

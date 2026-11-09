@@ -1,4 +1,6 @@
+import type { components } from '../src/api.gen.ts'
 export type Business = { name: string; inn: string; phone: string; category: string; website: string; city: string }
+export type BusinessProfile = components['schemas']['BusinessProfile']
 
 export function innError(value: string): string {
   if (!value) return 'Укажите ИНН бизнеса.'

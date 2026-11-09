@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { motion, useInView, useReducedMotion } from 'motion/react'
 import { ArrowRight, Check } from 'lucide-react'
 import { Brand } from '../ui'
@@ -8,7 +8,6 @@ import { DEMO_AD } from '../mock'
 import { AppScreenshotPhone } from './AppScreenshotPhone'
 import { CampaignAction, Clients, ForEveryone, Hero, LaunchContext, SketchMetrics, SURFACES as BASE_SURFACES, useHeaderCta } from './LandingV2'
 import { HowGraphic } from './HowGraphics'
-import CampaignWizard from './CampaignWizard'
 import './landing-v3.css'
 import './landing-motion.css'
 import './v3-v2-theme.css'
@@ -113,7 +112,7 @@ function Final() {
 }
 
 export default function LandingV4() {
-  const [wizardOpen, setWizardOpen] = useState(false)
+  const start = useNavigate()
   const showCta = useHeaderCta()
   const reduce = useReducedMotion()
   function navigate(id: string) {
@@ -122,7 +121,7 @@ export default function LandingV4() {
     target?.setAttribute('tabindex', '-1')
     target?.focus({ preventScroll: true })
   }
-  return <div className="v3-v2-theme v4-theme"><LaunchContext.Provider value={() => setWizardOpen(true)}>
+  return <div className="v3-v2-theme v4-theme"><LaunchContext.Provider value={() => start('/v4/create')}>
     <div className="bl-page wrap v2 v4">
       <a className="v2-skip-link" href="#v4-content" onClick={event => { event.preventDefault(); navigate('v4-content') }}>к содержимому</a>
       <header className="bl-header landing-head v2-head">
@@ -139,6 +138,5 @@ export default function LandingV4() {
       </main>
       <footer className="footer bl-caption"><span>© 2026 рекламная платформа билайна</span><span className="bl-row"><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link></span></footer>
     </div>
-    <CampaignWizard open={wizardOpen} onClose={() => setWizardOpen(false)}/>
   </LaunchContext.Provider></div>
 }

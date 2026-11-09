@@ -3,5 +3,10 @@ dist/
 .DS_Store
 .claude/
 *.log
+.env
+.env.*
+!.env.example
+*.sqlite*
+prototype-app/backups/
 .impeccable/
 .playwright-mcp/

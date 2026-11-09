@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Mic, PencilLine, Sparkles, Users, X } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion, useAnimationControls, useReducedMotion } from 'motion/react'
+import { useNavigate, useParams } from 'react-router'
+import { campaignStage, campaignStages, emptyCampaignDraft, type CampaignDraft } from './campaign-draft'
 import { MovingLabel, glide, settle } from './LandingMotion'
 import { Field } from './CampaignField'
 import { OfferReveal, useOfferGeneration } from './OfferGeneration'
@@ -86,7 +88,16 @@ function useImage(file: File | null) {
   return src
 }
 
-export default function CampaignWizard({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function CampaignWizard({ open, onClose, presentation = 'dialog', initialDraft, onDraftChange }: {
+  open: boolean; onClose: () => void; presentation?: 'dialog' | 'page'; initialDraft?: CampaignDraft;
+  onDraftChange?: (draft: CampaignDraft) => void;
+}) {
+  const page = presentation === 'page'
+  const routerNavigate = useNavigate()
+  const { stage: routeStage } = useParams()
+  const initial = initialDraft ?? emptyCampaignDraft()
+  const initialStage = page ? campaignStage(routeStage, initial) : 0
+  const [reached, setReached] = useState(initial.reached)
   const reduce = useReducedMotion()
   const sceneMotion = useAnimationControls()
   const dialogMotion = useAnimationControls()
@@ -95,32 +106,31 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
   const direction = useRef(1)
   const [busy, setBusy] = useState(false)
   const [closing, setClosing] = useState(false)
-  const [filled, setFilled] = useState(false)
+  const [filled, setFilled] = useState(initial.filled)
   const [generating, setGenerating] = useState(false)
   const [revising, setRevising] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const stepHeading = useRef<HTMLHeadingElement>(null)
-  const confirmedInn = useRef('')
+  const confirmedInn = useRef(initial.confirmedInn)
   const speech = useRef<LocalSpeech | null>(null)
-  const [step, setStep] = useState(0)
-  const [complete, setComplete] = useState(false)
-  // shortcut: drafts stay in memory; add server persistence before production.
-  const [business, setBusiness] = useState({ name: '', inn: '', phone: '', category: '', website: '', city: '' })
-  const [addresses, setAddresses] = useState([''])
-  const [businessPhase, setBusinessPhase] = useState<BusinessPhase>('identify')
-  const [profile, setProfile] = useState<DemoBusinessProfile | null>(null)
+  const [step, setStep] = useState(Math.max(0, Math.min(2, initialStage - 1)))
+  const [complete, setComplete] = useState(initialStage === 4)
+  const [business, setBusiness] = useState(initial.business)
+  const [addresses, setAddresses] = useState(initial.addresses)
+  const [businessPhase, updateBusinessPhase] = useState<BusinessPhase>(initialStage === 0 ? 'identify' : 'review')
+  const [profile, setProfile] = useState<DemoBusinessProfile | null>(initial.hasProfile ? { ...DEMO_PROFILE, ...initial.business } : null)
   const [searching, setSearching] = useState(false)
-  const [online, setOnline] = useState(false)
+  const [online, setOnline] = useState(initial.online)
   const lookup = useRef<number | null>(null)
-  const generatedTitle = useRef('')
+  const generatedTitle = useRef(initial.generatedTitle)
   const form = useRef<HTMLFormElement>(null)
-  const [offer, setOffer] = useState<OfferDraft>({ ...emptyOffer })
-  const [offerImage, setOfferImage] = useState<File | null>(null)
-  const [logoImage, setLogoImage] = useState<File | null>(null)
-  const [audience, setAudience] = useState(groups.map(() => 0))
-  const [triggers, setTriggers] = useState('')
+  const [offer, setOffer] = useState<OfferDraft>(initial.offer)
+  const [offerImage, setOfferImage] = useState<File | null>(initial.offerImage)
+  const [logoImage, setLogoImage] = useState<File | null>(initial.logoImage)
+  const [audience, setAudience] = useState(initial.audience)
+  const [triggers, setTriggers] = useState(initial.triggers)
   const [listening, setListening] = useState(false)
   const [voiceMessage, setVoiceMessage] = useState('')
   const image = useImage(offerImage)
@@ -134,16 +144,52 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
   }, [])
   const generation = useOfferGeneration(generating && step === 1 && open && !closing && !busy, finishGeneration)
   const generationStatus = [business.website ? 'изучаю сайт' : 'изучаю ваш бизнес', image ? 'использую ваше изображение' : 'подбираю изображение', logo ? 'добавляю ваш логотип' : 'собираю фирменный стиль', 'последние штрихи'][generation.phase]
+  const currentStage = complete ? 4 : step === 0 ? businessPhase === 'identify' ? 0 : 1 : step + 1
+
+  useEffect(() => {
+    onDraftChange?.({ business, addresses, online, offer, offerImage, logoImage, audience, triggers,
+      confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile: Boolean(profile),
+      stage: currentStage, reached: Math.max(reached, currentStage) })
+  }, [business, addresses, online, offer, offerImage, logoImage, audience, triggers, filled, profile, currentStage, reached, onDraftChange])
+
+  useLayoutEffect(() => {
+    if (!page) return
+    let allowed = reached
+    if (confirmedInn.current !== business.inn || innError(business.inn) || phoneError(business.phone)) allowed = 0
+    else if (textError(business.name) || textError(business.category, '', 3) || (!online && (textError(business.city) || addresses.some(address => textError(address, '', 5))))) allowed = Math.min(allowed, 1)
+    const target = campaignStage(routeStage, { stage: Math.min(currentStage, allowed), reached: allowed })
+    if (routeStage !== campaignStages[target]) routerNavigate(`/v4/create/${campaignStages[target]}`, { replace: true })
+    if (target === currentStage) return
+    epoch.current++
+    cancelLookup()
+    speech.current?.abort()
+    sceneMotion.stop()
+    locked.current = false
+    setBusy(false)
+    setRevising(false)
+    setStep(Math.max(0, Math.min(2, target - 1)))
+    setComplete(target === 4)
+    updateBusinessPhase(target === 0 ? 'identify' : 'review')
+    // Route changes include the browser's Back/Forward buttons; field edits stay on their current screen.
+  }, [routeStage, page, routerNavigate])
+
+  function setBusinessPhase(phase: BusinessPhase) {
+    updateBusinessPhase(phase)
+    if (page) {
+      setReached(value => Math.max(value, phase === 'review' ? 1 : 0))
+      routerNavigate(`/v4/create/${phase === 'review' ? 'details' : 'business'}`)
+    }
+  }
 
   useLayoutEffect(() => {
     const element = dialog.current
-    if (open && element) {
+    if (!page && open && element) {
       setClosing(false)
       if (!element.open) element.showModal()
       dialogMotion.set(reduce ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 22, scale: .975 })
       void dialogMotion.start({ opacity: 1, y: 0, scale: 1, transition: { duration: reduce ? 0 : .3, ease: glide } })
     }
-  }, [open, dialogMotion, reduce])
+  }, [open, page, dialogMotion, reduce])
 
   useLayoutEffect(() => {
     if (!open) return
@@ -151,12 +197,13 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
     locked.current = true
     setBusy(true)
     scroller.current?.scrollTo(0, 0)
+    if (page) window.scrollTo(0, 0)
     heading.current?.focus({ preventScroll: true })
     sceneMotion.set(reduce ? { opacity: 1, x: 0, filter: 'blur(0px)' } : { opacity: 0, x: direction.current * 8, filter: 'blur(0px)' })
     void sceneMotion.start({ opacity: 1, x: 0, filter: 'blur(0px)', transition: { duration: reduce ? 0 : .22, ease: glide } }).then(() => {
       if (epoch.current === token) { locked.current = false; setBusy(false); requestAnimationFrame(() => stepHeading.current?.focus({ preventScroll: true })) }
     })
-  }, [open, step, complete, businessPhase, sceneMotion, reduce])
+  }, [open, page, step, complete, businessPhase, sceneMotion, reduce])
 
   useEffect(() => () => { epoch.current++; speech.current?.abort(); if (lookup.current !== null) window.clearTimeout(lookup.current) }, [])
 
@@ -172,6 +219,7 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
 
   async function requestClose() {
     if (closing) return
+    if (page) { close(); return }
     cancelLookup()
     epoch.current++
     locked.current = true
@@ -192,7 +240,12 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
     const token = ++epoch.current
     direction.current = (done ? 3 : target) > (complete ? 3 : step) ? 1 : -1
     await sceneMotion.start({ opacity: 0, x: reduce ? 0 : -direction.current * 10, filter: reduce ? 'blur(0px)' : 'blur(2px)', transition: { duration: reduce ? 0 : .14, ease: glide } })
-    if (token !== epoch.current || !dialog.current?.open) return
+    if (token !== epoch.current || (!page && !dialog.current?.open)) return
+    if (page) {
+      const stage = done ? 4 : target === 0 ? 1 : target + 1
+      setReached(value => Math.max(value, stage))
+      routerNavigate(`/v4/create/${campaignStages[stage]}`)
+    }
     setStep(target)
     setComplete(done)
   }
@@ -230,7 +283,7 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
     lookup.current = null
     setSearching(false)
     if (restoreFocus) requestAnimationFrame(() => {
-      if (dialog.current?.open && !locked.current) form.current?.querySelector<HTMLInputElement>('[name="inn"]')?.focus()
+      if ((page || dialog.current?.open) && !locked.current) form.current?.querySelector<HTMLInputElement>('[name="inn"]')?.focus()
     })
   }
 
@@ -262,6 +315,7 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
     setOffer({ ...emptyOffer })
     setOfferImage(null); setLogoImage(null); setFilled(false); setGenerating(false)
     generatedTitle.current = ''
+    setReached(1)
     setAudience(groups.map(() => 0)); setTriggers(''); setOnline(false)
   }
 
@@ -327,13 +381,15 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
     else void navigate(2, true)
   }
 
+  const Surface = page ? motion.main : motion.dialog
+  const Title = page ? 'h1' : 'h2'
   return (
-    <motion.dialog ref={dialog} className="v3-dialog campaign-demo" data-closing={closing} aria-labelledby="v3-dialog-title" initial={false} animate={dialogMotion} onClose={close} onKeyDown={containFocus} onCancel={event => { event.preventDefault(); void requestClose() }}>
+    <Surface ref={page ? undefined : dialog} className={`v3-dialog campaign-demo${page ? ' campaign-page' : ''}`} data-closing={closing} aria-labelledby="v3-dialog-title" initial={false} animate={page ? undefined : dialogMotion} onClose={page ? undefined : close} onKeyDown={page ? undefined : containFocus} onCancel={page ? undefined : event => { event.preventDefault(); void requestClose() }}>
       <form ref={form} className="v3-dialog__form" onSubmit={next} noValidate>
         <header className="v3-dialog__head">
           <div className="v3-dialog__top">
-            <div className="v3-dialog__brand"><span aria-hidden="true"><PencilLine size={18} /></span><h2 id="v3-dialog-title" className="bl-h2" ref={heading} tabIndex={-1}>{complete ? 'черновик кампании' : 'настройка кампании'}</h2><span className="campaign-demo-label">демонстрация</span></div>
-            <button type="button" className="bl-icon-btn" aria-label="Закрыть окно" onClick={() => void requestClose()}><X size={22} aria-hidden="true" /></button>
+            <div className="v3-dialog__brand"><span aria-hidden="true"><PencilLine size={18} /></span><Title id="v3-dialog-title" className="bl-h2" ref={heading} tabIndex={-1}>{complete ? 'черновик кампании' : 'настройка кампании'}</Title><span className="campaign-demo-label">демонстрация</span></div>
+            {!page && <button type="button" className="bl-icon-btn" aria-label="Закрыть окно" onClick={() => void requestClose()}><X size={22} aria-hidden="true" /></button>}
           </div>
           <LayoutGroup id="campaign-progress"><ol className="v3-progress" aria-label="Шаги настройки">{steps.map((label, i) => (
             <li key={label} aria-current={i === step && !complete ? 'step' : undefined} className={i < step || complete ? 'is-done' : ''}>
@@ -369,7 +425,7 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
                 <div className="campaign-ai-result"><span>предложение для ваших клиентов</span><button type="button" className="v3-text-button" disabled={revising || generating} onClick={() => { setGenerating(true); stepHeading.current?.focus({preventScroll:true}) }}>повторить сборку</button></div>
                 <div className="v3-offer-stage" data-theme="invert" data-revising={revising} data-zoom={offer.zoom}>
                   <div className="v3-offer-card" aria-busy={generating || revising}>
-                    <div className="v3-preview-media"><div className="v3-offer-placeholder"><Creative o={{...creativeOf(name, `−${offer.discount || '20'}% на первую покупку`, 0), tone: offer.tone, ...(offer.gift ? {big:'1 + 1',small:'второй кофе в подарок'} : {})}} erid="реклама" wide/></div>{image && <motion.img key={image} className="v3-offer-card__image" src={image} alt="" initial={reduce ? false : { opacity: 0, scale: 1.025 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: reduce ? 0 : .4, ease: glide }} />}{(generating || revising) && <OfferReveal quick={!generating} paused={!generation.visible}/>}</div>
+                    <div className="v3-preview-media"><div className="v3-offer-placeholder"><Creative o={{...creativeOf(name, `−${offer.discount || '20'}% на первую покупку`, 0), tone: offer.tone, ...(offer.gift ? {big:'1 + 1',small:'второй кофе в подарок'} : {})}} erid="реклама" wide/></div>{image && <motion.img key={image} className="v3-offer-card__image" src={image} alt="" initial={reduce ? false : { opacity: 0, scale: 1.025 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: reduce ? 0 : .4, ease: glide }} />}{(generating || revising) && <OfferReveal quick={!generating} paused={!generation.visible || busy}/>}</div>
                     <div className="v3-offer-card__copy">
                       <div className="v3-offer-card__brand">{logo && <img src={logo} alt="" />}<span className="bl-caption">{name}</span></div>
                       <b className="bl-h3">{title}</b>
@@ -421,9 +477,9 @@ export default function CampaignWizard({ open, onClose }: { open: boolean; onClo
         <footer className="v3-dialog__actions">
           <span className="v3-dialog__footer-note">{complete ? 'демонстрация завершена' : step === 1 ? 'всё можно изменить перед запуском' : step === 0 && businessPhase === 'identify' ? 'без регистрации и запуска рекламы' : `шаг 0${step + 1} из 03`}</span>
           {(step > 0 || complete || businessPhase === 'review') && <button type="button" className="bl-btn" disabled={busy} onClick={() => { if (step === 0 && businessPhase === 'review') { direction.current = -1; setBusinessPhase('identify') } else void navigate(complete ? step : step - 1) }}><ArrowLeft size={17} aria-hidden="true" /> {complete ? 'к настройкам' : 'назад'}</button>}
-          <motion.button type="submit" className="bl-btn bl-btn--dark" disabled={busy || searching || (step === 1 && (generating || revising))} whileTap={reduce ? undefined : { scale: .97 }}><MovingLabel>{complete ? 'закрыть' : step === 1 && generating ? 'готовим предложение…' : searching ? 'ищем бизнес…' : step === 0 ? businessPhase === 'identify' ? 'найти бизнес' : 'собрать оффер' : step === 2 ? 'посмотреть черновик' : 'выбрать клиентов'}</MovingLabel>{!complete && <ArrowRight size={18} aria-hidden="true" />}</motion.button>
+          <motion.button type="submit" className="bl-btn bl-btn--dark" disabled={busy || searching || (step === 1 && (generating || revising))} whileTap={reduce ? undefined : { scale: .97 }}><MovingLabel>{complete ? page ? 'к лендингу' : 'закрыть' : step === 1 && generating ? 'готовим предложение…' : searching ? 'ищем бизнес…' : step === 0 ? businessPhase === 'identify' ? 'найти бизнес' : 'собрать оффер' : step === 2 ? 'посмотреть черновик' : 'выбрать клиентов'}</MovingLabel>{!complete && <ArrowRight size={18} aria-hidden="true" />}</motion.button>
         </footer>
       </form>
-    </motion.dialog>
+    </Surface>
   )
 }

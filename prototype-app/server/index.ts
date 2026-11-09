@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import type { components } from '../src/api.gen.ts'
 import * as db from './db.ts'
 import { allow, ask, checkAsk } from './ask.ts'
+import { createBusinessLookup } from './business-lookup.ts'
 import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, trackingUrl, view, type CampaignRow, type OfferType } from './domain.ts'
 
 type S = components['schemas']
@@ -15,12 +16,17 @@ type Env = { Variables: { cid: string } }
 const fail = (c: Context, status: 400 | 401 | 404 | 409 | 429, message: string) => c.json({ message }, status)
 
 export const app = new Hono<Env>().basePath('/api')
+app.get('/health', c => {
+  db.db.prepare('select 1').get()
+  return c.json({ status: 'ok' })
+})
+app.route('/business', createBusinessLookup())
 
 /* ───────── демо-копия компании по cookie. Справочники и подтверждение по ссылке её не требуют ───────── */
 const COOKIE = 'demo'
 const newDemo = (c: Context<Env>) => {
   const id = db.createCompany()
-  setCookie(c, COOKIE, id, { httpOnly: true, sameSite: 'Lax', path: '/', maxAge: 365 * 864e2 })
+  setCookie(c, COOKIE, id, { httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'Lax', path: '/', maxAge: 365 * 864e2 })
   return id
 }
 app.use('*', async (c, next) => {
@@ -353,6 +359,13 @@ app.onError((e, c) => (console.error(e), c.json({ message: 'ошибка сер�
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = +(process.env.API_PORT ?? 8787)
-  serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, () => console.log(`API ${CO.brand}: http://127.0.0.1:${port}/api`))
+  const hostname = process.env.API_HOST ?? '127.0.0.1'
+  const server = serve({ fetch: app.fetch, port, hostname }, () => console.log(`API ${CO.brand}: http://${hostname}:${port}/api`))
+  const shutdown = () => {
+    server.close(() => { db.db.close(); process.exit(0) })
+    setTimeout(() => { if ('closeAllConnections' in server) server.closeAllConnections() }, 8000).unref()
+  }
+  process.once('SIGTERM', shutdown)
+  process.once('SIGINT', shutdown)
 }
 

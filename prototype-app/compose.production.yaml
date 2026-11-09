@@ -1,0 +1,11 @@
+# Standalone HTTPS; do not enable when an existing nginx owns ports 80/443.
+services:
+  api:
+    environment:
+      COOKIE_SECURE: 'true'
+  web:
+    environment:
+      SITE_ADDRESS: ${DOMAIN:?Set DOMAIN to the public hostname in .env}
+    ports: !override
+      - 80:8080
+      - 443:8443

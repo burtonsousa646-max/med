@@ -11,6 +11,7 @@ import { queryClient, useCampaigns } from './api'
 const Landing = lazy(() => import('./screens/Landing'))
 const LandingV2 = lazy(() => import('./screens/LandingV2'))
 const LandingV4 = lazy(() => import('./screens/LandingV4'))
+const CampaignPage = lazy(() => import('./screens/CampaignPage'))
 const LandingV3 = lazy(() => import('./screens/LandingV3'))
 const Build = lazy(() => import('./screens/Build'))
 const Near = lazy(() => import('./screens/Near'))
@@ -51,7 +52,7 @@ function OnRoute() {
   const { pathname } = useLocation()
   useEffect(() => {
     scrollTo(0, 0)
-    const name = screenName(pathname)?.replace(/^[\d.]+ · /, '')
+    const name = pathname.startsWith('/v4/create') ? 'создание кампании' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/v4' ? 'Рекламная платформа билайна · версия 4' : pathname === '/v3' ? 'Рекламная платформа билайна · версия 3' : pathname === '/' || pathname === '/v2' || pathname === '/mvp' ? 'Рекламная платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · рекламная платформа билайна`
   }, [pathname])
   return null
@@ -86,6 +87,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v2" element={<LandingV2 />} />
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
+                <Route path="/v4/create/:stage?" element={<CampaignPage />} />
                 <Route path="/mvp" element={<LandingV2 />} />
                 <Route path="/mvp/login" element={<MvpLogin />} />
                 <Route path="/mvp/new" element={<MvpNew />} />

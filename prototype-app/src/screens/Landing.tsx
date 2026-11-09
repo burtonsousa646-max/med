@@ -416,7 +416,7 @@ export default function Landing() {
           <FinalCta />
         </main>
         <footer className="footer bl-caption">
-          <span>© 2026 рекламная платформа билайна</span>
+          <span>© 2026 партнёрская платформа билайна</span>
           <span className="bl-row" style={{ ['--bl-gap' as string]: '24px' }}><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link><span className="bl-row" style={{ gap: 4 }}><MapPin size={14} /> Москва</span></span>
         </footer>
       </div>

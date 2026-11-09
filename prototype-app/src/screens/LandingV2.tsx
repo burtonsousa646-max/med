@@ -8,6 +8,7 @@ import { Brand, Chip, Num, Photo, Reveal, Segmented } from '../ui'
 import { OFFERS } from './Near'
 import { NICHES, n, rub } from '../data'
 import { HowGraphic } from './HowGraphics'
+import { CityAudienceMap } from './CityAudienceMap'
 
 function subscribeReducedMotion(listener: () => void) {
   const query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -600,14 +601,12 @@ export function SketchMetrics({ calm = false, pulse = false }: { calm?: boolean;
   }, [pulse])
   const show = seen || reduce
   return <section ref={ref} className="bl-section bl-section--wide v2-sketch-metrics" data-theme="invert" data-pulsing={pulse && inView && pageVisible && !reduce} aria-labelledby="v3-metrics-title">
-      <svg className="v2-sketch-metrics__crowd" viewBox="0 0 432 180" aria-hidden="true">
+      {pulse ? <CityAudienceMap timings={dots}/> : <svg className="v2-sketch-metrics__crowd" viewBox="0 0 432 180" aria-hidden="true">
         <defs><linearGradient id="v3-metrics-scan"><stop stopColor="var(--color-brand-primary)" stopOpacity="0"/><stop offset=".5" stopColor="var(--color-brand-primary)" stopOpacity=".25"/><stop offset="1" stopColor="var(--color-brand-primary)" stopOpacity="0"/></linearGradient></defs>
         {Array.from({ length: 240 }, (_, i) => <circle key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} r="2" fill="currentColor" opacity={dim(i) * .5} />)}
-        {pulse ? <g className="v4-pulse-dots">{dots.map((dot, i) => <circle key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} r="3.5" fill="var(--color-brand-primary)" style={{ animationDuration: `${dot.duration}s`, animationDelay: `${dot.delay}s` }}/>)}</g> : <>
           {!reduce && <motion.rect className="v2-sketch-metrics__scan" width="72" height="180" fill="url(#v3-metrics-scan)" initial={{ x: -72, opacity: 0 }} animate={seen ? { x: 432, opacity: [0, 1, 1, 0] } : { x: -72, opacity: 0 }} transition={{ duration: 1.6, delay: .15, ease: 'linear', opacity: { duration: 1.6, delay: .15, times: [0, .1, .85, 1] } }} />}
           {Array.from({ length: 240 }, (_, i) => lit(i, 0) && <motion.circle className="v2-sketch-metrics__match" key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} fill="var(--color-brand-primary)" initial={reduce ? false : { opacity: 0, r: 2 }} animate={show ? { opacity: 1, r: reduce ? 3.5 : [2, 5, 3.5] } : { opacity: 0, r: 2 }} transition={{ duration: reduce ? 0 : .45, delay: reduce ? 0 : ((i % 24) * 18 + 81) / 504 * 1.6 + .15, ease: 'easeOut' }} />)}
-        </>}
-      </svg>
+      </svg>}
       <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Найдём их среди абонентов билайна.</p></div>
       <dl>{([[35, ' млн', 'абонентов билайна'], [200, '', 'триггеров показа'], [15, '%', 'средняя конверсия']] as const).map(([value, suffix, label]) => <div key={label}><dt className="bl-body bl-secondary">{label}</dt><dd>{calm ? `${value}${suffix}` : <Num value={value} suffix={suffix} from={0}/>}</dd></div>)}</dl>
     </section>
@@ -700,7 +699,7 @@ export default function LandingV2({ onStart }: { onStart?: () => void } = {}) {
 
       </main>
       <footer className="footer bl-caption">
-        <span>© 2026 рекламная платформа билайна</span>
+        <span>© 2026 партнёрская платформа билайна</span>
         <span className="bl-row" style={{ ['--bl-gap' as string]: '24px' }}><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link></span>
       </footer>
     </div></LaunchContext.Provider>

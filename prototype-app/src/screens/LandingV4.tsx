@@ -1,79 +1,57 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { motion, useInView, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react'
 import { ArrowRight, Check } from 'lucide-react'
 import { Brand } from '../ui'
 import { Creative, creativeOf } from '../creative'
 import { DEMO_AD } from '../mock'
 import { AppScreenshotPhone } from './AppScreenshotPhone'
-import { CampaignAction, Clients, ForEveryone, Hero, LaunchContext, SketchMetrics, SURFACES as BASE_SURFACES, useHeaderCta } from './LandingV2'
+import { CampaignAction, Hero, LaunchContext, SketchMetrics, SURFACES as BASE_SURFACES, useHeaderCta } from './LandingV2'
 import { HowGraphic } from './HowGraphics'
 import './landing-v3.css'
 import './landing-motion.css'
 import './v3-v2-theme.css'
 import './landing-v4.css'
 
-const SURFACES = BASE_SURFACES.map(surface => surface.k === 'showcase' ? { ...surface, t: 'в разделе «подарки и акции»' } : surface)
+const SURFACES = BASE_SURFACES.map(surface => surface.k === 'showcase'
+  ? { ...surface, t: 'в разделе «подарки и акции»' }
+  : surface.k === 'rest' ? { ...surface, t: 'на витринах партнёров', d: 'Привлекайте клиентов с витрин партнёров.' } : surface)
 const STEPS = [
   { kind: 'business', title: 'укажите ваш бизнес', text: 'Введите ИНН и телефон, проверьте сведения и добавьте точки, куда приглашать клиентов.' },
   { kind: 'offer', title: 'соберите оффер', text: 'Подготовьте предложение на основе данных бизнеса. Добавьте изображение, скидку или промокод.' },
   { kind: 'audience', title: 'выберите клиентов', text: 'Укажите, кому и в каких ситуациях показывать рекламу. От вашего района до всей страны.' },
   { kind: 'guests', title: 'встречайте новых гостей', text: 'Гости приходят за кофе и завтраком. Встречайте их с улыбкой и давайте повод вернуться.' },
 ] as const
-const NAV = [['how', 'как это работает'], ['where', 'где покажем'], ['cases', 'для кого']] as const
+const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
 const STEP_STATUS = [
-  ['находим ваш бизнес…', 'точка добавлена'],
-  ['собираем креатив…', 'креатив готов'],
-  ['выбираем подходящих…', 'аудитория подобрана'],
-  ['ждём первых гостей…', 'визит подтверждён'],
+  'точка добавлена', 'креатив готов', 'аудитория подобрана', 'визит подтверждён',
 ] as const
 
-function HowItWorks() {
-  const ref = useRef<HTMLDivElement>(null)
-  const visible = useInView(ref, { amount: .35 })
+function HowStep({ step, index, progress }: { step: typeof STEPS[number]; index: number; progress: MotionValue<number> }) {
   const reduce = useReducedMotion()
-  const [tick, setTick] = useState(0)
-  const [pageVisible, setPageVisible] = useState(!document.hidden)
-  const selected = Math.floor(tick / 3)
-  useEffect(() => {
-    const update = () => setPageVisible(!document.hidden)
-    document.addEventListener('visibilitychange', update)
-    return () => document.removeEventListener('visibilitychange', update)
-  }, [])
-  useEffect(() => {
-    if (!visible || !pageVisible || reduce) return
-    const timer = setTimeout(() => setTick(value => (value + 1) % 12), tick % 3 === 2 ? 1500 : 800)
-    return () => clearTimeout(timer)
-  }, [visible, pageVisible, reduce, tick])
-  return <section id="how" className="bl-section bl-section--wide v4-how">
-    <div className="section-head"><h2 className="bl-display-l">как это работает</h2></div>
-    <div className="v4-how-layout">
-      <ol className="v4-step-list">
-        {STEPS.map((step, index) => <li key={step.kind}>
-          <button type="button" className={selected === index ? 'is-selected' : ''} aria-pressed={selected === index} aria-controls="v4-how-scene" onClick={() => {
-            setTick(index * 3)
-            if (matchMedia('(max-width: 767px)').matches) ref.current?.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'center' })
-          }}>
-            <span className="v4-step-number">0{index + 1}</span>
-            <span><span className="bl-h3">{step.title}</span><span className="bl-body bl-secondary">{step.text}</span></span>
-            <ArrowRight size={20} className="v4-step-arrow"/>
-          </button>
-        </li>)}
-      </ol>
-      <div className="v4-how-stage" ref={ref} id="v4-how-scene" role="img" aria-label={`Демонстрация: ${STEPS[selected].title}`}>
-        <div className="v4-how-art">
-        {STEPS.map((step, index) => <motion.div className="v4-how-scene" key={step.kind} aria-hidden="true" initial={false} animate={{ opacity: selected === index ? 1 : 0, y: selected === index ? 0 : 12 }} transition={{ duration: reduce ? 0 : .35 }}>
-          <HowGraphic kind={step.kind} unified controlledPhase={index === selected ? tick % 3 : 2}/>
-        </motion.div>)}
-        </div>
-        <div className={`v4-scene-status${reduce || tick % 3 === 2 ? ' is-done' : ''}`}>
-          <span>{STEP_STATUS[selected][reduce || tick % 3 === 2 ? 1 : 0]}</span>
-          <span className="v4-scene-status-icon"><Check size={16}/></span>
-        </div>
-        <div className="v4-scene-caption"><span>кофейня «Зерно»</span><span>0{selected + 1} / 04</span></div>
+  const scale = useTransform(progress, [index / STEPS.length, 1], [1, 1 - (STEPS.length - 1 - index) * .025])
+  return <li className="v4-stack-step" style={{ '--step-index': index } as CSSProperties}>
+    <motion.article className={`v4-stack-card v4-stack-card--${step.kind}`} style={{ scale: reduce ? 1 : scale }} aria-labelledby={`v4-step-${step.kind}`}>
+      <div className="v4-stack-copy">
+        <span className="v4-stack-count">0{index + 1} / 04</span>
+        <h3 id={`v4-step-${step.kind}`}>{step.title}</h3>
+        <p>{step.text}</p>
+        <span className="v4-stack-result"><Check size={18}/>{STEP_STATUS[index]}</span>
       </div>
+      <div className="v4-stack-visual"><div className="v4-stack-art" data-ss-fill><HowGraphic kind={step.kind} unified controlledPhase={2}/></div></div>
+    </motion.article>
+  </li>
+}
+
+function HowItWorks() {
+  const ref = useRef<HTMLOListElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 176px', 'end end'] })
+  return <section id="how" className="bl-section bl-section--wide v4-how" aria-labelledby="v4-how-title">
+    <div className="v4-how-head">
+      <h2 id="v4-how-title" className="bl-display-l">как это работает</h2>
+      <CampaignAction className="bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction>
     </div>
-    <div className="v4-action-row"><CampaignAction className="bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction><span className="bl-caption bl-secondary">начните с ИНН и телефона</span></div>
+    <ol className="v4-step-stack" ref={ref}>{STEPS.map((step, index) => <HowStep key={step.kind} step={step} index={index} progress={scrollYProgress}/>)}</ol>
   </section>
 }
 
@@ -134,9 +112,13 @@ export default function LandingV4() {
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
-        <Hero showPlaybackControl={false} phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/><Clients calm/><Placements/><ForEveryone calm/><Final/>
+        <Hero showPlaybackControl={false} phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/>
+        {/* Временно скрыто: <Clients calm/> */}
+        <Placements/>
+        {/* Временно скрыто: <ForEveryone calm/> */}
+        <Final/>
       </main>
-      <footer className="footer bl-caption"><span>© 2026 рекламная платформа билайна</span><span className="bl-row"><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link></span></footer>
+      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
     </div>
   </LaunchContext.Provider></div>
 }

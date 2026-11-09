@@ -53,7 +53,7 @@ function OnRoute() {
   useEffect(() => {
     scrollTo(0, 0)
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
-    document.title = pathname === '/v4' ? 'Рекламная платформа билайна · версия 4' : pathname === '/v3' ? 'Рекламная платформа билайна · версия 3' : pathname === '/' || pathname === '/v2' || pathname === '/mvp' ? 'Рекламная платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · рекламная платформа билайна`
+    document.title = pathname === '/v4' ? 'Партнёрская платформа билайна · версия 4' : pathname === '/v3' ? 'Партнёрская платформа билайна · версия 3' : pathname === '/' || pathname === '/v2' || pathname === '/mvp' ? 'Партнёрская платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · партнёрская платформа билайна`
   }, [pathname])
   return null
 }

@@ -8,9 +8,9 @@ import { $api, act, queryClient, useCampaigns, useCatalog, useCompany, type S } 
 /* ───────── бренд и шапка сценария ───────── */
 export function Brand({ to = '/' }: { to?: string }) {
   return (
-    <Link className="brand" to={to} aria-label="Рекламная платформа билайна, на главную">
+    <Link className="brand" to={to} aria-label="Партнёрская платформа билайна, на главную">
       <img className="bl-logo" src={logoUrl} alt="" width={44} height={44} />
-      <span className="brand__name">рекламная<br />платформа</span>
+      <span className="brand__name">партнёрская<br />платформа</span>
     </Link>
   )
 }

@@ -2,20 +2,42 @@
 
 Route: `/#/v4`. V3 remains at `/#/v3`.
 
-V4 retains seven V3 content sections in their original order; the testimonial and bonus section was removed at the user's request. V4 follows one coffee campaign through business setup, creative, audience, placement and a final preview. Demonstration art consistently uses the existing «Зерно / −20% на первую покупку» creative. Demonstration data never enters the campaign form.
+V4 has five visible content sections; the client logos and case studies are temporarily commented out, and the testimonial and bonus section was removed at the user's request. V4 follows one coffee campaign through business setup, creative, audience, placement and a final preview. Demonstration art consistently uses the existing «Зерно / −20% на первую покупку» creative. Demonstration data never enters the campaign form.
 
-The how-it-works section now has four selectable explanations and one coordinated product stage. Playback loops while at least 35% of the stage is visible and the page is active; leaving the viewport or hiding the tab pauses it. Manual selection jumps to a step and autoplay continues. Playback buttons on the story, hero and audience dots are removed in V4. Reduced motion shows completed scene states and disables automatic playback. Placements are manually selected beside a stable phone; the ad card uses a shared layout transition. Mobile placement explanations appear below the phone.
+The how-it-works section has four scroll-stacking cards, inspired by the user's 21st.dev Stacking Cards reference. At widths of at least 540px and heights of at least 640px, native sticky positioning layers each new card over the previous ones; the installed Motion library slightly scales the covered cards with page-scroll progress. There is no nested scroll area or wheel interception. The section heading and launch action stay above the cards. Cards use restrained white, light grey and graphite surfaces, with small yellow accents and the existing purple offer. Each step keeps its full explanation and completed product illustration; the previous timed carousel is removed. On smaller windows and with reduced motion, all four cards appear in normal document flow. Placements remain manually selected beside a stable phone.
 
-Six client logos are static. Metrics, case results and bonus amounts show their final values immediately. V4 styling is scoped under `.v4`; the existing campaign wizard and design-system components are reused. Shared sections expose optional calm presentation with original behavior as default.
+Metrics show their final values immediately. V4 styling is scoped under `.v4`; the existing campaign wizard and design-system components are reused. Shared sections expose optional calm presentation with original behavior as default.
+
+## One section per screen
+
+At widths of 600px and above, the hero, metrics, placements and final section have a minimum height of `100svh - 100px`, reserving the 76px sticky header and 24px of clearance. How-it-works is a deliberate exception: each card fits beneath the navigation and section heading, while the four steps provide the page-scroll distance for stacking. Sections can grow if their contents need more room. Navigation respects the header. Below 600px, the page keeps its natural content height.
+
+Each section uses the available height for its composition. Metrics have a large headline and audience map above a bottom row of large figures; at 600–767px, the map sits between the heading and figures. Each story card pairs its explanation with a full-height product illustration. The artwork can grow beyond its original design size, and the final creative becomes a taller card with space reserved for its copy and coffee image.
+
+Desktop windows up to 1100px high use tighter section spacing and a phone sized to the available height. Windows at least 1280×800 use larger headings and illustrations. At 600–767px, the story cards and placements retain two columns for the desktop preview pane. Phone contents scale with the phone, keeping the creative visible in every placement. The story artwork uses the actual illustration height instead of an oversized aspect-ratio placeholder.
+
+The stacking-card revision passed layout assertions at 19 viewport sizes from 320×740 to 1920×1080, including the 539/540px breakpoint and 900×600. All four steps were checked scrolling forward and backward at 1440×800, 1280×640, 662×742 and 600×640; stacking also passed at 570×742. Cards fit below both headings, their copy stays inside the card, and their illustration stays inside its panel. Keyboard page scrolling, exiting the stack, reduced-motion fallback and the campaign CTA passed. The remaining four sections still fill one usable screen on desktop. Metrics assertions also check separation from the map. Real MacBook hardware and Safari were not checked.
 
 ## Verification
 
+### Audience map
+
+V4 replaces the regular dot grid with a dark vector map of central Moscow. The basemap uses actual OpenStreetMap road, water and park geometry, projected together with the points in Web Mercator, north up. Bounds: south 55.68, west 37.48, north 55.82, east 37.78. OSM snapshot: 2026-11-08T21:21:00Z, retrieved through `https://ovp.dresel.systems/api/interpreter`.
+
+The 240 audience points are illustrative, deterministically sampled from OSM building centres. They are not subscriber records, a measured density or coverage data. Generation excludes water polygons and crowded point pairs. The accessible description identifies this as a demonstration. Visible captions under the map are removed at the user's request. The existing independent pulses pause outside the viewport and with reduced motion; static points remain visible.
+
+`scripts/moscow-map.overpassql` reproduces the source query. Save its Overpass JSON response, then run `python3 scripts/build-audience-map.py /path/to/moscow-osm.json`. The script produces `public/img/moscow-audience-map.svg` and `src/screens/moscow-audience.json`; geographic-layer and point-placement assertions run during generation. The local SVG is 981 KB before compression, about 293 KB gzipped. No map SDK, API key or third-party map requests are needed at runtime.
+
+Map data: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL. The attribution link is in the page footer. The original dot-grid presentation remains on the other landing variants.
+
+### Landing checks
+
 - TypeScript and Vite production build passed.
 - Browser inspected at 320, 375, 768 and 1440 px, plus the initial wide desktop viewport.
-- The original eight-section layout, six logos, one selected story step, one selected placement, no horizontal overflow, and separated header controls were verified with assertions. Reusable browser assertions in `scripts/check-landing-v4.mjs` now expect seven sections after removal of the testimonial and bonus block.
-- Story autoplay cycles past step four and pauses outside the viewport; manual selection remains available.
+- Reusable browser assertions in `scripts/check-landing-v4.mjs` expect five sections, all four story cards, one selected placement, no horizontal overflow, separated header controls, a visible creative, and one screen for the four non-stacking sections on desktop.
+- Scroll stacking is reversible, and the next section remains reachable with normal page scrolling.
 - Placement switching, stable phone and visible campaign creative checked.
-- CTA opened the existing wizard at 320 px; focus entered the dialog; Escape closed it and restored focus.
+- The how-it-works CTA opens the existing V4 campaign page at `/#/v4/create`.
 - V3 regression check retained eight sections and its original four-card setup layout.
 - No browser console errors observed.
 

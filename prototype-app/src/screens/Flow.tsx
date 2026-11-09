@@ -272,7 +272,7 @@ export function Approve() {
   return (
     <div className="bl-page">
       <div className="phone"><div className="phone__in">
-        <div className="bl-row" style={{ justifyContent: 'space-between' }}><img className="bl-logo bl-logo--s" src={logoUrl} alt="билайн" width={32} height={32} /><span className="bl-caption">рекламная платформа</span></div>
+        <div className="bl-row" style={{ justifyContent: 'space-between' }}><img className="bl-logo bl-logo--s" src={logoUrl} alt="билайн" width={32} height={32} /><span className="bl-caption">партнёрская платформа</span></div>
         <AnimatePresence mode="wait">
           {done ? (
             <motion.div key="done" className="bl-stack" style={{ ...gap('16px'), flex: 1 }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>

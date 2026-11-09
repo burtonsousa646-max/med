@@ -47,7 +47,7 @@ function PublicDocument({ privacy = false }: { privacy?: boolean }) {
     <header className="bl-header"><Brand to="/v4"/><Link className="bl-btn" to="/v4">На главную</Link></header>
     <main className="bl-section bl-stack">
       <h1 className="bl-h1">{privacy ? 'Обработка персональных данных' : 'Оферта на размещение рекламы'}</h1>
-      <p className="bl-body bl-secondary">Документ пока не опубликован. Добавим его после утверждения</p>
+      {privacy ? <p className="bl-body bl-secondary">Документ пока не опубликован. Добавим его после утверждения</p> : <a className="bl-btn bl-btn--primary" href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer">Открыть оферту (PDF)</a>}
     </main>
   </div>
 }

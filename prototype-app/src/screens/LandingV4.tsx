@@ -144,7 +144,7 @@ export default function LandingV4() {
         {/* Временно скрыто: <ForEveryone calm/> */}
         <Final/>
       </main>
-      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><Link to="/v4/offer" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'offer_document' })}>оферта</Link><Link to="/v4/privacy" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'privacy_document' })}>обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
+      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><a href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'offer_document' })}>оферта</a><Link to="/v4/privacy" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'privacy_document' })}>обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
     </div>
   </LaunchContext.Provider></div>
 }

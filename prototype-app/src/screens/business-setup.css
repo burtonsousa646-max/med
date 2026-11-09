@@ -26,6 +26,9 @@
 .v3-business-explainer li small { display: block; font-size: 12px; color: var(--v3-muted); margin-top: 4px; }
 .v3-business-privacy { margin: 0; font-size: 12px; line-height: 1.5; color: var(--v3-muted); max-width: 330px; }
 .v3-manual-entry { justify-self: start; }
+.v3-offer-consent .bl-check { font-size: 14px; line-height: 20px; }
+.v3-offer-consent a { text-decoration: underline; text-underline-offset: 2px; }
+.v3-offer-consent-error { margin: 8px 0 0; color: #a63529; font-size: 14px; line-height: 20px; }
 .v3-lookup-feedback:empty { display: none; }
 .v3-lookup-loading { display: flex; gap: 12px; align-items: center; padding: 16px; border: 1px solid var(--v3-line); border-radius: 12px; font-size: 15px; }
 .v3-lookup-loading small { display: block; font-size: 12px; margin-top: 5px; color: var(--v3-muted); }

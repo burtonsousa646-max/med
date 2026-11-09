@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, Building2, Check, MapPin, Plus, X } from 'lucide-react'
 import { Field } from './CampaignField'
@@ -12,14 +13,25 @@ type Props = {
   phase: BusinessPhase; business: Business; onChange: (value: Business) => void;
   profile: DemoBusinessProfile | null; searching: boolean; onCancel: () => void; onManual: () => void;
   addresses: string[]; onAddresses: (value: string[]) => void; online: boolean; onOnline: (value: boolean) => void;
+  offerAccepted: boolean; onOfferAccepted?: (value: boolean) => void;
 }
-export function BusinessSetup({phase,business,onChange,profile,searching,onCancel,onManual,addresses,onAddresses,online,onOnline}: Props) {
+export function BusinessSetup({phase,business,onChange,profile,searching,onCancel,onManual,addresses,onAddresses,online,onOnline,offerAccepted,onOfferAccepted}: Props) {
   const reduce = useReducedMotion()
+  const consentId = useId()
+  const [consentError, setConsentError] = useState(false)
   const update = (key: keyof Business, value: string) => onChange({...business,[key]:value})
   return phase === 'identify' ? <div className="v3-business-start">
     <div className="v3-fields v3-business-inputs">
       <Field label="ИНН" name="inn" inputMode="numeric" autoComplete="off" placeholder="10 или 12 цифр" value={business.inn} onChange={e=>update('inn',e.target.value.replace(/\D/g,''))} maxLength={12} error={innError(business.inn)} hint={business.name ? "При смене ИНН текущие настройки сбросятся" : "10 цифр для компании или 12 для ИП"} disabled={searching} required />
       <Field label="контактный телефон" name="phone" type="tel" autoComplete="tel" placeholder="+7 (900) 000-00-00" value={business.phone} onChange={e=>update('phone',e.target.value)} onBlur={e=>update('phone',formatPhone(e.target.value))} maxLength={25} error={phoneError(business.phone)} hint="Укажите номер, по которому с вами можно связаться" disabled={searching} required />
+      {onOfferAccepted && <div className="v3-offer-consent">
+        <label className="bl-check">
+          <input type="checkbox" name="offerAccepted" required checked={offerAccepted} disabled={searching} aria-invalid={consentError && !offerAccepted} aria-describedby={consentError && !offerAccepted ? consentId : undefined} onChange={event => { onOfferAccepted(event.target.checked); setConsentError(false) }} onInvalid={event => { event.preventDefault(); setConsentError(true) }}/>
+          <span className="bl-check__box" aria-hidden="true"/>
+          <span>Принимаю условия <a href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer">оферты</a></span>
+        </label>
+        {consentError && !offerAccepted && <p id={consentId} className="v3-offer-consent-error" role="alert">Чтобы продолжить, примите условия оферты</p>}
+      </div>}
       <div className="v3-lookup-feedback" role="status" aria-live="polite">
         {searching ? <motion.div initial={reduce ? false : {opacity:0,y:5}} animate={{opacity:1,y:0}} className="v3-lookup-loading"><span className="v3-lookup-spinner" aria-hidden="true"/><div>ищем ваш бизнес<small>Ищем компанию и её адреса</small></div><button type="button" className="v3-text-button" onClick={onCancel}>отменить</button></motion.div> : null}
       </div>

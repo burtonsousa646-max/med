@@ -125,6 +125,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const [step, setStep] = useState(Math.max(0, Math.min(2, initialStage - 1)))
   const [complete, setComplete] = useState(initialStage === 4)
   const [business, setBusiness] = useState(initial.business)
+  const [offerAccepted, setOfferAccepted] = useState(initial.offerAccepted === true)
   const [addresses, setAddresses] = useState(initial.addresses)
   const [businessPhase, updateBusinessPhase] = useState<BusinessPhase>(initialStage === 0 ? 'identify' : 'review')
   const [profile, setProfile] = useState<DemoBusinessProfile | null>(initial.hasProfile ? { ...DEMO_PROFILE, ...initial.business } : null)
@@ -175,7 +176,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const currentStage = complete ? 4 : step === 0 ? businessPhase === 'identify' ? 0 : 1 : step + 1
   const currentDraft: CampaignDraft = { business, addresses, online, offer, offerImage, logoImage, audience, triggers,
     confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile: Boolean(profile),
-    stage: currentStage, reached: Math.max(reached, currentStage) }
+    stage: currentStage, reached: Math.max(reached, currentStage), offerAccepted: !page || offerAccepted }
   const stepName = campaignStages[currentStage]
   const offerFlags = { has_image: Boolean(offerImage), has_logo: Boolean(logoImage), has_promo: Boolean(offer.promo), has_discount: Boolean(offer.discount), tone: offer.tone }
 
@@ -187,7 +188,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   useEffect(() => {
     void onDraftChange?.(currentDraft)
-  }, [business, addresses, online, offer, offerImage, logoImage, audience, triggers, filled, profile, currentStage, reached, onDraftChange])
+  }, [business, addresses, online, offer, offerImage, logoImage, audience, triggers, filled, profile, currentStage, reached, offerAccepted, onDraftChange])
 
   useLayoutEffect(() => {
     if (!page) return
@@ -498,7 +499,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
         <div className="v3-dialog__body" ref={scroller}>
           <motion.div className="v3-dialog__scene" initial={false} animate={sceneMotion} inert={busy}>
           {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : step === 1 && generating ? 'Собираем ваш оффер' : introductions[step][0]}</h3><p>{step === 0 ? 'Сформируем оффер на основе информации о компании' : step === 1 && generating ? 'Готовим текст и изображение для вашей акции' : introductions[step][1]}</p></div><span>0{step + 1} / 03</span></div>}
-          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} />}
+          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} offerAccepted={offerAccepted} onOfferAccepted={page ? setOfferAccepted : undefined} />}
           {!complete && step === 1 && !generating && <div className="v3-campaign-context"><span><Check size={14}/> {name}</span><span>{online ? 'онлайн' : business.city + ' · точек: ' + addresses.filter(a=>a.trim()).length}</span></div>}
 
           {!complete && step === 1 && <div className="v3-dialog__split campaign-offer-editor" data-generating={generating} data-phase={generation.phase}>

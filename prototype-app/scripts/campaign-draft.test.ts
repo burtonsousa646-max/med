@@ -6,6 +6,7 @@ function completedDraft() {
   const draft = emptyCampaignDraft()
   draft.business = { name: 'Кофейня', category: 'Кофе и завтраки', inn: '1234567894', phone: '+79000000001', city: 'Москва', website: '' }
   draft.confirmedInn = draft.business.inn
+  draft.offerAccepted = true
   draft.addresses = ['Покровка, 12']
   draft.offer = { ...draft.offer, title: 'Загляните на завтрак', discount: '20' }
   draft.filled = true
@@ -22,9 +23,22 @@ test('stored drafts validate before restoring fields and files', () => {
   for (const broken of [null, {}, { ...draft, business: null }, { ...draft, stage: 4 },
     { ...draft, audience: [0, 0, 0, 0, 3] }, { ...draft, addresses: [] },
     { ...draft, offer: { ...draft.offer, tone: 'unknown' } },
-    { ...draft, offerImage: { name: 'lost.png' } }, { ...draft, reached: 99 }]) {
+    { ...draft, offerImage: { name: 'lost.png' } }, { ...draft, reached: 99 }, { ...draft, offerAccepted: 'yes' }]) {
     assert.equal(isCampaignDraft(broken), false)
   }
+})
+
+test('offer consent is required for lookup continuation and restored routes, including older drafts', () => {
+  const draft = completedDraft()
+  for (const accepted of [false, undefined]) {
+    draft.offerAccepted = accepted
+    assert.equal(isCampaignDraft(draft), true, 'Older drafts keep their data')
+    assert.equal(campaignAllowedStage(draft), 0)
+    for (const route of ['details', 'offer', 'audience', 'success', undefined]) assert.equal(campaignStage(route, draft), 0)
+  }
+  draft.offerAccepted = true
+  assert.equal(campaignStage('success', draft), 4)
+  assert.equal(emptyCampaignDraft().offerAccepted, false)
 })
 
 test('URLs restore a visited step and cannot skip unfinished setup', () => {

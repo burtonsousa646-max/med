@@ -40,16 +40,16 @@ export function OfferAssistant({ offer, active, onChange, onWorking }: {
     setMessages(current => [...current.slice(-10), { role: 'user', text: value.trim() }])
     const result = reviseOffer(value, offer)
     if (!result) {
-      const reply = 'Могу изменить фон, размер чашки, скидку, промокод или заголовок в кавычках. Остальное доступно в ручном редакторе.'
+      const reply = 'Напишите, какой цвет, размер чашки, скидку или промокод хотите. Для других правок нажмите «Редактировать»'
       setMessages(current => [...current, { role: 'assistant', text: reply }]); setMessage(''); setPrompt(''); return
     }
     input.current?.focus({ preventScroll: true })
-    setPrompt(value); setMessage('Примеряем вашу идею…'); setWorking(true); onWorking(true)
+    setPrompt(value); setMessage('Меняю предложение…'); setWorking(true); onWorking(true)
     timer.current = window.setTimeout(() => {
       setPrevious(offer); applied.current = result.offer; onChange(result.offer)
       timer.current = window.setTimeout(() => {
         timer.current = null; setWorking(false); onWorking(false)
-        setMessages(current => [...current, { role: 'assistant', text: result.message + '. Можно продолжить правки или перейти к выбору клиентов.' }])
+        setMessages(current => [...current, { role: 'assistant', text: result.message }])
         setMessage(''); setPrompt(''); input.current?.focus({ preventScroll: true })
       }, reduce ? 50 : 900)
     }, reduce ? 50 : 450)
@@ -59,21 +59,21 @@ export function OfferAssistant({ offer, active, onChange, onWorking }: {
     if (speech.current) { speech.current.stop(); return }
     const browser = window as Window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition }
     const Constructor = browser.SpeechRecognition ?? browser.webkitSpeechRecognition
-    if (!Constructor) { setMessage('В этом браузере нет диктовки. Напишите пожелание или выберите пример ниже.'); input.current?.focus(); return }
+    if (!Constructor) { setMessage('В этом браузере голосовой ввод недоступен. Напишите пожелание'); input.current?.focus(); return }
     const recognition = new Constructor()
     recognition.lang = 'ru-RU'; recognition.interimResults = true
     recognition.onresult = ({ results }) => setPrompt(Array.from(results).map(result => result[0]?.transcript || '').join(' ').slice(0, 400))
-    recognition.onerror = () => setMessage('Не удалось услышать вас. Проверьте доступ к микрофону или напишите пожелание.')
+    recognition.onerror = () => setMessage('Не удалось записать голос. Проверьте доступ к микрофону или напишите пожелание')
     recognition.onend = () => { speech.current = null; setListening(false) }
-    try { speech.current = recognition; recognition.start(); setListening(true); setMessage('Слушаю. Затем проверьте текст и нажмите стрелку.') }
-    catch { speech.current = null; setListening(false); setMessage('Диктовка недоступна. Можно написать пожелание.') }
+    try { speech.current = recognition; recognition.start(); setListening(true); setMessage('Слушаю вас. Проверьте текст перед отправкой') }
+    catch { speech.current = null; setListening(false); setMessage('Голосовой ввод недоступен. Напишите пожелание') }
   }
   const examples = [
     { label: 'Другой цвет', request: offer.tone === 'blue' ? 'Сделай фон фиолетовым' : 'Сделай фон синим' },
     { label: 'Скидка 25%', request: 'Сделай скидку 25%' },
   ]
   return <section className="offer-assistant" aria-label="Изменить оффер с ИИ" data-working={working} data-listening={listening}>
-    <div className="offer-assistant-heading"><span><Sparkles size={18}/></span><div><h4>Что изменить?</h4><p>Напишите или скажите голосом.</p></div></div>
+    <div className="offer-assistant-heading"><span><Sparkles size={18}/></span><div><h4>Что изменить?</h4><p>Напишите или скажите голосом</p></div></div>
     {messages.length > 0 && <div ref={log} className="offer-chat-log" role="log" aria-label="Переписка с дизайнером" aria-live="polite">
       {messages.map((message, index) => <p key={index} className="offer-chat-message" data-role={message.role}><span className="offer-chat-author">{message.role === 'user' ? 'вы' : 'дизайнер'}</span>{message.text}</p>)}
     </div>}

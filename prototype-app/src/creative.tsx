@@ -33,10 +33,10 @@ export function CrImg({ o }: { o: CreativeData }) {
     : <picture><source srcSet={`${base}.avif`} type="image/avif" /><img className="cr__img" src={`${base}.png`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} /></picture>
 }
 
-export function Creative({ o, erid, wide }: { o: CreativeData; erid: string; wide?: boolean }) {
+export function Creative({ o, erid, wide, image }: { o: CreativeData; erid: string; wide?: boolean; image?: string }) {
   return (
-    <div className={`cr cr--${o.tone}${wide ? ' cr--wide' : ''}`}>
-      <CrImg o={o} />
+    <div className={`cr cr--${o.tone}${wide ? ' cr--wide' : ''}${image ? ' cr--photo' : ''}${o.mark.length > 30 || o.small.length > 60 || o.big.length > 60 ? ' cr--dense' : ''}`}>
+      {image ? <img className="cr__photo" src={image} alt="" decoding="async"/> : <CrImg o={o} />}
       <span className="cr__text">
         <span className="cr__mark">{o.mark}</span>
         {/* условие без цифры, например «второй кофе в подарок», переносится строками */}

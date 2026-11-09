@@ -41,6 +41,16 @@ function Offer() {
   )
 }
 
+function PublicDocument({ privacy = false }: { privacy?: boolean }) {
+  return <div className="v3-v2-theme bl-page wrap">
+    <header className="bl-header"><Brand to="/v4"/><Link className="bl-btn" to="/v4">На главную</Link></header>
+    <main className="bl-section bl-stack">
+      <h1 className="bl-h1">{privacy ? 'Обработка персональных данных' : 'Оферта на размещение рекламы'}</h1>
+      <p className="bl-body bl-secondary">Документ пока не опубликован. Добавим его после утверждения</p>
+    </main>
+  </div>
+}
+
 // «Статистика» в меню кабинета — последняя запущенная кампания
 function LatestStats() {
   const live = useCampaigns().find(c => c.launchedAt || c.status === 'moderation')
@@ -52,7 +62,7 @@ function OnRoute() {
   const { pathname } = useLocation()
   useEffect(() => {
     scrollTo(0, 0)
-    const name = pathname.startsWith('/v4/create') ? 'создание кампании' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
+    const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/v4' ? 'Партнёрская платформа билайна · версия 4' : pathname === '/v3' ? 'Партнёрская платформа билайна · версия 3' : pathname === '/' || pathname === '/v2' || pathname === '/mvp' ? 'Партнёрская платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · партнёрская платформа билайна`
   }, [pathname])
   return null
@@ -88,6 +98,8 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
                 <Route path="/v4/create/:stage?" element={<CampaignPage />} />
+                <Route path="/v4/offer" element={<PublicDocument />} />
+                <Route path="/v4/privacy" element={<PublicDocument privacy />} />
                 <Route path="/mvp" element={<LandingV2 />} />
                 <Route path="/mvp/login" element={<MvpLogin />} />
                 <Route path="/mvp/new" element={<MvpNew />} />

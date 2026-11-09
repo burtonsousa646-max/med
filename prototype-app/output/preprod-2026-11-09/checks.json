@@ -1,0 +1,270 @@
+{
+  "viewports": [
+    {
+      "screen": "landing",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: V4 content, navigation and selection invariants at 320px"
+    },
+    {
+      "screen": "landing",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: V4 content, navigation and selection invariants at 390px"
+    },
+    {
+      "screen": "landing",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: V4 content, navigation and selection invariants at 768px"
+    },
+    {
+      "screen": "landing",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: V4 content, navigation and selection invariants at 1440px"
+    },
+    {
+      "screen": "business",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "business",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "business",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "business",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "details",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "details",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "details",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "details",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "offer",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "offer",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "offer",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "offer",
+      "width": 844,
+      "height": 390,
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "offer",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "audience",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "audience",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "audience",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "audience",
+      "width": 844,
+      "height": 390,
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "audience",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "success",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "success",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "success",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "success",
+      "width": 844,
+      "height": 390,
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "success",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "landing-new-heading",
+      "width": 320,
+      "height": 800,
+      "result": "PASS: V4 content, navigation and selection invariants at 320px"
+    },
+    {
+      "screen": "landing-new-heading",
+      "width": 390,
+      "height": 844,
+      "result": "PASS: V4 content, navigation and selection invariants at 390px"
+    },
+    {
+      "screen": "landing-new-heading",
+      "width": 768,
+      "height": 1024,
+      "result": "PASS: V4 content, navigation and selection invariants at 768px"
+    },
+    {
+      "screen": "landing-new-heading",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS: V4 content, navigation and selection invariants at 1440px"
+    }
+  ],
+  "ctas": [
+    {
+      "selector": "#v2-hero",
+      "url": "http://127.0.0.1:5174/#/v4/create/success"
+    },
+    {
+      "selector": "#how",
+      "url": "http://127.0.0.1:5174/#/v4/create/success"
+    },
+    {
+      "selector": "#where",
+      "url": "http://127.0.0.1:5174/#/v4/create/success"
+    },
+    {
+      "selector": "#v2-final",
+      "url": "http://127.0.0.1:5174/#/v4/create/success"
+    }
+  ],
+  "placements": [
+    {
+      "caption": "на главной приложенияКогда абонент открывает приложение и проверяет баланс",
+      "phone": true,
+      "selected": 1
+    },
+    {
+      "caption": "в разделе «подарки и акции»Среди акций магазинов и кафе рядом",
+      "phone": true,
+      "selected": 1
+    },
+    {
+      "caption": "сразу после оплатыПосле оплаты услуг билайна",
+      "phone": true,
+      "selected": 1
+    },
+    {
+      "caption": "на витринах партнёровНа сайтах и в приложениях партнёров",
+      "phone": true,
+      "selected": 1
+    }
+  ],
+  "green": {
+    "bg": "rgb(43, 218, 142)",
+    "className": "cr cr--green cr--wide",
+    "fg": "rgb(255, 200, 0)"
+  },
+  "reloadedTone": "cr cr--violet cr--wide",
+  "emptyDiscount": {
+    "field": "",
+    "preview": "−20%"
+  },
+  "routeBypass": {
+    "offerText": "Ваш бизнескофейня «Зерно»Ваш офферскидка на первый заказВаши клиентыМосква · выше среднего",
+    "success": true,
+    "url": "#/v4/create/success"
+  },
+  "photo": {
+    "photo": {
+      "bottom": 778.015625,
+      "height": 331.015625,
+      "left": 222,
+      "right": 735.0859375,
+      "top": 447,
+      "width": 513.0859375,
+      "x": 222,
+      "y": 447
+    },
+    "photoPosition": "absolute",
+    "photoZ": "auto",
+    "text": {
+      "bottom": 643.8515625,
+      "height": 173.6875,
+      "left": 245.1640625,
+      "right": 711.921875,
+      "top": 470.1640625,
+      "width": 466.7578125,
+      "x": 245.1640625,
+      "y": 470.1640625
+    },
+    "textZ": "auto"
+  }
+}

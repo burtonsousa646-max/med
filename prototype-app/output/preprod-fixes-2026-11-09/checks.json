@@ -1,0 +1,359 @@
+{
+  "viewports": [
+    {
+      "screen": "offer-photo",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "offer-photo",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "offer-photo",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "offer-photo",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "offer-photo",
+      "size": [
+        844,
+        390
+      ],
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "offer-long-copy",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "offer-long-copy",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "offer-long-copy",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "offer-long-copy",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "offer-long-copy",
+      "size": [
+        844,
+        390
+      ],
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "audience-photo-long",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "audience-photo-long",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "audience-photo-long",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "audience-photo-long",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "audience-photo-long",
+      "size": [
+        844,
+        390
+      ],
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "success-photo-long",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "success-photo-long",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "success-photo-long",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "success-photo-long",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "success-photo-long",
+      "size": [
+        844,
+        390
+      ],
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "business-new",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "business-new",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "business-new",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "business-new",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "details-new",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "details-new",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "details-new",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "details-new",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "offer-new-ready",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: campaign demo layout and focus at 320px"
+    },
+    {
+      "screen": "offer-new-ready",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "offer-new-ready",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: campaign demo layout and focus at 768px"
+    },
+    {
+      "screen": "offer-new-ready",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: campaign demo layout and focus at 1440px"
+    },
+    {
+      "screen": "offer-new-ready",
+      "size": [
+        844,
+        390
+      ],
+      "result": "PASS: campaign demo layout and focus at 844px"
+    },
+    {
+      "screen": "audience-new",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "success-new",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: campaign demo layout and focus at 390px"
+    },
+    {
+      "screen": "landing-fixed",
+      "size": [
+        320,
+        800
+      ],
+      "result": "PASS: V4 content, navigation and selection invariants at 320px"
+    },
+    {
+      "screen": "landing-fixed",
+      "size": [
+        390,
+        844
+      ],
+      "result": "PASS: V4 content, navigation and selection invariants at 390px"
+    },
+    {
+      "screen": "landing-fixed",
+      "size": [
+        768,
+        1024
+      ],
+      "result": "PASS: V4 content, navigation and selection invariants at 768px"
+    },
+    {
+      "screen": "landing-fixed",
+      "size": [
+        1440,
+        900
+      ],
+      "result": "PASS: V4 content, navigation and selection invariants at 1440px"
+    }
+  ],
+  "colors": [
+    {
+      "bg": "color(srgb 0.0539608 0.451922 0.839765)",
+      "big": "rgb(255, 255, 255)",
+      "small": "rgb(255, 255, 255)",
+      "tone": "cr cr--blue cr--wide cr--photo cr--dense",
+      "bigContrast": 4.714872051756568,
+      "smallContrast": 4.714872051756568
+    },
+    {
+      "bg": "rgb(255, 235, 187)",
+      "big": "rgb(40, 48, 63)",
+      "small": "rgb(40, 48, 63)",
+      "tone": "cr cr--light cr--wide cr--photo cr--dense",
+      "bigContrast": 11.265221817267475,
+      "smallContrast": 11.265221817267475
+    },
+    {
+      "bg": "rgb(98, 59, 206)",
+      "big": "rgb(255, 200, 0)",
+      "small": "rgb(255, 255, 255)",
+      "tone": "cr cr--violet cr--wide cr--photo cr--dense",
+      "bigContrast": 4.450912682567049,
+      "smallContrast": 6.9166174238056986
+    },
+    {
+      "bg": "rgb(43, 218, 142)",
+      "big": "rgb(40, 48, 63)",
+      "small": "rgb(40, 48, 63)",
+      "tone": "cr cr--green cr--wide cr--photo cr--dense",
+      "bigContrast": 7.270330951485487,
+      "smallContrast": 7.270330951485487
+    }
+  ],
+  "regressions": {
+    "greenRestores": true,
+    "emptyDiscountHasNoFallback": true,
+    "invalidSuccessRouteReturnsToOffer": true,
+    "invalidRestoredOfferCannotComplete": true,
+    "loginReturnsToV4": true,
+    "documentsHaveSeparateRoutes": true,
+    "freshFlowCompletes": true
+  }
+}

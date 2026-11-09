@@ -377,6 +377,10 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .cr--wide .cr__icon { right: 14cqmin; width: 44cqmin; height: 44cqmin; }
 .cr--wide .cr__small { max-width: 92cqmin; }
 .cr--wide .cr__big--text { max-width: 110cqmin; }
+.cr__photo { position: absolute; inset: 0 0 0 auto; width: 44%; height: 100%; object-fit: cover; }
+.cr.cr--photo .cr__text { right: 48%; }
+.cr--photo :is(.cr__mark, .cr__big, .cr__small) { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.cr--photo .cr__big--text { font-size: 8cqmin; }
 /* на витрине карточки бывают маленькими: текст креатива не мельче читаемого */
 .near-card .cr__mark { font-size: max(12px, 5.4cqmin); }
 .near-card .cr__small { font-size: max(13px, 6.4cqmin); }
@@ -922,3 +926,4 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 }
 
 @media(min-width:1440px) { .v2-sketch-how { grid-template-columns: repeat(4, minmax(0,1fr)); } .v2-sketch-art { height: 230px; } }
+.v3-v2-theme, .login { font-synthesis: none; }

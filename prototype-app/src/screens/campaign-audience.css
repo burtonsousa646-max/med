@@ -40,10 +40,9 @@
 .campaign-summary-creative { position: relative; overflow: hidden; }
 .campaign-summary-creative > .cr { width: 100%; border-radius: 0; aspect-ratio: 1.65; }
 .campaign-summary-creative .cr--violet { --cr-bg: var(--color-static-violet-600); }
-.campaign-summary-creative .cr__big { color: var(--color-static-yellow-300); }
+.campaign-summary-creative .cr__big { color: var(--cr-highlight); }
 .campaign-summary-creative .cr__small { max-width: 55cqmin; font-size: 6cqmin; }
 .campaign-summary-creative .cr__img { width: 86cqmin; height: 86cqmin; right: -10cqmin; bottom: -10cqmin; }
-.campaign-summary-creative > img { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .audience-summary-copy { padding: 24px; }
 .audience-summary h4 { font-size: 20px; line-height: 28px; font-weight: 400; margin: 0 0 24px; }
 .audience-summary dl { display: grid; gap: 20px; margin: 0; }

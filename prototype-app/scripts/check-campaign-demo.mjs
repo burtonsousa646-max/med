@@ -41,6 +41,13 @@ export function assertCampaignDemo() {
     assert(audience.querySelectorAll('.audience-moment input:checked').length === 1, 'One moment is selected')
     assert(audience.querySelector('.audience-summary dd')?.textContent.trim(), 'The targeting summary is visible')
   }
+  for (const creative of dialog.querySelectorAll('.cr--photo')) {
+    const photo = creative.querySelector('.cr__photo').getBoundingClientRect()
+    for (const text of creative.querySelectorAll('.cr__mark, .cr__big, .cr__small')) {
+      assert(text.getBoundingClientRect().right <= photo.left + 1, 'Uploaded photo has a separate area from the offer text')
+    }
+    assert(creative.querySelector('.cr__text').getBoundingClientRect().bottom <= creative.querySelector('.cr__erid').getBoundingClientRect().top, 'Offer text stays above the advertising label')
+  }
   for (const field of dialog.querySelectorAll('input[aria-invalid="true"]')) {
     assert(document.getElementById(field.getAttribute('aria-describedby'))?.textContent.trim(), 'Invalid fields have associated feedback')
   }

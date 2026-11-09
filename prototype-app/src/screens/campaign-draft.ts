@@ -1,5 +1,5 @@
-import type { Business } from '../../shared/campaign-business'
-import { emptyOffer, type OfferDraft } from './offer-assistant-demo.ts'
+import { innError, phoneError, textError, type Business } from '../../shared/campaign-business.ts'
+import { emptyOffer, offerErrors, type OfferDraft } from './offer-assistant-demo.ts'
 
 export const campaignStages = ['business', 'details', 'offer', 'audience', 'success'] as const
 export type CampaignDraft = {
@@ -34,9 +34,20 @@ export function isCampaignDraft(value: unknown): value is CampaignDraft {
     && Number.isInteger(draft.stage) && Number.isInteger(draft.reached) && draft.stage >= 0 && draft.stage <= draft.reached && draft.reached < campaignStages.length
 }
 
-export function campaignStage(requested: string | undefined, draft: Pick<CampaignDraft, 'stage' | 'reached'>) {
+export function campaignAllowedStage(draft: CampaignDraft) {
+  const { business, addresses, online, offer, audience } = draft
+  if (draft.confirmedInn !== business.inn || innError(business.inn) || phoneError(business.phone)) return 0
+  if (textError(business.name) || business.name.length > 80 || textError(business.category, '', 3) || business.category.length > 100
+    || (!online && (textError(business.city) || business.city.length > 80 || !addresses.length || addresses.some((address, index) => textError(address, '', 5) || address.length > 200 || addresses.some((other, i) => i !== index && other.trim().toLowerCase() === address.trim().toLowerCase()))))) return 1
+  if (!draft.filled || Object.values(offerErrors(offer)).some(Boolean)) return 2
+  if (audience[0] === 1 && (textError(business.city) || business.city.length > 80)) return 3
+  return 4
+}
+
+export function campaignStage(requested: string | undefined, draft: CampaignDraft) {
+  const allowed = Math.min(draft.reached, campaignAllowedStage(draft))
   const index = campaignStages.indexOf((requested === 'preview' ? 'success' : requested) as typeof campaignStages[number])
-  return index >= 0 && index <= draft.reached ? index : Math.min(draft.stage, draft.reached)
+  return index >= 0 ? Math.min(index, allowed) : Math.min(draft.stage, allowed)
 }
 
 let database: Promise<IDBDatabase> | undefined

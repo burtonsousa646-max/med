@@ -72,7 +72,7 @@ export function Hero({ phone, showPlaybackControl = true }: { phone?: ReactNode;
       <HeroVideo showPlaybackControl={showPlaybackControl}/>
       <div className="v2-hero__text">
         <h1 className="bl-display-xl">{sketch ? 'Находите новых клиентов' : 'покажите свою акцию тем, кто рядом'}</h1>
-        <p className="bl-lead bl-secondary">{sketch ? 'Показывайте рекламу абонентам билайна, а затем ведите их на свой сайт, в приложение или мессенджер.' : 'Разместите акцию в приложении билайна. Показы бесплатны — платите за переходы, заявки или продажи.'}</p>
+        <p className="bl-lead bl-secondary">{sketch ? 'Показывайте рекламу абонентам билайна и приглашайте их на сайт, в приложение или мессенджер' : 'Разместите акцию в приложении билайна. Показы бесплатны — платите за переходы, заявки или продажи.'}</p>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
           <CampaignAction className="bl-btn bl-btn--primary bl-btn--xl">узнать охват</CampaignAction>
         </div>
@@ -607,7 +607,7 @@ export function SketchMetrics({ calm = false, pulse = false }: { calm?: boolean;
           {!reduce && <motion.rect className="v2-sketch-metrics__scan" width="72" height="180" fill="url(#v3-metrics-scan)" initial={{ x: -72, opacity: 0 }} animate={seen ? { x: 432, opacity: [0, 1, 1, 0] } : { x: -72, opacity: 0 }} transition={{ duration: 1.6, delay: .15, ease: 'linear', opacity: { duration: 1.6, delay: .15, times: [0, .1, .85, 1] } }} />}
           {Array.from({ length: 240 }, (_, i) => lit(i, 0) && <motion.circle className="v2-sketch-metrics__match" key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} fill="var(--color-brand-primary)" initial={reduce ? false : { opacity: 0, r: 2 }} animate={show ? { opacity: 1, r: reduce ? 3.5 : [2, 5, 3.5] } : { opacity: 0, r: 2 }} transition={{ duration: reduce ? 0 : .45, delay: reduce ? 0 : ((i % 24) * 18 + 81) / 504 * 1.6 + .15, ease: 'easeOut' }} />)}
       </svg>}
-      <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Найдём их среди абонентов билайна.</p></div>
+      <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Показывайте предложение абонентам билайна</p></div>
       <dl>{([[35, ' млн', 'абонентов билайна'], [200, '', 'триггеров показа'], [15, '%', 'средняя конверсия']] as const).map(([value, suffix, label]) => <div key={label}><dt className="bl-body bl-secondary">{label}</dt><dd>{calm ? `${value}${suffix}` : <Num value={value} suffix={suffix} from={0}/>}</dd></div>)}</dl>
     </section>
 }

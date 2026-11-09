@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { emptyOffer, reviseOffer } from '../src/screens/offer-assistant-demo.ts'
+import { emptyOffer, offerErrors, reviseOffer } from '../src/screens/offer-assistant-demo.ts'
 
 const draft = { ...emptyOffer, title: 'Мой текст', discount: '20', promo: 'ЗЕРНО', until: '2026-12-01' }
 test('color and size preserve manually entered offer fields', () => {
@@ -22,4 +22,12 @@ test('invalid and unsupported commands leave draft unchanged', () => {
 test('promo and quoted title can be changed', () => {
   const result = reviseOffer('Промокод КОФЕ и заголовок «Заходите на завтрак»', draft)!.offer
   assert.equal(result.promo, 'КОФЕ'); assert.equal(result.title, 'Заходите на завтрак')
+})
+
+test('offer validation accepts optional empty terms and rejects invalid dates and discounts', () => {
+  assert.deepEqual(offerErrors({ ...emptyOffer, title: 'Загляните на завтрак' }), { title: '', promo: '', discount: '', until: '' })
+  assert.ok(offerErrors(emptyOffer).title)
+  for (const until of ['2099-02-31', 'not-a-date', '2000-01-01']) assert.ok(offerErrors({ ...draft, until }).until)
+  assert.equal(offerErrors({ ...draft, until: '2099-12-31', discount: '99' }).until, '')
+  for (const discount of ['0', '100', '2.5', '-20']) assert.ok(offerErrors({ ...draft, discount }).discount)
 })

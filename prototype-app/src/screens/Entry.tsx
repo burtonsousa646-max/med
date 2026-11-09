@@ -77,6 +77,8 @@ const PERKS = ['охват по вашим точкам — сразу посл�
 
 export function Login() {
   const nav = useNavigate(), type = useStartType()
+  const [params] = useSearchParams()
+  const home = params.get('from') === 'v4' ? '/v4' : '/v2'
   const T = useCatalog().offerTypes.find(o => o.id === type)!
   const login = $api.useMutation('post', '/session/login', act)
   const [busy, setBusy] = useState<IdProvider | null>(null)
@@ -89,7 +91,7 @@ export function Login() {
   return (
     <div className="login">
       <div className="login__form">
-        <header className="login__head"><Brand /><Link className="bl-btn bl-btn--ghost" to="/v2"><ArrowLeft size={18} />на главную</Link></header>
+        <header className="login__head"><Brand to={home}/><Link className="bl-btn bl-btn--ghost" to={home}><ArrowLeft size={18} />на главную</Link></header>
         <motion.main className="login__body bl-stack" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           {type !== 'click' && <span className="bl-tag bl-tag--soft-violet" style={{ alignSelf: 'flex-start' }}>подключаем: {T.t}</span>}
           <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>

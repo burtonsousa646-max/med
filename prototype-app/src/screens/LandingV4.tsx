@@ -13,14 +13,17 @@ import './landing-motion.css'
 import './v3-v2-theme.css'
 import './landing-v4.css'
 
-const SURFACES = BASE_SURFACES.map(surface => surface.k === 'showcase'
-  ? { ...surface, t: 'в разделе «подарки и акции»' }
-  : surface.k === 'rest' ? { ...surface, t: 'на витринах партнёров', d: 'Привлекайте клиентов с витрин партнёров.' } : surface)
+const SURFACES = BASE_SURFACES.map(surface => ({ ...surface, ...{
+  main: { d: 'Когда абонент открывает приложение и проверяет баланс' },
+  showcase: { t: 'в разделе «подарки и акции»', d: 'Среди акций магазинов и кафе рядом' },
+  paid: { d: 'После оплаты услуг билайна' },
+  rest: { t: 'на витринах партнёров', d: 'На сайтах и в приложениях партнёров' },
+}[surface.k] }))
 const STEPS = [
-  { kind: 'business', title: 'укажите ваш бизнес', text: 'Введите ИНН и телефон, проверьте сведения и добавьте точки, куда приглашать клиентов.' },
-  { kind: 'offer', title: 'соберите оффер', text: 'Подготовьте предложение на основе данных бизнеса. Добавьте изображение, скидку или промокод.' },
-  { kind: 'audience', title: 'выберите клиентов', text: 'Укажите, кому и в каких ситуациях показывать рекламу. От вашего района до всей страны.' },
-  { kind: 'guests', title: 'встречайте новых гостей', text: 'Гости приходят за кофе и завтраком. Встречайте их с улыбкой и давайте повод вернуться.' },
+  { kind: 'business', title: 'Информация о компании', text: 'Введите ИНН и телефон, затем добавьте адреса ваших точек' },
+  { kind: 'offer', title: 'соберите оффер', text: 'Подготовим предложение по данным компании. Вы сможете изменить фото, скидку и промокод' },
+  { kind: 'audience', title: 'выберите клиентов', text: 'Выберите клиентов, город и подходящий момент для показа' },
+  { kind: 'guests', title: 'встречайте новых гостей', text: 'Принимайте гостей и помогайте им воспользоваться акцией' },
 ] as const
 const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
 const STEP_STATUS = [
@@ -58,7 +61,7 @@ function HowItWorks() {
 function Placements() {
   const [selected, setSelected] = useState(0)
   return <section id="where" className="bl-section bl-section--wide v4-placements">
-    <div className="section-head"><h2 className="bl-display-l">где покажем</h2><p className="bl-body bl-secondary">Показываем там, где решение ближе всего.</p></div>
+    <div className="section-head"><h2 className="bl-display-l">где покажем</h2><p className="bl-body bl-secondary">В приложении билайна и на площадках партнёров</p></div>
     <div className="v4-placement-layout">
       <div className="v4-placement-controls">
         {SURFACES.map((surface, index) => <button key={surface.k} type="button" aria-pressed={selected === index} aria-controls="v4-placement-phone" className={`v4-placement-choice${selected === index ? ' is-selected' : ''}`} onClick={() => setSelected(index)}>
@@ -77,9 +80,9 @@ function Placements() {
 
 function Final() {
   return <section id="v2-final" className="bl-section bl-section--wide v4-final" data-theme="invert">
-    <div className="v4-final-copy"><h2 className="bl-display-l">новый эффективный канал привлечения клиентов</h2>
+    <div className="v4-final-copy"><h2 className="bl-display-l">привлекайте клиентов с билайном</h2>
       <CampaignAction className="bl-btn bl-btn--primary bl-btn--xl">запустить сейчас <ArrowRight size={22}/></CampaignAction>
-      <p className="bl-caption bl-secondary">сначала — ваш бизнес и первая кампания</p>
+      <p className="bl-caption bl-secondary">начните с данных компании</p>
     </div>
     <div className="v4-final-preview" aria-label="Пример кампании кофейни Зерно">
       <Creative o={creativeOf(DEMO_AD.brand, DEMO_AD.offer, DEMO_AD.img)} erid="реклама" wide/>
@@ -108,7 +111,7 @@ export default function LandingV4() {
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
           <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
           {showCta && <CampaignAction className="bl-btn bl-btn--primary">запустить сейчас</CampaignAction>}
-          <Link className="bl-btn bl-btn--dark" to="/login">войти</Link>
+          <Link className="bl-btn bl-btn--dark" to="/login?from=v4">войти</Link>
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
@@ -118,7 +121,7 @@ export default function LandingV4() {
         {/* Временно скрыто: <ForEveryone calm/> */}
         <Final/>
       </main>
-      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
+      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><Link to="/v4/offer">оферта</Link><Link to="/v4/privacy">обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
     </div>
   </LaunchContext.Provider></div>
 }

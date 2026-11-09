@@ -1,0 +1,130 @@
+/* Motion layer: stable anchors, interruptible springs, quiet reading states. */
+.v3-moving-label { position: relative; display: inline-grid; vertical-align: baseline; }
+.v3-moving-label > span { grid-area: 1 / 1; display: block; }
+.v3-hero-story { min-width: 0; }
+.v3-hero-story .v3-hero-art { height: 520px; }
+.v3-story-route { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.v3-story-neighbour { position: absolute; top: 16%; right: 0; display: flex; gap: 9px; align-items: center; padding: 12px; border-radius: 14px; background: var(--v3-paper); box-shadow: 0 8px 30px #20201d14; font-size: 14px; }
+.v3-story-neighbour > span { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--v3-ink); color: var(--v3-accent); }
+.v3-story-neighbour small { display: block; margin-top: 4px; font-size: 10px; color: var(--v3-muted); }
+.v3-story-controls { display: flex; align-items: center; gap: 18px; padding: 8px 16px; min-height: 48px; margin-top: 5px; }
+.v3-story-caption { display: flex; align-items: center; gap: 12px; font-size: 12px; flex: none; min-width: 175px; }
+.v3-story-index { color: var(--v3-muted); font-size: 10px; }
+.v3-story-track { flex: 1; height: 2px; background: var(--v3-line); overflow: hidden; }
+.v3-story-track > span { display: block; height: 100%; width: 100%; background: var(--v3-ink); transform-origin: left; }
+.v3-story-controls button { position: relative; display: grid; place-items: center; width: 36px; height: 36px; flex: none; border: 1px solid var(--v3-line); border-radius: 50%; background: transparent; color: var(--v3-ink); cursor: pointer; }
+.v3-story-controls button span { display: grid; place-items: center; }
+.v3-story-controls button:hover { background: var(--v3-panel); }
+.v3-story-controls button:disabled { opacity: .35; cursor: default; }
+.v3-hero-story .v3-hero-portrait, .v3-hero-story .v3-hero-ticket { will-change: transform; }
+.v3-placement-detail { display: block; overflow: hidden; }
+.v3-placements__options button { position: relative; }
+.v3-placements__options button > .v3-placement-option-copy { flex: 1; }
+.v3-placement-active { position: absolute; left: -15px; top: 18px; width: 3px; height: 20px; background: var(--v3-accent); border-radius: 4px; }
+.v3-placement-arrow { display: inline-flex; flex: none; color: var(--v3-muted); }
+.v3-placements__options button[aria-pressed="true"] .v3-placement-arrow { color: var(--v3-accent); }
+.v3-placements__visual { min-height: 780px; }
+.v3-phone-stage { position: relative; width: 100%; display: grid; place-items: center; align-self: center; padding-top: 30px; }
+.v3-phone-app { position: relative; height: 812px; font: 400 17px/1.4 var(--font-primary); color: var(--v3-ink); --color-text-primary: var(--v3-ink); --color-text-secondary: var(--v3-muted); --color-background-secondary: white; }
+.v3-phone-app__title { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; font-size: 26px; letter-spacing: -.03em; }
+.v3-app-brand { width: 30px; height: 30px; object-fit: contain; }
+.v3-phone-context { position: absolute; top: 70px; left: 22px; right: 22px; }
+.v3-phone-context p { font-size: 16px; color: var(--v3-muted); margin: 0 0 14px; }
+.v3-phone-balance { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 5px 12px; }
+.v3-phone-balance > span { font-size: 16px; }
+.v3-phone-balance b { font-size: 32px; font-weight: 400; grid-column: 1; grid-row: 2; line-height: 1; }
+.v3-phone-balance > span:last-child { grid-column: 2; grid-row: 2; font-size: 13px; color: var(--v3-muted); }
+.v3-phone-pills { display: flex; gap: 8px; margin-top: 16px; font-size: 15px; }
+.v3-phone-pills > span { background: white; padding: 8px 12px; border-radius: 30px; }
+.v3-phone-pills > .is-active { background: var(--v3-accent); }
+.v3-phone-payment { display: grid; justify-items: center; gap: 14px; padding-top: 20px; }
+.v3-phone-payment > span { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 50%; background: #dce8c9; color: #405d27; }
+.v3-phone-payment > b { font-size: 46px; line-height: 1; font-weight: 400; letter-spacing: -.04em; }
+.v3-phone-meters { display: grid; gap: 18px; padding-top: 16px; }
+.v3-phone-meters > div { background: white; border-radius: 16px; padding: 16px; display: grid; gap: 6px; }
+.v3-phone-meters b { font-size: 28px; font-weight: 400; }
+.v3-phone-meters i { display: block; height: 4px; border-radius: 3px; background: #eeeee7; }
+.v3-phone-meters i span { display: block; height: 100%; border-radius: inherit; background: var(--v3-accent); }
+.v3-phone-offer.pm-card { position: absolute; left: 16px; right: 16px; display: block; padding: 0; border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 7px 22px #34342a0c; will-change: top; }
+.v3-phone-offer__image { position: relative; overflow: hidden; }
+.v3-phone-offer__image .cr { width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; }
+.v3-phone-offer__image .cr__img { right: 8px; bottom: 0; width: 50%; height: 100%; object-fit: contain; }
+.v3-phone-offer__image .cr__text { inset: 18px auto auto 18px; gap: 8px; }
+.v3-phone-offer__image .cr__small { font-size: 14px; }
+.v3-phone-offer__image .cr__erid { font-size: 10px; }
+.v3-phone-offer__image .cr__big { font-size: 44px; }
+.v3-phone-offer__image .cr__mark { font-size: 13px; }
+.v3-phone-offer__copy { padding: 18px; display: grid; gap: 12px; }
+.v3-phone-offer__copy > span:first-child { font-size: 14px; color: var(--v3-muted); }
+.v3-phone-offer__copy > b { font: 400 24px/1.18 var(--font-primary); letter-spacing: -.025em; }
+.v3-phone-offer__cta { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; margin-top: 4px; background: var(--v3-accent); color: var(--v3-ink); border-radius: 30px; font-size: 16px; }
+.v3-phone-bottom { position: absolute; bottom: 52px; left: 22px; right: 22px; display: flex; justify-content: space-around; gap: 18px; padding-top: 18px; border-top: 1px solid var(--v3-line); color: var(--v3-muted); font-size: 14px; }
+/* Prevent CSS entrances from fighting the interrupted Motion timelines. */
+.v3-dialog[open], .v3-dialog__scene { animation: none; }
+.v3-dialog__form { overflow: hidden; }
+.v3-dialog[data-closing="true"] { pointer-events: none; }
+.v3-dialog::backdrop { transition: opacity .22s; }
+.v3-dialog[data-closing="true"]::backdrop { opacity: 0; }
+.v3-dialog__scene { transform-origin: 50% 0; }
+.v3-dialog__scene[inert] { pointer-events: none; }
+.v3-progress li { position: relative; }
+.v3-progress li[aria-current] { border-color: var(--v3-line); }
+.v3-step-indicator { position: absolute; inset: auto 0 -2px; height: 3px; border-radius: 2px; background: var(--v3-accent); }
+.v3-progress button:disabled { opacity: 1; }
+.v3-progress-check { display: grid; place-items: center; }
+.v3-file { transition: border-color .25s, background .25s; }
+.v3-file[data-filled="true"] { border-style: solid; border-color: #a5b28e; background: #f4f6ef; }
+.v3-file__done { margin-left: auto; flex: none; color: #52683a; }
+.v3-preview-media { position: relative; overflow: hidden; aspect-ratio: 2.1; }
+.v3-preview-media > .cr { height: 100%; }
+.v3-preview-media .v3-offer-card__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.v3-autofill > span { display: inline-flex; align-items: center; gap: 7px; }
+.v3-choice .bl-btn { position: relative; isolation: isolate; }
+.v3-choice .bl-btn[aria-pressed="true"] { background: white; border-color: var(--v3-line); }
+.v3-choice-highlight { position: absolute; inset: -1px; z-index: -1; border: 1px solid #b89a31; border-radius: inherit; background: #fff4c9; pointer-events: none; }
+.v3-audience-card dd { text-align: right; }
+.v3-success-path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: v3-success-draw .5s .2s var(--v3-ease) forwards; }
+@keyframes v3-success-draw { to { stroke-dashoffset: 0; } }
+@media (max-width: 1100px) { .v3-hero-story .v3-hero-art { height: 455px; } .v3-story-controls { gap: 10px; padding-inline: 8px; } .v3-story-caption { min-width: 162px; font-size: 11px; } }
+@media (max-width: 800px) { .v3-hero-story .v3-hero-art { height: 390px; } .v3-story-controls { gap: 8px; } .v3-story-caption { min-width: 150px; } .v3-story-neighbour { padding: 9px; font-size: 12px; } }
+@media (max-width: 600px) {
+  .v3-hero-story .v3-hero-art { height: 430px; }
+  .v3-story-controls { margin-top: 10px; padding-inline: 0; gap: 14px; }
+  .v3-story-caption { min-width: 170px; font-size: 12px; }
+  .v3-placements__visual { min-height: 780px; }
+  .v3-placement-label { top: 27px; }
+  .v3-story-neighbour { top: 15%; right: 0; }
+}
+@media (max-width: 360px) { .v3-hero-story .v3-hero-art { height: 390px; } .v3-story-caption { min-width: 152px; font-size: 11px; } .v3-placements__visual { min-height: 695px; } }
+@media (prefers-reduced-motion: reduce) { .v3-success-path { stroke-dashoffset: 0; animation: none; } .v3-dialog::backdrop { transition: none; } }
+
+.v3-placements__options button > .v3-placement-number { flex: 0 0 auto; }
+
+.v3-story-stage { background: transparent; font-family: var(--font-primary); }
+.v3-story-stage .v3-hero-art { width: 100%; height: 100%; margin: 0; }
+.v3-story-stage .v3-ticket-bottom, .v3-story-stage .v3-hero-ticket > div, .v3-story-stage .v3-hero-match small, .v3-story-stage .v3-story-neighbour small { font-size: 12px; }
+
+.v3-phone-discover { position: absolute; top: 605px; left: 24px; right: 24px; display: flex; align-items: center; gap: 14px; padding: 18px 0; border-top: 1px solid var(--v3-line); font-size: 17px; }
+.v3-phone-discover small { display: block; font-size: 14px; color: var(--v3-muted); margin-top: 4px; }
+
+.v3-story-stage .v3-hero-ticket { right: 20px; padding: 20px; }
+.v3-story-stage .v3-ticket-bottom { margin-inline: -20px; padding-inline: 20px; }
+.v3-story-stage .v3-hero-match { padding: 16px; }
+.v3-story-neighbour { will-change: transform; }
+@media (max-width: 600px) {
+  .v3-story-stage .v3-hero-ticket { right: 12px; width: 146px; padding: 16px; }
+  .v3-story-stage .v3-ticket-bottom { margin-inline: -16px; padding-inline: 16px; font-size: 11px; }
+  .v3-story-stage .v3-hero-ticket > div { font-size: 11px; }
+  .v3-story-stage .v3-hero-match { padding: 12px; }
+}
+
+.v3-placements { overflow-anchor: none; }
+.v3-placements__options { height: 350px; flex: none; }
+.v3-story-stage .v3-hero-match { will-change: transform; }
+@media (max-width: 600px) { .v3-story-stage .v3-hero-portrait { left: 14%; right: 12%; } }
+
+@media (max-width: 600px) {
+  .v3-story-stage .v3-hero-portrait { left: 10%; right: 24%; }
+  .v3-story-stage .v3-hero-ticket { top: 37%; }
+  .v3-story-stage .v3-hero-match { bottom: 0; }
+}

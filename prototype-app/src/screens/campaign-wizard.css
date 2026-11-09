@@ -1,0 +1,206 @@
+/* Compact working surface; brand color is reserved for the next action. */
+.v3-v2-theme .campaign-demo { width: min(1060px, calc(100% - 40px)); height: min(800px, calc(100dvh - 40px)); border-radius: 28px; }
+.campaign-demo :is(h2,h3)[tabindex="-1"]:focus { outline: none; }
+.campaign-demo ::selection { background: var(--v3-accent); color: var(--v3-ink); }
+.campaign-demo .v3-dialog__head { padding-top: 16px; }
+.campaign-demo .v3-dialog__body { padding-block: 20px; scrollbar-color: var(--v3-line) transparent; scrollbar-width: thin; }
+.v3-v2-theme .campaign-demo .v3-dialog__top h2 { font-size: 22px; }
+.campaign-demo .campaign-demo-label { display: block; width: auto; height: auto; padding: 5px 10px; border-radius: 100px; background: var(--v3-panel); color: var(--v3-muted); font-size: 12px; }
+.campaign-demo .v3-progress { margin-top: 10px; gap: 24px; }
+.campaign-demo .v3-progress li { padding-bottom: 6px; font-size: 14px; }
+.campaign-demo .v3-progress__number { width: 26px; height: 26px; font-size: 12px; }
+.v3-v2-theme .campaign-demo .v3-step-intro h3 { font-size: 30px; line-height: 1.15; text-wrap: balance; }
+.v3-v2-theme .campaign-demo .v3-step-intro p { font-size: 14px; line-height: 1.5; max-width: 65ch; }
+.campaign-demo .v3-step-intro { margin-bottom: 20px; }
+.campaign-demo .v3-step-intro > span { display: none; }
+.campaign-demo .v3-business-start { gap: 40px; grid-template-columns: 1fr 1fr; align-items: start; }
+.v3-v2-theme .campaign-demo .v3-business-inputs { padding: 0; gap: 16px; }
+.v3-v2-theme .campaign-demo .v3-business-inputs .v3-field-feedback { min-height: 20px; }
+.v3-v2-theme .campaign-demo .v3-fields .bl-input { background: var(--color-static-white); min-height: 48px; border-radius: 12px; padding: 12px 40px 12px 14px; caret-color: var(--v3-ink); }
+.campaign-demo .cr--green { --cr-bg: var(--color-static-green-300); --cr-fg: var(--color-static-grey-800); }
+.campaign-demo .v3-validated-field .bl-field__label { transition: color 180ms ease; }
+.campaign-demo .v3-validated-field:focus-within .bl-field__label { color: var(--v3-ink); }
+.campaign-demo .v3-input-wrap > input:focus-visible { border-color: var(--v3-ink); box-shadow: none; outline: 2px solid var(--v3-accent); outline-offset: 3px; }
+.campaign-demo .v3-field-mark { top: 16px; }
+.campaign-example { display: flex; align-items: center; gap: 12px; width: 100%; border: 1px solid var(--v3-line); border-radius: 14px; background: var(--v3-panel); color: var(--v3-ink); padding: 14px 16px; text-align: left; font-family: inherit; cursor: pointer; transition: border-color 180ms, background 180ms; }
+.campaign-example:hover { border-color: var(--v3-ink); background: var(--color-static-white); }
+.campaign-example:disabled { cursor: wait; opacity: .6; }
+.campaign-example > svg { flex: none; }
+.campaign-example > svg:last-child { margin-left: auto; transition: transform 180ms ease; }
+.campaign-example:hover > svg:last-child { transform: translateX(3px); }
+.campaign-example b { font-size: 14px; font-weight: 400; display: block; }
+.campaign-example small { font-size: 12px; color: var(--v3-muted); display: block; margin-top: 4px; }
+.v3-v2-theme .campaign-demo .campaign-business-preview { background: var(--color-static-grey-25); padding: 24px; border-radius: 20px; }
+.v3-v2-theme .campaign-demo .campaign-business-preview h4 { display: block; font-size: 26px; line-height: 1.15; margin: 0; }
+.campaign-demo .campaign-business-preview > p { display: block; font-size: 13px; line-height: 1.5; margin: 8px 0 16px; max-width: 36ch; }
+.campaign-example-creative { border-radius: 16px; overflow: hidden; background: var(--color-static-white); box-shadow: 0 8px 20px #2229360a; }
+.campaign-example-creative > .cr { width: 100%; aspect-ratio: 2.6; border-radius: 16px; }
+.campaign-example-creative > div:last-child { display: grid; gap: 4px; padding: 14px 16px; font-size: 14px; }
+.campaign-example-creative small { font-size: 12px; color: var(--v3-muted); }
+.campaign-demo .v3-business-privacy { max-width: 38ch; font-size: 12px; }
+.campaign-demo .v3-manual-entry { min-height: 30px; margin-top: -8px; }
+.campaign-demo .v3-lookup-loading { padding: 12px; background: var(--v3-panel); border: 0; }
+.v3-v2-theme .campaign-demo .v3-business-locations { background: var(--v3-panel); }
+.campaign-demo .v3-source-note > span { padding-block: 4px; }
+.campaign-demo .v3-offer-placeholder { padding: 0; }
+.campaign-demo .v3-offer-placeholder > .cr { width: 100%; height: 100%; }
+.v3-v2-theme .campaign-demo .v3-offer-stage { background: var(--v3-panel); color: var(--v3-ink); border-radius: 20px; padding: 24px; }
+.campaign-demo .v3-offer-stage > .bl-caption { color: var(--v3-muted); }
+.campaign-demo .v3-file { flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; min-height: 88px; padding: 12px; border: 1px dashed var(--v3-line); border-radius: 12px; transition: border-color 180ms, background 180ms; }
+.campaign-demo .v3-file:hover { border-color: var(--v3-ink); background: var(--color-static-white); }
+.campaign-demo .v3-file > span { display: flex; align-items: center; gap: 8px; padding: 0; background: transparent; }
+.campaign-demo .v3-file small { max-width: 100%; }
+.campaign-demo .v3-dialog__actions { padding-block: 16px; }
+.campaign-demo .v3-dialog__actions button { transition: background 180ms, box-shadow 180ms; }
+.campaign-demo .v3-dialog__actions .bl-btn--dark:hover { box-shadow: 0 4px 12px #22293612; }
+.campaign-demo .v3-dialog__footer-note { font-size: 12px; }
+@media(max-width:700px) {
+  .v3-v2-theme .campaign-demo { width: calc(100% - 16px); height: calc(100dvh - 16px); border-radius: 20px; }
+  .campaign-demo .campaign-demo-label { display: none; }
+  .v3-v2-theme .campaign-demo .v3-dialog__top h2 { font-size: 19px; }
+  .campaign-demo .v3-progress { gap: 12px; margin-top: 12px; }
+  .campaign-demo .v3-progress li { font-size: 11px; }
+  .v3-v2-theme .campaign-demo .v3-step-intro h3 { font-size: 26px; }
+  .campaign-demo .v3-business-start { grid-template-columns: minmax(0,1fr); gap: 24px; }
+  .campaign-demo .campaign-business-preview { display: none; }
+  .campaign-demo .v3-fields__pair { grid-template-columns: minmax(0,1fr); }
+  .campaign-demo .v3-dialog__body { padding-block: 20px; }
+  .campaign-demo .v3-business-inputs { gap: 16px; }
+  .campaign-demo .v3-file { min-height: 70px; }
+  .campaign-demo .v3-dialog__actions { padding-block: 12px; }
+}
+@keyframes offer-spark { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(.85) rotate(-12deg); } }
+.campaign-ai-result { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 32px; font-size: 12px; color: var(--v3-muted); }
+.campaign-demo .campaign-ai-result .v3-text-button { font-size: 12px; min-height: 32px; text-underline-offset: 4px; }
+/* The creative is the working canvas; requests and manual controls stay alongside it. */
+.campaign-offer-editor .v3-preview-column { order: -1; align-self: start; }
+.campaign-demo .campaign-offer-editor { grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 24px; align-items: start; }
+.campaign-demo .campaign-offer-editor .v3-preview-media { aspect-ratio: 1.85; }
+.campaign-demo .campaign-offer-editor .v3-offer-stage { padding: 0; border: 0; background: transparent; border-radius: 16px; }
+.campaign-demo .campaign-offer-editor .v3-offer-card__copy { gap: 12px; padding: 20px; }
+.campaign-demo .campaign-offer-editor .v3-offer-card__copy > b { font-size: 20px; line-height: 1.2; }
+.campaign-demo .v3-offer-card { position: relative; isolation: isolate; }
+.campaign-demo .v3-offer-card .cr { transition: opacity 500ms cubic-bezier(.22,1,.36,1); }
+.campaign-demo .v3-offer-card .cr__img { transform-origin: 75% 85%; transition: transform 850ms cubic-bezier(.22,1,.36,1), opacity 400ms; }
+.campaign-demo .v3-offer-stage[data-zoom=true] .cr__img { transform: scale(1.2); }
+.campaign-demo .v3-offer-stage[data-revising=true] .cr__img { transform: translateY(-7px) rotate(-3deg) scale(.96); }
+.campaign-demo .v3-offer-stage .cr__text { transition: opacity 500ms cubic-bezier(.22,1,.36,1); }
+.campaign-demo .v3-offer-stage[data-revising=true] .cr__text { opacity: .4;  }
+.offer-assistant { min-width: 0; }
+.offer-assistant-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.offer-assistant-heading > span { width: 34px; height: 34px; display: grid; place-items: center; background: var(--v3-accent); border-radius: 50%; flex: none; }
+.offer-assistant-heading h4 { margin: 0; font-size: 18px; font-weight: 400; }
+.offer-assistant-heading p { margin: 4px 0 0; font-size: 12px; color: var(--v3-muted); }
+.offer-assistant-input { border: 1px solid var(--v3-line); border-radius: 16px; padding: 12px; background: var(--color-static-white); transition: border-color 180ms, box-shadow 180ms; }
+.offer-assistant-input:focus-within { border-color: var(--v3-ink); box-shadow: 0 0 0 3px #ffc80025; }
+.offer-assistant-input textarea { width: 100%; resize: vertical; min-height: 76px; max-height: 160px; padding: 0; border: 0; background: transparent; font: inherit; font-size: 14px; line-height: 1.5; color: var(--v3-ink); outline: none; }
+.offer-assistant-input textarea::placeholder { color: var(--v3-muted); }
+.offer-assistant-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.offer-assistant button { font-family: inherit; cursor: pointer; color: inherit; }
+.offer-assistant button:disabled { opacity: .45; cursor: default; }
+.offer-mic { display: inline-flex; gap: 8px; align-items: center; padding: 8px 4px; border: 0; background: transparent; font-size: 12px; min-height: 40px; }
+.offer-mic:hover { color: var(--v3-muted); }
+.offer-send { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--v3-accent); transition: transform 180ms; flex: none; }
+.offer-send:not(:disabled):hover { transform: translateY(-2px); }
+.offer-assistant-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.offer-assistant-examples button { display: inline-flex; align-items: center; gap: 8px; text-align: left; border: 1px solid var(--v3-line); background: transparent; border-radius: 100px; font-size: 12px; padding: 8px 12px; transition: background 180ms, border-color 180ms; }
+.offer-assistant-examples button:not(:disabled):hover { background: var(--v3-panel); border-color: var(--v3-ink); }
+.offer-assistant-feedback { font-size: 12px; line-height: 1.5; margin-top: 12px; min-height: 22px; }
+.offer-assistant-feedback > span { display: flex; gap: 8px; align-items: center; }
+.offer-assistant-feedback svg { flex: none; }
+.offer-assistant-feedback > button { display: inline-flex; gap: 5px; align-items: center; border: 0; background: transparent; padding: 8px 0; text-decoration: underline; text-underline-offset: 3px; font-size: 12px; }
+.offer-assistant-note { display: block; font-size: 12px; line-height: 1.5; color: var(--v3-muted); margin-top: 6px; }
+.offer-assistant[data-working=true] .offer-assistant-heading svg { animation: offer-spark 1s cubic-bezier(.22,1,.36,1) infinite; }
+.offer-wave { display: inline-flex; gap: 2px; align-items: center; height: 18px; margin-left: 4px; }
+.offer-wave i { display: block; width: 2px; height: 12px; border-radius: 2px; background: var(--v3-ink); animation: offer-wave 650ms cubic-bezier(.22,1,.36,1) infinite alternate; }
+@keyframes offer-wave { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+.campaign-manual { border-top: 1px solid var(--v3-line); margin-top: 4px; }
+.campaign-manual summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0; cursor: pointer; font-size: 14px; list-style: none; }
+.campaign-manual summary::-webkit-details-marker { display: none; }
+.campaign-manual summary:after { content: '+'; margin-left: auto; font-size: 18px; }
+.campaign-manual[open] summary:after { content: '−'; }
+.campaign-manual summary span { font-size: 12px; color: var(--v3-muted); }
+.campaign-manual fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+@media(max-width:700px) {
+ .campaign-demo .campaign-offer-editor { grid-template-columns: minmax(0,1fr); gap: 24px; }
+ .campaign-demo .campaign-offer-editor .v3-offer-card__copy { padding: 12px; }
+ .campaign-demo .campaign-offer-editor .v3-offer-card__copy > b { font-size: 18px; }
+ .campaign-manual summary span { display: none; }
+}
+.campaign-demo:has(.campaign-offer-editor) .v3-step-intro p { max-width: none; }
+.campaign-demo:has(.campaign-offer-editor) .v3-step-intro { margin-bottom: 12px; }
+.campaign-demo .v3-campaign-context { padding: 8px 12px; margin-bottom: 16px; font-size: 12px; background: var(--v3-panel); }
+@media(min-width:701px) and (max-height:820px) {
+ .campaign-demo .campaign-offer-editor .v3-preview-media { aspect-ratio: 2.8; }
+ .campaign-demo .campaign-offer-editor .v3-offer-card__copy { padding: 12px; gap: 8px; }
+ .campaign-demo .campaign-offer-editor .v3-offer-card__copy > b { font-size: 20px; }
+ .campaign-demo .v3-dialog__body { padding-block: 16px; }
+ .offer-assistant-heading { margin-bottom: 12px; }
+}
+
+.offer-assistant button:focus-visible, .campaign-manual summary:focus-visible { outline: 2px solid var(--v3-ink); outline-offset: 4px; }
+.offer-assistant button:not(:disabled):active { transform: scale(.98); }
+.offer-assistant p, .offer-assistant-note, .offer-assistant-feedback { text-wrap: pretty; }
+.offer-assistant-heading h4 { font-size: 18px; line-height: 28px; text-wrap: balance; }
+.offer-assistant :is(p,small), .offer-assistant-examples button, .offer-assistant-feedback { line-height: 16px; }
+.offer-assistant button { transition-duration: 300ms; transition-timing-function: cubic-bezier(.22,1,.36,1); }
+@media(prefers-reduced-motion:reduce) {
+ .campaign-demo *, .campaign-demo *::before { animation: none !important; transition: none !important; }
+}
+.campaign-demo:has(.campaign-offer-editor) .v3-campaign-context { display: none; }
+.campaign-demo:has(.campaign-offer-editor) .v3-step-intro { margin-bottom: 24px; }
+
+.offer-assistant-input textarea:focus-visible { outline: none; }
+
+/* Generation and editing share one persistent canvas and one spatial layout. */
+.campaign-demo .campaign-offer-editor { gap: 32px; }
+.campaign-demo .campaign-offer-editor .v3-preview-column { gap: 12px; }
+.campaign-demo .campaign-offer-editor .v3-offer-card { border: 1px solid var(--v3-line); border-radius: 16px; box-shadow: 0 12px 32px #2229360d; }
+.campaign-demo .campaign-offer-editor .v3-preview-media .cr { aspect-ratio: auto; }
+.campaign-offer-control-space { position: relative; min-width: 0; padding-top: 44px; }
+.campaign-offer-controls { opacity: 1; transition: opacity 500ms cubic-bezier(.22,1,.36,1); }
+[data-generating=true] .campaign-offer-controls { opacity: 0; pointer-events: none; }
+.offer-preparing-note { position: absolute; inset: 44px 0 auto; opacity: 0; pointer-events: none; transition: opacity 300ms cubic-bezier(.22,1,.36,1); }
+[data-generating=true] .offer-preparing-note { opacity: 1; }
+.offer-source-mark { display: inline-block; padding: 8px 12px; border: 1px solid var(--v3-line); border-radius: 100px; font-size: 12px; color: var(--v3-muted); max-width: 100%; overflow-wrap: anywhere; }
+.offer-preparing-note p { margin: 24px 0 12px; font-size: 18px; line-height: 28px; color: var(--v3-muted); }
+.offer-preparing-note small { font-size: 12px; line-height: 16px; color: var(--v3-muted); }
+.offer-canvas-status { min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--v3-muted); }
+.offer-canvas-status > span { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.offer-status-icon { display: grid; place-items: center; color: var(--color-static-green-700); }
+[data-generating=true] .offer-status-icon { color: var(--v3-ink); animation: offer-spark 1500ms cubic-bezier(.22,1,.36,1) infinite; }
+.offer-canvas-status > button { border: 0; padding: 8px 0; background: none; color: var(--v3-muted); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
+.offer-canvas-status > button:hover { color: var(--v3-ink); }
+.offer-canvas-status > button:focus-visible { outline: 2px solid var(--v3-ink); outline-offset: 4px; }
+.offer-reveal { display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(6,1fr); position: absolute; inset: -16px; pointer-events: none; z-index: 3; overflow: hidden; backdrop-filter: blur(18px); animation: offer-resolve 4100ms cubic-bezier(.22,1,.36,1) both; }
+.offer-reveal > span { margin: -1px; background: #e3ece7e6; filter: blur(12px); animation: offer-develop 1700ms cubic-bezier(.22,1,.36,1) both; }
+.offer-reveal[data-quick=true] { animation-duration: 1300ms; }
+.offer-reveal[data-quick=true] > span { background: #f3f1e9b3; animation-duration: 700ms; }
+.offer-reveal[data-paused=true], .offer-reveal[data-paused=true] > span { animation-play-state: paused; }
+@keyframes offer-develop { 0% { opacity: 1; } 100% { opacity: 0; } }
+[data-generating=true] .v3-offer-card__copy { opacity: .25; }
+[data-generating=true][data-phase="2"] .v3-offer-card__copy,
+[data-generating=true][data-phase="3"] .v3-offer-card__copy { opacity: 1; }
+.campaign-offer-editor .v3-offer-card__copy { transition: opacity 700ms cubic-bezier(.22,1,.36,1); }
+@media(max-width:700px) {
+ .campaign-demo .campaign-offer-editor { gap: 16px; }
+ .campaign-offer-control-space { padding-top: 0; }
+ .offer-preparing-note { inset: 0 0 auto; }
+ .offer-preparing-note p { font-size: 18px; line-height: 28px; margin-top: 12px; }
+ .offer-preparing-note small { display: none; }
+ .offer-canvas-status { align-items: flex-start; }
+ .offer-canvas-status > span { padding-block: 8px; }
+ .campaign-demo:has(.campaign-offer-editor) .v3-dialog__footer-note { display: none; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .offer-reveal { display: none; }
+ .campaign-demo *, .campaign-demo *::before { animation: none !important; transition: none !important; }
+}
+
+@media(min-width:701px) and (max-height:820px) {
+ .campaign-demo:has(.campaign-offer-editor) .v3-step-intro { margin-bottom: 8px; }
+}
+
+.offer-assistant-feedback:empty { display: none; }
+
+@keyframes offer-resolve { 0%,30% { opacity: 1; } 75% { opacity: .35; } 100% { opacity: 0; } }

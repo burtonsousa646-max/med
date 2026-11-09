@@ -1,0 +1,59 @@
+/* V3 uses the V2 landing and its shared tokens; only the campaign dialog needs a bridge. */
+.v3-v2-theme .v3-dialog {
+  --v3-paper: var(--color-static-white);
+  --v3-ink: var(--color-static-grey-800);
+  --v3-muted: var(--color-static-grey-600);
+  --v3-accent: var(--color-static-yellow-300);
+  --v3-panel: var(--color-static-grey-25);
+  --v3-line: var(--color-static-grey-50);
+  --color-text-primary: var(--color-static-grey-800);
+  --color-text-secondary: var(--color-static-grey-600);
+  --color-brand-primary: var(--color-static-yellow-300);
+  --color-background-secondary: var(--color-static-white);
+  --color-background-secondary-invert: var(--color-static-grey-800);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-800);
+}
+.v3-v2-theme .v3-dialog__brand > span { background: var(--color-surface-04); }
+.v3-v2-theme .v3-dialog__body { background: var(--color-background-secondary); }
+.v3-v2-theme .v3-dialog__top h2 { font: var(--type-h3); letter-spacing: normal; }
+.v3-v2-theme .v3-step-intro h3 { font: var(--type-h2); letter-spacing: normal; }
+.v3-v2-theme .v3-step-intro p { font: var(--type-body); }
+.v3-v2-theme .v3-dialog__actions .bl-btn { border-radius: var(--radius-circle); }
+.v3-v2-theme .v3-fields .bl-input,
+.v3-v2-theme .v3-location-row .bl-input { background: var(--color-background-primary); border-radius: var(--radius-400); }
+.v3-v2-theme :is(.v3-business-explainer, .v3-business-locations, .v3-campaign-context) { background: var(--color-surface-02); }
+.v3-v2-theme :is(.v3-business-explainer, .v3-business-locations) { border-radius: var(--radius-600); }
+.v3-v2-theme .v3-business-explainer h4 { font: var(--type-h2); letter-spacing: normal; }
+.v3-v2-theme .v3-source-note { color: var(--color-text-secondary); }
+.v3-v2-theme .v3-offer-stage { background: var(--color-surface-04); border-color: transparent; }
+.v3-v2-theme .v3-offer-placeholder { background: var(--color-surface-02); color: var(--color-text-primary); }
+.v3-v2-theme .v3-offer-placeholder > small { color: var(--color-text-secondary); }
+
+.v3-v2-theme .v3-dialog__top .bl-icon-btn { width: 44px; height: 44px; }
+.v3-v2-theme .v3-progress button { min-height: 44px; width: 100%; }
+.v3-v2-theme .v3-text-button { min-height: 44px; font-size: 14px; }
+.v3-v2-theme .v3-location-row > button { width: 44px; height: 44px; margin-top: 22px; }
+.v3-v2-theme .v3-online-check { min-height: 44px; }
+.v3-v2-theme .v3-fields .bl-field__label,
+.v3-v2-theme .v3-location-row .bl-field__label { font-size: 14px; line-height: 1.4; }
+.v3-v2-theme :is(.v3-field-feedback, .v3-upload-feedback, .v3-business-privacy, .v3-location-hint, .v3-source-note small) { font-size: 13px; line-height: 1.5; }
+.v3-v2-theme .v3-business-inputs { gap: 16px; }
+.v3-v2-theme .v3-field-feedback { min-height: 20px; }
+.v3-v2-theme .v3-business-inputs .v3-field-feedback { min-height: 39px; }
+.v3-v2-theme .v3-fields .bl-input { font-size: 16px; }
+.v3-v2-theme .v3-required { color: var(--color-text-secondary); }
+.v3-v2-theme .v3-input-wrap > input { scroll-margin-block: 28px; }
+.v3-v2-theme .v3-progress button:disabled { opacity: .6; }
+.v3-v2-theme .v3-progress li[aria-current] button:disabled { opacity: 1; }
+.v3-v2-theme .v3-dialog__actions { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+@media(max-height:500px) {
+  .v3-v2-theme .v3-dialog { height: calc(100dvh - 16px); width: calc(100% - 16px); }
+  .v3-v2-theme .v3-dialog__head { padding-top: 8px; }
+  .v3-v2-theme .v3-progress { margin-top: 4px; }
+  .v3-v2-theme .v3-progress li { padding-bottom: 4px; }
+  .v3-v2-theme .v3-dialog__actions { padding-block: 8px; }
+  .v3-v2-theme .v3-dialog__body { padding-block: 16px; }
+}
+.v3-v2-theme .v3-fields .bl-input::placeholder,
+.v3-v2-theme .v3-location-row .bl-input::placeholder { color: var(--color-text-secondary); opacity: 1; }

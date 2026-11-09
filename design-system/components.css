@@ -140,7 +140,7 @@ a:hover { color: var(--color-link-tertiary); }
   font: var(--type-label); color: var(--color-text-secondary);
   background: transparent; cursor: pointer; transition: background-color var(--transition-fast), color var(--transition-fast);
 }
-.bl-segmented button[aria-selected="true"] { background: var(--color-background-secondary); color: var(--color-text-primary); }
+.bl-segmented button:is([aria-selected="true"], [aria-checked="true"]) { background: var(--color-background-secondary); color: var(--color-text-primary); }
 
 .bl-tabs { display: flex; gap: var(--space-l); flex-wrap: wrap; }
 .bl-tabs a, .bl-tabs button {

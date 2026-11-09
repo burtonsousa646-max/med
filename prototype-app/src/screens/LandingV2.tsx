@@ -1,79 +1,87 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { AnimatePresence, animate, motion, useAnimationFrame, useInView, useMotionValue, useReducedMotion, useTransform, type MotionValue } from 'motion/react'
-import { ArrowRight, BellRing, Bot, Briefcase, Check, Clock, Coins, CreditCard, EyeOff, FileCheck2, Footprints, Globe, Home, LayoutTemplate, MapPin, Pause, PenLine, Play, Smartphone, Sparkles, TrendingDown, Truck, Tv, UserPlus, Wallet } from 'lucide-react'
-import { PhoneSurface, ReachMap } from '../mock'
-import { Creative, creativeOf, type CreativeData } from '../creative'
-import { Brand, Chip, Num, PartnerLogo, Photo, Reveal, Segmented } from '../ui'
+import { AnimatePresence, motion, useInView } from 'motion/react'
+import { ArrowRight, Bot, Briefcase, Check, Clock, Coins, CreditCard, EyeOff, FileCheck2, Footprints, Home, Pause, PenLine, Play, Smartphone, Sparkles, TrendingDown, Truck, Wallet } from 'lucide-react'
+import { DEMO_AD, PhoneSurface, ReachMap } from '../mock'
+import { Creative, creativeOf } from '../creative'
+import { Brand, Chip, Num, Photo, Reveal, Segmented } from '../ui'
 import { OFFERS } from './Near'
 import { NICHES, n, rub } from '../data'
-import logoUrl from '../../../design-system/assets/beeline-logo.svg'
+import { HowGraphic } from './HowGraphics'
 
-/* Лендинг v2: подача и анимации по мотивам shopify.com, всё из дизайн-системы.
-   Порядок — вопросы владельца бизнеса: что это (hero) → кто уже с нами → какая аудитория → кому покажем → где увидят → и в чате →
-   сколько стоит → как запустить и управлять → помощник → истории → отзыв → вопросы → запуск. */
+function subscribeReducedMotion(listener: () => void) {
+  const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+  query.addEventListener('change', listener)
+  return () => query.removeEventListener('change', listener)
+}
+function useLiveReducedMotion() {
+  return useSyncExternalStore(subscribeReducedMotion, () => window.matchMedia('(prefers-reduced-motion: reduce)').matches, () => true)
+}
 
 // Лендинг открыт и как MVP (/mvp): тогда все кнопки ведут на вход MVP
 const mvp = () => location.hash.startsWith('#/mvp')
 const login = () => (mvp() ? '/mvp/login' : '/login')
 
-const WORDS = ['рядом с домом', 'в день зарплаты', 'после переезда', 'по дороге на работу', 'когда кончился трафик']
+export const LaunchContext = createContext<(() => void) | undefined>(undefined)
 
-function Rotator() {
-  const [i, setI] = useState(0)
-  const reduce = useReducedMotion()
-  useEffect(() => {
-    if (reduce) return
-    const t = setInterval(() => setI(x => (x + 1) % WORDS.length), 2400)
-    return () => clearInterval(t)
-  }, [reduce])
+export function CampaignAction({ to = login(), className, children, describedBy }: { to?: string; className?: string; children: ReactNode; describedBy?: string }) {
+  const launch = useContext(LaunchContext)
+  return launch
+    ? <button type="button" className={className} onClick={launch} aria-haspopup="dialog" aria-describedby={describedBy}>{children === 'узнать охват' ? 'запустить сейчас' : children}</button>
+    : <Link to={to} className={className} aria-describedby={describedBy}>{children}</Link>
+}
+
+const DEMO_CREATIVE = creativeOf(DEMO_AD.brand, DEMO_AD.offer, DEMO_AD.img)
+
+function OfferPreview({ caption }: { caption: string }) {
   return (
-    <span className="v2-rot" aria-live="off">
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span key={i} initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '-100%', opacity: 0 }} transition={{ duration: 0.45, ease: [0.2, 0.7, 0.2, 1] }}>
-          {WORDS[i]}
-        </motion.span>
-      </AnimatePresence>
-    </span>
+    <figure className="v2-offer-preview">
+      <figcaption className="bl-caption">{caption}</figcaption>
+      <Creative o={DEMO_CREATIVE} erid="реклама" wide />
+    </figure>
   )
 }
 
 // фон hero, как у Shopify: public/video/hero.mp4 и первый кадр hero.jpg. Нет файла — остаётся тёмный блок.
-// Без звука и по кругу; при «уменьшить движение» не стартует сам. Кнопка паузы обязательна: движение дольше 5 секунд
-function HeroVideo() {
-  const reduce = useReducedMotion()
+// Без звука и по кругу; при «уменьшить движение» не стартует сам.
+function HeroVideo({ showPlaybackControl }: { showPlaybackControl: boolean }) {
+  const reduce = useLiveReducedMotion()
   const ref = useRef<HTMLVideoElement>(null)
   const [failed, setFailed] = useState(false)
   // автозапуск успевает раньше подписки на onPlay, поэтому стартуем с «играет»
   const [paused, setPaused] = useState(!!reduce)
+  useEffect(() => { if (reduce) { ref.current?.pause(); setPaused(true) } }, [reduce])
   if (failed) return null
   const base = `${import.meta.env.BASE_URL}video/hero`
   return (
     <>
       <video ref={ref} className="v2-hero__video" src={`${base}.mp4`} poster={`${base}.jpg`} autoPlay={!reduce} muted loop playsInline preload="metadata" aria-hidden="true"
         onError={() => setFailed(true)} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} />
-      <button type="button" className="bl-icon-btn v2-hero__pause" onClick={() => { const v = ref.current!; if (v.paused) v.play(); else v.pause() }} aria-label={paused ? 'включить видео' : 'остановить видео'}>
+      {showPlaybackControl && <button type="button" className="bl-icon-btn v2-hero__pause" onClick={() => { const v = ref.current!; if (v.paused) void v.play().catch(() => setPaused(true)); else v.pause() }} aria-label={paused ? 'включить видео' : 'остановить видео'}>
         {paused ? <Play size={18} /> : <Pause size={18} />}
-      </button>
+      </button>}
     </>
   )
 }
 
-function Hero() {
+export function Hero({ phone, showPlaybackControl = true }: { phone?: ReactNode; showPlaybackControl?: boolean } = {}) {
+  const sketch = Boolean(useContext(LaunchContext))
   return (
     <section id="v2-hero" className="bl-section bl-section--wide v2-hero" data-theme="invert">
-      <HeroVideo />
+      <HeroVideo showPlaybackControl={showPlaybackControl}/>
       <div className="v2-hero__text">
-        <h1 className="bl-display-xl">пусть вас выбирают<br /><Rotator /></h1>
-        <p className="bl-lead bl-secondary">Покажем вашу акцию абонентам билайна, которые живут или бывают рядом, — в приложении и в момент, когда им это нужно. Показы бесплатно: платите за переходы, заявки или продажи.</p>
+        <h1 className="bl-display-xl">{sketch ? 'Находите новых клиентов' : 'покажите свою акцию тем, кто рядом'}</h1>
+        <p className="bl-lead bl-secondary">{sketch ? 'Показывайте рекламу абонентам билайна, а затем ведите их на свой сайт, в приложение или мессенджер.' : 'Разместите акцию в приложении билайна. Показы бесплатны — платите за переходы, заявки или продажи.'}</p>
         <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
-          <Link className="bl-btn bl-btn--primary bl-btn--xl" to={login()}>узнать охват</Link>
+          <CampaignAction className="bl-btn bl-btn--primary bl-btn--xl">узнать охват</CampaignAction>
         </div>
       </div>
-      {/* так абонент увидит вашу акцию — вместо ссылки на витрину */}
-      <motion.div className="v2-hero__phone" aria-hidden="true" initial={{ opacity: 0, y: 40, rotate: 4 }} animate={{ opacity: 1, y: 0, rotate: -3 }} transition={{ delay: 0.3, duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}>
-        <PhoneSurface kind="main" />
-      </motion.div>
+      <div className="v2-hero__offer">
+        <OfferPreview caption="так абонент увидит вашу акцию" />
+      </div>
+      <div className="v2-hero__phone" aria-hidden="true">
+        {phone ?? <PhoneSurface kind="main" />}
+      </div>
     </section>
   )
 }
@@ -82,21 +90,23 @@ function Hero() {
 function useAuto(len: number, ms: number) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { amount: 0.4 })
-  const reduce = useReducedMotion()
+  const reduce = useLiveReducedMotion()
   const [i, pick] = useState(0)
   const [hold, setHold] = useState(false)
-  const run = inView && !reduce && !hold
+  const [focused, setFocused] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const run = inView && !reduce && !hold && !focused && !paused
   useEffect(() => { if (!run) return; const t = setTimeout(() => pick(x => (x + 1) % len), ms); return () => clearTimeout(t) }, [run, i, len, ms])
-  return { ref, i, pick, run, hover: { onMouseEnter: () => setHold(true), onMouseLeave: () => setHold(false) } }
+  return { ref, i, pick, run, paused, reduce, toggle: () => setPaused(value => !value), hover: { onMouseEnter: () => setHold(true), onMouseLeave: () => setHold(false), onFocusCapture: () => setFocused(true), onBlurCapture: (event: FocusEvent<HTMLDivElement>) => setFocused(event.currentTarget.contains(event.relatedTarget)) } }
 }
 // полоска прогресса под активным шагом, длиной в один шаг
 const Prog = ({ i, ms, run }: { i: number; ms: number; run: boolean }) =>
   <span key={i} className="v2-prog" style={{ animationDuration: `${ms}ms`, animationPlayState: run ? 'running' : 'paused' }} />
 // целевое действие блока. Жёлтая кнопка на экране одна (hero, финал или шапка), поэтому здесь тёмная или ссылка
 const Go = ({ to, ghost, children }: { to: string; ghost?: boolean; children: ReactNode }) =>
-  <Link className={`bl-btn v2-go ${ghost ? 'bl-btn--ghost' : 'bl-btn--dark'}`} to={to}>{children} <ArrowRight size={18} /></Link>
+  <CampaignAction className={`bl-btn v2-go ${ghost ? 'bl-btn--ghost' : 'bl-btn--dark'}`} to={to}>{children} <ArrowRight size={18} /></CampaignAction>
 
-const SURFACES = [
+export const SURFACES = [
   { k: 'main' as const, t: 'на главной приложения', d: 'Первое, что абонент видит утром, когда проверяет баланс.' },
   { k: 'showcase' as const, t: 'в разделе «лучшее рядом»', d: 'Акции заведений у дома, ближние — первыми.' },
   { k: 'paid' as const, t: 'сразу после оплаты', d: 'В момент, когда деньги есть и решение близко.' },
@@ -104,15 +114,16 @@ const SURFACES = [
 ]
 const SURF_MS = 4200
 function Everywhere() {
+  const sketch = Boolean(useContext(LaunchContext))
   const a = useAuto(SURFACES.length, SURF_MS)
   return (
     <section id="where" className="bl-section bl-section--wide">
       <div ref={a.ref} {...a.hover}>
         <div className="section-head">
-          <h2 className="bl-display-l">вас увидят там,<br />где абонент проводит день</h2>
+          <h2 className="bl-display-l">{sketch ? 'где покажем' : <>вас увидят там,<br />где абонент проводит день</>}</h2>
           <div className="bl-stack" style={{ ['--bl-gap' as string]: '16px', maxWidth: 400 }}>
             <p className="bl-body bl-secondary">Одна кампания — четыре места в приложении билайна. Показываем там, где решение ближе всего.</p>
-            <Go to={login()}>выбрать, где показать</Go>
+            <Go to={login()}>{sketch ? 'запустить сейчас' : 'выбрать, где показать'}</Go>
           </div>
         </div>
         <div className="v2-backdrop v2-backdrop--teal v2-where">
@@ -122,6 +133,7 @@ function Everywhere() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <div className="v2-playback"><button type="button" className="bl-btn" aria-pressed={a.paused} disabled={!!a.reduce} onClick={a.toggle}>{a.paused ? <Play size={16}/> : <Pause size={16}/>} автосмена: {a.paused || a.reduce ? 'выключена' : 'включена'}</button></div>
         <ol className="v2-tabs v2-tabs--row">
           {SURFACES.map((x, n) => (
             <li key={x.k} className={n === a.i ? 'is-on' : ''}>
@@ -138,28 +150,15 @@ function Everywhere() {
   )
 }
 
-// ИИ-поиск витрины: вопрос печатается, ИИ «думает», отвечает и выкладывает офферы. Чипсами можно выбрать вопрос самому
+// Готовый пример виден сразу. Другой вопрос выбирает посетитель.
 const ASKS = [
-  { q: 'где позавтракать рядом до 300 ₽?', a: 'Нашёл два места в 5 минутах. Завтрак с кофе дешевле в «Колосе».', ids: ['kolos', 'schi'], more: ['ближе', 'с собой', 'открыто сейчас'] },
-  { q: 'переобуть машину до выходных', a: 'В «Колесе 24» есть запись на четверг, «Мотор» бесплатно проверит ходовую.', ids: ['koleso', 'motor'], more: ['по записи', 'дешевле'] },
-  { q: 'чем занять ребёнка в субботу?', a: 'Пробное занятие в «Сове» бесплатно, а в «Кубике» −15% на конструкторы.', ids: ['sova', 'toys'], more: ['4–6 лет', 'рядом с домом'] },
+  { q: 'где позавтракать рядом до 300 ₽?', a: 'Нашёл два места в 5 минутах. Завтрак с кофе дешевле в «Колосе».', ids: ['kolos', 'schi'] },
+  { q: 'переобуть машину до выходных', a: 'В «Колесе 24» есть запись на четверг, «Мотор» бесплатно проверит ходовую.', ids: ['koleso', 'motor'] },
+  { q: 'чем занять ребёнка в субботу?', a: 'Пробное занятие в «Сове» бесплатно, а в «Кубике» −15% на конструкторы.', ids: ['sova', 'toys'] },
 ]
 function Chat() {
-  const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { amount: 0.4 })
-  const reduce = useReducedMotion()
-  const [s, setS] = useState(0)
-  const [k, setK] = useState(0) // тики по 45 мс от начала сценария
-  const x = ASKS[s], typed = reduce ? x.q.length : Math.min(k, x.q.length)
-  const T = { think: x.q.length + 6, answer: x.q.length + 22, cards: x.q.length + 30, next: x.q.length + 150 }
-  const at = reduce ? T.next : k
-  useEffect(() => {
-    if (!inView || reduce) return
-    const t = setInterval(() => setK(v => v + 1), 45)
-    return () => clearInterval(t)
-  }, [inView, reduce, s])
-  useEffect(() => { if (at >= T.next && !reduce) { setS(v => (v + 1) % ASKS.length); setK(0) } }, [at])
-  const play = (n: number) => { setS(n); setK(0) }
+  const [selected, select] = useState(0)
+  const reduce = useLiveReducedMotion()
   return (
     <section className="bl-section bl-section--wide">
       <div className="section-head">
@@ -173,174 +172,24 @@ function Chat() {
         </div>
       </div>
       <div className="v2-backdrop v2-backdrop--violet v2-center">
-        <div className="bl-row v2-asks" role="group" aria-label="Спросите сами">{ASKS.map((a, n) => <Chip key={a.q} on={n === s} onClick={() => play(n)}>{a.q}</Chip>)}</div>
+        <div className="bl-row v2-asks" role="group" aria-label="Вопросы для примера">{ASKS.map((a, i) => <Chip key={a.q} on={i === selected} onClick={() => select(i)}>{a.q}</Chip>)}</div>
         <div className="v2-window v2-window--chat">
           <div className="v2-window__bar"><Sparkles size={16} /> лучшее рядом · поиск словами</div>
-          <div ref={ref} className="v2-chat v2-chat--white v2-chat--live" role="log" aria-live="polite" aria-label="Пример диалога в витрине">
-            <div className="v2-bubble v2-bubble--me">{x.q.slice(0, typed)}{typed < x.q.length && <span className="v2-caret" />}</div>
-            <AnimatePresence mode="popLayout">
-              {at >= T.think && at < T.answer && <motion.div key={`t${s}`} className="v2-bubble v2-typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><i /><i /><i /></motion.div>}
-              {at >= T.answer && <motion.div key={`a${s}`} className="v2-bubble" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><Bot size={16} /> {x.a}</motion.div>}
-            </AnimatePresence>
-            <div className="v2-chat__cards">
-              {at >= T.cards && x.ids.map((id, n) => (
-                <motion.div key={`${s}${id}`} initial={{ opacity: 0, scale: 0.9, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: n * 0.12, type: 'spring', stiffness: 260, damping: 22 }}>
-                  <Creative o={OFFERS.find(o => o.id === id)!} erid="реклама" />
-                </motion.div>
-              ))}
-            </div>
-            {at >= T.cards && <motion.div className="bl-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{x.more.map(m => <span key={m} className="bl-chip">{m}</span>)}</motion.div>}
+          <div className="v2-chat v2-chat--white v2-chat--live" role="group" aria-label="Пример диалога в витрине">
+            {ASKS.map((example, i) => (
+              <motion.div key={example.q} className="v2-chat__scene" aria-hidden={i !== selected}
+                initial={false} animate={{ opacity: i === selected ? 1 : 0 }} transition={{ duration: reduce ? 0 : 0.22 }}>
+                <div className="v2-bubble v2-bubble--me">{example.q}</div>
+                <div className="v2-bubble">{example.a}</div>
+                <div className="v2-chat__cards">
+                  {example.ids.map(id => <Creative key={id} o={OFFERS.find(o => o.id === id)!} erid="реклама" />)}
+                </div>
+              </motion.div>
+            ))}
+            <span className="v2-visually-hidden" role="status">{ASKS[selected].a}</span>
           </div>
         </div>
       </div>
-    </section>
-  )
-}
-
-/* «будьте везде» по мотивам блока Shopify. Карточка под курсором раскрывается на 2/4 ширины;
-   активная показывает свой сценарий: ИИ правит креатив, орбита кабинета выводит раздел наверх, каналы съезжают в центр.
-   Всё стоит, пока блок вне экрана или включено «уменьшить движение». */
-type Cr = CreativeData & { say: string }
-const BASE = creativeOf('кофейня «Зерно»', '−20% до 10:00', 0)
-const EDITS: Cr[] = [
-  { ...BASE, say: 'делаю условие крупнее…' },
-  { ...BASE, tone: 'violet', say: 'меняю фон под бренд…' },
-  { ...BASE, tone: 'violet', big: '1 + 1', small: 'второй кофе в подарок', say: 'пробую другое условие…' },
-  { ...BASE, tone: 'green', big: '1 + 1', small: 'второй кофе в подарок', say: 'проверяю маркировку…' }, // светлый тон не берём: в тёмной секции текст креатива станет белым
-]
-function Builder({ run }: { run: boolean }) {
-  const [i, setI] = useState(0)
-  useEffect(() => { if (!run) return; const t = setInterval(() => setI(x => (x + 1) % EDITS.length), 2400); return () => clearInterval(t) }, [run])
-  const e = EDITS[i]
-  return (
-    <div className="v2-builder" aria-hidden="true">
-      <span className="v2-builder__label"><LayoutTemplate size={14} /> креатив</span>
-      <div className="v2-builder__clip">
-      <AnimatePresence initial={false}>
-        <motion.div key={i} className="v2-builder__cr" initial={{ opacity: 0, filter: 'blur(8px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
-          <Creative o={e} erid="реклама" wide />
-        </motion.div>
-      </AnimatePresence>
-      {run && <motion.span key={`s${i}`} className="v2-builder__sweep" initial={{ x: '-100%' }} animate={{ x: '120%' }} transition={{ duration: 1.1, ease: 'easeInOut' }} />}
-      </div>
-      <div className="v2-builder__ai">
-        <Bot size={18} />
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>{e.say}</motion.span>
-        </AnimatePresence>
-        <span className="v2-builder__stop" />
-      </div>
-    </div>
-  )
-}
-
-// разделы кабинета на орбите и экран, который появляется в центре, когда раздел наверху
-const HUB: { t: string; ui: ReactNode }[] = [
-  { t: 'кампании', ui: <><b>2 кампании идут</b><span className="v2-mini__row"><span>кофейня у дома</span><span className="bl-tag bl-tag--soft-green">идёт</span></span><span className="v2-mini__row"><span>завтраки −20%</span><span className="bl-tag bl-tag--soft-green">идёт</span></span></> },
-  { t: 'статистика', ui: <><span className="bl-caption">визиты за неделю</span><b className="bl-h2">206</b><span className="v2-mini__bars">{[30, 45, 40, 62, 75, 70, 95].map((h, n) => <i key={n} style={{ height: `${h}%` }} />)}</span></> },
-  { t: 'баланс', ui: <><span className="bl-caption">на балансе</span><b className="bl-h2">12 400 ₽</b><span className="bl-caption">хватит на 9 дней</span></> },
-  { t: 'заявки', ui: <><b>+3 новые заявки</b><span className="v2-mini__row"><span>Мария, 10:42</span><span>перезвонить</span></span><span className="v2-mini__row"><span>Олег, 11:05</span><span>перезвонить</span></span></> },
-  { t: 'документы и ЭДО', ui: <><b>акт за октябрь</b><span className="v2-mini__row"><span>Диадок</span><span className="bl-tag bl-tag--soft-green">подписан</span></span></> },
-  { t: 'модерация', ui: <><span className="v2-mini__ok"><Check size={18} strokeWidth={3} /></span><b>проверено ИИ</b><span className="bl-caption">за 2 минуты</span></> },
-]
-const STEP = 360 / HUB.length
-function HubPill({ spin, k, on }: { spin: MotionValue<number>; k: number; on: boolean }) {
-  const a = k * STEP
-  const rotate = useTransform(spin, s => -s - a) // подпись остаётся горизонтальной
-  return (
-    <span className="v2-orbit__slot" style={{ transform: `rotate(${a}deg) translateY(calc(-1 * var(--r)))` }}>
-      <motion.span className={`v2-orbit__pill${on ? ' is-on' : ''}`} style={{ rotate }}>{HUB[k].t}</motion.span>
-    </span>
-  )
-}
-function Hub({ active, run }: { active: boolean; run: boolean }) {
-  const spin = useMotionValue(0)
-  const [pick, setPick] = useState<number | null>(null)
-  useAnimationFrame((_, dt) => { if (run && !active) spin.set(spin.get() + dt * 0.008) })
-  useEffect(() => {
-    if (!active || !run) { setPick(null); return }
-    const next = () => {
-      const to = Math.round(spin.get() / STEP) * STEP - STEP // следующий раздел встаёт наверх
-      animate(spin, to, { duration: 0.7, ease: [0.2, 0.7, 0.2, 1] })
-      setPick(((-to / STEP) % HUB.length + HUB.length) % HUB.length)
-    }
-    next()
-    const t = setInterval(next, 2600)
-    return () => clearInterval(t)
-  }, [active, run])
-  return (
-    <div className="v2-orbit" aria-hidden="true">
-      {[100, 160, 240, 330].map(r => <span key={r} className="v2-orbit__circle" style={{ width: r * 2, height: r * 2 }} />)}
-      <AnimatePresence mode="wait" initial={false}>
-        {pick === null
-          ? <motion.span key="logo" className="v2-orbit__hub" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}><img src={logoUrl} alt="" width={64} height={64} /></motion.span>
-          : <motion.span key={pick} className="v2-mini" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}>{HUB[pick].ui}</motion.span>}
-      </AnimatePresence>
-      <motion.span className="v2-orbit__ring" style={{ rotate: spin }}>
-        {HUB.map((h, k) => <HubPill key={h.t} spin={spin} k={k} on={pick === k} />)}
-      </motion.span>
-    </div>
-  )
-}
-
-// каналы летают по двум кругам вокруг знака билайна; в активной карточке центр орбиты съезжает внутрь
-const CHANNELS: { k: string; i: ReactNode; r: 0 | 1; a: number }[] = [
-  { k: 'app', i: <Smartphone size={30} />, r: 0, a: 0 }, { k: 'near', i: <MapPin size={30} />, r: 0, a: 90 },
-  { k: 'tv', i: <Tv size={30} />, r: 0, a: 180 }, { k: 'push', i: <BellRing size={30} />, r: 0, a: 270 },
-  { k: 'avito', i: <PartnerLogo id="avito" />, r: 1, a: 45 }, { k: 'alfabank', i: <PartnerLogo id="alfabank" />, r: 1, a: 135 },
-  { k: 'tbank', i: <PartnerLogo id="tbank" />, r: 1, a: 225 }, { k: 'web', i: <Globe size={30} />, r: 1, a: 315 },
-]
-const RADII = [150, 260]
-function ChannelTile({ spin, c }: { spin: MotionValue<number>; c: (typeof CHANNELS)[number] }) {
-  const deg = useTransform(spin, s => (c.a + s * (c.r ? 0.7 : 1)) * Math.PI / 180) // внешний круг медленнее
-  const x = useTransform(deg, d => Math.cos(d) * RADII[c.r])
-  const y = useTransform(deg, d => Math.sin(d) * RADII[c.r])
-  return <motion.span className="v2-tile" style={{ x, y }}>{c.i}</motion.span>
-}
-function Channels({ active, run }: { active: boolean; run: boolean }) {
-  const spin = useMotionValue(-30)
-  useAnimationFrame((_, dt) => { if (run) spin.set(spin.get() + dt * (active ? 0.012 : 0.006)) })
-  return (
-    <div className={`v2-orbit v2-channels${active ? ' is-active' : ''}`} aria-hidden="true">
-      <div className="v2-channels__center">
-        <svg className="v2-channels__rings" viewBox="-300 -300 600 600">{RADII.map(r => <circle key={r} r={r} />)}</svg>
-        <span className="v2-orbit__hub v2-channels__hub"><img src={logoUrl} alt="" width={48} height={48} /></span>
-        {CHANNELS.map(c => <ChannelTile key={c.k} spin={spin} c={c} />)}
-      </div>
-    </div>
-  )
-}
-
-function Anywhere() {
-  const ref = useRef<HTMLDivElement>(null)
-  const reduce = useReducedMotion()
-  const run = useInView(ref) && !reduce
-  const [active, setActive] = useState(0)
-  // карточки друг под другом (планшет, телефон): наводить нечего, сценарии идут во всех сразу
-  const [stacked, setStacked] = useState(() => matchMedia('(max-width: 1023px)').matches)
-  useEffect(() => {
-    const m = matchMedia('(max-width: 1023px)'), f = () => setStacked(m.matches)
-    m.addEventListener('change', f)
-    return () => m.removeEventListener('change', f)
-  }, [])
-  const items = [
-    { ui: (on: boolean) => <Builder run={run && on} />, t: 'объявление за 5 минут', d: <>Дайте ссылку на сайт или Карты — <Link to={login()}>ИИ соберёт объявление</Link> сам. Поправить можно словами.</> },
-    { ui: (on: boolean) => <Hub active={on} run={run} />, t: 'всё в одном кабинете', d: 'Кампании, баланс, заявки и документы. Статистика каждый день.' },
-    { ui: (on: boolean) => <Channels active={on} run={run} />, t: 'одна кампания — все каналы', d: 'Приложение билайна, раздел «лучшее рядом», ТВ и пуши. И у партнёров: Авито, Альфа-Банк, Т-Банк.' },
-  ]
-  return (
-    <section id="how" className="bl-section bl-section--wide v2-anywhere" data-theme="invert">
-      <h2 className="bl-display-l">запуск за вечер.<br />дальше — из одного окна</h2>
-      <div ref={ref} className="v2-any" style={{ ['--any-cols' as string]: items.map((_, i) => `minmax(0, ${i === active ? 2 : 1}fr)`).join(' ') }}>
-        {items.map((x, i) => (
-          <article key={x.t} className={`v2-any__item${i === active ? ' is-active' : ''}`} onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)}>
-            <div className="v2-any__card">{x.ui(stacked || i === active)}</div>
-            <h3 className="bl-h3">{x.t}</h3>
-            <p className="bl-body bl-secondary">{x.d}</p>
-          </article>
-        ))}
-      </div>
-      <Go to={login()}>собрать объявление самому</Go>
     </section>
   )
 }
@@ -355,17 +204,19 @@ const CLIENTS: [string, string][] = [
   ['pyaterochka.svg', 'Пятёрочка'], ['alfabank.svg', 'Альфа-Банк'], ['tbank.svg', 'Т-Банк'], ['yandex.svg', 'Яндекс'],
   ['ozon.svg', 'Ozon'], ['cdek.svg', 'СДЭК'], ['brandshop.png', 'Brandshop'],
 ]
-function Clients() {
+export function Clients({ calm = false }: { calm?: boolean } = {}) {
+  const clients = useContext(LaunchContext) ? CLIENTS.slice(0, 6) : CLIENTS
+  const [paused, setPaused] = useState(false)
   return (
     <section className="bl-section bl-section--wide v2-clients" aria-labelledby="clients-h">
       <div className="v2-clients__head">
         <h2 id="clients-h" className="bl-h3">нам доверяют</h2>
-        <Go ghost to={login()}>стать партнёром</Go>
+        <div className="bl-row">{!calm && <button type="button" className="bl-icon-btn" aria-label={paused ? 'Продолжить прокрутку логотипов' : 'Приостановить прокрутку логотипов'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused ? <Play size={18}/> : <Pause size={18}/>}</button>}<Go ghost to={login()}>стать партнёром</Go></div>
       </div>
       <div className="v2-ticker v2-ticker--logos">
-        <ul className="v2-ticker__track">
-          {[...CLIENTS, ...CLIENTS].map(([f, t], k) => (
-            <li key={k} className="v2-logo" aria-hidden={k >= CLIENTS.length}><img src={`${import.meta.env.BASE_URL}logos/${f}`} alt={k < CLIENTS.length ? t : ''} /></li>
+        <ul className="v2-ticker__track" style={{ animationPlayState: paused ? 'paused' : undefined }}>
+          {(calm ? clients : [...clients, ...clients]).map(([f, t], k) => (
+            <li key={k} className="v2-logo" aria-hidden={k >= clients.length}><img src={`${import.meta.env.BASE_URL}logos/${f}`} alt={k < clients.length ? t : ''} /></li>
           ))}
         </ul>
       </div>
@@ -383,13 +234,18 @@ const NEAR = [
   { i: Briefcase, t: 'работают рядом', d: 'Заходят в обед и после работы.' },
   { i: Footprints, t: 'бывают каждый день', d: 'Проходят мимо по дороге домой или в метро.' },
 ]
-function AroundPoint() {
-  const [n, setN] = useState(0)
-  const [rad, setRad] = useState(1)
-  const [when, setWhen] = useState(0)
-  const reduce = useReducedMotion()
-  useEffect(() => { if (reduce) return; const t = setInterval(() => setN(x => x + 1), 2600); return () => clearInterval(t) }, [reduce])
-  const [label, r, people] = RADIUS[rad]
+type ReachSelection = {
+  rad: number
+  setRad: (value: number) => void
+  when: number
+  setWhen: (value: number) => void
+}
+
+const RADIUS_OPTIONS: [number, string][] = RADIUS.map(([label], i) => [i, label])
+const reach = (rad: number, when: number) => Math.round(RADIUS[rad][2] * POINTS.length * WHEN[when][2] / 10) * 10
+
+function AroundPoint({ rad, setRad, when, setWhen }: ReachSelection) {
+  const [label, r] = RADIUS[rad]
   return (
     <section id="who" className="bl-section bl-section--wide v2-reach">
       <div className="section-head">
@@ -399,13 +255,13 @@ function AroundPoint() {
           <Go to={login()}>посчитать для своих точек</Go>
         </div>
       </div>
-      <Reveal className="v2-backdrop">
+      <div className="v2-backdrop">
         <div className="v2-window v2-app">
           <aside className="v2-app__panel">
             <div className="v2-app__top"><b className="bl-h4">кому показать</b><span className="bl-caption">кофейня «Зерно» · 2 точки</span></div>
             <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
               <span className="bl-caption">радиус от точки</span>
-              <Segmented label="Радиус охвата" value={rad} onChange={setRad} options={RADIUS.map(([t], i) => [i, t] as [number, string])} />
+              <Segmented label="Радиус охвата" value={rad} onChange={setRad} options={RADIUS_OPTIONS} />
             </div>
             <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
               <span className="bl-caption">когда показать</span>
@@ -418,24 +274,16 @@ function AroundPoint() {
               </div>
             </div>
             <div className="v2-app__result">
-              <span className="bl-caption">подходящих людей</span>
-              <b className="bl-h1"><Num value={Math.round(people * POINTS.length * WHEN[when][2] / 10) * 10} /></b>
+              <span className="bl-caption">примерный охват</span>
+              <b className="bl-h1"><Num value={reach(rad, when)} /></b>
               <span className="bl-caption">в {label} от двух точек{WHEN[when][1]}</span>
             </div>
           </aside>
           <div className="v2-map">
-            <ReachMap points={POINTS} r={r} />
-            <AnimatePresence>
-              <motion.div key={n} className="float-card v2-map__guest" style={{ left: `${18 + (n * 23) % 50}%`, top: `${12 + (n * 37) % 55}%` }}
-                initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}>
-                <span className="guest-dot"><UserPlus size={16} /></span>
-                <span><b className="bl-medium">+1 гость</b><span className="bl-micro" style={{ display: 'block' }}>{['300 м', '650 м', '900 м'][n % 3]} от точки</span></span>
-              </motion.div>
-            </AnimatePresence>
-            <span className="bl-pill-dark v2-map__today">сегодня пришли: <b className="bl-nums">{14 + n}</b></span>
+            <ReachMap points={POINTS} r={r} radiusLabel={label} animateDots={false} />
           </div>
         </div>
-      </Reveal>
+      </div>
       <div className="bl-grid v2-feats" style={{ ['--bl-cols' as string]: 3 }}>
         {NEAR.map((x, k) => <Reveal key={x.t} delay={k * 0.08} className="bl-stack v2-trust__item"><x.i size={24} /><b className="bl-h4">{x.t}</b><span className="bl-body bl-secondary">{x.d}</span></Reveal>)}
       </div>
@@ -494,7 +342,7 @@ function Pricing() {
   )
 }
 
-function ForEveryone() {
+export function ForEveryone({ calm = false }: { calm?: boolean } = {}) {
   const s = [
     { photo: 'case-coffee.jpg', label: 'Кофейня с гостями у стойки', t: 'начните за вечер', d: 'Кофейня «Зерно» запустилась за 10 минут. Автопилот сам выбрал, кому и где показать.', v: 289, u: 'гостей за месяц', plan: 'автопилот', price: '10 000 ₽ в месяц' },
     { photo: 'case-auto.jpg', label: 'Автосервис, смена шин', t: 'растите без агентства', d: 'Сеть из трёх автосервисов сама выбирает моменты и ставки — например, первые заморозки.', v: 72, u: 'записи за две недели холодов', plan: 'вручную', price: '5 600 ₽ за две недели' },
@@ -504,13 +352,13 @@ function ForEveryone() {
     <section id="cases" className="bl-section bl-section--wide">
       <div className="section-head">
         <h2 className="bl-display-l">от кофейни до федеральной сети</h2>
-        <Link className="bl-btn" to={login()}>запустить свою кампанию <ArrowRight size={18} /></Link>
+        <CampaignAction className="bl-btn">запустить свою кампанию <ArrowRight size={18} /></CampaignAction>
       </div>
       <div className="bl-grid" style={{ ['--bl-cols' as string]: 3 }}>
         {s.map((x, i) => (
           <Reveal key={x.t} delay={i * 0.08} as="article" className="v2-story">
             <Photo name={x.photo} label={x.label} ratio="4 / 3">
-              <span className="v2-story__result"><b className="bl-h2"><Num value={x.v} from={0} /></b><span className="bl-caption">{x.u}</span></span>
+              <span className="v2-story__result"><b className="bl-h2">{calm ? x.v : <Num value={x.v} from={0} />}</b><span className="bl-caption">{x.u}</span></span>
             </Photo>
             <h3 className="bl-h3">{x.t}</h3>
             <p className="bl-body bl-secondary">{x.d}</p>
@@ -586,7 +434,7 @@ const SIGNALS = ['живёт рядом', 'работает рядом', 'каж
 const LAUNCH = ['ИНН', 'кому', 'оплата', 'в эфире']
 function Audience() {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { amount: 0.3 }), reduce = useReducedMotion()
+  const inView = useInView(ref, { amount: 0.3 }), reduce = useLiveReducedMotion()
   const run = inView && !reduce
   const [t, setT] = useState(0)
   useEffect(() => { if (!run) return; const x = setInterval(() => setT(v => v + 1), 1300); return () => clearInterval(x) }, [run])
@@ -646,7 +494,7 @@ function Audience() {
   )
 }
 
-function Quote() {
+export function Quote({ calm = false }: { calm?: boolean } = {}) {
   return (
     <section className="bl-section bl-section--wide v2-quote">
       <figure className="bl-stack" style={{ ['--bl-gap' as string]: '24px', margin: 0 }}>
@@ -659,7 +507,7 @@ function Quote() {
       </figure>
       <div className="v2-bonus">
         {([[3000, ' ₽', 'на баланс за первую кампанию'], [0, ' ₽', 'за показы и подключение'], [1, ' день', 'до первых гостей']] as const).map(([v, u, t], n) => (
-          <Reveal key={t} delay={n * 0.1} className="v2-bonus__row"><b className="bl-h2"><Num value={v} suffix={u} from={0} /></b><span className="bl-body bl-secondary">{t}</span></Reveal>
+          <Reveal key={t} delay={n * 0.1} className="v2-bonus__row"><b className="bl-h2">{calm ? `${v.toLocaleString("ru-RU")}${u}` : <Num value={v} suffix={u} from={0} />}</b><span className="bl-body bl-secondary">{t}</span></Reveal>
         ))}
         <Go to={login()}>получить бонус 3 000 ₽</Go>
       </div>
@@ -667,41 +515,47 @@ function Quote() {
   )
 }
 
-// финал: три шага сменяют друг друга, справа — тот же шаг в интерфейсе вместо фото
-const FINAL_MS = 3600
-const FINAL = [
-  { t: 'введите ИНН или сайт', d: 'узнаем компанию и точки', ui: <><span className="bl-caption">ИНН или сайт</span><span className="v2-mock-input">7701 234 567<span className="v2-caret" /></span><span className="v2-mini__row"><span>ООО «Зерно» · 2 точки</span><Check size={16} /></span></> },
-  { t: 'выберите, кому показать', d: 'или доверьтесь автопилоту', ui: <><span className="bl-caption">кому показать</span><span className="bl-row"><span className="bl-chip is-active">соседи в 1 км</span><span className="bl-chip is-active">утром</span><span className="bl-chip">после оплаты</span></span><b className="bl-h2">24 800</b><span className="bl-caption">подходящих людей</span></> },
-  { t: 'пополните и запустите', d: 'СБП, оферта галочкой', ui: <><span className="bl-caption">к оплате по СБП</span><b className="bl-h2">3 000 ₽</b><span className="v2-mini__row"><span className="v2-mini__ok"><Check size={18} strokeWidth={3} /></span><span>кампания запущена</span></span></> },
-]
-function Final() {
-  const a = useAuto(FINAL.length, FINAL_MS)
+const LAUNCH_STEPS = ['выберите радиус', 'оцените охват', 'посмотрите, как выглядит акция']
+
+function Final({ rad, setRad, when }: Omit<ReachSelection, 'setWhen'>) {
+  const launch = useContext(LaunchContext)
+  const [step, setStep] = useState(2)
+  const reduce = useLiveReducedMotion()
+  const [label, radius] = RADIUS[rad]
   return (
     <section id="v2-final" className="bl-section bl-section--wide v2-final" data-theme="invert">
-      <div ref={a.ref} className="bl-stack" style={{ ['--bl-gap' as string]: '32px' }} {...a.hover}>
-        <h2 className="bl-display-l">запустите сегодня</h2>
-        <ol className="v2-steps">
-          {FINAL.map((x, n) => (
-            <li key={x.t} className={n === a.i ? 'is-on' : ''}>
-              <button type="button" onClick={() => a.pick(n)} aria-pressed={n === a.i}>
-                <span className="v2-steps__n">0{n + 1}</span>
-                <span><b className="bl-h4">{x.t}</b><span className="bl-caption" style={{ display: 'block' }}>{x.d}</span></span>
+      <div className="v2-final__intro bl-stack">
+        <h2 className="bl-display-l">как запустить кампанию</h2>
+        <p className="bl-body bl-secondary">На примере кофейни «Зерно» с двумя точками.</p>
+        <ol className="v2-steps" aria-label="Шаги примера">
+          {LAUNCH_STEPS.map((title, i) => (
+            <li key={title} className={i === step ? 'is-on' : ''}>
+              <button type="button" onClick={() => setStep(i)} aria-pressed={i === step} aria-controls="v2-launch-preview">
+                <span className="v2-steps__n" aria-hidden="true">0{i + 1}</span>
+                <span className="bl-h4">{title}</span>
               </button>
-              {n === a.i && <Prog i={a.i} ms={FINAL_MS} run={a.run} />}
             </li>
           ))}
         </ol>
-        <div className="bl-row" style={{ ['--bl-gap' as string]: '20px' }}>
-          <Link className="bl-btn bl-btn--primary bl-btn--xl" to={login()}>узнать охват</Link>
-        </div>
-        <span className="bl-caption">вход через Госуслуги или бизнес-ID — компанию и точки узнаем сами</span>
       </div>
-      <div className="v2-final__stage" aria-hidden="true">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={a.i} className="v2-final__card" initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.4 }}>
-            {FINAL[a.i].ui}
-          </motion.div>
-        </AnimatePresence>
+      <div id="v2-launch-preview" className="v2-final__stage" role="group" aria-label="Пример кампании">
+        <div className="v2-window__bar"><Smartphone size={16} aria-hidden="true" /> {step === 2 ? 'приложение билайна' : 'кабинет · кофейня «Зерно»'}</div>
+        <motion.div key={step} className="v2-final__scene" initial={reduce ? false : { opacity: 0.45, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
+          {step === 0 && <>
+            <Segmented label="Радиус в примере запуска" value={rad} onChange={setRad} options={RADIUS_OPTIONS} />
+            <div className="v2-final__map"><ReachMap points={POINTS} r={radius} radiusLabel={label} animateDots={false} /></div>
+          </>}
+          {step === 1 && <div className="v2-final__result">
+            <span className="bl-caption">примерный охват</span>
+            <strong className="bl-display-l">{n(reach(rad, when))}</strong>
+            <span className="bl-body">человек в радиусе {label} от двух точек{WHEN[when][1]}</span>
+          </div>}
+          {step === 2 && <OfferPreview caption="так абонент увидит вашу акцию" />}
+        </motion.div>
+      </div>
+      <div className="v2-final__action bl-stack">
+        <div><CampaignAction className="bl-btn bl-btn--primary bl-btn--xl" describedBy="v2-login-hint">узнать охват</CampaignAction></div>
+        <span id="v2-login-hint" className="bl-caption">{launch ? 'Начните с ИНН и телефона. Затем проверьте бизнес, добавьте точки и соберите оффер.' : <>Сначала откроется вход в кабинет. {mvp() ? 'Понадобятся рабочая почта и ИНН.' : 'Можно войти через Госуслуги или бизнес-ID.'}</>}</span>
       </div>
     </section>
   )
@@ -731,53 +585,124 @@ function Faq() {
   )
 }
 
-// кнопка в шапке — когда hero и финал с главной кнопкой ушли с экрана: на экране всегда одна жёлтая
-function useHeaderCta() {
+export function SketchMetrics({ calm = false, pulse = false }: { calm?: boolean; pulse?: boolean } = {}) {
+  const ref = useRef<HTMLElement>(null)
+  const seen = useInView(ref, { once: true, amount: .65 })
+  const inView = useInView(ref, { amount: .1 })
+  const reduce = useLiveReducedMotion()
+  const [pageVisible, setPageVisible] = useState(!document.hidden)
+  const [dots] = useState(() => pulse ? Array.from({ length: 240 }, () => ({ duration: 8 + Math.random() * 16, delay: -Math.random() * 24 })) : [])
+  useEffect(() => {
+    if (!pulse) return
+    const update = () => setPageVisible(!document.hidden)
+    document.addEventListener('visibilitychange', update)
+    return () => document.removeEventListener('visibilitychange', update)
+  }, [pulse])
+  const show = seen || reduce
+  return <section ref={ref} className="bl-section bl-section--wide v2-sketch-metrics" data-theme="invert" data-pulsing={pulse && inView && pageVisible && !reduce} aria-labelledby="v3-metrics-title">
+      <svg className="v2-sketch-metrics__crowd" viewBox="0 0 432 180" aria-hidden="true">
+        <defs><linearGradient id="v3-metrics-scan"><stop stopColor="var(--color-brand-primary)" stopOpacity="0"/><stop offset=".5" stopColor="var(--color-brand-primary)" stopOpacity=".25"/><stop offset="1" stopColor="var(--color-brand-primary)" stopOpacity="0"/></linearGradient></defs>
+        {Array.from({ length: 240 }, (_, i) => <circle key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} r="2" fill="currentColor" opacity={dim(i) * .5} />)}
+        {pulse ? <g className="v4-pulse-dots">{dots.map((dot, i) => <circle key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} r="3.5" fill="var(--color-brand-primary)" style={{ animationDuration: `${dot.duration}s`, animationDelay: `${dot.delay}s` }}/>)}</g> : <>
+          {!reduce && <motion.rect className="v2-sketch-metrics__scan" width="72" height="180" fill="url(#v3-metrics-scan)" initial={{ x: -72, opacity: 0 }} animate={seen ? { x: 432, opacity: [0, 1, 1, 0] } : { x: -72, opacity: 0 }} transition={{ duration: 1.6, delay: .15, ease: 'linear', opacity: { duration: 1.6, delay: .15, times: [0, .1, .85, 1] } }} />}
+          {Array.from({ length: 240 }, (_, i) => lit(i, 0) && <motion.circle className="v2-sketch-metrics__match" key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} fill="var(--color-brand-primary)" initial={reduce ? false : { opacity: 0, r: 2 }} animate={show ? { opacity: 1, r: reduce ? 3.5 : [2, 5, 3.5] } : { opacity: 0, r: 2 }} transition={{ duration: reduce ? 0 : .45, delay: reduce ? 0 : ((i % 24) * 18 + 81) / 504 * 1.6 + .15, ease: 'easeOut' }} />)}
+        </>}
+      </svg>
+      <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Найдём их среди абонентов билайна.</p></div>
+      <dl>{([[35, ' млн', 'абонентов билайна'], [200, '', 'триггеров показа'], [15, '%', 'средняя конверсия']] as const).map(([value, suffix, label]) => <div key={label}><dt className="bl-body bl-secondary">{label}</dt><dd>{calm ? `${value}${suffix}` : <Num value={value} suffix={suffix} from={0}/>}</dd></div>)}</dl>
+    </section>
+}
+
+function SketchIntro() {
+  return <>
+    <SketchMetrics />
+    <section id="how" className="bl-section bl-section--wide">
+      <h2 className="bl-display-l">как это работает</h2>
+      <ol className="v2-sketch-how">
+        <li><div className="v2-backdrop v2-backdrop--teal v2-sketch-art"><HowGraphic kind="business"/></div><h3 className="bl-h3">укажите ваш бизнес</h3><p className="bl-body bl-secondary">Введите ИНН и телефон, проверьте сведения и добавьте точки, куда приглашать клиентов.</p></li>
+        <li><div className="v2-backdrop v2-backdrop--violet v2-sketch-art"><HowGraphic kind="offer"/></div><h3 className="bl-h3">соберите оффер</h3><p className="bl-body bl-secondary">Подготовьте предложение на основе данных бизнеса. Добавьте изображение, скидку или промокод.</p></li>
+        <li><div className="v2-backdrop v2-backdrop--green v2-sketch-art"><HowGraphic kind="audience"/></div><h3 className="bl-h3">выберите клиентов</h3><p className="bl-body bl-secondary">Укажите, кому и в каких ситуациях показывать рекламу. От вашего района до всей страны.</p></li>
+        <li><div className="v2-backdrop v2-backdrop--magenta v2-sketch-art"><HowGraphic kind="guests"/></div><h3 className="bl-h3">встречайте новых гостей</h3><p className="bl-body bl-secondary">Гости приходят за кофе и завтраком. Встречайте их с улыбкой и давайте повод вернуться.</p></li>
+      </ol>
+      <div className="v2-sketch-action"><Go to={login()}>запустить сейчас</Go></div>
+    </section>
+  </>
+}
+
+function SketchFinal() {
+  return <section id="v2-final" className="bl-section bl-section--wide v2-sketch-final" data-theme="invert">
+    <h2 className="bl-display-l">новый эффективный канал привлечения клиентов</h2>
+    <CampaignAction className="bl-btn bl-btn--primary bl-btn--xl">запустить сейчас</CampaignAction>
+  </section>
+}
+
+// Скрываем кнопку в шапке, когда посетитель уже видит одну из основных кнопок.
+export function useHeaderCta() {
   const [show, setShow] = useState(false)
   useEffect(() => {
     const seen = new Map<Element, boolean>()
-    const io = new IntersectionObserver(es => { es.forEach(e => seen.set(e.target, e.isIntersecting)); setShow(![...seen.values()].some(Boolean)) })
-    for (const id of ['v2-hero', 'v2-final']) { const el = document.getElementById(id); if (el) io.observe(el) }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => seen.set(entry.target, entry.isIntersecting))
+      setShow(![...seen.values()].some(Boolean))
+    }, { rootMargin: '-76px 0px 0px' })
+    document.querySelectorAll('#v2-hero .bl-btn--primary, #v2-final .bl-btn--primary').forEach(el => io.observe(el))
     return () => io.disconnect()
   }, [])
   return show
 }
-const NAV: [string, string][] = [['who', 'кому покажем'], ['price', 'цены'], ['how', 'как запустить'], ['faq', 'вопросы']]
-const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+const SKETCH_NAV: [string, string][] = [['how', 'как это работает'], ['where', 'где покажем'], ['cases', 'для кого']]
+const NAV: [string, string][] = [['who', 'кому покажем'], ['price', 'цены'], ['v2-final', 'как запустить'], ['faq', 'вопросы']]
+const go = (id: string) => document.getElementById(id)?.scrollIntoView({
+  behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start',
+})
 
-export default function LandingV2() {
+export default function LandingV2({ onStart }: { onStart?: () => void } = {}) {
   const cta = useHeaderCta()
+  const nav = onStart ? SKETCH_NAV : NAV
+  const [rad, setRad] = useState(1)
+  const [when, setWhen] = useState(0)
   return (
-    <div className="bl-page wrap v2">
+    <LaunchContext.Provider value={onStart}><div className="bl-page wrap v2">
+      <a className="v2-skip-link" href="#v2-content" onClick={event => { event.preventDefault(); document.getElementById('v2-content')?.focus() }}>к содержимому</a>
       <header className="bl-header landing-head v2-head">
-        <div className="bl-header__side"><Brand to={mvp() ? '/mvp' : '/v2'} /></div>
+        <div className="bl-header__side"><Brand to={onStart ? '/v3' : mvp() ? '/mvp' : '/v2'} /></div>
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
-          {NAV.map(([id, t]) => <button key={id} type="button" className="bl-hide-mobile bl-btn" onClick={() => go(id)}>{t}</button>)}
+          {nav.map(([id, t]) => <button key={id} type="button" className="bl-hide-mobile bl-btn" onClick={() => go(id)}>{t}</button>)}
+          <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{nav.map(([id,t]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); go(id); const target = document.getElementById(id); target?.setAttribute('tabindex','-1'); target?.focus({preventScroll:true}) }}>{t}</button>)}</div></details>
           <AnimatePresence initial={false}>
-            {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><Link className="bl-btn bl-btn--primary" to={login()}>узнать охват</Link></motion.span>}
+            {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><CampaignAction className="bl-btn bl-btn--primary">узнать охват</CampaignAction></motion.span>}
           </AnimatePresence>
           <Link className="bl-btn bl-btn--dark" to={login()}>войти</Link>
         </nav>
       </header>
-      <main className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
+      <main id="v2-content" tabIndex={-1} className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>
         <Hero />
+        {onStart ? <>
+          <SketchIntro />
+          <Clients />
+          <Everywhere />
+          <ForEveryone />
+          <Quote />
+          <SketchFinal />
+        </> : <>
+        <AroundPoint rad={rad} setRad={setRad} when={when} setWhen={setWhen} />
         <Clients />
         <Audience />
-        <AroundPoint />
         <Everywhere />
         <Chat />
         <Pricing />
-        <Anywhere />
         <Assistant />
         <ForEveryone />
         <Quote />
         <Faq />
-        <Final />
+        <Final rad={rad} setRad={setRad} when={when} />
+        </>}
+
       </main>
       <footer className="footer bl-caption">
         <span>© 2026 рекламная платформа билайна</span>
         <span className="bl-row" style={{ ['--bl-gap' as string]: '24px' }}><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link></span>
       </footer>
-    </div>
+    </div></LaunchContext.Provider>
   )
 }

@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { motion } from 'motion/react'
+import { useId, useMemo } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { BatteryLow, Check, Gift, Wifi } from 'lucide-react'
 import { type S } from './api'
 import { Creative, creativeOf } from './creative'
@@ -7,10 +7,13 @@ import { Creative, creativeOf } from './creative'
 export type Surface = 'showcase' | 'main' | 'paid' | 'rest'
 export type Ad = { brand: string; text: string; offer: string; img: number; addr?: string; cta?: string }
 
-export const DEMO_AD: Ad = { brand: 'кофейня «Зерно»', text: 'Свежая обжарка каждый день — в двух шагах от дома', offer: '−20% до 10:00', img: 0, addr: 'ул. Покровка, 12 · 300 м' }
+export const DEMO_AD: Ad = { brand: 'кофейня «Зерно»', text: 'Свежая обжарка каждый день — в двух шагах от дома', offer: '−20% на первую покупку', img: 0, addr: 'ул. Покровка, 12 · 300 м' }
 
 /* Экран приложения билайна с рекламным слотом. Нарисован токенами, без картинок. */
-export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; ad?: Ad; compact?: boolean }) {
+export function PhoneSurface({ kind, ad = DEMO_AD, compact, animatePlacements = false }: { kind: Surface; ad?: Ad; compact?: boolean; animatePlacements?: boolean }) {
+  const placementId = useId()
+  const reduce = useReducedMotion()
+  const placementMotion = animatePlacements ? { layoutId: placementId, transition: { duration: reduce ? 0 : .4, ease: [.22, 1, .36, 1] as const } } : {}
   return (
     <div className={`phone-mock${compact ? ' phone-mock--compact' : ''}`}>
       <div className="phone-mock__status"><span>9:41</span><span className="bl-row" style={{ gap: 4 }}><Wifi size={12} /><BatteryLow size={14} /></span></div>
@@ -18,11 +21,11 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
         <>
           <div className="pm-title">билайн</div>
           <div className="pm-tiles"><span /><span /><span /></div>
-          <div className="pm-banner">
+          <motion.div {...placementMotion} className="pm-banner">
             <Creative o={creativeOf(ad.brand, ad.offer, ad.img)} erid="erid" wide />
             <div className="pm-banner__text"><b>{ad.brand}</b><span>{ad.text}</span></div>
             <span className="pm-label">реклама</span>
-          </div>
+          </motion.div>
           <div className="pm-lines"><span /><span /><span /></div>
         </>
       )}
@@ -30,27 +33,28 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
         <>
           <div className="pm-title">лучшее рядом</div>
           <div className="pm-chips"><span className="is-on">рядом</span><span>еда</span><span>авто</span></div>
-          <div className="pm-card">
+          <motion.div {...placementMotion} className="pm-card">
             <div className="pm-near">
               <Creative o={creativeOf(ad.brand, ad.offer, ad.img)} erid="erid" />
               <span className="bl-stack" style={{ ['--bl-gap' as string]: '4px' }}><b>{ad.offer}</b><span className="pm-muted">{ad.brand}{ad.addr ? ` · ${ad.addr}` : ''}</span></span>
             </div>
             <span className="pm-btn">{ad.cta ?? 'сохранить купон'}</span>
             <span className="pm-label">реклама</span>
-          </div>
+          </motion.div>
           <div className="pm-card pm-card--ghost"><span /><span /></div>
         </>
       )}
       {kind === 'paid' && (
         <>
           <div className="pm-ok"><i><Check size={22} strokeWidth={3} /></i><b>платёж прошёл</b><span className="pm-muted">500 ₽ · пополнение счёта</span></div>
-          <div className="pm-card" style={{ marginTop: 'auto' }}>
+          <motion.div {...placementMotion} className="pm-card" style={{ marginTop: 'auto' }}>
             <span className="pm-muted">вам может пригодиться</span>
+            {animatePlacements && <Creative o={creativeOf(ad.brand, ad.offer, ad.img)} erid="реклама" wide/>}
             <b>{ad.brand}</b>
             <span>{ad.text}</span>
             <span className="pm-btn">{ad.offer}</span>
             <span className="pm-label">реклама</span>
-          </div>
+          </motion.div>
         </>
       )}
       {kind === 'rest' && (
@@ -58,12 +62,13 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
           <div className="pm-title">остатки</div>
           <div className="pm-meter"><span>интернет</span><b>0,4 ГБ</b><div className="pm-bar"><span style={{ width: '8%' }} /></div></div>
           <div className="pm-meter"><span>минуты</span><b>210</b><div className="pm-bar"><span style={{ width: '60%' }} /></div></div>
-          <div className="pm-card pm-card--reward">
+          <motion.div {...placementMotion} className="pm-card pm-card--reward">
+            {animatePlacements && <Creative o={creativeOf(ad.brand, ad.offer, ad.img)} erid="реклама" wide/>}
             <span className="bl-row" style={{ gap: 6 }}><Gift size={16} /><b>+1 ГБ за визит</b></span>
             <span>{ad.brand}: {ad.offer.toLowerCase()}</span>
             <span className="pm-btn">получить</span>
             <span className="pm-label">реклама</span>
-          </div>
+          </motion.div>
         </>
       )}
     </div>
@@ -72,7 +77,15 @@ export function PhoneSurface({ kind, ad = DEMO_AD, compact }: { kind: Surface; a
 
 /* Карта охвата: улицы, точки, радиус 1 км и люди внутри */
 // r — радиус охвата в единицах карты: 105 = 1 км; лендинг двигает его ползунком
-export function ReachMap({ points, onToggle, r = 105 }: { points: S['Point'][]; onToggle?: (id: number) => void; r?: number }) {
+export function ReachMap({ points, onToggle, r = 105, radiusLabel = '1 км', animateDots = true }: {
+  points: S['Point'][]
+  onToggle?: (id: number) => void
+  r?: number
+  radiusLabel?: string
+  animateDots?: boolean
+}) {
+  const reduce = useReducedMotion()
+  const pulse = animateDots && !reduce
   const dots = useMemo(() => {
     let seed = 7
     const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280
@@ -82,7 +95,7 @@ export function ReachMap({ points, onToggle, r = 105 }: { points: S['Point'][]; 
     }))
   }, [points, r])
   return (
-    <svg className="reach-map" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Карта охвата: ${points.filter(p => p.active).length} точки и радиус 1 км`}>
+    <svg className="reach-map" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Карта охвата: ${points.filter(p => p.active).length} точки, радиус ${radiusLabel}`}>
       <rect width="640" height="480" fill="var(--color-background-primary)" />
       <g fill="var(--color-background-tertiary)" opacity=".55">
         {Array.from({ length: 48 }, (_, i) => <rect key={i} x={(i % 8) * 82 + 6} y={Math.floor(i / 8) * 82 + 6} width="66" height="62" rx="8" />)}
@@ -94,11 +107,12 @@ export function ReachMap({ points, onToggle, r = 105 }: { points: S['Point'][]; 
       </g>
       {points.map(p => !p.active ? null : (
         <motion.circle key={`r-${p.id}`} cx={p.x} cy={p.y} r={r} fill="var(--color-static-blue-500)" fillOpacity=".08" stroke="var(--color-static-blue-500)" strokeDasharray="6 6" strokeWidth="2"
-          initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1, r }} transition={{ duration: 0.6 }} style={{ transformOrigin: `${p.x}px ${p.y}px` }} />
+          initial={reduce ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1, r }} transition={{ duration: reduce ? 0 : 0.6 }} style={{ transformOrigin: `${p.x}px ${p.y}px` }} />
       ))}
       {dots.map(d => !points.find(p => p.id === d.p)?.active ? null : (
         <motion.circle key={d.id} cx={d.x} cy={d.y} r="3.2" fill="var(--color-static-blue-500)"
-          initial={{ opacity: 0 }} animate={{ opacity: [0.25, 0.75, 0.25] }} transition={{ duration: 3, delay: d.d * 2, repeat: Infinity }} />
+          initial={pulse ? { opacity: 0 } : false} animate={{ opacity: pulse ? [0.25, 0.75, 0.25] : 0.25 + d.d * 0.5 }}
+          transition={pulse ? { duration: 3, delay: d.d * 2, repeat: Infinity } : { duration: 0 }} />
       ))}
       {points.map(p => (
         <g key={p.id} opacity={!p.active ? 0.35 : 1} style={{ cursor: onToggle ? 'pointer' : undefined }} onClick={() => onToggle?.(p.id)}>

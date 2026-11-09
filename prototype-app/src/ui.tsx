@@ -238,8 +238,8 @@ export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathn
 
 export function DemoMenu() {
   const [open, setOpen] = useState(false)
-  // в MVP карты экранов нет: там свой короткий путь
-  if (useLocation().pathname.startsWith('/mvp')) return null
+  const { pathname } = useLocation()
+  if (pathname === '/v4' || pathname === '/v3' || pathname.startsWith('/mvp')) return null
   return (
     <>
       <button className="bl-pill-dark demo-fab" onClick={() => setOpen(true)} aria-haspopup="dialog">экраны прототипа</button>

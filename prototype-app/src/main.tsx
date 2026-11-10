@@ -44,7 +44,7 @@ function Offer() {
 
 function PublicDocument({ privacy = false }: { privacy?: boolean }) {
   return <div className="v3-v2-theme bl-page wrap">
-    <header className="bl-header"><Brand to="/v4"/><Link className="bl-btn" to="/v4">На главную</Link></header>
+    <header className="bl-header"><Brand/><Link className="bl-btn" to="/">На главную</Link></header>
     <main className="bl-section bl-stack">
       <h1 className="bl-h1">{privacy ? 'Обработка персональных данных' : 'Оферта на размещение рекламы'}</h1>
       {privacy ? <p className="bl-body bl-secondary">Документ пока не опубликован. Добавим его после утверждения</p> : <a className="bl-btn bl-btn--primary" href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer">Открыть оферту (PDF)</a>}
@@ -63,13 +63,14 @@ function OnRoute() {
   const { pathname, search } = useLocation()
   useEffect(() => {
     if (pathname.startsWith('/v4/create')) return // Wizard sends only validated, visible steps.
-    const tracked = Object.hasOwn(pages, pathname) && (pathname !== '/login' || new URLSearchParams(search).get('from') === 'v4')
-    analytics.view(tracked ? pathname as AnalyticsPage : null)
+    const page = pathname === '/' ? '/v4' : pathname
+    const tracked = Object.hasOwn(pages, page) && (pathname !== '/login' || new URLSearchParams(search).get('from') === 'v4')
+    analytics.view(tracked ? page as AnalyticsPage : null)
   }, [pathname, search])
   useEffect(() => {
     scrollTo(0, 0)
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
-    document.title = pathname === '/v4' ? 'Партнёрская платформа билайна · версия 4' : pathname === '/v3' ? 'Партнёрская платформа билайна · версия 3' : pathname === '/' || pathname === '/v2' || pathname === '/mvp' ? 'Партнёрская платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · партнёрская платформа билайна`
+    document.title = pathname === '/' || pathname === '/v4' ? 'Партнёрская платформа билайна · версия 4' : pathname === '/v3' ? 'Партнёрская платформа билайна · версия 3' : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? 'Партнёрская платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · партнёрская платформа билайна`
   }, [pathname])
   return null
 }
@@ -99,7 +100,8 @@ createRoot(document.getElementById('root')!).render(
           <Failsafe>
             <Suspense fallback={<div className="bl-page wrap" aria-busy="true" />}>
               <Routes>
-                <Route path="/" element={<Landing />} />
+                <Route path="/" element={<LandingV4 />} />
+                <Route path="/v1" element={<Landing />} />
                 <Route path="/v2" element={<LandingV2 />} />
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
@@ -129,7 +131,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/cab/help" element={<Help />} />
                 <Route path="/offer" element={<Offer />} />
                 <Route path="/near" element={<Near />} />
-                <Route path="*" element={<Landing />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <DemoMenu />
             </Suspense>

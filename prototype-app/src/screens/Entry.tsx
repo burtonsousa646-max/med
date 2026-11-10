@@ -78,7 +78,7 @@ const PERKS = ['охват по вашим точкам — сразу посл�
 export function Login() {
   const nav = useNavigate(), type = useStartType()
   const [params] = useSearchParams()
-  const home = params.get('from') === 'v4' ? '/v4' : '/v2'
+  const home = params.get('from') === 'v4' ? '/' : '/v2'
   const T = useCatalog().offerTypes.find(o => o.id === type)!
   const login = $api.useMutation('post', '/session/login', act)
   const [busy, setBusy] = useState<IdProvider | null>(null)

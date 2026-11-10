@@ -394,7 +394,7 @@ export default function Landing() {
       <div className="bl-topbar"><Sparkles size={14} /> первая кампания с бонусом 3 000 ₽ на баланс</div>
       <div className="bl-page wrap">
         <header className="bl-header landing-head">
-          <div className="bl-header__side"><Brand /></div>
+          <div className="bl-header__side"><Brand to="/v1" /></div>
           <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
             <button className="bl-hide-mobile bl-btn" onClick={() => go('how')}>как это работает</button>
             <button className="bl-hide-mobile bl-btn" onClick={() => go('where')}>где покажем</button>

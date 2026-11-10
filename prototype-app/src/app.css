@@ -550,8 +550,8 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .v2-hero { display: flex; flex-direction: column; justify-content: center; gap: var(--space-xl); overflow: hidden; min-height: min(640px, calc(100svh - 120px)); }
 /* видео под текстом: затемнение сильнее слева, где заголовок */
 .v2-hero { position: relative; isolation: isolate; }
-.v2-hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
-.v2-hero:has(.v2-hero__video)::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+.v2-hero__media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.v2-hero:has(.v2-hero__media)::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(90deg, color-mix(in srgb, var(--color-background-secondary-invert) 92%, transparent) 0%, color-mix(in srgb, var(--color-background-secondary-invert) 70%, transparent) 50%, color-mix(in srgb, var(--color-background-secondary-invert) 35%, transparent) 100%); }
 .v2-hero__pause { position: absolute; top: var(--space-l); right: var(--space-l); z-index: 1; }
 /* телефон с объявлением справа; секция тёмная, поэтому внутри телефона возвращаем светлые токены */
@@ -574,7 +574,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 }
 @media (max-width: 767px) {
   .v2-hero { padding-block: var(--space-4xl) var(--space-l); }
-  .v2-hero:has(.v2-hero__video)::before { background: color-mix(in srgb, var(--color-background-secondary-invert) 82%, transparent); }
+  .v2-hero:has(.v2-hero__media)::before { background: color-mix(in srgb, var(--color-background-secondary-invert) 82%, transparent); }
   .v2-hero__pause { top: var(--space-s); right: var(--space-s); }
   .v2-hero__text { gap: var(--space-m); }
   .v2-hero__text h1 { font-size: clamp(32px, 9vw, 44px); line-height: 1.06; }

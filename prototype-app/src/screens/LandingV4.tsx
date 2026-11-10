@@ -49,7 +49,7 @@ function HowStep({ step, index, progress }: { step: typeof STEPS[number]; index:
 
 function HowItWorks() {
   const ref = useRef<HTMLOListElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 176px', 'end end'] })
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 184px', 'end end'] })
   return <section id="how" className="bl-section bl-section--wide v4-how" aria-labelledby="v4-how-title">
     <div className="v4-how-head">
       <h2 id="v4-how-title" className="bl-display-l">как это работает</h2>
@@ -68,13 +68,13 @@ function Placements() {
         {SURFACES.map((surface, index) => <button key={surface.k} type="button" aria-pressed={selected === index} aria-controls="v4-placement-phone" className={`v4-placement-choice${selected === index ? ' is-selected' : ''}`} onClick={() => { if (selected !== index) analytics.event('v4_placement_select', { placement: surface.k }); setSelected(index) }}>
           <span className="v4-placement-number">0{index + 1}</span><span><span className="bl-h3">{surface.t}</span><span className="bl-body bl-secondary">{surface.d}</span></span><ArrowRight size={20}/>
         </button>)}
-        <CampaignAction className="bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction>
       </div>
       <div className="v4-placement-stage" id="v4-placement-phone">
         <span className="v4-placement-orbit" aria-hidden="true"/>
         <AppScreenshotPhone kind={SURFACES[selected].k}/>
         <div className="v4-placement-caption" aria-live="polite"><span><i className="v4-status-dot"/>{SURFACES[selected].t}</span><p>{SURFACES[selected].d}</p></div>
       </div>
+      <CampaignAction className="v4-placement-start bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction>
     </div>
   </section>
 }
@@ -129,16 +129,16 @@ export default function LandingV4() {
     <div className="bl-page wrap v2 v4">
       <a className="v2-skip-link" href="#v4-content" onClick={event => { event.preventDefault(); navigate('v4-content') }}>к содержимому</a>
       <header className="bl-header landing-head v2-head">
-        <div className="bl-header__side"><Brand to="/v4"/></div>
+        <div className="bl-header__side"><Brand/></div>
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
-          <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
-          {showCta && <CampaignAction className="bl-btn bl-btn--primary">запустить сейчас</CampaignAction>}
+          <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}<CampaignAction className="bl-btn bl-btn--primary">запустить сейчас</CampaignAction></div></details>
+          {showCta && <CampaignAction className="bl-btn bl-btn--primary v4-header-start">запустить сейчас</CampaignAction>}
           <Link className="bl-btn bl-btn--dark" to="/login?from=v4" onClick={() => analytics.event('v4_navigation_click', { source: 'header', target: 'login' })}>войти</Link>
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
-        <Hero showPlaybackControl={false} phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/>
+        <Hero staticBackground phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/>
         {/* Временно скрыто: <Clients calm/> */}
         <Placements/>
         {/* Временно скрыто: <ForEveryone calm/> */}

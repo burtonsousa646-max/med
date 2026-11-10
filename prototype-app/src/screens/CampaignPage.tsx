@@ -114,10 +114,10 @@ export default function CampaignPage() {
 
   return <div className="v3-v2-theme campaign-page-theme">
     <div className="campaign-page-shell">
-      <header className="campaign-page-header" onClickCapture={event => { if (event.target instanceof Element && event.target.closest('a')) analytics.event('v4_flow_exit', { target: 'landing', source: 'header' }) }}><Brand to="/v4"/><Link className="bl-btn" to="/v4"><ArrowLeft size={18}/>к лендингу</Link></header>
+      <header className="campaign-page-header" onClickCapture={event => { if (event.target instanceof Element && event.target.closest('a')) analytics.event('v4_flow_exit', { target: 'landing', source: 'header' }) }}><Brand/><Link className="bl-btn" to="/"><ArrowLeft size={18}/>к лендингу</Link></header>
       {storage === 'error' && <p className="campaign-page-storage bl-caption" role="status">Не удалось сохранить черновик в браузере. Оставьте страницу открытой, чтобы не потерять данные</p>}
       {serverError && <p className="campaign-page-storage bl-caption" role="status">Черновик пока не сохранился на сервере. <button type="button" className="v3-text-button" onClick={flush}>Повторить сохранение</button></p>}
-      {draft ? <CampaignWizard open onClose={() => navigate('/v4')} presentation="page" initialDraft={draft} onDraftChange={save} onSubmitDraft={submit} storageState={storage}/> : <main className="campaign-page-loading" aria-busy="true" aria-label="Загрузка черновика"><div/><div/><div/></main>}
+      {draft ? <CampaignWizard open onClose={() => navigate('/')} presentation="page" initialDraft={draft} onDraftChange={save} onSubmitDraft={submit} storageState={storage}/> : <main className="campaign-page-loading" aria-busy="true" aria-label="Загрузка черновика"><div/><div/><div/></main>}
     </div>
   </div>
 }

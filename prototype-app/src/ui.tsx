@@ -225,7 +225,7 @@ export function Qr({ label = 'QR-код для оплаты по СБП, заг�
 /* ───────── карта экранов прототипа ───────── */
 // :id — последняя кампания, :token — её ссылка на подтверждение
 export const SCREENS: [string, string, string][] = [
-  ['вход и ага-момент', '/', '1 · лендинг'], ['вход и ага-момент', '/login', '2.1 · вход по бизнес-ID'], ['вход и ага-момент', '/inn', '2.1 · без входа: ИНН или сайт'],
+  ['вход и ага-момент', '/v1', '1 · лендинг v1'], ['вход и ага-момент', '/login', '2.1 · вход по бизнес-ID'], ['вход и ага-момент', '/inn', '2.1 · без входа: ИНН или сайт'],
   ['вход и ага-момент', '/consent', '2.2 · согласия'], ['вход и ага-момент', '/c/:id/reach', '2.3 · охват и прогноз'],
   ['сборка кампании', '/c/:id/build', '3 · автопилот, вручную, медиаплан, спецпроект'],
   ['оплата', '/c/:id/checkout', '4.1 · чекаут'], ['оплата', '/approve/:token', '4.2 · подтверждение руководителем'],
@@ -239,7 +239,7 @@ export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathn
 export function DemoMenu() {
   const [open, setOpen] = useState(false)
   const { pathname, search } = useLocation()
-  if (pathname === '/v4' || pathname.startsWith('/v4/') || (pathname === '/login' && new URLSearchParams(search).get('from') === 'v4') || pathname === '/v3' || pathname.startsWith('/mvp')) return null
+  if (pathname === '/' || pathname === '/v4' || pathname.startsWith('/v4/') || (pathname === '/login' && new URLSearchParams(search).get('from') === 'v4') || pathname === '/v3' || pathname.startsWith('/mvp')) return null
   return (
     <>
       <button className="bl-pill-dark demo-fab" onClick={() => setOpen(true)} aria-haspopup="dialog">экраны прототипа</button>
@@ -253,7 +253,7 @@ function DemoMap({ close }: { close: () => void }) {
   const cat = useCatalog(), co = useCompany(), all = useCampaigns(), last = all[0], token = all.find(c => c.approvalToken)?.approvalToken
   const patchCo = $api.useMutation('patch', '/company', act)
   const patchC = $api.useMutation('patch', '/campaigns/{id}', act)
-  const reset = $api.useMutation('post', '/session/reset', { onSuccess: () => { queryClient.clear(); close(); nav('/') } })
+  const reset = $api.useMutation('post', '/session/reset', { onSuccess: () => { queryClient.clear(); close(); nav('/v1') } })
   const groups = [...new Set(SCREENS.map(x => x[0]))]
   const href = (to: string) => to.replace(':id', String(last?.id ?? '')).replace(':token', token ?? '')
   return (

@@ -138,7 +138,7 @@ export default function LandingV4() {
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
-        <Hero staticBackground phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/>
+        <Hero phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/>
         {/* Временно скрыто: <Clients calm/> */}
         <Placements/>
         {/* Временно скрыто: <ForEveryone calm/> */}

@@ -4,8 +4,11 @@ export function assertLandingV4Layout() {
   assert(['', '#/', '#/v4'].includes(location.hash.split('?')[0]), 'Expected a V4 landing route')
   assert(document.querySelectorAll('main > section').length === 5, 'Five content sections while the cases and client logos are hidden')
   assert(document.documentElement.scrollWidth <= innerWidth, 'Horizontal overflow')
-  assert(document.querySelector('#v2-hero img.v2-hero__media')?.naturalWidth > 0, 'Hero poster must load')
-  assert(!document.querySelector('#v2-hero video'), 'V4 must not autoplay background video')
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+  const video = document.querySelector('#v2-hero video')
+  assert(video?.loop && video.muted && video.playsInline && video.poster.endsWith('/video/hero.jpg'), 'Hero video must loop with a poster and no audio')
+  assert(video.autoplay === !reduced, 'Hero video must respect reduced motion')
+  assert(document.querySelector('#v2-hero .v2-hero__pause')?.getClientRects().length > 0, 'Hero video must have a visible playback control')
   const box = selector => document.querySelector(selector).getBoundingClientRect()
   const header = document.querySelector('.v4 header')
   assert(box('.v4 header a').right <= box('.v4 header nav').left, 'Header controls overlap the brand')
@@ -38,7 +41,6 @@ export function assertLandingV4Layout() {
 
   const steps = [...document.querySelectorAll('.v4-stack-card')]
   assert(steps.length === 4, 'All four story steps must remain in the document')
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
   const stacked = !reduced && innerWidth >= 900 && innerHeight >= 720
   for (const step of steps) {
     assert(getComputedStyle(step.parentElement).position === (stacked ? 'sticky' : 'relative'), 'Step stacking must adapt to the viewport and motion preference')
@@ -81,10 +83,8 @@ export function assertLandingV4Layout() {
   if (reduced) {
     assert(dots.every(dot => getComputedStyle(dot).animationName === 'none'), 'Map animation must respect reduced motion')
   } else {
-    assert(dots.every(dot => {
-      const style = getComputedStyle(dot)
-      return style.animationIterationCount === '1' && parseFloat(style.animationDuration) + parseFloat(style.animationDelay) <= 5
-    }), 'Audience pulses must finish within five seconds')
+    assert(dots.every(dot => getComputedStyle(dot).animationIterationCount === 'infinite'), 'Audience pulses must loop')
+    assert(document.querySelector('.v4-map-toggle')?.getClientRects().length > 0, 'The looping map must have a pause control')
     assert(dots.every(dot => getComputedStyle(dot).animationPlayState === (running ? 'running' : 'paused')), 'Dot playback must follow visibility and pause state')
   }
   return `PASS: V4 content, navigation and selection invariants at ${innerWidth}px`

@@ -9,7 +9,9 @@ export function assertLandingV4Layout() {
   const box = selector => document.querySelector(selector).getBoundingClientRect()
   const header = document.querySelector('.v4 header')
   assert(box('.v4 header a').right <= box('.v4 header nav').left, 'Header controls overlap the brand')
-  assert(header.querySelector('a[href*="/login"]').getClientRects().length > 0, 'Login remains available on compact screens')
+  const headerStart = header.querySelector('nav a[data-campaign-start]')
+  assert(headerStart?.getAttribute('href') === '#/v4/create' && headerStart.getClientRects().length > 0, 'The visible header CTA must open V4 campaign setup')
+  assert(!header.querySelector('a[href*="/login"]'), 'V4 header must not link to the old login')
 
   const hero = box('#v2-hero')
   const content = box('.v4-content')

@@ -18,7 +18,7 @@ Metrics, placements and the final section size to their contents. The metrics
 map is in the grid beside the heading or below it, and the figures stack into
 rows on narrow screens. The placement controls switch between a side column and
 a compact grid. On mobile the launch action follows the placement preview.
-Login remains visible on mobile, and the sections menu includes a launch action.
+The header launch action remains visible on mobile and opens the same V4 campaign setup as the hero.
 
 The step cards stack on scroll only when the window has room and reduced motion
 is off. On smaller windows the cards flow in order. In the campaign form, the

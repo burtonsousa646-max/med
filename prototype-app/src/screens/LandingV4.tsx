@@ -26,6 +26,7 @@ const STEPS = [
   { kind: 'audience', title: 'выберите клиентов', text: 'Выберите клиентов, город и подходящий момент для показа' },
   { kind: 'guests', title: 'встречайте новых гостей', text: 'Принимайте гостей и помогайте им воспользоваться акцией' },
 ] as const
+const CAMPAIGN_START = '/v4/create'
 const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
 const STEP_STATUS = [
   'точка добавлена', 'креатив готов', 'аудитория подобрана', 'визит подтверждён',
@@ -125,16 +126,15 @@ export default function LandingV4() {
     const section = target.closest('section')?.id
     const source = target.closest('header') ? 'header' : section === 'v2-hero' ? 'hero' : section === 'how' ? 'how' : section === 'where' ? 'where' : section === 'v2-final' ? 'final' : 'direct'
     analytics.event('v4_cta_click', { source })
-  }}><LaunchContext.Provider value={() => start('/v4/create')}>
+  }}><LaunchContext.Provider value={() => start(CAMPAIGN_START)}>
     <div className="bl-page wrap v2 v4">
       <a className="v2-skip-link" href="#v4-content" onClick={event => { event.preventDefault(); navigate('v4-content') }}>к содержимому</a>
       <header className="bl-header landing-head v2-head">
         <div className="bl-header__side"><Brand/></div>
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
-          <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}<CampaignAction className="bl-btn bl-btn--primary">запустить сейчас</CampaignAction></div></details>
-          {showCta && <CampaignAction className="bl-btn bl-btn--primary v4-header-start">запустить сейчас</CampaignAction>}
-          <Link className="bl-btn bl-btn--dark" to="/login?from=v4" onClick={() => analytics.event('v4_navigation_click', { source: 'header', target: 'login' })}>войти</Link>
+          <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
+          <Link data-campaign-start className={`bl-btn ${showCta ? 'bl-btn--primary' : 'bl-btn--dark'}`} to={CAMPAIGN_START}>запустить сейчас</Link>
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">

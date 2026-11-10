@@ -177,8 +177,7 @@
 }
 @media (max-width: 1023px) {
   .v4 .v2-head nav { gap: 8px; }
-  .v4 .v2-head nav .bl-btn { padding-inline: 12px; }
-  .v4 .v2-head .v4-header-start { display: none; }
+  .v4 .v2-head nav .bl-btn { padding-inline: 10px; font-size: 14px; }
   .v4 .v2-head .bl-btn { min-height: 44px; }
 }
 @media (max-width: 767px) {

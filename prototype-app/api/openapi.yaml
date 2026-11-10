@@ -49,12 +49,12 @@ paths:
                 properties:
                   status: { type: string, enum: [ok] }
         '500': { $ref: '#/components/responses/Error' }
-  /business/lookup:
+  /autocomplete/inn:
     post:
       tags: [компания]
-      summary: Найти действующий бизнес по ИНН для лендинга V3
+      summary: Найти действующий бизнес по ИНН для настройки кампании
       description: Серверный поиск через DaData. Телефон не передаётся. Юридический адрес возвращается отдельно и не считается подтверждённой точкой кампании. Без DADATA_API_KEY возвращает 503.
-      operationId: lookupBusiness
+      operationId: autocompleteInn
       requestBody:
         required: true
         content:
@@ -77,9 +77,50 @@ paths:
         '400': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
         '502': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
+  /v4/draft:
+    parameters:
+      - name: X-Draft-Key
+        in: header
+        required: true
+        description: Секретный идентификатор черновика, хранится в браузере.
+        schema: { type: string, format: uuid }
+      - name: X-Draft-Revision
+        in: header
+        required: true
+        schema: { type: integer, minimum: 1 }
+    put:
+      tags: [кампании]
+      summary: Сохранить черновик кампании v4 после принятия оферты
+      operationId: saveV4Draft
+      requestBody: { $ref: '#/components/requestBodies/V4Draft' }
+      responses:
+        '200':
+          description: Черновик сохранён
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: saved }
+        '400': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [кампании]
+      summary: Сохранить заполненную заявку и поставить письмо в очередь
+      description: Повторная отправка тех же данных с тем же ключом возвращает ранее принятую заявку.
+      operationId: submitV4Draft
+      requestBody: { $ref: '#/components/requestBodies/V4Draft' }
+      responses:
+        '200': { $ref: '#/components/responses/V4Accepted' }
+        '201': { $ref: '#/components/responses/V4Accepted' }
+        '400': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
   /catalog:
     get:
       tags: [справочники]
@@ -452,10 +493,32 @@ paths:
         '429': { $ref: '#/components/responses/Error' }
 
 components:
+  requestBodies:
+    V4Draft:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [draft]
+            properties:
+              draft: { type: string, description: 'JSON с полями бизнеса, оффера и аудитории, без файлов' }
+              offerImage: { type: string, format: binary, description: 'Изображение оффера, до 5 МиБ' }
+              logoImage: { type: string, format: binary, description: 'Логотип, до 5 МиБ' }
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
 
   responses:
+    V4Accepted:
+      description: Заявка записана в SQLite и поставлена в очередь на отправку
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id, status]
+            properties:
+              id: { type: string, format: uuid }
+              status: { type: string, const: accepted }
     Error: { description: ошибка, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
     Session: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Session' } } } }
     Company: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Company' } } } }
@@ -475,6 +538,7 @@ components:
         category: { type: string }
         city: { type: string }
         registeredAddress: { type: string }
+        website: { type: string, format: uri, description: Сайт организации при наличии в DaData }
         source: { type: string, enum: [dadata] }
     Error:
       type: object

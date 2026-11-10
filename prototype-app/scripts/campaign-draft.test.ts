@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { campaignAllowedStage, campaignStage, emptyCampaignDraft, isCampaignDraft } from '../src/screens/campaign-draft.ts'
 
 function completedDraft() {
-  const draft = emptyCampaignDraft()
+  const draft = { ...emptyCampaignDraft(), submitted: true }
   draft.business = { name: 'Кофейня', category: 'Кофе и завтраки', inn: '1234567894', phone: '+79000000001', city: 'Москва', website: '' }
   draft.confirmedInn = draft.business.inn
   draft.offerAccepted = true
@@ -52,6 +52,7 @@ test('URLs restore a visited step and cannot skip unfinished setup', () => {
 
 test('success preserves completed drafts and legacy URLs without skipping setup', () => {
   assert.equal(campaignStage('success', { ...completedDraft(), stage: 3, reached: 3 }), 3)
+  assert.equal(campaignStage('success', { ...completedDraft(), submitted: undefined }), 3, 'Old local success needs server confirmation')
   assert.equal(campaignStage('success', completedDraft()), 4)
   assert.equal(campaignStage('preview', completedDraft()), 4)
   assert.equal(isCampaignDraft({ ...emptyCampaignDraft(), stage: 4, reached: 4 }), true)

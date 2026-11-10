@@ -5,12 +5,37 @@ import createFetchClient from 'openapi-fetch'
 import createClient from 'openapi-react-query'
 import { QueryClient } from '@tanstack/react-query'
 import type { components, paths } from './api.gen'
+import type { CampaignDraft } from '../shared/campaign-draft'
 import { toast } from './ui'
 
 export type S = components['schemas']
 export type Campaign = S['Campaign']
 
 export const client = createFetchClient<paths>({ baseUrl: import.meta.env.VITE_API_URL ?? '/api', credentials: 'include' })
+export async function autocompleteInn(inn: string, signal: AbortSignal) {
+  const { data, error } = await client.POST('/autocomplete/inn', { body: { inn }, signal })
+  if (!data || data.profile.inn !== inn) throw new Error(error?.message || 'Не удалось найти бизнес. Попробуйте ещё раз')
+  return data.profile
+}
+
+export async function sendCampaignDraft(method: 'put' | 'post', key: string, revision: number, value: CampaignDraft, signal?: AbortSignal) {
+  const { offerImage, logoImage, ...fields } = value
+  const timeout = AbortSignal.timeout(60_000)
+  const { data, response } = await client.request(method, '/v4/draft', {
+    params: { header: { 'X-Draft-Key': key, 'X-Draft-Revision': revision } },
+    body: { draft: JSON.stringify(fields) },
+    bodySerializer: ({ draft }) => {
+      const form = new FormData()
+      form.append('draft', draft)
+      if (offerImage) form.append('offerImage', offerImage)
+      if (logoImage) form.append('logoImage', logoImage)
+      return form
+    },
+    signal: signal ? AbortSignal.any([timeout, signal]) : timeout,
+  })
+  if (!response.ok || data?.status !== (method === 'post' ? 'accepted' : 'saved')) throw new Error('Campaign save failed')
+}
+
 export const $api = createClient(client)
 export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, retry: 1 } } })
 

@@ -14,7 +14,8 @@ services:
       DB_PATH: /data/demo.sqlite
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      DADATA_API_KEY: ${DADATA_API_KEY:-}
+      CAMPAIGN_SMTP_URL: ${CAMPAIGN_SMTP_URL:-}
+      CAMPAIGN_MAIL_FROM: ${CAMPAIGN_MAIL_FROM:-}
       NEAR_AI_MODEL: ${NEAR_AI_MODEL:-claude-opus-5-5}
     volumes:
       - api-data:/data
@@ -34,6 +35,23 @@ services:
         max-size: 10m
         max-file: '3'
 
+  autocomplete:
+    image: med-prototype-api:${IMAGE_TAG:-local}
+    pull_policy: never
+    command: ["node", "server/autocomplete.ts"]
+    environment:
+      AUTOCOMPLETE_HOST: 0.0.0.0
+      AUTOCOMPLETE_PORT: '8787'
+      DADATA_API_KEY: ${DADATA_API_KEY:-}
+      DADATA_SECRET_KEY: ${DADATA_SECRET_KEY:-}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
   web:
     image: med-prototype-web:${IMAGE_TAG:-local}
     build:
@@ -51,6 +69,8 @@ services:
       - caddy-config:/config
     depends_on:
       api:
+        condition: service_healthy
+      autocomplete:
         condition: service_healthy
     restart: unless-stopped
     read_only: true

@@ -9,6 +9,7 @@ test('color and size preserve manually entered offer fields', () => {
   assert.equal(draft.tone, 'violet')
 })
 test('gift and discount stay mutually consistent', () => {
+  assert.equal(reviseOffer('Сделай 1 + 1', draft)?.offer.title, 'Второй в подарок')
   const gift = reviseOffer('Второй кофе в подарок', draft)!.offer
   assert.equal(gift.gift, true); assert.equal(gift.discount, '')
   const discount = reviseOffer('Сделай скидку 25% и фон зелёным', gift)!.offer

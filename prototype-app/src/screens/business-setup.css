@@ -27,6 +27,7 @@
 .v3-business-privacy { margin: 0; font-size: 12px; line-height: 1.5; color: var(--v3-muted); max-width: 330px; }
 .v3-manual-entry { justify-self: start; }
 .v3-offer-consent .bl-check { font-size: 14px; line-height: 20px; }
+.v3-offer-consent .bl-caption { margin: 8px 0 0; }
 .v3-offer-consent a { text-decoration: underline; text-underline-offset: 2px; }
 .v3-offer-consent-error { margin: 8px 0 0; color: #a63529; font-size: 14px; line-height: 20px; }
 .v3-lookup-feedback:empty { display: none; }

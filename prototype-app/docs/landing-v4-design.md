@@ -45,7 +45,7 @@ Not checked: real mobile hardware, Safari, OS reduced-motion runtime or real cam
 
 ## Campaign wizard demo
 
-The wizard uses local fixtures from `src/screens/campaign-demo.ts`; business lookup no longer calls the API. Existing server code is retained but not used by this flow. INN and phone are entered manually; a cancellable local delay prepares editable business details and address. For local testing use INN `1234567894` and phone `+7 (900) 000-00-01`. The example button and user-facing demo labels are removed. V3 keeps its in-memory modal. V4 now opens the separate page described below; its draft and image files are stored locally in IndexedDB.
+Campaign setup calls the Autocomplete service after entry of a valid INN. DaData fills editable business details when the user confirms the result. The registered address is offered as a possible location. V4 restores its draft and images from IndexedDB.
 
 The first step is compact, with a real creative preview, inline validation and focus feedback. Offer discount and the suggested title stay synchronized; custom titles are preserved. The final summary includes discount, promo code and date. Browser checks covered the complete demo, back navigation, errors, cancellation, dynamic preview and 320/375/1280 px layout. Reusable assertions: `scripts/check-campaign-demo.mjs`. File upload and local speech recognition were not exercised in this pass.
 

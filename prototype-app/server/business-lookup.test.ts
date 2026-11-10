@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createBusinessLookup } from './business-lookup.ts'
-import { innError, phoneError, formatPhone, offerSuggestion } from '../shared/campaign-business.ts'
-const call = (app: ReturnType<typeof createBusinessLookup>, inn = '7707083893') => app.request('/lookup', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({inn})})
+import { createAutocomplete } from './autocomplete.ts'
+import { innError, phoneError, formatPhone, normalizeBusinessWebsite, offerSuggestion, offerTheme } from '../shared/campaign-business.ts'
+const call = (app: ReturnType<typeof createAutocomplete>, inn = '7707083893') => app.request('/api/autocomplete/inn', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({inn})})
 
 test('checks both INN lengths and control digits, phones and offer context',()=>{
   assert.equal(innError('7707083893'),'')
@@ -11,23 +11,29 @@ test('checks both INN lengths and control digits, phones and offer context',()=>
   for(const value of ['+7 (999) 123-45-67','8 999 123 45 67','74951234567']) assert.equal(phoneError(value),'')
   for(const value of ['', '+1 999 123 4567','+7 999 123 45', '+7 000 000 0000','call 79991234567']) assert.ok(phoneError(value),value)
   assert.equal(formatPhone('89991234567'),'+7 (999) 123-45-67')
-  assert.match(offerSuggestion({name:'Мой сервис',category:'автосервис'}),/^Мой сервис:.*сервис/)
-  assert.doesNotMatch(offerSuggestion({name:'Школа',category:'обучение'}),/20%|кофе/)
+  assert.match(offerSuggestion({name:'Мой сервис',category:'автосервис'}),/авто/)
+  assert.doesNotMatch(offerSuggestion({name:'Школа',category:'обучение'}),/скидк|подар|кофе|%/i)
+  assert.equal(offerTheme('автосервис').cat, 'auto')
+  assert.equal(offerTheme('кофейня').cat, 'food')
+  assert.equal(normalizeBusinessWebsite('example.test'), 'https://example.test/')
+  for (const site of ['https://user:pass@example.test', 'javascript:alert(1)', 'https://example.test x']) assert.equal(normalizeBusinessWebsite(site), '')
 })
 
 test('invalid input and unavailable service never return invented profiles',async()=>{
   let calls=0
-  const app=createBusinessLookup({token:()=>undefined,request:(async()=>{calls++;throw Error()}) as typeof fetch})
+  const app=createAutocomplete({token:()=>undefined,request:(async()=>{calls++;throw Error()}) as typeof fetch})
   assert.equal((await call(app,'7707083894')).status,400)
   assert.equal((await call(app)).status,503)
   assert.equal(calls,0)
-  assert.equal((await app.request('/lookup',{method:'POST',body:'bad json'})).status,400)
+  assert.equal((await app.request('/api/autocomplete/inn',{method:'POST',body:'bad json'})).status,400)
 })
 
 test('lookup maps verified matching business and keeps registered address separate',async()=>{
-  const app=createBusinessLookup({token:()=> 'test-key',request:(async(url,init)=>{
+  const app=createAutocomplete({token:()=> 'test-key',request:(async(url,init)=>{
     assert.equal(url,'https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party')
     assert.deepEqual(JSON.parse(init!.body as string),{query:'7707083893',branch_type:'MAIN',count:1})
+    assert.equal(new Headers(init!.headers).get('Authorization'), 'Token test-key')
+    assert.equal(new Headers(init!.headers).has('X-Secret'), false)
     return Response.json({suggestions:[{data:{inn:'7707083893',name:{short_with_opf:'ООО Пример'},state:{status:'ACTIVE'},okved:'56.10',address:{value:'г Москва, ул Примерная, 1',data:{city:'Москва'}}}}]})
   }) as typeof fetch})
   const response=await call(app); assert.equal(response.status,200)
@@ -37,6 +43,38 @@ test('lookup maps verified matching business and keeps registered address separa
   assert.equal(body.profile.points,undefined);assert.equal(body.profile.phone,undefined)
 })
 
+test('Autocomplete prefers the named main activity and returns a valid optional website', async () => {
+  const app = createAutocomplete({ token: () => 'test-key', request: async () => Response.json({ suggestions: [{
+    data: {
+      inn: '7707083893', name: { short_with_opf: 'ООО Пример' }, state: { status: 'ACTIVE' }, okved: '96.02',
+      okveds: [
+        { main: false, code: '56.10', name: 'Кафе' },
+        { main: true, code: '96.02', name: 'Услуги парикмахерских и салонов красоты' },
+      ],
+      sites: [{ data: { domain: 'javascript:alert(1)' } }, { data: { domain: 'example.test' } }],
+    },
+  }] }) })
+  const response = await call(app)
+  assert.equal(response.status, 200)
+  const { profile } = await response.json()
+  assert.equal(profile.category, 'Услуги парикмахерских и салонов красоты')
+  assert.equal(profile.website, 'https://example.test/')
+})
+
+test('Autocomplete supports an individual entrepreneur with the provider display name', async () => {
+  const inn = '500100732259'
+  const app = createAutocomplete({ token: () => 'test-key', request: async (_url, init) => {
+    assert.deepEqual(JSON.parse(init!.body as string), { query: inn, type: 'INDIVIDUAL', count: 1 })
+    return Response.json({ suggestions: [{ value: 'ИП Пример', data: { inn, state: { status: 'ACTIVE' } } }] })
+  } })
+  const response = await call(app, inn)
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('cache-control'), 'no-store')
+  assert.deepEqual((await response.json()).profile, {
+    inn, name: 'ИП Пример', category: '', city: '', registeredAddress: '', source: 'dadata',
+  })
+})
+
 test('no result, inactive business, wrong company and upstream failure are distinct from success',async()=>{
   for(const [body,status] of [
     [{suggestions:[]},404],
@@ -44,9 +82,9 @@ test('no result, inactive business, wrong company and upstream failure are disti
     [{suggestions:[{data:{inn:'other',name:{short_with_opf:'Компания'}}}]},502],
     [{invalid:true},502],
   ] as const) {
-    const app=createBusinessLookup({token:()=> 'test',request:(async()=>Response.json(body)) as typeof fetch})
+    const app=createAutocomplete({token:()=> 'test',request:(async()=>Response.json(body)) as typeof fetch})
     assert.equal((await call(app)).status,status)
   }
-  const app=createBusinessLookup({token:()=> 'test',request:(async()=>{throw Error('timeout')}) as typeof fetch})
+  const app=createAutocomplete({token:()=> 'test',request:(async()=>{throw Error('timeout')}) as typeof fetch})
   assert.equal((await call(app)).status,502)
 })

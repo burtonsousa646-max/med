@@ -45,7 +45,7 @@ export function OfferAssistant({ offer, active, onChange, onWorking, track = fal
     const result = reviseOffer(value, offer)
     if (!result) {
       event('v4_assistant_result', { method, result: 'error', reason: 'unsupported' })
-      const reply = 'Напишите, какой цвет, размер чашки, скидку или промокод хотите. Для других правок нажмите «Редактировать»'
+      const reply = 'Напишите, какой цвет, размер изображения, скидку или промокод хотите. Для других правок нажмите «Редактировать»'
       setMessages(current => [...current, { role: 'assistant', text: reply }]); setMessage(''); setPrompt(''); return
     }
     input.current?.focus({ preventScroll: true })
@@ -86,7 +86,7 @@ export function OfferAssistant({ offer, active, onChange, onWorking, track = fal
       {messages.map((message, index) => <p key={index} className="offer-chat-message" data-role={message.role}><span className="offer-chat-author">{message.role === 'user' ? 'вы' : 'дизайнер'}</span>{message.text}</p>)}
     </div>}
     <div className="offer-assistant-input">
-      <textarea ref={input} className="ym-disable-keys" aria-label="Что изменить в оффере" placeholder="Например: скидка 25%, фон синий, чашку крупнее" value={prompt} maxLength={400} rows={2} readOnly={working || !active} onChange={e => { promptMethod.current = 'text'; setPrompt(e.target.value) }} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); apply() } }}/>
+      <textarea ref={input} className="ym-disable-keys" aria-label="Что изменить в оффере" placeholder="Например: скидка 25%, фон синий, изображение крупнее" value={prompt} maxLength={400} rows={2} readOnly={working || !active} onChange={e => { promptMethod.current = 'text'; setPrompt(e.target.value) }} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); apply() } }}/>
       <div className="offer-assistant-tools"><button type="button" className="offer-mic" title="Диктовка использует распознавание речи браузера" aria-label={listening ? 'Остановить диктовку' : 'Надиктовать правку'} aria-pressed={listening} disabled={working} onClick={dictate}>{listening ? <Square size={15}/> : <Mic size={17}/>}<span>{listening ? 'слушаю' : 'сказать голосом'}</span>{listening && <i className="offer-wave" aria-hidden="true">{[0,1,2,3,4].map(i => <i key={i} style={{animationDelay:`${i * 90}ms`}}/>)}</i>}</button><button type="button" className="offer-send" aria-label="Применить правку" disabled={working || listening || !prompt.trim()} onClick={() => apply()}><ArrowUp size={20}/></button></div>
     </div>
     <div className="offer-assistant-examples" aria-label="Примеры правок">{examples.map(example => <button key={example.label} type="button" disabled={working || listening} onClick={() => apply(example.request, 'example')}>{example.label}</button>)}</div>

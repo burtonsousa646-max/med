@@ -74,9 +74,9 @@
 .campaign-demo .campaign-offer-editor .v3-offer-card__copy > b { font-size: 20px; line-height: 1.2; }
 .campaign-demo .v3-offer-card { position: relative; isolation: isolate; }
 .campaign-demo .v3-offer-card .cr { transition: opacity 500ms cubic-bezier(.22,1,.36,1); }
-.campaign-demo .v3-offer-card .cr__img { transform-origin: 75% 85%; transition: transform 850ms cubic-bezier(.22,1,.36,1), opacity 400ms; }
-.campaign-demo .v3-offer-stage[data-zoom=true] .cr__img { transform: scale(1.2); }
-.campaign-demo .v3-offer-stage[data-revising=true] .cr__img { transform: translateY(-7px) rotate(-3deg) scale(.96); }
+.campaign-demo .v3-offer-card :is(.cr__img,.cr__icon,.cr__photo) { transform-origin: 75% 85%; transition: transform 850ms cubic-bezier(.22,1,.36,1), opacity 400ms; }
+.campaign-demo .v3-offer-stage[data-zoom=true] :is(.cr__img,.cr__icon,.cr__photo) { transform: scale(1.2); }
+.campaign-demo .v3-offer-stage[data-revising=true] :is(.cr__img,.cr__icon,.cr__photo) { transform: translateY(-7px) rotate(-3deg) scale(.96); }
 .campaign-demo .v3-offer-stage .cr__text { transition: opacity 500ms cubic-bezier(.22,1,.36,1); }
 .campaign-demo .v3-offer-stage[data-revising=true] .cr__text { opacity: .4;  }
 .offer-assistant { min-width: 0; }

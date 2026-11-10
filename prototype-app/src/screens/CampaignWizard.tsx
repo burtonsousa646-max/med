@@ -2,8 +2,10 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Mic, PencilLine, RotateCcw, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion, useAnimationControls, useReducedMotion } from 'motion/react'
 import { useNavigate, useParams } from 'react-router'
+import { autocompleteInn } from '../api'
 import { analytics, type AnalyticsPage, type EventParams, type Goal } from '../analytics'
-import { campaignAllowedStage, campaignStage, campaignStages, emptyCampaignDraft, type CampaignDraft } from './campaign-draft'
+import { campaignAllowedStage, campaignStage, campaignStages, emptyCampaignDraft, type StoredCampaignDraft } from './campaign-draft'
+import { audienceGroups as groups } from '../../shared/campaign-draft'
 import { MovingLabel, glide, settle } from './LandingMotion'
 import { Field } from './CampaignField'
 import { OfferReveal, useOfferGeneration } from './OfferGeneration'
@@ -11,9 +13,8 @@ import { OfferAssistant } from './OfferAssistant'
 import { emptyOffer, offerErrors, type OfferDraft } from './offer-assistant-demo'
 import { BusinessSetup, type BusinessPhase } from './BusinessSetup'
 import { AudienceSetup, CampaignSuccess, type AudienceSummary } from './CampaignAudience'
-import { innError, phoneError, localDate } from '../../shared/campaign-business'
+import { innError, phoneError, localDate, offerSuggestion, offerTheme, type BusinessProfile } from '../../shared/campaign-business'
 import { Creative, creativeOf } from '../creative'
-import { DEMO_PROFILE, type DemoBusinessProfile } from './campaign-demo'
 import './business-setup.css'
 import './campaign-wizard.css'
 
@@ -23,14 +24,6 @@ const introductions = [
   ['Ваш оффер готов', 'Проверьте предложение и напишите в чат, если хотите что-то изменить'],
   ['Кому показать предложение?', 'Выберите географию и клиентов для показа'],
 ]
-const groups = [
-  { title: 'геолокация', choices: ['рядом с точкой', 'весь город', 'вся Россия'] },
-  { title: 'пол', choices: ['любой', 'женщины', 'мужчины'] },
-  { title: 'возраст', choices: ['любой', '18–34', '35 и старше'] },
-  { title: 'уровень дохода', choices: ['любой', 'средний', 'выше среднего'] },
-  { title: 'жизненные ситуации', choices: ['любые', 'недавно переехали', 'день зарплаты'] },
-]
-
 type LocalSpeech = {
   lang: string
   processLocally?: boolean
@@ -91,15 +84,15 @@ function useImage(file: File | null) {
   return src
 }
 
-export default function CampaignWizard({ open, onClose, presentation = 'dialog', initialDraft, onDraftChange, storageState }: {
-  open: boolean; onClose: () => void; presentation?: 'dialog' | 'page'; initialDraft?: CampaignDraft;
-  onDraftChange?: (draft: CampaignDraft) => Promise<boolean>; storageState?: 'loading' | 'saving' | 'saved' | 'error';
+export default function CampaignWizard({ open, onClose, presentation = 'dialog', initialDraft, onDraftChange, onSubmitDraft, storageState }: {
+  open: boolean; onClose: () => void; presentation?: 'dialog' | 'page'; initialDraft?: StoredCampaignDraft;
+  onDraftChange?: (draft: StoredCampaignDraft) => void; onSubmitDraft?: (draft: StoredCampaignDraft) => Promise<void>; storageState?: 'loading' | 'saving' | 'saved' | 'error';
 }) {
   const page = presentation === 'page'
   const track = useCallback((goal: Goal, params: EventParams = {}) => { if (page) analytics.event(goal, params) }, [page])
   const routerNavigate = useNavigate()
   const { stage: routeStage } = useParams()
-  const initial = initialDraft ?? emptyCampaignDraft()
+  const initial: StoredCampaignDraft = initialDraft ?? emptyCampaignDraft()
   const resumed = initial.reached > 0 || Boolean(initial.business.inn || initial.business.phone)
   const initialStage = page ? campaignStage(routeStage, initial) : 0
   const [reached, setReached] = useState(initial.reached)
@@ -128,10 +121,15 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const [offerAccepted, setOfferAccepted] = useState(initial.offerAccepted === true)
   const [addresses, setAddresses] = useState(initial.addresses)
   const [businessPhase, updateBusinessPhase] = useState<BusinessPhase>(initialStage === 0 ? 'identify' : 'review')
-  const [profile, setProfile] = useState<DemoBusinessProfile | null>(initial.hasProfile ? { ...DEMO_PROFILE, ...initial.business } : null)
+  const [hasProfile, setHasProfile] = useState(initial.hasProfile)
+  const [registeredAddress, setRegisteredAddress] = useState(typeof initial.registeredAddress === 'string' ? initial.registeredAddress.slice(0, 200) : '')
+  const [suggestion, setSuggestion] = useState<BusinessProfile | null>(null)
+  const [lookupError, setLookupError] = useState('')
+  const [lookupAttempt, setLookupAttempt] = useState(0)
+  const matchingSuggestion = suggestion?.inn === business.inn ? suggestion : null
   const [searching, setSearching] = useState(false)
   const [online, setOnline] = useState(initial.online)
-  const lookup = useRef<number | null>(null)
+  const lookup = useRef<AbortController | null>(null)
   const generatedTitle = useRef(initial.generatedTitle)
   const form = useRef<HTMLFormElement>(null)
   const [offer, setOffer] = useState<OfferDraft>(initial.offer)
@@ -161,7 +159,8 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     }).join(' · ') || 'Все клиенты',
     moment: ['В любой момент', 'После переезда', 'В день зарплаты'][audience[4]],
   }
-  const creative = { ...creativeOf(name, title, 0), tone: offer.tone,
+  const theme = offerTheme(business.category)
+  const creative = { ...creativeOf(name, title, 0), tone: offer.tone, cat: theme.cat, img: theme.image ?? '',
     big: offer.gift ? '1 + 1' : offer.discount ? `−${offer.discount}%` : title,
     small: offer.gift || offer.discount ? /^Скидка \d+% на первую покупку$/.test(title) ? 'на первую покупку' : title : '' }
   const preview = <div className="campaign-summary-creative"><Creative o={creative} image={image} erid="реклама" wide/></div>
@@ -172,11 +171,11 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     requestAnimationFrame(() => stepHeading.current?.focus({ preventScroll: true }))
   }, [track])
   const generation = useOfferGeneration(generating && step === 1 && open && !closing && !busy, finishGeneration)
-  const generationStatus = [business.website ? 'изучаю сайт' : 'изучаю ваш бизнес', image ? 'использую ваше изображение' : 'подбираю изображение', logo ? 'добавляю ваш логотип' : 'подбираю цвета', 'проверяем результат'][generation.phase]
+  const generationStatus = ['учитываю сферу бизнеса', image ? 'использую ваше изображение' : 'готовлю креатив', logo ? 'добавляю ваш логотип' : 'подбираю цвета', 'проверяем результат'][generation.phase]
   const currentStage = complete ? 4 : step === 0 ? businessPhase === 'identify' ? 0 : 1 : step + 1
-  const currentDraft: CampaignDraft = { business, addresses, online, offer, offerImage, logoImage, audience, triggers,
-    confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile: Boolean(profile),
-    stage: currentStage, reached: Math.max(reached, currentStage), offerAccepted: !page || offerAccepted }
+  const currentDraft: StoredCampaignDraft = { business, addresses, online, offer, offerImage, logoImage, audience, triggers,
+    confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile, registeredAddress,
+    stage: currentStage, reached: Math.max(reached, currentStage), offerAccepted: !page || offerAccepted, submitted: page && complete }
   const stepName = campaignStages[currentStage]
   const offerFlags = { has_image: Boolean(offerImage), has_logo: Boolean(logoImage), has_promo: Boolean(offer.promo), has_discount: Boolean(offer.discount), tone: offer.tone }
 
@@ -187,8 +186,42 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   useEffect(() => { setEditing(false) }, [step, complete])
 
   useEffect(() => {
-    void onDraftChange?.(currentDraft)
-  }, [business, addresses, online, offer, offerImage, logoImage, audience, triggers, filled, profile, currentStage, reached, offerAccepted, onDraftChange])
+    onDraftChange?.(currentDraft)
+  }, [business, addresses, online, offer, offerImage, logoImage, audience, triggers, filled, hasProfile, registeredAddress, currentStage, reached, offerAccepted, onDraftChange])
+
+  useEffect(() => {
+    const inn = business.inn
+    setSuggestion(null)
+    setLookupError('')
+    setSearching(false)
+    if (!open || step !== 0 || businessPhase !== 'identify' || innError(inn)) return
+    const controller = new AbortController()
+    lookup.current = controller
+    const timer = window.setTimeout(async () => {
+      if (controller.signal.aborted) return
+      track('v4_lookup_start', { step: 'business' })
+      setSearching(true)
+      try {
+        const result = await autocompleteInn(inn, AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]))
+        if (controller.signal.aborted) return
+        setSuggestion(result)
+        track('v4_lookup_result', { result: 'success', method: 'lookup' })
+      } catch (error) {
+        if (controller.signal.aborted) return
+        setLookupError(error instanceof TypeError || !(error instanceof Error)
+          ? 'Поиск сейчас недоступен. Попробуйте ещё раз или заполните данные вручную'
+          : error.name === 'TimeoutError' ? 'Поиск не ответил вовремя. Попробуйте ещё раз' : error.message)
+        track('v4_lookup_result', { result: 'error', method: 'lookup' })
+      } finally {
+        if (lookup.current === controller) { lookup.current = null; setSearching(false) }
+      }
+    }, 350)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+      if (lookup.current === controller) lookup.current = null
+    }
+  }, [business.inn, businessPhase, lookupAttempt, open, step, track])
 
   useLayoutEffect(() => {
     if (!page) return
@@ -242,7 +275,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     })
   }, [open, page, step, complete, businessPhase, sceneMotion, reduce])
 
-  useEffect(() => () => { epoch.current++; speech.current?.abort(); if (lookup.current !== null) window.clearTimeout(lookup.current) }, [])
+  useEffect(() => () => { epoch.current++; speech.current?.abort(); lookup.current?.abort() }, [])
 
   function close() {
     epoch.current++
@@ -326,7 +359,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   function cancelLookup(restoreFocus = false) {
     if (lookup.current !== null) track('v4_lookup_cancel', { step: 'business' })
-    if (lookup.current !== null) window.clearTimeout(lookup.current)
+    lookup.current?.abort()
     lookup.current = null
     setSearching(false)
     if (restoreFocus) requestAnimationFrame(() => {
@@ -334,30 +367,23 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     })
   }
 
-  function findBusiness() {
-    if (!validate() || lookup.current) return
-    track('v4_lookup_start', { step: 'business' })
-    setSearching(true)
-    lookup.current = window.setTimeout(() => {
-      lookup.current = null
-      confirmBusinessIdentity()
-      setProfile({ ...DEMO_PROFILE, inn: business.inn, phone: business.phone })
-      setBusiness(current => ({ ...current, name: DEMO_PROFILE.name, category: DEMO_PROFILE.category, city: DEMO_PROFILE.city }))
-      setAddresses([DEMO_PROFILE.registeredAddress])
-      setSearching(false)
-      track('v4_lookup_result', { result: 'success', method: 'lookup' })
-      track('v4_identify_complete', { method: 'lookup' })
-      direction.current = 1
-      setBusinessPhase('review')
-    }, 850)
+  function acceptSuggestion(profile: BusinessProfile) {
+    confirmBusinessIdentity()
+    setHasProfile(true)
+    setRegisteredAddress(profile.registeredAddress)
+    setBusiness(current => ({ ...current, name: current.name || profile.name, category: current.category || profile.category, city: current.city || profile.city, website: current.website || profile.website || '' }))
+    track('v4_identify_complete', { method: 'lookup' })
+    direction.current = 1
+    setBusinessPhase('review')
   }
 
   function confirmBusinessIdentity() {
     if (confirmedInn.current === business.inn) return
     if (confirmedInn.current) track('v4_company_change')
     confirmedInn.current = business.inn
-    setProfile(null)
-    setBusiness(current => ({ ...current, name: '', category: '', city: '' }))
+    setHasProfile(false)
+    setRegisteredAddress('')
+    setBusiness(current => ({ ...current, name: '', category: '', city: '', website: '' }))
     setAddresses([''])
     setOffer({ ...emptyOffer })
     setOfferImage(null); setLogoImage(null); setFilled(false); setGenerating(false)
@@ -367,7 +393,8 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   }
 
   function manualEntry() {
-    if (!validate() || searching) return
+    if (!validate()) return
+    cancelLookup()
     confirmBusinessIdentity()
     track('v4_identify_complete', { method: 'manual' })
     direction.current = 1
@@ -376,19 +403,20 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   function fillOffer() {
     setFilled(true)
-    const suggestion = `Скидка ${offer.discount || '20'}% на первую покупку`
-    setOffer(current => ({ ...current, title: suggestion, discount: current.discount || '20' }))
+    const suggestion = offerSuggestion(business)
+    setOffer(current => ({ ...current, title: suggestion }))
     generatedTitle.current = suggestion
   }
 
   function beginGeneration(kind: 'first' | 'rebuild') {
+    if (kind === 'rebuild' && offer.title === generatedTitle.current && !offer.discount && !offer.gift) fillOffer()
     generationRun.current = { started: Date.now(), kind }
     track('v4_generation_start', { step: 'offer', generation: kind, ...offerFlags })
     setGenerating(true)
   }
 
   function changeDiscount(discount: string) {
-    const title = offer.title === generatedTitle.current ? discount ? `Скидка ${discount}% на первую покупку` : '' : offer.title
+    const title = offer.title === generatedTitle.current ? discount ? `Скидка ${discount}% на первую покупку` : offerSuggestion(business) : offer.title
     if (offer.title === generatedTitle.current) generatedTitle.current = title
     setOffer({ ...offer, discount, title, gift: false })
   }
@@ -447,25 +475,38 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     event.preventDefault()
     if (locked.current || searching || finalizing || (step === 1 && (generating || revising))) return
     if (complete) { void requestClose(); return }
+    if (step === 0 && businessPhase === 'identify') {
+      if (matchingSuggestion) {
+        if (validate()) acceptSuggestion(matchingSuggestion)
+      } else if (innError(business.inn)) {
+        validate()
+      } else {
+        setLookupAttempt(attempt => attempt + 1)
+      }
+      return
+    }
     if (!validate()) return
-    if (step === 0 && businessPhase === 'identify') { void findBusiness(); return }
     if (step === 0) {
       if (innError(business.inn) || phoneError(business.phone)) { setBusinessPhase('identify'); return }
       track('v4_business_complete', { online, address_count: online ? 0 : addresses.length })
       if (!filled) { fillOffer(); beginGeneration('first') }
+      else if (offer.title === generatedTitle.current && !offer.discount && !offer.gift) fillOffer()
       if (online) setAudience(current => current.map((value,i)=>i===0?2:value))
     }
     if (step < steps.length - 1) { if (step === 1) track('v4_offer_complete', offerFlags); void navigate(step + 1); return }
     if (campaignAllowedStage(currentDraft) < 4) { void navigate(2, true); return }
     setFinishError('')
+    speech.current?.abort()
+    const token = epoch.current
     setFinalizing(true)
     track('v4_save_start', { step: 'audience' })
     try {
-      if (onDraftChange && !await onDraftChange({ ...currentDraft, stage: 4, reached: 4 })) throw new Error('Save failed')
+      await onSubmitDraft?.(currentDraft)
+      if (token !== epoch.current) return
       track('v4_save_result', { result: 'success' })
       track('v4_setup_complete', { ...offerFlags, online, has_wishes: Boolean(triggers.trim()), address_count: online ? 0 : addresses.length, resumed })
       await navigate(2, true)
-    } catch { track('v4_save_result', { result: 'error', reason: 'storage' }); setFinishError('Не удалось сохранить настройки. Нажмите «Завершить настройку» ещё раз') }
+    } catch { track('v4_save_result', { result: 'error', reason: 'storage' }); setFinishError('Не удалось принять заявку. Нажмите «Завершить настройку» ещё раз') }
     finally { setFinalizing(false) }
   }
 
@@ -498,8 +539,8 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
         <div className="v3-dialog__body" ref={scroller}>
           <motion.div className="v3-dialog__scene" initial={false} animate={sceneMotion} inert={busy}>
-          {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : step === 1 && generating ? 'Собираем ваш оффер' : introductions[step][0]}</h3><p>{step === 0 ? 'Сформируем оффер на основе информации о компании' : step === 1 && generating ? 'Готовим текст и изображение для вашей акции' : introductions[step][1]}</p></div><span>0{step + 1} / 03</span></div>}
-          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} profile={profile} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} offerAccepted={offerAccepted} onOfferAccepted={page ? setOfferAccepted : undefined} />}
+          {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : step === 1 && generating ? 'Собираем ваш оффер' : introductions[step][0]}</h3><p>{step === 0 ? 'Сформируем оффер на основе информации о компании' : step === 1 && generating ? 'Готовим черновик на основе данных о бизнесе' : introductions[step][1]}</p></div><span>0{step + 1} / 03</span></div>}
+          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} hasProfile={hasProfile} registeredAddress={registeredAddress} suggestionName={matchingSuggestion?.name} lookupError={lookupError} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} offerAccepted={offerAccepted} onOfferAccepted={page ? setOfferAccepted : undefined} />}
           {!complete && step === 1 && !generating && <div className="v3-campaign-context"><span><Check size={14}/> {name}</span><span>{online ? 'онлайн' : business.city + ' · точек: ' + addresses.filter(a=>a.trim()).length}</span></div>}
 
           {!complete && step === 1 && <div className="v3-dialog__split campaign-offer-editor" data-generating={generating} data-phase={generation.phase}>
@@ -534,7 +575,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
               <div className="campaign-offer-control-space">
                 <div className="offer-preparing-note" aria-hidden={!generating}><span className="offer-source-mark">{name.replace(/^.*«(.+)»$/, '$1')}</span><p>Собираю первый вариант<br/>для вашего бизнеса</p><small>Потом можно изменить текст<br/>или настроить детали вручную</small></div>
                 <div ref={assistant} className="v3-fields campaign-offer-controls" inert={generating} aria-hidden={generating}>
-                <OfferAssistant track={page} offer={offer} active={open && !closing && !busy && !generating} onChange={value => { generatedTitle.current = /^Скидка \d+% на первую покупку$/.test(value.title) ? value.title : ''; setOffer(value) }} onWorking={setRevising}/>
+                <OfferAssistant track={page} offer={offer} active={open && !closing && !busy && !generating} onChange={value => { if (value.title !== offer.title) generatedTitle.current = /^Скидка \d+% на первую покупку$/.test(value.title) || value.title === offerSuggestion(business) ? value.title : ''; setOffer(value) }} onWorking={setRevising}/>
 
                 </div>
               </div>
@@ -555,7 +596,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
         <footer className="v3-dialog__actions">
           <span className="v3-dialog__footer-note">{complete ? 'Вы завершили все три шага' : step === 1 ? 'всё можно изменить перед запуском' : step === 0 && businessPhase === 'identify' ? 'без регистрации и запуска рекламы' : `шаг 0${step + 1} из 03`}</span>
           {(step > 0 || complete || businessPhase === 'review') && <button type="button" className="bl-btn" disabled={busy || finalizing} onClick={() => { if (step === 0 && businessPhase === 'review') { direction.current = -1; setBusinessPhase('identify') } else void navigate(complete ? step : step - 1) }}><ArrowLeft size={17} aria-hidden="true" /> {complete ? 'Изменить настройки' : 'назад'}</button>}
-          <motion.button type="submit" className="bl-btn bl-btn--dark" disabled={busy || searching || finalizing || (step === 1 && (generating || revising))} whileTap={reduce ? undefined : { scale: .97 }}><MovingLabel>{complete ? 'Готово' : finalizing ? 'Сохраняем настройки…' : step === 1 && generating ? 'готовим предложение…' : searching ? 'ищем бизнес…' : step === 0 ? businessPhase === 'identify' ? 'найти бизнес' : 'собрать оффер' : step === 2 ? 'Завершить настройку' : 'Дальше: выбрать клиентов'}</MovingLabel>{!complete && <ArrowRight size={18} aria-hidden="true" />}</motion.button>
+          <motion.button type="submit" className="bl-btn bl-btn--dark" disabled={busy || searching || finalizing || (step === 1 && (generating || revising))} whileTap={reduce ? undefined : { scale: .97 }}><MovingLabel>{complete ? 'Готово' : finalizing ? 'Сохраняем настройки…' : step === 1 && generating ? 'готовим предложение…' : searching ? 'ищем бизнес…' : step === 0 ? businessPhase === 'identify' ? matchingSuggestion ? 'проверить данные' : 'найти бизнес' : 'собрать оффер' : step === 2 ? 'Завершить настройку' : 'Дальше: выбрать клиентов'}</MovingLabel>{!complete && <ArrowRight size={18} aria-hidden="true" />}</motion.button>
         </footer>
       </form>
     </Surface>

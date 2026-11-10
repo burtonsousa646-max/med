@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/business/lookup": {
+    "/autocomplete/inn": {
         parameters: {
             query?: never;
             header?: never;
@@ -31,10 +31,35 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Найти действующий бизнес по ИНН для лендинга V3
+         * Найти действующий бизнес по ИНН для настройки кампании
          * @description Серверный поиск через DaData. Телефон не передаётся. Юридический адрес возвращается отдельно и не считается подтверждённой точкой кампании. Без DADATA_API_KEY возвращает 503.
          */
-        post: operations["lookupBusiness"];
+        post: operations["autocompleteInn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/draft": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Секретный идентификатор черновика, хранится в браузере. */
+                "X-Draft-Key": string;
+                "X-Draft-Revision": number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Сохранить черновик кампании v4 после принятия оферты */
+        put: operations["saveV4Draft"];
+        /**
+         * Сохранить заполненную заявку и поставить письмо в очередь
+         * @description Повторная отправка тех же данных с тем же ключом возвращает ранее принятую заявку.
+         */
+        post: operations["submitV4Draft"];
         delete?: never;
         options?: never;
         head?: never;
@@ -588,6 +613,11 @@ export interface components {
             category: string;
             city: string;
             registeredAddress: string;
+            /**
+             * Format: uri
+             * @description Сайт организации при наличии в DaData
+             */
+            website?: string;
             /** @enum {string} */
             source: "dadata";
         };
@@ -1073,6 +1103,20 @@ export interface components {
         };
     };
     responses: {
+        /** @description Заявка записана в SQLite и поставлена в очередь на отправку */
+        V4Accepted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    /** @constant */
+                    status: "accepted";
+                };
+            };
+        };
         /** @description ошибка */
         Error: {
             headers: {
@@ -1149,7 +1193,26 @@ export interface components {
     parameters: {
         CampaignId: number;
     };
-    requestBodies: never;
+    requestBodies: {
+        V4Draft: {
+            content: {
+                "multipart/form-data": {
+                    /** @description JSON с полями бизнеса, оффера и аудитории, без файлов */
+                    draft: string;
+                    /**
+                     * Format: binary
+                     * @description Изображение оффера, до 5 МиБ
+                     */
+                    offerImage?: string;
+                    /**
+                     * Format: binary
+                     * @description Логотип, до 5 МиБ
+                     */
+                    logoImage?: string;
+                };
+            };
+        };
+    };
     headers: never;
     pathItems: never;
 }
@@ -1179,7 +1242,7 @@ export interface operations {
             500: components["responses"]["Error"];
         };
     };
-    lookupBusiness: {
+    autocompleteInn: {
         parameters: {
             query?: never;
             header?: never;
@@ -1208,9 +1271,59 @@ export interface operations {
             400: components["responses"]["Error"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
             429: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
+        };
+    };
+    saveV4Draft: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Секретный идентификатор черновика, хранится в браузере. */
+                "X-Draft-Key": string;
+                "X-Draft-Revision": number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["V4Draft"];
+        responses: {
+            /** @description Черновик сохранён */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        status: "saved";
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+        };
+    };
+    submitV4Draft: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Секретный идентификатор черновика, хранится в браузере. */
+                "X-Draft-Key": string;
+                "X-Draft-Revision": number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["V4Draft"];
+        responses: {
+            200: components["responses"]["V4Accepted"];
+            201: components["responses"]["V4Accepted"];
+            400: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
     getCatalog: {

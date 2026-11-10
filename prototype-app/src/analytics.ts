@@ -5,7 +5,7 @@ const values = {
   section: ['hero', 'metrics', 'how', 'where', 'final'],
   target: ['how', 'where', 'login', 'offer_document', 'privacy_document', 'landing'],
   method: ['lookup', 'manual', 'first', 'rebuild', 'automatic', 'skip', 'text', 'example', 'voice'],
-  field: ['inn', 'phone', 'name', 'category', 'city', 'address', 'title', 'promo', 'discount', 'until', 'image', 'logo', 'wishes', 'unknown'],
+  field: ['inn', 'phone', 'name', 'category', 'city', 'website', 'address', 'title', 'promo', 'discount', 'until', 'image', 'logo', 'wishes', 'unknown'],
   tone: ['red', 'green', 'blue', 'violet', 'magenta', 'teal', 'dark', 'light'],
   reason: ['required', 'format', 'range', 'length', 'invalid', 'type', 'size', 'decode', 'unsupported', 'recognition', 'storage'],
   result: ['success', 'error', 'empty'],

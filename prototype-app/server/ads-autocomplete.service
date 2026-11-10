@@ -1,0 +1,13 @@
+[Unit]
+Description=МЁД: Autocomplete по ИНН
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/ads-proto
+ExecStart=/opt/node22/bin/node server/autocomplete.ts
+EnvironmentFile=-/etc/ads-autocomplete.env
+User=www-data
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

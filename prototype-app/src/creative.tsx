@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Baby, Car, Coffee, Dumbbell, HeartPulse, House, Scissors, ShoppingBasket, Ticket, type LucideIcon } from 'lucide-react'
 
+import type { Tone } from '../shared/campaign-offer'
+
 /* Креатив карточки в витрине «лучшее рядом», как у партнёрских акций на beeline.ru:
    цветной квадрат, знак партнёра, условие крупно, предмет из public/img/near и плашка erid.
    Текст собирается кодом, картинка — только предмет без надписей: партнёр меняет условие, креатив обновляется сам. */
 
 export type Cat = 'grocery' | 'food' | 'beauty' | 'health' | 'auto' | 'home' | 'sport' | 'kids' | 'fun'
-export type Tone = 'red' | 'green' | 'blue' | 'violet' | 'magenta' | 'teal' | 'dark' | 'light'
+export type { Tone } from '../shared/campaign-offer'
 export type CreativeData = { mark: string; big: string; small: string; tone: Tone; img: string; cat: Cat }
 
 export const CATS: Record<Cat, [string, LucideIcon]> = {
@@ -28,7 +30,7 @@ export function CrImg({ o }: { o: CreativeData }) {
   const [failed, setFailed] = useState(false)
   const Icon = CATS[o.cat][1]
   const base = `${import.meta.env.BASE_URL}img/near/${o.img}`
-  return failed
+  return !o.img || failed
     ? <Icon className="cr__icon" aria-hidden="true" />
     : <picture><source srcSet={`${base}.avif`} type="image/avif" /><img className="cr__img" src={`${base}.png`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} /></picture>
 }

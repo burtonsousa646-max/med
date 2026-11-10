@@ -25,8 +25,31 @@ export function formatPhone(value: string): string {
 }
 export const textError = (value: string, label = 'Это поле', min = 2) => value.trim().length >= min ? '' : `${label}: не менее ${min} символов`
 export const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+export function normalizeBusinessWebsite(value: string): string {
+  const input = value.trim()
+  if (!input || input.length > 250 || /\s/.test(input)) return ''
+  try {
+    const url = new URL(input.includes('://') ? input : `https://${input}`)
+    return ['https:', 'http:'].includes(url.protocol) && url.hostname.includes('.') && !url.username && !url.password && url.href.length <= 250
+      ? url.href : ''
+  } catch { return '' }
+}
+
+export const websiteError = (value: string) => value.trim() && !normalizeBusinessWebsite(value) ? 'Укажите сайт, например example.ru' : ''
+
+export function offerTheme(value: string) {
+  const category = value.toLowerCase()
+  if (/кофейн|кофе и завтрак/.test(category)) return { cat: 'food', title: 'Загляните на кофе', image: 'own-0' } as const
+  if (/кафе|ресторан|общественного питания/.test(category)) return { cat: 'food', title: 'Загляните к нам' } as const
+  if (/автосервис|автобизнес|автомобил|шиномонтаж/.test(category)) return { cat: 'auto', title: 'Узнайте, чем поможем вашему авто' } as const
+  if (/салон.*красот|космет|маникюр|парикмахер/.test(category)) return { cat: 'beauty', title: 'Выберите уход для себя' } as const
+  if (/рознич|магазин|маркетплейс/.test(category)) return { cat: 'grocery', title: 'Загляните за покупками' } as const
+  if (/спорт|фитнес/.test(category)) return { cat: 'sport', title: 'Найдите время для спорта' } as const
+  if (/обучен|образован|языков.*школ|курсы/.test(category)) return { cat: 'fun', title: 'Выберите, чему научиться' } as const
+  if (/медицин|клиник|стоматолог/.test(category)) return { cat: 'health', title: 'Узнайте больше о наших услугах' } as const
+  return { cat: 'fun', title: '' } as const
+}
+
 export function offerSuggestion(business: Pick<Business, 'name' | 'category'>) {
-  const category = business.category.toLowerCase()
-  const topic = /коф|кафе|ресторан|питан/.test(category) ? 'загляните на кофе и завтрак' : /авто|ремонт/.test(category) ? 'познакомьтесь с вашим новым сервисом' : /красот|салон|парикмах/.test(category) ? 'позаботьтесь о себе рядом с домом' : /магаз|торгов/.test(category) ? 'откройте для себя любимые покупки' : 'познакомьтесь с нами поближе'
-  return `${business.name.trim()}: ${topic}`.slice(0,90)
+  return offerTheme(business.category).title || `Познакомьтесь с нами: ${business.name.trim()}`.slice(0, 90)
 }

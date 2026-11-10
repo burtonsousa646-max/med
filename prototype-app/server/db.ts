@@ -12,6 +12,16 @@ export const db = new DatabaseSync(process.env.DB_PATH ?? new URL('demo.sqlite',
 db.exec(`
   pragma journal_mode = wal;
   pragma foreign_keys = on;
+  create table if not exists v4_drafts (
+    id text primary key, revision integer not null, data text not null, updated_at integer not null
+  );
+  create table if not exists v4_submissions (
+    id text primary key, draft_id text not null, digest text not null, data text not null, submitted_at integer not null,
+    mail_next_at integer not null, mail_attempts integer not null default 0, mail_sent_at integer,
+    unique (draft_id, digest)
+  );
+  create index if not exists v4_submissions_recent on v4_submissions (submitted_at);
+  create index if not exists v4_submissions_pending on v4_submissions (mail_next_at) where mail_sent_at is null;
   create table if not exists companies (id text primary key, session text not null, data text not null, seen integer not null);
   create table if not exists points (id integer primary key, company_id text not null references companies on delete cascade, addr text not null, x real not null, y real not null, active integer not null default 1);
   create table if not exists members (id integer primary key, company_id text not null references companies on delete cascade, name text not null, email text, role text not null, title text not null);

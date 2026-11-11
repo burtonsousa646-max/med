@@ -617,7 +617,14 @@ export function SketchMetrics({ calm = false, pulse = false, motionPaused = fals
       </svg>}
       <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Показывайте предложение абонентам билайна</p></div>
       {pulse && <CityAudienceMap timings={dots}/>}
-      <dl>{([[35, ' млн', 'абонентов билайна'], [200, '', 'триггеров показа'], [15, '%', 'средняя конверсия']] as const).map(([value, suffix, label]) => <div key={label}><dt className="bl-body bl-secondary">{label}</dt><dd>{calm ? `${value}${suffix}` : <Num value={value} suffix={suffix} from={0}/>}</dd></div>)}</dl>
+      <dl>{([
+        [30, '+ млн', 'абонентов билайна', ''],
+        [200, '', 'триггеров показа', ''],
+        [30, '%', 'средняя конверсия', 'до '],
+      ] as const).map(([value, suffix, label, prefix]) => <div key={label}>
+        <dt className="bl-body bl-secondary">{label}</dt>
+        <dd>{prefix}{calm ? `${value}${suffix}` : <Num value={value} suffix={suffix} from={0}/>}</dd>
+      </div>)}</dl>
     </section>
 }
 

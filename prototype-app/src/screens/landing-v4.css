@@ -67,10 +67,10 @@
     mask-composite: intersect;
   }
 }
-@media (max-width: 539px) {
+@media (max-width: 639px) {
   .v4 .v2-sketch-metrics dl { grid-template-columns: 1fr; padding: 0; }
   .v4 .v2-sketch-metrics dl > div {
-    grid-template-columns: minmax(0, 110px) minmax(0, 1fr); grid-template-rows: auto;
+    grid-template-columns: minmax(0, 140px) minmax(0, 1fr); grid-template-rows: auto;
     align-items: center; gap: 16px; padding: 12px 0; border-inline-start: 0;
   }
   .v4 .v2-sketch-metrics dl > div + div { border-top: 1px solid var(--color-border-secondary); }

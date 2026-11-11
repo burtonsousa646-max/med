@@ -45,31 +45,39 @@ function OfferPreview({ caption }: { caption: string }) {
 
 // фон hero, как у Shopify: public/video/hero.mp4 и первый кадр hero.jpg. Нет файла — остаётся тёмный блок.
 // Без звука и по кругу; при «уменьшить движение» не стартует сам.
-function HeroVideo() {
+function HeroVideo({ motionPaused }: { motionPaused?: boolean }) {
   const reduce = useLiveReducedMotion()
   const ref = useRef<HTMLVideoElement>(null)
   const [failed, setFailed] = useState(false)
   // автозапуск успевает раньше подписки на onPlay, поэтому стартуем с «играет»
   const [paused, setPaused] = useState(!!reduce)
-  useEffect(() => { if (reduce) { ref.current?.pause(); setPaused(true) } }, [reduce])
+  useEffect(() => {
+    const video = ref.current
+    if (reduce || motionPaused) {
+      video?.pause()
+      setPaused(true)
+    } else if (motionPaused === false) {
+      void video?.play().catch(() => {})
+    }
+  }, [reduce, motionPaused])
   if (failed) return null
   const base = `${import.meta.env.BASE_URL}video/hero`
   return (
     <>
-      <video ref={ref} className="v2-hero__media" src={`${base}.mp4`} poster={`${base}.jpg`} autoPlay={!reduce} muted loop playsInline preload="metadata" aria-hidden="true"
+      <video ref={ref} className="v2-hero__media" src={`${base}.mp4`} poster={`${base}.jpg`} autoPlay={!reduce && !motionPaused} muted loop playsInline preload="metadata" aria-hidden="true"
         onError={() => setFailed(true)} onPlay={() => setPaused(false)} onPause={() => setPaused(true)} />
-      <button type="button" className="bl-icon-btn v2-hero__pause" onClick={() => { const v = ref.current!; if (v.paused) void v.play().catch(() => setPaused(true)); else v.pause() }} aria-label={paused ? 'включить видео' : 'остановить видео'}>
+      {motionPaused === undefined && <button type="button" className="bl-icon-btn v2-hero__pause" onClick={() => { const v = ref.current!; if (v.paused) void v.play().catch(() => setPaused(true)); else v.pause() }} aria-label={paused ? 'включить видео' : 'остановить видео'}>
         {paused ? <Play size={18} /> : <Pause size={18} />}
-      </button>
+      </button>}
     </>
   )
 }
 
-export function Hero({ phone }: { phone?: ReactNode } = {}) {
+export function Hero({ phone, motionPaused }: { phone?: ReactNode; motionPaused?: boolean } = {}) {
   const sketch = Boolean(useContext(LaunchContext))
   return (
     <section id="v2-hero" className="bl-section bl-section--wide v2-hero" data-theme="invert">
-      <HeroVideo/>
+      <HeroVideo motionPaused={motionPaused}/>
       <div className="v2-hero__text">
         <h1 className="bl-display-xl">{sketch ? 'Находите новых клиентов' : 'покажите свою акцию тем, кто рядом'}</h1>
         <p className="bl-lead bl-secondary">{sketch ? 'Показывайте рекламу абонентам билайна и приглашайте их на сайт, в приложение или мессенджер' : 'Разместите акцию в приложении билайна. Показы бесплатны — платите за переходы, заявки или продажи.'}</p>
@@ -586,13 +594,12 @@ function Faq() {
   )
 }
 
-export function SketchMetrics({ calm = false, pulse = false }: { calm?: boolean; pulse?: boolean } = {}) {
+export function SketchMetrics({ calm = false, pulse = false, motionPaused = false }: { calm?: boolean; pulse?: boolean; motionPaused?: boolean } = {}) {
   const ref = useRef<HTMLElement>(null)
   const seen = useInView(ref, { once: true, amount: .65 })
   const inView = useInView(ref, { amount: .1 })
   const reduce = useLiveReducedMotion()
   const [pageVisible, setPageVisible] = useState(!document.hidden)
-  const [mapPaused, setMapPaused] = useState(false)
   const [dots] = useState(() => pulse ? Array.from({ length: 240 }, () => ({ duration: 8 + Math.random() * 16, delay: -Math.random() * 24 })) : [])
   useEffect(() => {
     if (!pulse) return
@@ -601,16 +608,14 @@ export function SketchMetrics({ calm = false, pulse = false }: { calm?: boolean;
     return () => document.removeEventListener('visibilitychange', update)
   }, [pulse])
   const show = seen || reduce
-  return <section ref={ref} className="bl-section bl-section--wide v2-sketch-metrics" data-theme="invert" data-pulsing={pulse && inView && pageVisible && !reduce && !mapPaused} aria-labelledby="v3-metrics-title">
+  return <section ref={ref} className="bl-section bl-section--wide v2-sketch-metrics" data-theme="invert" data-pulsing={pulse && inView && pageVisible && !reduce && !motionPaused} aria-labelledby="v3-metrics-title">
       {!pulse && <svg className="v2-sketch-metrics__crowd" viewBox="0 0 432 180" aria-hidden="true">
         <defs><linearGradient id="v3-metrics-scan"><stop stopColor="var(--color-brand-primary)" stopOpacity="0"/><stop offset=".5" stopColor="var(--color-brand-primary)" stopOpacity=".25"/><stop offset="1" stopColor="var(--color-brand-primary)" stopOpacity="0"/></linearGradient></defs>
         {Array.from({ length: 240 }, (_, i) => <circle key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} r="2" fill="currentColor" opacity={dim(i) * .5} />)}
           {!reduce && <motion.rect className="v2-sketch-metrics__scan" width="72" height="180" fill="url(#v3-metrics-scan)" initial={{ x: -72, opacity: 0 }} animate={seen ? { x: 432, opacity: [0, 1, 1, 0] } : { x: -72, opacity: 0 }} transition={{ duration: 1.6, delay: .15, ease: 'linear', opacity: { duration: 1.6, delay: .15, times: [0, .1, .85, 1] } }} />}
           {Array.from({ length: 240 }, (_, i) => lit(i, 0) && <motion.circle className="v2-sketch-metrics__match" key={i} cx={(i % 24) * 18 + 9} cy={Math.floor(i / 24) * 18 + 9} fill="var(--color-brand-primary)" initial={reduce ? false : { opacity: 0, r: 2 }} animate={show ? { opacity: 1, r: reduce ? 3.5 : [2, 5, 3.5] } : { opacity: 0, r: 2 }} transition={{ duration: reduce ? 0 : .45, delay: reduce ? 0 : ((i % 24) * 18 + 81) / 504 * 1.6 + .15, ease: 'easeOut' }} />)}
       </svg>}
-      <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Показывайте предложение абонентам билайна</p>
-        {pulse && !reduce && <button type="button" className="bl-icon-btn v4-map-toggle" aria-label={mapPaused ? 'возобновить анимацию карты' : 'остановить анимацию карты'} onClick={() => setMapPaused(value => !value)}>{mapPaused ? <Play size={18}/> : <Pause size={18}/>}</button>}
-      </div>
+      <div className="v2-sketch-metrics__intro"><h2 id="v3-metrics-title">ваши клиенты уже здесь</h2><p className="bl-body bl-secondary">Показывайте предложение абонентам билайна</p></div>
       {pulse && <CityAudienceMap timings={dots}/>}
       <dl>{([[35, ' млн', 'абонентов билайна'], [200, '', 'триггеров показа'], [15, '%', 'средняя конверсия']] as const).map(([value, suffix, label]) => <div key={label}><dt className="bl-body bl-secondary">{label}</dt><dd>{calm ? `${value}${suffix}` : <Num value={value} suffix={suffix} from={0}/>}</dd></div>)}</dl>
     </section>

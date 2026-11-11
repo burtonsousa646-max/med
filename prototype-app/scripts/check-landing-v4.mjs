@@ -8,7 +8,9 @@ export function assertLandingV4Layout() {
   const video = document.querySelector('#v2-hero video')
   assert(video?.loop && video.muted && video.playsInline && video.poster.endsWith('/video/hero.jpg'), 'Hero video must loop with a poster and no audio')
   assert(video.autoplay === !reduced, 'Hero video must respect reduced motion')
-  assert(document.querySelector('#v2-hero .v2-hero__pause')?.getClientRects().length > 0, 'Hero video must have a visible playback control')
+  assert(!document.querySelector('main .v2-hero__pause, main .v4-map-toggle'), 'The hero and map must have no playback icons')
+  const motionToggle = document.querySelector('footer .v4-motion-toggle')
+  assert(motionToggle && Boolean(motionToggle.getClientRects().length) === !reduced, 'The footer motion control must be available when motion is enabled')
   const box = selector => document.querySelector(selector).getBoundingClientRect()
   const header = document.querySelector('.v4 header')
   assert(box('.v4 header a').right <= box('.v4 header nav').left, 'Header controls overlap the brand')
@@ -33,8 +35,15 @@ export function assertLandingV4Layout() {
     assert(box('.v2-hero__offer').top >= box('.v2-hero__text').bottom, 'Compact hero must show the ad below the text')
   }
   const intro = box('.v2-sketch-metrics__intro'), figures = box('.v2-sketch-metrics dl'), map = box('.v4-audience-map')
-  assert(map.height > 0 && map.bottom + 8 <= figures.top, 'Map must stay above the figures')
-  assert(intro.bottom + 8 <= map.top || intro.right + 8 <= map.left, 'Metrics text and map must not overlap')
+  if (innerWidth >= 900) {
+    const section = box('.v2-sketch-metrics')
+    assert(Math.abs(map.top - section.top) <= 1 && Math.abs(map.bottom - section.bottom) <= 1, 'Map must fill the height of the metrics section')
+    assert(Math.abs(map.right - section.right) <= 1 && Math.abs(map.left - (section.left + section.width * .48)) <= 1, 'Map must fill the right half of the section')
+    assert(intro.right <= map.left, 'The heading must stay beside the map')
+  } else {
+    assert(map.height > 0 && map.bottom + 8 <= figures.top, 'Map must stay above the figures on compact screens')
+    assert(intro.bottom + 8 <= map.top, 'Map must stay below the heading on compact screens')
+  }
   for (const value of document.querySelectorAll('.v2-sketch-metrics dd')) {
     assert(value.scrollWidth <= value.clientWidth + 1, 'Metrics value must fit its column')
   }
@@ -80,11 +89,14 @@ export function assertLandingV4Layout() {
   assert(dots.length === 240, 'All audience positions can pulse')
   assert(new Set(dots.map(dot => dot.style.animationDuration)).size > 200, 'Dots must have independent pulse timings')
   const running = document.querySelector('.v2-sketch-metrics').dataset.pulsing === 'true'
+  const mapMotion = getComputedStyle(document.querySelector('.v4-audience-map > svg'))
   if (reduced) {
+    assert(mapMotion.animationName === 'none', 'Map zoom must respect reduced motion')
     assert(dots.every(dot => getComputedStyle(dot).animationName === 'none'), 'Map animation must respect reduced motion')
   } else {
+    assert(mapMotion.animationName === 'v4-map-zoom' && mapMotion.animationDirection === 'alternate', 'The map must zoom smoothly in both directions')
+    assert(mapMotion.animationPlayState === (running ? 'running' : 'paused'), 'Map zoom must follow the same playback state as the dots')
     assert(dots.every(dot => getComputedStyle(dot).animationIterationCount === 'infinite'), 'Audience pulses must loop')
-    assert(document.querySelector('.v4-map-toggle')?.getClientRects().length > 0, 'The looping map must have a pause control')
     assert(dots.every(dot => getComputedStyle(dot).animationPlayState === (running ? 'running' : 'paused')), 'Dot playback must follow visibility and pause state')
   }
   return `PASS: V4 content, navigation and selection invariants at ${innerWidth}px`

@@ -28,9 +28,10 @@ type LocalSpeech = {
   lang: string
   processLocally?: boolean
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
-  onerror: (() => void) | null
+  onerror: ((event: { error: string }) => void) | null
   onend: (() => void) | null
   start(): void
+  stop(): void
   abort(): void
 }
 
@@ -434,13 +435,13 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   function voiceOffer() {
     assistant.current?.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' })
-    const mic = assistant.current?.querySelector<HTMLButtonElement>('.offer-mic')
+    const mic = assistant.current?.querySelector<HTMLButtonElement>('.campaign-voice-button')
     mic?.focus({ preventScroll: true })
     mic?.click()
   }
 
   function dictate() {
-    if (speech.current) return
+    if (speech.current) { speech.current.stop(); return }
     track('v4_voice_start', { step: 'audience' })
     const browser = window as Window & { SpeechRecognition?: new () => LocalSpeech; webkitSpeechRecognition?: new () => LocalSpeech }
     const Recognition = browser.SpeechRecognition ?? browser.webkitSpeechRecognition
@@ -451,21 +452,35 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
       return
     }
     recognition.lang = 'ru-RU'
-    let heard = false, failed = false
+    let heard = false
     recognition.processLocally = true
     recognition.onresult = ({ results }) => {
       const value = results[0]?.[0]?.transcript.trim()
-      if (value) { heard = true; setTriggers(current => [current.trim(), value].filter(Boolean).join(' ').slice(0, 400)) }
+      if (speech.current === recognition && value) { heard = true; setTriggers(current => [current.trim(), value].filter(Boolean).join(' ').slice(0, 400)) }
     }
-    recognition.onerror = () => { failed = true; track('v4_voice_result', { step: 'audience', result: 'error', reason: 'recognition' }); setVoiceMessage('Не удалось распознать речь. Напишите пожелание') }
-    recognition.onend = () => { if (!failed) track('v4_voice_result', { step: 'audience', result: heard ? 'success' : 'empty' }); speech.current = null; setListening(false) }
+    recognition.onerror = ({ error }) => {
+      if (speech.current !== recognition) return
+      speech.current = null
+      setListening(false)
+      if (error === 'aborted') return
+      track('v4_voice_result', { step: 'audience', result: 'error', reason: 'recognition' })
+      setVoiceMessage('Не удалось распознать речь. Попробуйте ещё раз или введите текст')
+    }
+    recognition.onend = () => {
+      if (speech.current !== recognition) return
+      speech.current = null
+      setListening(false)
+      track('v4_voice_result', { step: 'audience', result: heard ? 'success' : 'empty' })
+      setVoiceMessage(heard ? 'Текст добавлен. Проверьте его перед отправкой' : 'Речь не распознана. Попробуйте ещё раз или введите текст')
+    }
     try {
-      recognition.start()
       speech.current = recognition
       setListening(true)
       setVoiceMessage('')
+      recognition.start()
     } catch {
-      failed = true
+      speech.current = null
+      setListening(false)
       track('v4_voice_result', { step: 'audience', result: 'error', reason: 'recognition' })
       setVoiceMessage('Голосовой ввод недоступен. Напишите пожелание')
     }

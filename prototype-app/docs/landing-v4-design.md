@@ -12,7 +12,7 @@ Metrics show their final values immediately. V4 styling is scoped under `.v4`; t
 
 The hero shares the page grid and aligns with the header and other sections. Desktop hero height is capped at 760 px
 and adapts to short windows. Below 900 px the launch action and ad preview flow
-in one column. The muted hero video loops with a playback control and stays on its poster when reduced motion is enabled.
+in one column. The muted hero video loops and stays on its poster when reduced motion is enabled. A text button in the footer pauses both the video and the map.
 
 Metrics, placements and the final section size to their contents. The metrics
 map is in the grid beside the heading or below it, and the figures stack into
@@ -31,7 +31,7 @@ fields clear of the footer.
 
 V4 replaces the regular dot grid with a dark vector map of central Moscow. The basemap uses actual OpenStreetMap road, water and park geometry, projected together with the points in Web Mercator, north up. Bounds: south 55.68, west 37.48, north 55.82, east 37.78. OSM snapshot: 2026-11-08T21:21:00Z, retrieved through `https://ovp.dresel.systems/api/interpreter`.
 
-The 240 audience points are illustrative, deterministically sampled from OSM building centres. They are not subscriber records, a measured density or coverage data. Generation excludes water polygons and crowded point pairs. The accessible description identifies this as a demonstration. Visible captions under the map are removed at the user's request. The independent pulses loop while the map is visible and the tab is active. A control pauses the motion. Reduced motion shows static points.
+The 240 audience points are illustrative, deterministically sampled from OSM building centres. They are not subscriber records, a measured density or coverage data. Generation excludes water polygons and crowded point pairs. The accessible description identifies this as a demonstration. Visible captions under the map are removed at the user's request. On desktop the map fills the right side of the section and fades behind the figures. On compact screens it sits between the heading and the figures. While the section is visible and the tab is active, the map slowly zooms in and out, with the points pulsing over the streets. Reduced motion shows the static map and points.
 
 `scripts/moscow-map.overpassql` reproduces the source query. Save its Overpass JSON response, then run `python3 scripts/build-audience-map.py /path/to/moscow-osm.json`. The script produces `public/img/moscow-audience-map.svg` and `src/screens/moscow-audience.json`; geographic-layer and point-placement assertions run during generation. The local SVG is 981 KB before compression, about 293 KB gzipped. No map SDK, API key or third-party map requests are needed at runtime.
 

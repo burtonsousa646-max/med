@@ -1,5 +1,5 @@
 import { useId, type ReactNode, type Ref } from 'react'
-import { Building2, Check, ChevronDown, Globe2, MapPin, Mic, SlidersHorizontal, Users } from 'lucide-react'
+import { Building2, Check, ChevronDown, Globe2, MapPin, Mic, SlidersHorizontal, Square, Users } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Field } from './CampaignField'
 import { textError } from '../../shared/campaign-business'
@@ -48,9 +48,15 @@ export function AudienceSetup({ groups, values, onChange, city, onCityChange, on
         </fieldset>)}</div>
       </details>
       <fieldset className="audience-wishes" disabled={disabled}>
-        <label><span>Что ещё учесть? <small>необязательно</small></span><textarea className="bl-input ym-disable-keys" data-analytics-field="wishes" rows={2} maxLength={400} placeholder="Например, показать акцию тем, кто ищет, где позавтракать" value={triggers} onChange={event => onTriggers(event.target.value)}/></label>
-        <button type="button" className="v3-text-button" onClick={onDictate} disabled={listening}><Mic size={16}/>{listening ? 'Слушаю…' : 'Сказать голосом'}</button>
-        {voiceMessage && <p role="status">{voiceMessage}</p>}
+        <label htmlFor={id + '-wishes'}>Что ещё учесть? <small>необязательно</small></label>
+        <div className="audience-wishes-input">
+          <textarea id={id + '-wishes'} aria-describedby={id + '-voice-status'} className="ym-disable-keys" data-analytics-field="wishes" rows={2} maxLength={400} placeholder="Например, показать акцию тем, кто ищет, где позавтракать" value={triggers} onChange={event => onTriggers(event.target.value)}/>
+          <button type="button" className="campaign-voice-button" aria-pressed={listening} onClick={onDictate}>
+            {listening ? <Square size={15} aria-hidden="true"/> : <Mic size={17} aria-hidden="true"/>}
+            {listening ? 'остановить запись' : 'сказать голосом'}
+          </button>
+        </div>
+        <p id={id + '-voice-status'} role="status">{listening ? 'Слушаю…' : voiceMessage}</p>
       </fieldset>
     </div>
     <aside className="audience-summary" aria-label="Итог выбора клиентов">

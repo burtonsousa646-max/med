@@ -98,6 +98,7 @@ export default function LandingV4() {
   const start = useNavigate()
   const showCta = useHeaderCta()
   const reduce = useReducedMotion()
+  const [motionPaused, setMotionPaused] = useState(false)
   const seen = useRef(new Set<string>())
   useEffect(() => {
     const names: Record<string, EventParams['section']> = { 'v2-hero': 'hero', how: 'how', where: 'where', 'v2-final': 'final' }
@@ -138,13 +139,21 @@ export default function LandingV4() {
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
-        <Hero phone={<AppScreenshotPhone kind="main"/>}/><SketchMetrics calm pulse/><HowItWorks/>
+        <Hero phone={<AppScreenshotPhone kind="main"/>} motionPaused={motionPaused}/><SketchMetrics calm pulse motionPaused={motionPaused}/><HowItWorks/>
         {/* Временно скрыто: <Clients calm/> */}
         <Placements/>
         {/* Временно скрыто: <ForEveryone calm/> */}
         <Final/>
       </main>
-      <footer className="footer bl-caption"><span>© 2026 партнёрская платформа билайна</span><span className="bl-row"><a href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'offer_document' })}>оферта</a><Link to="/v4/privacy" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'privacy_document' })}>обработка данных</Link><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a></span></footer>
+      <footer className="footer bl-caption">
+        <span>© 2026 партнёрская платформа билайна</span>
+        <span className="bl-row">
+          <a href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'offer_document' })}>оферта</a>
+          <Link to="/v4/privacy" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'privacy_document' })}>обработка данных</Link>
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a>
+          <button type="button" className="v4-motion-toggle" onClick={() => setMotionPaused(value => !value)}>{motionPaused ? 'возобновить анимацию' : 'остановить анимацию'}</button>
+        </span>
+      </footer>
     </div>
   </LaunchContext.Provider></div>
 }

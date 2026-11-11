@@ -26,12 +26,12 @@ node scripts/check-docker.mjs http://127.0.0.1:8080
 
 Для автозаполнения по ИНН задайте `DADATA_API_KEY` и `DADATA_SECRET_KEY` в серверном `.env`. Compose передаёт их только в Autocomplete.
 
-### Отправка заявок V4 через Resend
+### Отправка заявок V4 через Unisender Go
 
-- **systemd**. Сохраните ключ Resend в `/etc/credstore/ads-proto-resend-api-key` (владелец `root`, права `0600`). Укажите `CAMPAIGN_MAIL_FROM` в `/etc/ads-proto.env`. После обновления unit-файла выполните `systemctl daemon-reload` и `systemctl restart ads-proto`.
-- **Docker Compose**. Сохраните ключ вне репозитория в файле, доступном на чтение пользователю API (UID 1000 в контейнере). В серверном `.env` задайте `RESEND_SECRET_PATH` с абсолютным путём к файлу и `CAMPAIGN_MAIL_FROM`. Добавляйте `-f compose.resend.yaml` после остальных файлов Compose при каждом обновлении контейнеров. Например, `docker compose -f compose.yaml -f compose.resend.yaml up -d --build --wait`. При замене файла ключа пересоздайте контейнер API.
+- **systemd**. Сохраните ключ Unisender Go в `/etc/credstore/ads-proto-unisender-go-api-key` (владелец `root`, права `0600`). Укажите `CAMPAIGN_MAIL_FROM` в `/etc/ads-proto.env`. После обновления unit-файла выполните `systemctl daemon-reload` и `systemctl restart ads-proto`.
+- **Docker Compose**. Сохраните ключ вне репозитория в файле, доступном на чтение пользователю API (UID 1000 в контейнере). В серверном `.env` задайте `UNISENDER_GO_SECRET_PATH` с абсолютным путём к файлу и `CAMPAIGN_MAIL_FROM`. Добавляйте `-f compose.unisender.yaml` после остальных файлов Compose при каждом обновлении контейнеров. Например, `docker compose -f compose.yaml -f compose.unisender.yaml up -d --build --wait`. При замене файла ключа пересоздайте контейнер API.
 
-В обоих вариантах укажите адрес отправителя на подтверждённом в Resend домене. Пока ключ и отправитель не настроены, заявки сохраняются в очереди SQLite.
+В обоих вариантах нужен API-ключ из кабинета Unisender Go и адрес отправителя на домене, подтверждённом там же. Пока ключ и отправитель не настроены, заявки сохраняются в очереди SQLite.
 
 ## Прод с существующим nginx и HTTPS
 

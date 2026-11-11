@@ -7,13 +7,21 @@ import { db } from './db.ts'
 type MailRow = { id: string; data: string; submitted_at: number; mail_attempts: number }
 const recipient = 'beepartners@beeline.ru'
 
-const credentialName = 'ads-proto-resend-api-key'
+const credentialName = 'ads-proto-unisender-go-api-key'
+const maxRequestBytes = 10_000_000
+const acceptedPart = db.prepare('select 1 from v4_mail_parts where submission_id = ? and part = ?')
+const markPartAccepted = db.prepare('insert into v4_mail_parts (submission_id, part) values (?, ?)')
 
 function campaignMessage(row: MailRow, from: string) {
   const { business, addresses, online, offer, audience, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
   return {
-    from, to: recipient, subject: 'Новая заявка на рекламную кампанию МЁД',
-    text: [
+    from_email: from,
+    recipients: [{ email: recipient }],
+    subject: 'Новая заявка на рекламную кампанию МЁД',
+    template_engine: 'none',
+    // shortcut: Unisender Go deduplicates for one minute; reconcile ambiguous sends if duplicates must be ruled out.
+    idempotence_key: `v4-campaign-${row.id}`,
+    body: { plaintext: [
       `Заявка ${row.id}`, `Дата: ${new Date(row.submitted_at).toISOString()}`, '',
       `Название: ${business.name}`, `ИНН: ${business.inn}`, `Телефон: ${business.phone}`, `Сфера: ${business.category}`,
       `Сайт: ${business.website || '—'}`, `Город: ${business.city || '—'}`,
@@ -23,32 +31,58 @@ function campaignMessage(row: MailRow, from: string) {
       `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, '',
       ...audienceGroups.map(({ title, choices }, i) => `${title}: ${choices[audience[i]]}`),
       `Пожелания: ${triggers || '—'}`, 'Условия оферты приняты.',
-    ].join('\n'),
+    ].join('\n') },
     attachments: [{ file: offerImage, label: 'offer' }, { file: logoImage, label: 'logo' }].flatMap(({ file, label }) => file ? [{
-      filename: `${label}.${imageExtension(file.type)}`, content: file.base64,
+      name: `${label}.${imageExtension(file.type)}`, type: file.type, content: file.base64,
     }] : []),
   }
 }
 
-export async function sendCampaignMail(row: MailRow, from: string, apiKey: string) {
-  const response = await fetch('https://api.resend.com/emails', {
+async function sendUnisenderMail(body: string, apiKey: string) {
+  if (Buffer.byteLength(body) > maxRequestBytes) throw new Error('Unisender Go request exceeds 10 MB')
+  const response = await fetch('https://goapi.unisender.ru/ru/transactional/api/v1/email/send.json', {
     method: 'POST',
     redirect: 'error',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'X-API-KEY': apiKey,
       'Content-Type': 'application/json',
-      // shortcut: Resend deduplicates for 24 hours; reconcile ambiguous sends if retries must be safe beyond that.
-      'Idempotency-Key': `v4-campaign/${row.id}`,
     },
-    body: JSON.stringify(campaignMessage(row, from)),
+    body,
     signal: AbortSignal.timeout(30_000),
   })
   if (!response.ok) {
     await response.body?.cancel()
-    throw new Error(`Resend rejected campaign email (HTTP ${response.status})`)
+    throw new Error(`Unisender Go rejected campaign email (HTTP ${response.status})`)
   }
-  const result = await response.json() as { id?: unknown } | null
-  if (typeof result?.id !== 'string' || !result.id) throw new Error('Resend did not return an email ID')
+  const result = await response.json() as {
+    status?: string; job_id?: string; emails?: string[]; failed_emails?: Record<string, string>
+  } | null
+  if (result?.status !== 'success' || typeof result.job_id !== 'string' || !result.job_id
+    || (result.failed_emails && Object.hasOwn(result.failed_emails, recipient))
+    || (result.emails !== undefined && (!Array.isArray(result.emails) || !result.emails.includes(recipient)))) {
+    throw new Error('Unisender Go did not accept the campaign email')
+  }
+}
+
+export async function sendCampaignMail(row: MailRow, from: string, apiKey: string) {
+  const message = campaignMessage(row, from)
+  const body = JSON.stringify({ message })
+  if (Buffer.byteLength(body) <= maxRequestBytes || message.attachments.length < 2) {
+    await sendUnisenderMail(body, apiKey)
+    return
+  }
+
+  for (const [index, attachment] of message.attachments.entries()) {
+    const part = index + 1
+    if (acceptedPart.get(row.id, part)) continue
+    await sendUnisenderMail(JSON.stringify({ message: {
+      ...message,
+      subject: `${message.subject} (${part}/${message.attachments.length})`,
+      idempotence_key: `${message.idempotence_key}-${part}`,
+      attachments: [attachment],
+    } }), apiKey)
+    markPartAccepted.run(row.id, part)
+  }
 }
 
 // Claim with a lease so two worker processes cannot send the same queued entry at once.
@@ -74,17 +108,17 @@ export async function deliverCampaignMail(send: (row: MailRow) => Promise<void>,
 }
 
 export function startCampaignMail() {
-  const { CAMPAIGN_MAIL_FROM: from, RESEND_API_KEY_FILE, CREDENTIALS_DIRECTORY } = process.env
-  const keyPath = RESEND_API_KEY_FILE || (CREDENTIALS_DIRECTORY && join(CREDENTIALS_DIRECTORY, credentialName))
+  const { CAMPAIGN_MAIL_FROM: from, UNISENDER_GO_API_KEY_FILE, CREDENTIALS_DIRECTORY } = process.env
+  const keyPath = UNISENDER_GO_API_KEY_FILE || (CREDENTIALS_DIRECTORY && join(CREDENTIALS_DIRECTORY, credentialName))
   let apiKey = ''
   try {
     if (keyPath) apiKey = readFileSync(keyPath, 'utf8').trim()
   } catch {
-    console.warn('V4 campaign email is queued: Resend credential file could not be read')
+    console.warn('V4 campaign email is queued: Unisender Go credential file could not be read')
     return () => {}
   }
   if (!/^\S+$/.test(apiKey) || !from || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(from)) {
-    console.warn('V4 campaign email is queued: configure the Resend credential and CAMPAIGN_MAIL_FROM')
+    console.warn('V4 campaign email is queued: configure the Unisender Go credential and CAMPAIGN_MAIL_FROM')
     return () => {}
   }
   let running = false

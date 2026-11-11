@@ -22,6 +22,11 @@ db.exec(`
   );
   create index if not exists v4_submissions_recent on v4_submissions (submitted_at);
   create index if not exists v4_submissions_pending on v4_submissions (mail_next_at) where mail_sent_at is null;
+  create table if not exists v4_mail_parts (
+    submission_id text not null references v4_submissions on delete cascade,
+    part integer not null,
+    primary key (submission_id, part)
+  );
   create table if not exists companies (id text primary key, session text not null, data text not null, seen integer not null);
   create table if not exists points (id integer primary key, company_id text not null references companies on delete cascade, addr text not null, x real not null, y real not null, active integer not null default 1);
   create table if not exists members (id integer primary key, company_id text not null references companies on delete cascade, name text not null, email text, role text not null, title text not null);

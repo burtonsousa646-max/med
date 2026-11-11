@@ -1,0 +1,10 @@
+services:
+  api:
+    environment:
+      UNISENDER_GO_API_KEY_FILE: /run/secrets/ads-proto-unisender-go-api-key
+    secrets:
+      - ads-proto-unisender-go-api-key
+
+secrets:
+  ads-proto-unisender-go-api-key:
+    file: ${UNISENDER_GO_SECRET_PATH:?Set UNISENDER_GO_SECRET_PATH to the Unisender Go key file outside the repository}

@@ -1,4 +1,5 @@
-import nodemailer from 'nodemailer'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { audienceGroups } from '../shared/campaign-draft.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
 import { db } from './db.ts'
@@ -6,11 +7,12 @@ import { db } from './db.ts'
 type MailRow = { id: string; data: string; submitted_at: number; mail_attempts: number }
 const recipient = 'beepartners@beeline.ru'
 
-export function campaignMessage(row: MailRow, from: string) {
+const credentialName = 'ads-proto-resend-api-key'
+
+function campaignMessage(row: MailRow, from: string) {
   const { business, addresses, online, offer, audience, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
   return {
     from, to: recipient, subject: 'Новая заявка на рекламную кампанию МЁД',
-    messageId: `<campaign-${row.id}@${from.split('@').at(-1)}>`,
     text: [
       `Заявка ${row.id}`, `Дата: ${new Date(row.submitted_at).toISOString()}`, '',
       `Название: ${business.name}`, `ИНН: ${business.inn}`, `Телефон: ${business.phone}`, `Сфера: ${business.category}`,
@@ -23,9 +25,30 @@ export function campaignMessage(row: MailRow, from: string) {
       `Пожелания: ${triggers || '—'}`, 'Условия оферты приняты.',
     ].join('\n'),
     attachments: [{ file: offerImage, label: 'offer' }, { file: logoImage, label: 'logo' }].flatMap(({ file, label }) => file ? [{
-      filename: `${label}.${imageExtension(file.type)}`, content: Buffer.from(file.base64, 'base64'), contentType: file.type,
+      filename: `${label}.${imageExtension(file.type)}`, content: file.base64,
     }] : []),
   }
+}
+
+export async function sendCampaignMail(row: MailRow, from: string, apiKey: string) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    redirect: 'error',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      // shortcut: Resend deduplicates for 24 hours; reconcile ambiguous sends if retries must be safe beyond that.
+      'Idempotency-Key': `v4-campaign/${row.id}`,
+    },
+    body: JSON.stringify(campaignMessage(row, from)),
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!response.ok) {
+    await response.body?.cancel()
+    throw new Error(`Resend rejected campaign email (HTTP ${response.status})`)
+  }
+  const result = await response.json() as { id?: unknown } | null
+  if (typeof result?.id !== 'string' || !result.id) throw new Error('Resend did not return an email ID')
 }
 
 // Claim with a lease so two worker processes cannot send the same queued entry at once.
@@ -51,24 +74,25 @@ export async function deliverCampaignMail(send: (row: MailRow) => Promise<void>,
 }
 
 export function startCampaignMail() {
-  const { CAMPAIGN_SMTP_URL: url, CAMPAIGN_MAIL_FROM: from } = process.env
-  if (!url || !from || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(from) || !/^smtps?:\/\//.test(url)) {
-    console.warn('V4 campaign email is queued: configure CAMPAIGN_SMTP_URL and CAMPAIGN_MAIL_FROM')
+  const { CAMPAIGN_MAIL_FROM: from, RESEND_API_KEY_FILE, CREDENTIALS_DIRECTORY } = process.env
+  const keyPath = RESEND_API_KEY_FILE || (CREDENTIALS_DIRECTORY && join(CREDENTIALS_DIRECTORY, credentialName))
+  let apiKey = ''
+  try {
+    if (keyPath) apiKey = readFileSync(keyPath, 'utf8').trim()
+  } catch {
+    console.warn('V4 campaign email is queued: Resend credential file could not be read')
     return () => {}
   }
-  const smtp = nodemailer.createTransport({
-    url, requireTLS: true, connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 30_000,
-    disableFileAccess: true, disableUrlAccess: true,
-  })
+  if (!/^\S+$/.test(apiKey) || !from || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(from)) {
+    console.warn('V4 campaign email is queued: configure the Resend credential and CAMPAIGN_MAIL_FROM')
+    return () => {}
+  }
   let running = false
   const tick = async () => {
     if (running) return
     running = true
     try {
-      await deliverCampaignMail(async row => {
-        const result = await smtp.sendMail(campaignMessage(row, from))
-        if (!result.accepted?.length) throw new Error('Recipient rejected')
-      })
+      await deliverCampaignMail(row => sendCampaignMail(row, from, apiKey))
     } catch { console.error('V4 campaign mail queue error') }
     finally { running = false }
   }

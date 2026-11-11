@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { test } from 'node:test'
-import nodemailer from 'nodemailer'
 import { emptyCampaignDraft, type CampaignDraft } from '../shared/campaign-draft.ts'
 
 process.env.DB_PATH = ':memory:'
 const { app } = await import('./index.ts')
 const { db } = await import('./db.ts')
-const { campaignMessage, deliverCampaignMail } = await import('./campaign-mail.ts')
+const { deliverCampaignMail, sendCampaignMail } = await import('./campaign-mail.ts')
 
 const key = randomUUID()
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+yFYcAAAAASUVORK5CYII=', 'base64')
@@ -21,7 +20,7 @@ async function send(method: string, revision: number, value: CampaignDraft, draf
   return app.request('/api/v4/draft', { method, headers: { 'x-draft-key': draftKey, 'x-draft-revision': String(revision) }, body })
 }
 
-test('V4 stores partial drafts and files, accepts complete submissions once, and retries mail', async () => {
+test('V4 stores partial drafts and files, accepts complete submissions once, and retries Resend mail', async t => {
   const draft = emptyCampaignDraft()
   draft.business = { name: 'Тестовая кофейня', category: 'Кофе и завтраки', inn: '1234567894', phone: '+79000000001', city: 'Москва', website: 'https://example.test' }
   assert.equal((await send('PUT', 1, draft)).status, 400, 'No remote storage before acceptance')
@@ -53,23 +52,32 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   assert.equal(db.prepare('select count(*) as n from v4_submissions').get()?.n, 1)
 
   const now = Date.now()
-  await deliverCampaignMail(async () => { throw new Error('SMTP unavailable') }, now)
+  const resend = t.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 503 }))
+  const sendMail = (row: Parameters<typeof sendCampaignMail>[0]) => sendCampaignMail(row, 'sender@example.test', 'test-key')
+  await deliverCampaignMail(sendMail, now)
   assert.equal(db.prepare('select mail_sent_at from v4_submissions').get()?.mail_sent_at, null)
-  await deliverCampaignMail(async () => assert.fail('Retry must wait for the scheduled time'), now + 59_999)
-  let sent = 0
-  await deliverCampaignMail(async row => {
-    const message = campaignMessage(row, 'sender@example.test')
-    assert.equal(message.to, 'beepartners@beeline.ru')
-    assert.match(message.text, /ИНН: 1234567894/)
-    assert.match(message.text, /Показывать утром/)
-    assert.deepEqual(message.attachments[0].content, png)
-    const rendered = await nodemailer.createTransport({ streamTransport: true, buffer: true }).sendMail(message)
-    assert.match(String(rendered.message), /To: beepartners@beeline\.ru/)
-    assert.match(String(rendered.message), /filename=offer\.png/)
-    sent++
-  }, now + 60_000)
-  assert.equal(sent, 1)
+  await deliverCampaignMail(sendMail, now + 59_999)
+  assert.equal(resend.mock.callCount(), 1, 'Retry must wait for the scheduled time')
+  resend.mock.mockImplementation(async () => Response.json({ id: 'resend-email-id' }))
+  await deliverCampaignMail(sendMail, now + 60_000)
+  assert.equal(resend.mock.callCount(), 2)
+  const [initial, retried] = resend.mock.calls
+  assert.equal(retried.arguments[0], 'https://api.resend.com/emails')
+  const [, request] = retried.arguments
+  assert.equal(request?.method, 'POST')
+  assert.equal(new Headers(request?.headers).get('Authorization'), 'Bearer test-key')
+  assert.equal(new Headers(request?.headers).get('Idempotency-Key'), `v4-campaign/${first.id}`)
+  assert.deepEqual(request?.headers, initial.arguments[1]?.headers)
+  assert.equal(request?.body, initial.arguments[1]?.body)
+  const message = JSON.parse(String(request?.body))
+  assert.equal(message.from, 'sender@example.test')
+  assert.equal(message.to, 'beepartners@beeline.ru')
+  assert.match(message.text, /ИНН: 1234567894/)
+  assert.match(message.text, /Показывать утром/)
+  assert.deepEqual(message.attachments, [{ filename: 'offer.png', content: png.toString('base64') }])
   assert.equal(typeof db.prepare('select mail_sent_at from v4_submissions').get()?.mail_sent_at, 'number')
+  await deliverCampaignMail(sendMail, now + 120_000)
+  assert.equal(resend.mock.callCount(), 2, 'Accepted mail must leave the queue')
   assert.equal((await send('POST', 6, draft)).status, 200)
   assert.equal(db.prepare('select count(*) as n from v4_submissions').get()?.n, 1)
 })

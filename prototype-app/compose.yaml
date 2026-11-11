@@ -14,7 +14,6 @@ services:
       DB_PATH: /data/demo.sqlite
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      CAMPAIGN_SMTP_URL: ${CAMPAIGN_SMTP_URL:-}
       CAMPAIGN_MAIL_FROM: ${CAMPAIGN_MAIL_FROM:-}
       NEAR_AI_MODEL: ${NEAR_AI_MODEL:-claude-opus-5-5}
     volumes:

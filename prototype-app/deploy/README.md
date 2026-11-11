@@ -26,6 +26,13 @@ node scripts/check-docker.mjs http://127.0.0.1:8080
 
 Для автозаполнения по ИНН задайте `DADATA_API_KEY` и `DADATA_SECRET_KEY` в серверном `.env`. Compose передаёт их только в Autocomplete.
 
+### Отправка заявок V4 через Resend
+
+- **systemd**. Сохраните ключ Resend в `/etc/credstore/ads-proto-resend-api-key` (владелец `root`, права `0600`). Укажите `CAMPAIGN_MAIL_FROM` в `/etc/ads-proto.env`. После обновления unit-файла выполните `systemctl daemon-reload` и `systemctl restart ads-proto`.
+- **Docker Compose**. Сохраните ключ вне репозитория в файле, доступном на чтение пользователю API (UID 1000 в контейнере). В серверном `.env` задайте `RESEND_SECRET_PATH` с абсолютным путём к файлу и `CAMPAIGN_MAIL_FROM`. Добавляйте `-f compose.resend.yaml` после остальных файлов Compose при каждом обновлении контейнеров. Например, `docker compose -f compose.yaml -f compose.resend.yaml up -d --build --wait`. При замене файла ключа пересоздайте контейнер API.
+
+В обоих вариантах укажите адрес отправителя на подтверждённом в Resend домене. Пока ключ и отправитель не настроены, заявки сохраняются в очереди SQLite.
+
 ## Прод с существующим nginx и HTTPS
 
 Это предпочтительный вариант для текущего сервера, где nginx уже обслуживает другие сайты. Скопируйте `prototype-app/` и `design-system/`, сохранив соседство папок, или загрузите готовые образы по инструкции ниже. Создайте `.env` из примера и задайте `COOKIE_SECURE=true`. Порт `HTTP_PORT` должен соответствовать upstream в nginx, по умолчанию 8080.

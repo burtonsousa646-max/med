@@ -34,17 +34,33 @@ services:
       timeout: 3s
       retries: 10
 
+  # Feature toggles — specs/architecture/adr/0001-feature-toggles.md.
+  # Админка: http://localhost:4242, вход admin / unleash4all — только для локального окружения.
+  # Токены создаются при первом старте; флаги заводит pnpm env:flags из deploy/unleash/flags.json.
   unleash:
     image: unleashorg/unleash-server:8
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-platform}:${POSTGRES_PASSWORD:-platform}@postgres:5432/unleash
       DATABASE_SSL: 'false'
       LOG_LEVEL: warn
+      INIT_ADMIN_API_TOKENS: ${UNLEASH_ADMIN_TOKEN:-*:*.local-admin-token}
+      INIT_BACKEND_API_TOKENS: ${UNLEASH_API_TOKEN:-default:development.local-backend-token}
     ports:
       - '${UNLEASH_PORT:-4242}:4242'
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:4242/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
 volumes:
   postgres-data:

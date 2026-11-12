@@ -1,0 +1,4 @@
+{
+  "$comment": "Флаги локального окружения. Добавляет архитектор вместе с design.md фичи; pnpm env:flags заводит их в Unleash. Поля: name, type (release | kill-switch | operational), description, spec.",
+  "flags": []
+}

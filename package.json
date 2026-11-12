@@ -17,7 +17,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
-    "env:up": "docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d",
+    "env:up": "docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --wait && pnpm env:flags",
+    "env:flags": "node --env-file=deploy/.env deploy/unleash/seed.mjs",
     "env:down": "docker compose -f deploy/docker-compose.yml --env-file deploy/.env down",
     "ai:adapters": "node ai/adapters/generate.mjs",
     "ai:adapters:check": "node ai/adapters/generate.mjs --check"

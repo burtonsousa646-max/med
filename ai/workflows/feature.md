@@ -20,7 +20,7 @@
 ## 0. Ветка
 
 ```
-git switch main && git pull
+git switch develop && git pull
 git switch -c feature/NNN-slug
 ```
 
@@ -120,4 +120,4 @@ git switch -c feature/NNN-slug
 git push -u origin feature/NNN-slug
 ```
 
-Дальше — pull request в `main` по правилам команды.
+Дальше — pull request в `develop` по правилам команды.

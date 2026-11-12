@@ -188,9 +188,15 @@ const { data: campaign } = useSuspenseQuery(campaignQuery(api, campaignId))
 
 ## Feature toggles
 
-- Флаги — только через `@platform/feature-flags`; провайдер подключает host.
-- Проверка флага — в одном месте на экран или module, а не в каждом компоненте.
-- Код старого поведения удаляется вместе с флагом.
+Общие правила — `ai/rules/architecture.md`, раздел «Feature toggles», пример кода — `specs/architecture/structure.md`, раздел «`@platform/feature-flags` — web».
+
+- **Флаги приходят только от gateway** — операцией `getFeatureFlags` из OpenAPI приложения. SDK Unleash в браузере нет.
+- **Провайдер подключает host:** `FeatureFlagsProvider` в `src/providers/`, внутри `QueryClientProvider`. После входа и выхода host перезапрашивает флаги по `featureFlagsQueryKey`. Module своего провайдера не создаёт.
+- **Код размечается только флагами из `design.md` и задачи.** Флаг, нужный frontend, должен быть в схеме `FeatureFlags` контракта. Если его там нет или он не описан в `design.md`, разработчик останавливается и спрашивает.
+- **Реестр.** Флаг заводится в `src/model/featureFlags.ts` host или module, с JSDoc `@spec`, `@task`, `@remove`. Тип флагов — `components['schemas']['FeatureFlags']` из сгенерированных типов.
+- **Одна точка ветвления.** Флаг читается хуком `useFeatureFlag<FeatureFlags>(FLAGS.x)` в маршруте или на входе в экран. Компоненты из `components/` флаги не читают: вариант поведения приходит через props.
+- **Оба варианта компонента** покрываются stories, если компонент меняется под флагом.
+- **Флаг, которого нет в ответе**, выключен. Старое поведение не меняется и удаляется только вместе с флагом.
 
 ## Сборка
 

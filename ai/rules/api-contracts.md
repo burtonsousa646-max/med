@@ -71,6 +71,32 @@ Error:
 
 Каждая операция перечисляет коды ошибок, которые может вернуть.
 
+### Feature toggles
+
+В каждом `api/openapi/<app>.yaml` есть операция флагов. Решение — `specs/architecture/adr/0001-feature-toggles.md`.
+
+```yaml
+/v1/feature-flags:
+  get:
+    operationId: getFeatureFlags
+    summary: Флаги функциональности для текущего пользователя
+    tags: [feature-flags]
+    security: []                      # сессия не обязательна: без неё флаги вычисляются без пользователя и компании
+    responses:
+      '200': { content: { application/json: { schema: { $ref: '#/components/schemas/FeatureFlags' } } } }
+FeatureFlags:
+  type: object
+  additionalProperties: false
+  properties:
+    campaigns.launch.new-checkout:
+      type: boolean
+      description: 'Новый расчёт стоимости при запуске кампании. Спецификация: 004-campaign-launch'
+```
+
+- Схема `FeatureFlags` — белый список: gateway отдаёт ровно её свойства, другие флаги наружу не уходят.
+- Свойство — имя флага, тип `boolean`, свойства не обязательны: отсутствие значит «выключен». В `description` — что включает флаг и ссылка на фичу.
+- Свойство добавляет архитектор вместе с `design.md`, только для флагов, которые нужны этому web-приложению.
+
 ### Идемпотентность
 
 Операции, которые создают платёж, списание или другой необратимый эффект, принимают заголовок `Idempotency-Key`. Повтор с тем же ключом возвращает тот же результат.
@@ -91,6 +117,9 @@ Error:
 
 Можно без версии:
 - добавить операцию, метод, необязательное поле, значение перечисления, код ошибки.
+
+Можно без версии и не считается ломающим:
+- удалить флаг из схемы `FeatureFlags`, если потребители уже не читают его и ни один pact-файл на него не опирается.
 
 Ломающее изменение:
 - удалить или переименовать операцию, метод, поле;
@@ -137,7 +166,7 @@ Consumer-driven контракты на Pact JS. Тесты — `api/contract-te
 | Команда | Что делает |
 |---|---|
 | `pnpm --filter @platform/api lint` | проверка OpenAPI (Redocly) и `.proto` (Buf) |
-| `pnpm --filter @platform/api breaking` | поиск ломающих изменений `.proto` относительно `main` (Buf) |
+| `pnpm --filter @platform/api breaking` | поиск ломающих изменений `.proto` относительно `develop` (Buf) |
 | `pnpm --filter @platform/api generate` | генерация кода из контрактов |
 | `pnpm --filter @platform/api test:contract` | тесты потребителей и проверка поставщиков |
 

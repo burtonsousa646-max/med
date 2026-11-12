@@ -1,0 +1,10 @@
+services:
+  api:
+    environment:
+      CAMPAIGN_SMTP_PASSWORD_FILE: /run/secrets/ads-proto-smtp-password
+    secrets:
+      - ads-proto-smtp-password
+
+secrets:
+  ads-proto-smtp-password:
+    file: ${CAMPAIGN_SMTP_SECRET_PATH:?Set CAMPAIGN_SMTP_SECRET_PATH to the SMTP password file outside the repository}

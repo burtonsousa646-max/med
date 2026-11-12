@@ -26,12 +26,17 @@ node scripts/check-docker.mjs http://127.0.0.1:8080
 
 Для автозаполнения по ИНН задайте `DADATA_API_KEY` и `DADATA_SECRET_KEY` в серверном `.env`. Compose передаёт их только в Autocomplete.
 
-### Отправка заявок V4 через Unisender Go
+### Отправка заявок V4 через SMTP
 
-- **systemd**. Сохраните ключ Unisender Go в `/etc/credstore/ads-proto-unisender-go-api-key` (владелец `root`, права `0600`). Укажите `CAMPAIGN_MAIL_FROM` в `/etc/ads-proto.env`. После обновления unit-файла выполните `systemctl daemon-reload` и `systemctl restart ads-proto`.
-- **Docker Compose**. Сохраните ключ вне репозитория в файле, доступном на чтение пользователю API (UID 1000 в контейнере). В серверном `.env` задайте `UNISENDER_GO_SECRET_PATH` с абсолютным путём к файлу и `CAMPAIGN_MAIL_FROM`. Добавляйте `-f compose.unisender.yaml` после остальных файлов Compose при каждом обновлении контейнеров. Например, `docker compose -f compose.yaml -f compose.unisender.yaml up -d --build --wait`. При замене файла ключа пересоздайте контейнер API.
+В `CAMPAIGN_MAIL_FROM` укажите подтверждённый в Yandex Cloud Postbox адрес отправителя
+(`bot@beepartners.app.fast-lane.pro`), в `CAMPAIGN_SMTP_USER` — ID API-ключа. По умолчанию
+используется `postbox.cloud.yandex.net:587` с обязательным STARTTLS. Для SMTPS
+задайте `CAMPAIGN_SMTP_PORT=465`. Хост задаётся через `CAMPAIGN_SMTP_HOST`.
 
-В обоих вариантах нужен API-ключ из кабинета Unisender Go и адрес отправителя на домене, подтверждённом там же. Пока ключ и отправитель не настроены, заявки сохраняются в очереди SQLite.
+- **systemd**. Сохраните пароль SMTP в `/etc/credstore/ads-proto-smtp-password` (владелец `root`, права `0600`). Настройки отправителя и SMTP укажите в `/etc/ads-proto.env`. После обновления unit-файла выполните `systemctl daemon-reload` и `systemctl restart ads-proto`.
+- **Docker Compose**. Сохраните пароль вне репозитория в файле, доступном на чтение пользователю API (UID 1000 в контейнере). В серверном `.env` задайте `CAMPAIGN_SMTP_SECRET_PATH` с абсолютным путём к файлу, отправителя и настройки SMTP. Добавляйте `-f compose.smtp.yaml` после остальных файлов Compose при каждом обновлении контейнеров. Например, `docker compose -f compose.yaml -f compose.smtp.yaml up -d --build --wait`. При замене файла пароля пересоздайте контейнер API.
+
+Пока SMTP не настроен, заявки сохраняются в очереди SQLite. После включения SMTP очередь начнёт отправляться автоматически.
 
 ## Прод с существующим nginx и HTTPS
 

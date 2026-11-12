@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { test } from 'node:test'
+import nodemailer, { type SendMailOptions } from 'nodemailer'
 import { emptyCampaignDraft, type CampaignDraft } from '../shared/campaign-draft.ts'
 
 process.env.DB_PATH = ':memory:'
@@ -20,7 +21,7 @@ async function send(method: string, revision: number, value: CampaignDraft, draf
   return app.request('/api/v4/draft', { method, headers: { 'x-draft-key': draftKey, 'x-draft-revision': String(revision) }, body })
 }
 
-test('V4 stores partial drafts and files, accepts complete submissions once, and retries Unisender Go mail', async t => {
+test('V4 stores partial drafts and files, accepts complete submissions once, and retries failed mail', async t => {
   const draft = emptyCampaignDraft()
   draft.business = { name: 'Тестовая кофейня', category: 'Кофе и завтраки', inn: '1234567894', phone: '+79000000001', city: 'Москва', website: 'https://example.test' }
   assert.equal((await send('PUT', 1, draft)).status, 400, 'No remote storage before acceptance')
@@ -54,37 +55,34 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   assert.equal(db.prepare('select count(*) as n from v4_submissions').get()?.n, 1)
 
   const now = Date.now()
-  const unisender = t.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 503 }))
-  const sendMail = (row: Parameters<typeof sendCampaignMail>[0]) => sendCampaignMail(row, 'sender@example.test', 'test-key')
+  const transport = nodemailer.createTransport({ streamTransport: true, buffer: true })
+  const smtp = t.mock.fn((message: SendMailOptions) => transport.sendMail(message))
+  smtp.mock.mockImplementationOnce(async () => { throw new Error('SMTP unavailable') })
+  const sendMail = (row: Parameters<typeof sendCampaignMail>[0]) => sendCampaignMail(row, 'sender@example.test', smtp)
   await deliverCampaignMail(sendMail, now)
   assert.equal(db.prepare('select mail_sent_at from v4_submissions').get()?.mail_sent_at, null)
   await deliverCampaignMail(sendMail, now + 59_999)
-  assert.equal(unisender.mock.callCount(), 1, 'Retry must wait for the scheduled time')
-  unisender.mock.mockImplementation(async () => Response.json({ status: 'success', job_id: 'test-job' }))
+  assert.equal(smtp.mock.callCount(), 1, 'Retry must wait for the scheduled time')
   await deliverCampaignMail(sendMail, now + 60_000)
-  assert.equal(unisender.mock.callCount(), 2)
-  const [initial, retried] = unisender.mock.calls
-  assert.equal(retried.arguments[0], 'https://goapi.unisender.ru/ru/transactional/api/v1/email/send.json')
-  const [, request] = retried.arguments
-  assert.equal(request?.method, 'POST')
-  assert.equal(new Headers(request?.headers).get('X-API-KEY'), 'test-key')
-  assert.deepEqual(request?.headers, initial.arguments[1]?.headers)
-  assert.equal(request?.body, initial.arguments[1]?.body)
-  const { message } = JSON.parse(String(request?.body))
-  assert.equal(message.idempotence_key, `v4-campaign-${first.id}`)
-  assert.equal(message.from_email, 'sender@example.test')
-  assert.deepEqual(message.recipients, [{ email: 'beepartners@beeline.ru' }])
-  assert.match(message.body.plaintext, /ИНН: 1234567894/)
-  assert.match(message.body.plaintext, /Показывать утром/)
-  assert.deepEqual(message.attachments, [{ name: 'offer.png', type: 'image/png', content: png.toString('base64') }])
+  assert.equal(smtp.mock.callCount(), 2)
+  const [initial, retried] = smtp.mock.calls
+  assert.deepEqual(retried.arguments[0], initial.arguments[0])
+  const [message] = retried.arguments
+  assert.match(String(message.text), /ИНН: 1234567894/)
+  assert.match(String(message.text), /Показывать утром/)
+  const email = await retried.result
+  assert.equal(email?.messageId, `<v4-campaign-${first.id}@example.test>`)
+  assert.deepEqual(email?.envelope, { from: 'sender@example.test', to: ['beepartners@beeline.ru'] })
+  assert.match(String(email?.message), /Content-Disposition: attachment; filename=offer\.png/)
+  assert.ok(String(email?.message).replaceAll('\r\n', '').includes(png.toString('base64')))
   assert.equal(typeof db.prepare('select mail_sent_at from v4_submissions').get()?.mail_sent_at, 'number')
   await deliverCampaignMail(sendMail, now + 120_000)
-  assert.equal(unisender.mock.callCount(), 2, 'Accepted mail must leave the queue')
+  assert.equal(smtp.mock.callCount(), 2, 'Accepted mail must leave the queue')
   assert.equal((await send('POST', 6, draft)).status, 200)
   assert.equal(db.prepare('select count(*) as n from v4_submissions').get()?.n, 1)
 })
 
-test('V4 splits a request over the Unisender Go size limit and retries only the rejected part', async t => {
+test('V4 sends two large attachments together and completes older partially sent submissions', async t => {
   const draft = emptyCampaignDraft()
   draft.business = { name: 'Тестовая кофейня', category: 'Кофе', inn: '1234567894', phone: '+79000000001', city: '', website: '' }
   draft.online = true
@@ -100,29 +98,22 @@ test('V4 splits a request over the Unisender Go size limit and retries only the 
   const response = await send('POST', 1, draft, randomUUID())
   assert.equal(response.status, 201)
   const { id } = await response.json() as { id: string }
-  const readMail = db.prepare('select mail_sent_at from v4_submissions where id = ?')
-
-  const accepted = { status: 'success', job_id: 'test-job' }
-  const unisender = t.mock.method(globalThis, 'fetch', async () => Response.json(accepted))
-  unisender.mock.mockImplementationOnce(async () => Response.json({
-    ...accepted, emails: [], failed_emails: { 'beepartners@beeline.ru': 'temporary_unavailable' },
-  }), 1)
+  const olderResponse = await send('POST', 1, draft, randomUUID())
+  assert.equal(olderResponse.status, 201)
+  const older = await olderResponse.json() as { id: string }
+  db.prepare('insert into v4_mail_parts (submission_id, part) values (?, 1)').run(older.id)
+  const smtp = t.mock.fn(async (_message: SendMailOptions) => {})
   const now = Date.now()
-  const sendMail = (row: Parameters<typeof sendCampaignMail>[0]) => sendCampaignMail(row, 'sender@example.test', 'test-key')
+  const sendMail = (row: Parameters<typeof sendCampaignMail>[0]) => sendCampaignMail(row, 'sender@example.test', smtp)
   await deliverCampaignMail(sendMail, now)
-  assert.equal(readMail.get(id)?.mail_sent_at, null)
-  await deliverCampaignMail(sendMail, now + 60_000)
-  assert.equal(typeof readMail.get(id)?.mail_sent_at, 'number')
-  assert.equal(unisender.mock.callCount(), 3)
-  const [first, second, retry] = unisender.mock.calls.map(({ arguments: args }) => String(args[1]?.body))
-  assert.equal(second, retry)
-  for (const [index, body] of [first, second].entries()) {
-    assert.ok(Buffer.byteLength(body) <= 10_000_000)
-    const { message } = JSON.parse(body)
-    assert.equal(message.idempotence_key, `v4-campaign-${id}-${index + 1}`)
-    assert.ok(message.subject.endsWith(`(${index + 1}/2)`))
-    assert.equal(message.attachments.length, 1)
-    assert.equal(message.attachments[0].name, ['offer.png', 'logo.png'][index])
-    assert.deepEqual(Buffer.from(message.attachments[0].content, 'base64'), Buffer.from(largeImage))
-  }
+  await deliverCampaignMail(sendMail, now)
+  assert.equal(smtp.mock.callCount(), 2)
+  const messages = smtp.mock.calls.map(({ arguments: [message] }) => message)
+  const complete = messages.find(message => message.messageId === `<v4-campaign-${id}@example.test>`)
+  const remaining = messages.find(message => message.messageId === `<v4-campaign-${older.id}-2@example.test>`)
+  assert.deepEqual(complete?.attachments?.map(file => file.filename), ['offer.png', 'logo.png'])
+  assert.deepEqual(remaining?.attachments?.map(file => file.filename), ['logo.png'])
+  assert.match(remaining?.subject ?? '', /\(2\/2\)$/)
+  assert.ok(complete?.attachments?.every(file => Buffer.isBuffer(file.content) && file.content.equals(largeImage)))
+  assert.equal(db.prepare('select count(*) as n from v4_submissions where id in (?, ?) and mail_sent_at is not null').get(id, older.id)?.n, 2)
 })

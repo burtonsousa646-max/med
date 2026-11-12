@@ -6,6 +6,7 @@ import createClient from 'openapi-react-query'
 import { QueryClient } from '@tanstack/react-query'
 import type { components, paths } from './api.gen'
 import type { CampaignDraft } from '../shared/campaign-draft'
+import type { OfferAiInput, OfferAiResponse } from '../shared/offer-ai'
 import { toast } from './ui'
 
 export type S = components['schemas']
@@ -16,6 +17,30 @@ export async function autocompleteInn(inn: string, signal: AbortSignal) {
   const { data, error } = await client.POST('/autocomplete/inn', { body: { inn }, signal })
   if (!data || data.profile.inn !== inn) throw new Error(error?.message || 'Не удалось найти бизнес. Попробуйте ещё раз')
   return data.profile
+}
+
+export async function fetchCampaignSiteAssets(website: string, signal: AbortSignal) {
+  const { data, error } = await client.POST('/v4/site-assets', { body: { website }, signal })
+  if (!data) throw new Error(error?.message || 'Не удалось получить изображения с сайта')
+  return data.assets
+}
+
+export async function requestOfferCutout(image: Blob, signal: AbortSignal) {
+  const base = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
+  const response = await fetch(base + '/v4/offer-cutout', {
+    method: 'POST', body: image, headers: { 'Content-Type': 'image/png' },
+    signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+  })
+  if (!response.ok) throw new Error('Cutout unavailable')
+  return response.blob()
+}
+
+export async function requestOfferAi(input: OfferAiInput, signal: AbortSignal): Promise<OfferAiResponse> {
+  const { data } = await client.POST('/v4/offer-ai', {
+    body: input, signal: AbortSignal.any([signal, AbortSignal.timeout(28_000)]),
+  })
+  if (!data) throw new Error('Offer assistant unavailable')
+  return data
 }
 
 export async function sendCampaignDraft(method: 'put' | 'post', key: string, revision: number, value: CampaignDraft, signal?: AbortSignal) {

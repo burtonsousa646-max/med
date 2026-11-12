@@ -29,10 +29,12 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   assert.equal((await send('PUT', 1, draft)).status, 400, 'Reject a forged image type')
   draft.offerImage = new File([new Uint8Array(png)], 'кофе.png', { type: 'image/png' })
   draft.logoImage = null
+  draft.offer.layout = 'split'
   assert.equal((await send('PUT', 2, draft)).status, 200)
   assert.equal((await send('PUT', 1, { ...draft, triggers: 'Устаревшее пожелание' })).status, 200)
   const saved = db.prepare('select data from v4_drafts where id = ?').get(key) as { data: string }
   assert.equal(JSON.parse(saved.data).triggers, '')
+  assert.equal(JSON.parse(saved.data).offer.layout, 'split')
   assert.equal(JSON.parse(saved.data).offerImage.base64, png.toString('base64'))
   assert.equal((await send('POST', 3, draft)).status, 400, 'Incomplete draft cannot create a submission')
   assert.equal((await send('PUT', 3, draft, 'invalid-key')).status, 400)

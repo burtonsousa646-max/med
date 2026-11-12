@@ -5,7 +5,7 @@ import { analytics } from '../analytics'
 import { sendCampaignDraft } from '../api'
 import { Brand } from '../ui'
 import CampaignWizard from './CampaignWizard'
-import { campaignStages, emptyCampaignDraft, loadCampaignDraft, saveCampaignDraft, type StoredCampaignDraft } from './campaign-draft'
+import { campaignDraftForServer, campaignStages, emptyCampaignDraft, loadCampaignDraft, saveCampaignDraft, type StoredCampaignDraft } from './campaign-draft'
 import './landing-v3.css'
 import './landing-motion.css'
 import './v3-v2-theme.css'
@@ -46,7 +46,7 @@ export default function CampaignPage() {
     request.current?.abort()
     const controller = new AbortController()
     request.current = controller
-    void sendCampaignDraft('put', syncId.current, next.revision, next.draft, controller.signal).then(() => {
+    void sendCampaignDraft('put', syncId.current, next.revision, campaignDraftForServer(next.draft), controller.signal).then(() => {
       if (pending.current === next && !controller.signal.aborted) { pending.current = null; setServerError(false) }
     }).catch(() => {
       if (pending.current === next && !controller.signal.aborted) setServerError(true)
@@ -103,7 +103,7 @@ export default function CampaignPage() {
     try {
       const token = await saveLocal(value)
       if (token === revision.current) pending.current = { draft: value, revision: token }
-      await sendCampaignDraft('post', syncId.current, token, value)
+      await sendCampaignDraft('post', syncId.current, token, campaignDraftForServer(value))
       if (pending.current?.revision === token) pending.current = null
       setServerError(false)
     } catch (error) {

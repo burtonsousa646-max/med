@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { campaignAllowedStage, campaignStage, emptyCampaignDraft, isCampaignDraft } from '../src/screens/campaign-draft.ts'
+import { campaignAllowedStage, campaignDraftForServer, campaignStage, emptyCampaignDraft, isCampaignDraft } from '../src/screens/campaign-draft.ts'
 
 function completedDraft() {
   const draft = { ...emptyCampaignDraft(), submitted: true }
@@ -86,4 +86,16 @@ test('all previous steps must stay valid before finalizing', () => {
   assert.equal(campaignStage('success', draft), 3, 'City targeting needs a city')
   draft.audience[0] = 2
   assert.equal(campaignAllowedStage(draft), 4, 'Online nationwide setup needs no address')
+})
+
+test('server receives the photo shown in the offer while the draft keeps the original', () => {
+  const original = new File(['original'], 'photo.jpg', { type: 'image/jpeg' })
+  const cutout = new File(['cutout'], 'cutout.png', { type: 'image/png' })
+  const draft = { ...completedDraft(), offerImage: original, offerCutout: cutout }
+  const submitted = campaignDraftForServer(draft)
+  assert.equal(submitted.offerImage, cutout)
+  assert.equal('offerCutout' in submitted, false)
+  assert.equal(draft.offerImage, original)
+  assert.equal(campaignDraftForServer({ ...draft, keepOriginalImage: true }).offerImage, original)
+  assert.equal(campaignDraftForServer({ ...draft, offer: { ...draft.offer, layout: 'photo' } }).offerImage, original)
 })

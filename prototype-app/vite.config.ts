@@ -8,6 +8,6 @@ export default defineConfig({
   server: { host: '127.0.0.1', port: 5173, fs: { allow: ['..'] }, proxy: {
     '/api/autocomplete/': 'http://127.0.0.1:8788',
     '/api/business/lookup': 'http://127.0.0.1:8788',
-    '/api': 'http://127.0.0.1:8787',
+    '/api': 'http://127.0.0.1:' + (process.env.API_PORT ?? '8787'),
   } },
 })

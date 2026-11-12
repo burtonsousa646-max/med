@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Check, Mic, Sparkles, Square, Undo2 } from 'lucide-react'
-import { useReducedMotion } from 'motion/react'
 import { reviseOffer, type OfferDraft } from './offer-assistant-demo'
 import { analytics, type EventParams, type Goal } from '../analytics'
+import { requestOfferAi } from '../api'
+import { offerAiNotes, type OfferAiInput } from '../../shared/offer-ai'
 
 type Recognition = {
   lang: string; interimResults: boolean; processLocally?: boolean
@@ -11,11 +12,11 @@ type Recognition = {
   start(): void; abort(): void; stop(): void
 }
 
-export function OfferAssistant({ offer, active, onChange, onWorking, track = false }: {
-  offer: OfferDraft; active: boolean; onChange: (offer: OfferDraft) => void; onWorking: (working: boolean) => void; track?: boolean
+export function OfferAssistant({ context, initialClarification, active, onChange, onWorking, onRemoveBackground, onRemoveImage, track = false }: {
+  context: Pick<OfferAiInput, 'name' | 'category' | 'offer' | 'hasImage' | 'hasLogo'>; initialClarification: OfferAiInput['clarification']; active: boolean; onChange: (offer: OfferDraft) => void; onWorking: (working: boolean) => void; onRemoveBackground: () => string; onRemoveImage: () => string; track?: boolean
 }) {
   const event = (goal: Goal, params: EventParams = {}) => { if (track) analytics.event(goal, params) }
-  const reduce = useReducedMotion()
+  const { offer } = context
   const [prompt, setPrompt] = useState('')
   const [working, setWorking] = useState(false)
   const [listening, setListening] = useState(false)
@@ -23,7 +24,8 @@ export function OfferAssistant({ offer, active, onChange, onWorking, track = fal
   const [previous, setPrevious] = useState<OfferDraft | null>(null)
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
   const applied = useRef<OfferDraft | null>(null)
-  const timer = useRef<number | null>(null)
+  const pending = useRef<AbortController | null>(null)
+  const clarification = useRef<OfferAiInput['clarification']>(undefined)
   const speech = useRef<Recognition | null>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const log = useRef<HTMLDivElement>(null)
@@ -32,33 +34,67 @@ export function OfferAssistant({ offer, active, onChange, onWorking, track = fal
   useEffect(() => {
     if (applied.current && offer !== applied.current) { applied.current = null; setPrevious(null) }
   }, [offer])
+  useEffect(() => { clarification.current = undefined }, [initialClarification])
   useEffect(() => {
-    if (!active) { if (timer.current) clearTimeout(timer.current); timer.current = null; speech.current?.abort(); setWorking(false); onWorking(false) }
-    return () => { if (timer.current) clearTimeout(timer.current); speech.current?.abort() }
+    if (!active) { setWorking(false); onWorking(false); setMessage('') }
+    return () => { pending.current?.abort(); pending.current = null; speech.current?.abort() }
   }, [active, onWorking])
 
-  function apply(value = prompt, method: 'text' | 'voice' | 'example' = promptMethod.current) {
-    if (!active || timer.current || !value.trim()) return
+  async function apply(value = prompt, method: 'text' | 'voice' | 'example' = promptMethod.current) {
+    const request = value.trim()
+    if (!active || pending.current || !request) return
+    const controller = new AbortController()
+    pending.current = controller
     event('v4_assistant_request', { method })
     speech.current?.abort()
-    setMessages(current => [...current.slice(-10), { role: 'user', text: value.trim() }])
-    const result = reviseOffer(value, offer)
-    if (!result) {
-      event('v4_assistant_result', { method, result: 'error', reason: 'unsupported' })
-      const reply = 'Напишите, какой цвет, размер изображения, скидку или промокод хотите. Для других правок нажмите «Редактировать»'
-      setMessages(current => [...current, { role: 'assistant', text: reply }]); setMessage(''); setPrompt(''); return
+    setMessages(current => [...current.slice(-10), { role: 'user', text: request }])
+    setPrompt(value); setMessage('Проверяю правку…'); setWorking(true); onWorking(true)
+    try {
+      const result = await requestOfferAi({
+        ...context, mode: 'manual', request,
+        clarification: clarification.current ?? initialClarification,
+      }, controller.signal)
+      if (controller.signal.aborted) return
+      let next: OfferDraft | undefined
+      let removeBackground = false
+      let removeImage = false
+      let reply: string
+      if (result.source === 'disabled') {
+        removeBackground = /(?:убери|удали|вырежи)\s+(?:(?:белый|серый|цветной)\s+)?фон/i.test(request)
+        removeImage = /^(?:убери|удали)\s+(?:фото|картинку|изображение)[.!]?$/i.test(request)
+        const revised = removeBackground || removeImage ? null : reviseOffer(request, offer)
+        next = revised?.offer
+        reply = revised?.message ?? 'Опишите цвет, размер изображения, скидку или промокод. Другие поля можно изменить вручную'
+        if (!revised && /(?:^|\s)до\s*\d{1,2}\s*%/i.test(request)) reply = 'Для скидки «до» важно сохранить ограничение. Добавьте его в текст предложения и выберите в условиях «Предложение из текста карточки»'
+      } else {
+        const { answer } = result
+        removeBackground = answer.status === 'draft' && answer.visual.action === 'remove_background'
+        removeImage = answer.status === 'draft' && answer.visual.action === 'text_only'
+        if (answer.status === 'draft' && Object.keys(answer.patch).length) next = { ...offer, ...answer.patch }
+        const notes = offerAiNotes(answer)
+        clarification.current = answer.question ? { request, question: answer.question, options: answer.options.map(option => option.headline) } : undefined
+        reply = [...(next ? ['Правка в предпросмотре.'] : []), ...notes].join('\n') || 'Черновик оставлен без изменений'
+      }
+      if (next) {
+        setPrevious(offer); applied.current = next; onChange(next)
+        event('v4_assistant_result', { method, result: 'success', tone: next.tone, has_discount: Boolean(next.discount), has_promo: Boolean(next.promo) })
+      } else {
+        event('v4_assistant_result', { method, result: 'empty' })
+      }
+      if (removeBackground) reply = onRemoveBackground()
+      if (removeImage) reply = onRemoveImage()
+      setMessages(current => [...current, { role: 'assistant', text: reply }])
+      setPrompt('')
+    } catch {
+      if (controller.signal.aborted) return
+      event('v4_assistant_result', { method, result: 'error' })
+      setMessages(current => [...current, { role: 'assistant', text: 'Помощник не ответил. Повторите запрос или отредактируйте оффер вручную' }])
+    } finally {
+      if (pending.current === controller) {
+        pending.current = null; setWorking(false); onWorking(false); setMessage('')
+        requestAnimationFrame(() => input.current?.focus({ preventScroll: true }))
+      }
     }
-    input.current?.focus({ preventScroll: true })
-    setPrompt(value); setMessage('Меняю предложение…'); setWorking(true); onWorking(true)
-    timer.current = window.setTimeout(() => {
-      setPrevious(offer); applied.current = result.offer; onChange(result.offer)
-      event('v4_assistant_result', { method, result: 'success', tone: result.offer.tone, has_discount: Boolean(result.offer.discount), has_promo: Boolean(result.offer.promo) })
-      timer.current = window.setTimeout(() => {
-        timer.current = null; setWorking(false); onWorking(false)
-        setMessages(current => [...current, { role: 'assistant', text: result.message }])
-        setMessage(''); setPrompt(''); input.current?.focus({ preventScroll: true })
-      }, reduce ? 50 : 900)
-    }, reduce ? 50 : 450)
   }
 
   function dictate() {

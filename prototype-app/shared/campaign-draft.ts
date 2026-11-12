@@ -1,5 +1,5 @@
 import { innError, phoneError, textError, websiteError, type Business } from './campaign-business.ts'
-import { emptyOffer, offerErrors, type OfferDraft } from './campaign-offer.ts'
+import { emptyOffer, offerErrors, offerLayouts, type OfferDraft } from './campaign-offer.ts'
 
 export const campaignStages = ['business', 'details', 'offer', 'audience', 'success'] as const
 export type CampaignDraft = {
@@ -25,6 +25,7 @@ export function isCampaignDraft(value: unknown): value is CampaignDraft {
   return Boolean(draft.business && draft.offer)
     && Object.keys(sample.business).every(key => typeof draft.business[key as keyof Business] === 'string')
     && Object.keys(emptyOffer).every(key => typeof draft.offer[key as keyof OfferDraft] === typeof emptyOffer[key as keyof OfferDraft])
+    && (draft.offer.layout === undefined || (typeof draft.offer.layout === 'string' && Object.hasOwn(offerLayouts, draft.offer.layout)))
     && ['red', 'green', 'blue', 'violet', 'magenta', 'teal', 'dark', 'light'].includes(draft.offer.tone)
     && Array.isArray(draft.addresses) && draft.addresses.length > 0 && draft.addresses.length <= 10 && draft.addresses.every(address => typeof address === 'string')
     && Array.isArray(draft.audience) && draft.audience.length === 5 && draft.audience.every(index => Number.isInteger(index) && index >= 0 && index <= 2)

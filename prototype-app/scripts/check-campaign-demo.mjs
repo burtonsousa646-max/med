@@ -15,11 +15,12 @@ export function assertCampaignDemo() {
   const editor = dialog.querySelector('.campaign-offer-editor')
   if (editor) {
     assert(editor.querySelectorAll('.v3-offer-card').length === 1, 'A single persistent offer canvas')
-    assert(editor.querySelectorAll('.offer-workspace [role=toolbar] button').length === 2, 'Rebuild and edit are the only toolbar actions')
+    assert(editor.querySelectorAll('.offer-workspace [role=toolbar] button').length === 2, 'Another design and undo are the only toolbar actions')
     assert(editor.querySelector('.offer-assistant textarea'), 'The assistant has a direct input')
     assert(editor.querySelectorAll('.offer-assistant-examples button').length === 2, 'Only two suggested edits remain')
-    assert(!editor.querySelector('.v3-offer-card__copy .bl-tag'), 'Discount is not repeated under the creative')
-    assert(!editor.querySelector('.campaign-manual summary').getClientRects().length, 'Manual editing has a single entry point')
+    assert(editor.querySelector('.v3-offer-card .campaign-creative'), 'Offer details are inside the creative')
+    assert(editor.querySelectorAll('.offer-edit-actions button').length === 3, 'Text, media and terms have clear entry points')
+    assert(editor.querySelectorAll('.offer-edit-panel:not([hidden])').length <= 1, 'Only the chosen editor section is visible')
     const generating = editor.dataset.generating === 'true'
     const controls = editor.querySelector('.campaign-offer-controls')
     assert(controls.hasAttribute('inert') === generating, 'Editing is enabled only when the offer is ready')
@@ -41,12 +42,13 @@ export function assertCampaignDemo() {
     assert(audience.querySelectorAll('.audience-moment input:checked').length === 1, 'One moment is selected')
     assert(audience.querySelector('.audience-summary dd')?.textContent.trim(), 'The targeting summary is visible')
   }
-  for (const creative of dialog.querySelectorAll('.cr--photo')) {
-    const photo = creative.querySelector('.cr__photo').getBoundingClientRect()
-    for (const text of creative.querySelectorAll('.cr__mark, .cr__big, .cr__small')) {
-      assert(text.getBoundingClientRect().right <= photo.left + 1, 'Uploaded photo has a separate area from the offer text')
-    }
-    assert(creative.querySelector('.cr__text').getBoundingClientRect().bottom <= creative.querySelector('.cr__erid').getBoundingClientRect().top, 'Offer text stays above the advertising label')
+  for (const creative of dialog.querySelectorAll('.campaign-creative__layout')) {
+    const copy = creative.querySelector('.campaign-creative__copy').getBoundingClientRect()
+    const terms = creative.querySelector('.campaign-creative__terms').getBoundingClientRect()
+    assert(copy.bottom <= terms.top + 1, 'Offer text stays above the terms')
+    const media = creative.querySelector('.campaign-creative__media')?.getBoundingClientRect()
+    if (creative.dataset.layout === 'split') assert(copy.right <= media.left + 1, 'Photo has its own area')
+    if (creative.dataset.layout === 'photo') assert(media.bottom <= copy.top + 1, 'Photo sits above the copy')
   }
   for (const field of dialog.querySelectorAll('input[aria-invalid="true"]')) {
     assert(document.getElementById(field.getAttribute('aria-describedby'))?.textContent.trim(), 'Invalid fields have associated feedback')
@@ -56,7 +58,7 @@ export function assertCampaignDemo() {
 
 // Run after closing an invalid manual field and attempting to continue.
 export function assertCampaignValidation() {
-  const field = document.querySelector('.campaign-manual input[aria-invalid="true"]')
-  if (!field || !field.closest('details').open || document.activeElement !== field) throw new Error('Reveal and focus the invalid manual field')
+  const field = document.querySelector('.offer-edit-panel input[aria-invalid="true"]')
+  if (!field || field.closest('.offer-edit-panel').hidden || document.activeElement !== field) throw new Error('Reveal and focus the invalid manual field')
   return 'PASS: invalid manual field is revealed and focused'
 }

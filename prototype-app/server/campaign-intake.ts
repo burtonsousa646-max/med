@@ -41,7 +41,8 @@ async function parseDraft(form: FormData, submit: boolean): Promise<IntakeData> 
   const value = { ...fields, offerImage: form.get('offerImage'), logoImage: form.get('logoImage') }
   if (!isCampaignDraft(value) || !value.offerAccepted || (submit && campaignAllowedStage(value) < 4)) throw new Error('Invalid draft')
   return {
-    ...pick(value, sample), business: pick(value.business, sample.business), offer: pick(value.offer, sample.offer),
+    ...pick(value, sample), business: pick(value.business, sample.business),
+    offer: { ...pick(value.offer, sample.offer), ...(value.offer.layout && { layout: value.offer.layout }) },
     stage: submit ? 4 : Math.min(3, value.stage), reached: submit ? 4 : Math.min(3, value.reached),
     offerImage: await packImage(value.offerImage), logoImage: await packImage(value.logoImage),
   }

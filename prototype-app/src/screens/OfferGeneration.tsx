@@ -1,46 +1,32 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
 import './offer-generation.css'
 
-// Demo timing only. The same canvas will use generation events when the API is connected.
-export function useOfferGeneration(active: boolean, onComplete: () => void) {
-  const reduce = useReducedMotion()
-  const [phase, setPhase] = useState(0)
+export function useOfferVisibility() {
   const [visible, setVisible] = useState(!document.hidden)
   useEffect(() => {
     const update = () => setVisible(!document.hidden)
     document.addEventListener('visibilitychange', update)
     return () => document.removeEventListener('visibilitychange', update)
   }, [])
-  useEffect(() => {
-    if (!active) { setPhase(0); return }
-    if (!visible) return
-    const timer = window.setTimeout(() => {
-      if (reduce || phase === 3) onComplete()
-      else setPhase(value => value + 1)
-    }, reduce ? 150 : [8000, 9000, 9000, 4000][phase])
-    return () => window.clearTimeout(timer)
-  }, [active, phase, reduce, visible, onComplete])
-  return { phase, visible }
+  return visible
 }
 
-export function OfferReveal({ quick, paused }: { quick: boolean; paused: boolean }) {
+export function OfferReveal({ ready, paused, onReveal }: { ready: boolean; paused: boolean; onReveal: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const clock = useRef(0)
   const previous = useRef<number | null>(null)
-  const [progress, setProgress] = useState(0)
   const reduce = useReducedMotion()
   useEffect(() => {
     clock.current = 0
     previous.current = null
-    setProgress(0)
-  }, [quick])
+  }, [ready])
   useEffect(() => {
     const element = canvas.current
     const context = element?.getContext('2d')
     if (!element || !context || paused || reduce) return
     const ink = getComputedStyle(element).color
-    const duration = quick ? 1200 : 30000
+    const duration = ready ? 1200 : 12000
     let width = 0, height = 0, frame = 0, lastDraw = 0
     function resize() {
       const ratio = Math.min(window.devicePixelRatio || 1, 2)
@@ -57,7 +43,6 @@ export function OfferReveal({ quick, paused }: { quick: boolean; paused: boolean
         lastDraw = now
         const time = clock.current / 1000
         const fraction = Math.min(clock.current / duration, 1)
-        setProgress(Math.min(99, Math.round(fraction * 100)))
         context!.clearRect(0, 0, width, height)
         context!.fillStyle = ink
         const spacing = 12
@@ -87,9 +72,8 @@ export function OfferReveal({ quick, paused }: { quick: boolean; paused: boolean
     observer.observe(element)
     frame = requestAnimationFrame(draw)
     return () => { observer.disconnect(); cancelAnimationFrame(frame); previous.current = null }
-  }, [quick, paused, reduce])
-  return <div className="offer-reveal offer-generation" style={{ '--generation-duration': quick ? '1200ms' : '30000ms' } as CSSProperties} data-quick={quick} data-paused={paused} aria-hidden="true">
+  }, [ready, paused, reduce])
+  return <div className="offer-reveal offer-generation" data-ready={ready} data-paused={paused} aria-hidden="true" onAnimationEnd={onReveal}>
     <canvas ref={canvas}/>
-    <span className="offer-generation-percent">{progress}%</span>
   </div>
 }

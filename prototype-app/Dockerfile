@@ -21,6 +21,7 @@ FROM api-dependencies AS api
 ENV NODE_ENV=production API_HOST=0.0.0.0 API_PORT=8787 DB_PATH=/data/demo.sqlite
 COPY --chown=node:node prototype-app/server ./server
 COPY --chown=node:node prototype-app/shared ./shared
+COPY --chown=node:node prototype-app/docs/campaign-offer-rules.md ./docs/campaign-offer-rules.md
 RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 8787

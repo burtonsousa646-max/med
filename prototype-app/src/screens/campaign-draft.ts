@@ -1,7 +1,16 @@
 import { campaignAllowedStage, campaignStages, emptyCampaignDraft, isCampaignDraft, type CampaignDraft } from '../../shared/campaign-draft.ts'
 export { campaignAllowedStage, campaignStages, emptyCampaignDraft, isCampaignDraft, type CampaignDraft } from '../../shared/campaign-draft.ts'
 
-export type StoredCampaignDraft = CampaignDraft & { syncId?: string; submitted?: boolean; registeredAddress?: string }
+export type StoredCampaignDraft = CampaignDraft & {
+  syncId?: string; submitted?: boolean; registeredAddress?: string;
+  offerCutout?: File; keepOriginalImage?: boolean; logoWebsite?: string; skippedLogoWebsite?: string;
+}
+
+export function campaignDraftForServer(draft: StoredCampaignDraft): CampaignDraft {
+  const { offerCutout, keepOriginalImage, logoWebsite, skippedLogoWebsite, ...fields } = draft
+  const offerImage = keepOriginalImage || draft.offer.layout === 'photo' ? draft.offerImage : offerCutout ?? draft.offerImage
+  return { ...fields, offerImage }
+}
 
 export function campaignStage(requested: string | undefined, draft: StoredCampaignDraft) {
   const allowed = Math.min(draft.submitted === true ? 4 : 3, draft.reached, campaignAllowedStage(draft))
@@ -26,7 +35,11 @@ export async function loadCampaignDraft(): Promise<StoredCampaignDraft> {
     const request = db.transaction('drafts').objectStore('drafts').get('v4')
     request.onsuccess = () => {
       if (request.result !== undefined && !isCampaignDraft(request.result)) { reject(new Error('Invalid draft')); return }
-      resolve(request.result ?? emptyCampaignDraft())
+      const draft = (request.result ?? emptyCampaignDraft()) as StoredCampaignDraft
+      if (draft.offerCutout && (!(draft.offerCutout instanceof File) || draft.offerCutout.type !== 'image/png' || draft.offerCutout.size > 5 * 1024 * 1024)) {
+        delete draft.offerCutout
+      }
+      resolve(draft)
     }
     request.onerror = () => reject(request.error)
   })

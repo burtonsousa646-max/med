@@ -81,6 +81,79 @@ paths:
         '429': { $ref: '#/components/responses/Error' }
         '502': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
+  /v4/offer-cutout:
+    post:
+      tags: [кампании]
+      summary: Удалить фон изображения оффера
+      operationId: cutOutV4OfferImage
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema: { type: string, format: binary }
+      responses:
+        '200':
+          description: PNG с альфа-каналом
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+        '413': { $ref: '#/components/responses/Error' }
+        '415': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /v4/offer-ai:
+    post:
+      tags: [кампании]
+      summary: Собрать или отредактировать черновик оффера через помощника
+      operationId: generateV4Offer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OfferAiInput' }
+      responses:
+        '200':
+          description: Проверенный ответ помощника или отключённый режим
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OfferAiResponse' }
+        '400': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+  /v4/site-assets:
+    post:
+      tags: [кампании]
+      summary: Найти логотип и изображения на сайте компании
+      operationId: getV4SiteAssets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [website]
+              properties:
+                website: { type: string, maxLength: 250 }
+      responses:
+        '200':
+          description: Изображения для выбора в редакторе
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assets]
+                properties:
+                  assets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SiteAsset'
+        '400': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
   /v4/draft:
     parameters:
       - name: X-Draft-Key
@@ -529,6 +602,90 @@ components:
     Conversion: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Conversion' } } } }
 
   schemas:
+    OfferAiPatch:
+      type: object
+      additionalProperties: false
+      properties: &offerAiFields
+        title: { type: string, maxLength: 90 }
+        promo: { type: string, maxLength: 24 }
+        discount: { type: string }
+        until: { type: string }
+        tone: { type: string, enum: [red, green, blue, violet, magenta, teal, dark, light] }
+        gift: { type: boolean }
+        zoom: { type: boolean }
+        layout: { type: string, enum: [split, photo, text] }
+    OfferAiInput:
+      type: object
+      required: [mode, name, category, offer, request, hasImage, hasLogo]
+      properties:
+        mode: { type: string, enum: [auto, manual] }
+        name: { type: string, maxLength: 80 }
+        category: { type: string, maxLength: 100 }
+        offer:
+          type: object
+          additionalProperties: false
+          required: [title, promo, discount, until, tone, gift, zoom]
+          properties: *offerAiFields
+        request: { type: string, maxLength: 400 }
+        hasImage: { type: boolean }
+        hasLogo: { type: boolean }
+        lockedFields:
+          type: array
+          items: { type: string, enum: [title, promo, discount, until, tone, gift, zoom, layout] }
+        clarification:
+          type: object
+          required: [request, question]
+          properties:
+            request: { type: string, maxLength: 400 }
+            question: { type: string, maxLength: 300 }
+            options:
+              type: array
+              maxItems: 3
+              items: { type: string, maxLength: 90 }
+    OfferAiAnswer:
+      type: object
+      required: [status, patch, options, question, visual, logoAssetId]
+      properties:
+        status: { type: string, enum: [draft, ideas, needs_input] }
+        patch: { $ref: '#/components/schemas/OfferAiPatch' }
+        options:
+          type: array
+          maxItems: 3
+          items:
+            type: object
+            required: [mechanic, headline, missingFacts]
+            properties:
+              mechanic: { type: string }
+              headline: { type: string }
+              missingFacts: { type: array, items: { type: string } }
+        question: { type: [string, 'null'] }
+        visual:
+          type: object
+          required: [action, assetId, prompt]
+          properties:
+            action: { type: string, enum: [keep, suggest_asset, generate, remove_background, text_only] }
+            assetId: { type: [string, 'null'] }
+            prompt: { type: [string, 'null'] }
+        logoAssetId: { type: [string, 'null'] }
+    OfferAiResponse:
+      oneOf:
+        - type: object
+          required: [source]
+          properties:
+            source: { type: string, const: disabled }
+        - type: object
+          required: [source, answer]
+          properties:
+            source: { type: string, enum: [api, codex-replay] }
+            answer: { $ref: '#/components/schemas/OfferAiAnswer' }
+    SiteAsset:
+      type: object
+      required: [kind, type, base64]
+      properties:
+        kind: { type: string, enum: [logo, creative] }
+        source: { type: string, enum: [brand, icon, photo] }
+        type: { type: string, enum: [image/png, image/jpeg, image/webp, image/avif, image/svg+xml] }
+        base64: { type: string }
     BusinessProfile:
       type: object
       required: [inn, name, category, city, registeredAddress, source]

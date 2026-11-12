@@ -1,0 +1,80 @@
+[
+  {
+    "mode": "auto",
+    "category": "Шиномонтаж",
+    "title": "Шиномонтаж",
+    "request": "",
+    "answer": {
+      "status": "draft",
+      "patch": { "title": "Сезонная замена шин" },
+      "options": [],
+      "question": "На какие работы вы хотите дать выгоду: на замену шин или на балансировку?",
+      "visual": { "action": "keep", "assetId": null, "prompt": null },
+      "logoAssetId": null
+    }
+  },
+  {
+    "mode": "auto",
+    "category": "Кофейня",
+    "title": "Меню кофейни",
+    "request": "",
+    "answer": {
+      "status": "ideas",
+      "patch": {},
+      "options": [
+        { "mechanic": "Второй товар в подарок", "headline": "Второй кофе в подарок", "missingFacts": ["Участвующие напитки", "Как получить второй напиток"] },
+        { "mechanic": "Комбо", "headline": "Кофе с выпечкой по цене комбо", "missingFacts": ["Состав и цена"] },
+        { "mechanic": "Скидка на позицию", "headline": "Скидка на выпечку при заказе кофе", "missingFacts": ["Позиции меню", "Размер скидки"] }
+      ],
+      "question": "Какую механику вы готовы предложить гостям?",
+      "visual": { "action": "keep", "assetId": null, "prompt": null },
+      "logoAssetId": null
+    }
+  },
+  {
+    "mode": "manual",
+    "category": "Шиномонтаж",
+    "title": "Скидка 20% на замену резины",
+    "request": "Сделай скидку 25%",
+    "answer": {
+      "status": "draft",
+      "patch": { "title": "Скидка 25% на замену резины", "discount": "25" },
+      "options": [],
+      "question": null,
+      "visual": { "action": "keep", "assetId": null, "prompt": null },
+      "logoAssetId": null
+    }
+  },
+  {
+    "mode": "manual",
+    "category": "Шиномонтаж",
+    "title": "Сезонная замена шин",
+    "request": "Добавь подарок",
+    "answer": {
+      "status": "needs_input",
+      "patch": {},
+      "options": [],
+      "question": "Что именно получит клиент в подарок при замене шин?",
+      "visual": { "action": "keep", "assetId": null, "prompt": null },
+      "logoAssetId": null
+    }
+  },
+  {
+    "mode": "manual",
+    "category": "Шиномонтаж",
+    "title": "Сезонная замена шин",
+    "request": "Нарисуй шину без фона",
+    "answer": {
+      "status": "draft",
+      "patch": {},
+      "options": [],
+      "question": null,
+      "visual": {
+        "action": "generate",
+        "assetId": null,
+        "prompt": "Одна автомобильная шина без маркировки, в три четверти, протектор различим, шина целиком, мягкий предметный свет, прозрачный фон."
+      },
+      "logoAssetId": null
+    }
+  }
+]

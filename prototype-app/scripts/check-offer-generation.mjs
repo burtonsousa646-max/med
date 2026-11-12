@@ -10,7 +10,7 @@ export function assertOfferGeneration() {
   if (reduced) {
     assert(getComputedStyle(loader).display === 'none', 'Reduced motion shows the result directly')
   } else {
-    assert(getComputedStyle(loader).animationDuration === (loader.dataset.quick === 'true' ? '1.2s' : '30s'), 'Generation and revision use their intended durations')
+    assert(getComputedStyle(loader).animationDuration === (loader.dataset.ready === 'true' ? '1.2s' : '0s'), 'Only the completed result starts a reveal')
     const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
     assert(pixels.some((value, index) => index % 4 === 3 && value > 0), 'Dot field has rendered')
     const bounds = loader.getBoundingClientRect()
@@ -18,7 +18,6 @@ export function assertOfferGeneration() {
     assert(bounds.width === media.width && bounds.height === media.height, 'Loader shares the final creative geometry')
     assert(getComputedStyle(loader).animationPlayState === (loader.dataset.paused === 'true' ? 'paused' : 'running'), 'Reveal follows the visibility pause')
   }
-  const progress = Number.parseInt(loader.querySelector('.offer-generation-percent').textContent, 10)
-  assert(progress >= 0 && progress <= 99, 'Demo progress waits for the completed result')
-  return `PASS: offer generation at ${innerWidth}px (${progress}%)`
+  assert(!loader.querySelector('.offer-generation-percent'), 'A pending request has no estimated percentage')
+  return `PASS: offer generation at ${innerWidth}px`
 }

@@ -9,6 +9,9 @@ import type { components } from '../src/api.gen.ts'
 import * as db from './db.ts'
 import { allow, ask, checkAsk } from './ask.ts'
 import { campaignIntake } from './campaign-intake.ts'
+import { campaignSite } from './campaign-site.ts'
+import { offerAi } from './offer-ai.ts'
+import { offerCutout } from './offer-cutout.ts'
 import { startCampaignMail } from './campaign-mail.ts'
 import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, trackingUrl, view, type CampaignRow, type OfferType } from './domain.ts'
 
@@ -22,6 +25,9 @@ app.get('/health', c => {
   return c.json({ status: 'ok' })
 })
 app.route('/v4', campaignIntake)
+app.route('/v4', campaignSite)
+app.route('/v4', offerAi)
+app.route('/v4', offerCutout)
 
 /* ───────── демо-копия компании по cookie. Справочники и подтверждение по ссылке её не требуют ───────── */
 const COOKIE = 'demo'

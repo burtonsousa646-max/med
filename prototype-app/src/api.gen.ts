@@ -41,6 +41,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v4/offer-cutout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Удалить фон изображения оффера */
+        post: operations["cutOutV4OfferImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/offer-ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Собрать или отредактировать черновик оффера через помощника */
+        post: operations["generateV4Offer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/site-assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Найти логотип и изображения на сайте компании */
+        post: operations["getV4SiteAssets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v4/draft": {
         parameters: {
             query?: never;
@@ -607,6 +658,80 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        OfferAiPatch: {
+            title?: string;
+            promo?: string;
+            discount?: string;
+            until?: string;
+            /** @enum {string} */
+            tone?: "red" | "green" | "blue" | "violet" | "magenta" | "teal" | "dark" | "light";
+            gift?: boolean;
+            zoom?: boolean;
+            /** @enum {string} */
+            layout?: "split" | "photo" | "text";
+        };
+        OfferAiInput: {
+            /** @enum {string} */
+            mode: "auto" | "manual";
+            name: string;
+            category: string;
+            offer: {
+                title: string;
+                promo: string;
+                discount: string;
+                until: string;
+                /** @enum {string} */
+                tone: "red" | "green" | "blue" | "violet" | "magenta" | "teal" | "dark" | "light";
+                gift: boolean;
+                zoom: boolean;
+                /** @enum {string} */
+                layout?: "split" | "photo" | "text";
+            };
+            request: string;
+            hasImage: boolean;
+            hasLogo: boolean;
+            lockedFields?: ("title" | "promo" | "discount" | "until" | "tone" | "gift" | "zoom" | "layout")[];
+            clarification?: {
+                request: string;
+                question: string;
+                options?: string[];
+            };
+        };
+        OfferAiAnswer: {
+            /** @enum {string} */
+            status: "draft" | "ideas" | "needs_input";
+            patch: components["schemas"]["OfferAiPatch"];
+            options: {
+                mechanic: string;
+                headline: string;
+                missingFacts: string[];
+            }[];
+            question: string | null;
+            visual: {
+                /** @enum {string} */
+                action: "keep" | "suggest_asset" | "generate" | "remove_background" | "text_only";
+                assetId: string | null;
+                prompt: string | null;
+            };
+            logoAssetId: string | null;
+        };
+        OfferAiResponse: {
+            /** @constant */
+            source: "disabled";
+        } | {
+            /** @enum {string} */
+            source: "api" | "codex-replay";
+            answer: components["schemas"]["OfferAiAnswer"];
+        };
+        SiteAsset: {
+            /** @enum {string} */
+            kind: "logo" | "creative";
+            /** @enum {string} */
+            source?: "brand" | "icon" | "photo";
+            /** @enum {string} */
+            type: "image/png" | "image/jpeg" | "image/webp" | "image/avif" | "image/svg+xml";
+            base64: string;
+        };
         BusinessProfile: {
             inn: string;
             name: string;
@@ -1275,6 +1400,96 @@ export interface operations {
             429: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
+        };
+    };
+    cutOutV4OfferImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/png": string;
+            };
+        };
+        responses: {
+            /** @description PNG с альфа-каналом */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            413: components["responses"]["Error"];
+            415: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    generateV4Offer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferAiInput"];
+            };
+        };
+        responses: {
+            /** @description Проверенный ответ помощника или отключённый режим */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferAiResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getV4SiteAssets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    website: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Изображения для выбора в редакторе */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        assets: components["schemas"]["SiteAsset"][];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
     saveV4Draft: {

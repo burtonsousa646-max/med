@@ -38,15 +38,22 @@ export function normalizeBusinessWebsite(value: string): string {
 export const websiteError = (value: string) => value.trim() && !normalizeBusinessWebsite(value) ? 'Укажите сайт, например example.ru' : ''
 
 export function offerTheme(value: string) {
-  const category = value.toLowerCase()
-  if (/кофейн|кофе и завтрак/.test(category)) return { cat: 'food', title: 'Загляните на кофе', image: 'own-0' } as const
-  if (/кафе|ресторан|общественного питания/.test(category)) return { cat: 'food', title: 'Загляните к нам' } as const
-  if (/автосервис|автобизнес|автомобил|шиномонтаж/.test(category)) return { cat: 'auto', title: 'Узнайте, чем поможем вашему авто' } as const
-  if (/салон.*красот|космет|маникюр|парикмахер/.test(category)) return { cat: 'beauty', title: 'Выберите уход для себя' } as const
-  if (/рознич|магазин|маркетплейс/.test(category)) return { cat: 'grocery', title: 'Загляните за покупками' } as const
+  const category = value.trim().toLowerCase()
+  if (/кофейн|^кофе$|кофе и завтрак/.test(category)) return { cat: 'food', title: 'Меню кофейни', illustration: 'own-0' } as const
+  if (/^еда$|общепит|кафе|ресторан|общественного питания|доставк.*(?:ед|пицц)/.test(category)) return { cat: 'food', title: 'Познакомьтесь с нашим меню' } as const
+  if (/шиномонтаж/.test(category)) return { cat: 'auto', title: 'Шиномонтаж', illustration: 'koleso' } as const
+  if (/автосервис|ремонт авт|техобслуживание/.test(category)) return { cat: 'auto', title: 'Услуги автосервиса' } as const
+  if (/^авто$|автобизнес|автомобил|автотовар/.test(category)) return { cat: 'auto', title: 'Предложения для автомобилистов' } as const
+  if (/маникюр|ногтев/.test(category)) return { cat: 'beauty', title: 'Услуги маникюра', illustration: 'nogti' } as const
+  if (/красот|космет|парикмахер|барбершоп/.test(category)) return { cat: 'beauty', title: 'Познакомьтесь с нашими услугами' } as const
+  if (/продуктовый|магазин продуктов|торговля продуктами/.test(category)) return { cat: 'grocery', title: 'Посмотрите наш ассортимент', illustration: 'p5-new' } as const
+  if (/рознич|магазин|маркетплейс|торговл/.test(category)) return { cat: 'grocery', title: 'Посмотрите наш ассортимент' } as const
   if (/спорт|фитнес/.test(category)) return { cat: 'sport', title: 'Найдите время для спорта' } as const
-  if (/обучен|образован|языков.*школ|курсы/.test(category)) return { cat: 'fun', title: 'Выберите, чему научиться' } as const
+  if (/обучен|образован|языков.*школ|курсы/.test(category)) return { cat: 'fun', title: 'Познакомьтесь с программами обучения' } as const
   if (/медицин|клиник|стоматолог/.test(category)) return { cat: 'health', title: 'Узнайте больше о наших услугах' } as const
+  if (/клининг|уборк/.test(category)) return { cat: 'home', title: 'Услуги уборки', illustration: 'chisto' } as const
+  if (/домашн|ремонт|бытов/.test(category)) return { cat: 'home', title: 'Узнайте о наших услугах' } as const
+  if (/кино|развлечен|квест|театр/.test(category)) return { cat: 'fun', title: 'Выберите, куда сходить' } as const
   return { cat: 'fun', title: '' } as const
 }
 

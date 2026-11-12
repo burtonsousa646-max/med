@@ -21,8 +21,6 @@
 .campaign-page .v3-dialog__actions .bl-btn { min-height: 48px; }
 .campaign-page :is(input,textarea,select) { scroll-margin-block-end: 104px; }
 .campaign-demo.campaign-page .campaign-offer-editor { gap: 32px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
-.campaign-demo.campaign-page .campaign-offer-editor .v3-preview-media { aspect-ratio: 1.85; }
-.campaign-demo.campaign-page .campaign-offer-editor .v3-offer-card__copy { padding: 24px; gap: 12px; }
 .campaign-page .v3-complete { max-width: 720px; margin-inline: auto; }
 .campaign-page-loading { min-height: 480px; padding: 32px; background: var(--color-static-white); border-radius: 24px; display: grid; align-content: start; gap: 24px; }
 .campaign-page-loading div { height: 48px; border-radius: 8px; background: var(--color-static-grey-50); }
@@ -41,7 +39,6 @@
   .v3-v2-theme .campaign-demo.campaign-page .v3-step-intro h3 { font-size: 30px; line-height: 36px; }
   .v3-v2-theme .campaign-demo.campaign-page .v3-step-intro { margin-bottom: 24px; }
   .campaign-demo.campaign-page .campaign-offer-editor { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-  .campaign-demo.campaign-page .campaign-offer-editor .v3-offer-card__copy { padding: 16px; }
   .campaign-demo.campaign-page .v3-dialog__actions { padding: 12px 16px max(12px, env(safe-area-inset-bottom)); }
   .campaign-page .v3-dialog__actions .bl-btn { padding-inline: 12px; font-size: 14px; }
 }

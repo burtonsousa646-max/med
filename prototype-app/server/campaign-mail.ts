@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { audienceGroups } from '../shared/campaign-draft.ts'
+import { offerLayouts } from '../shared/campaign-offer.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
 import { db } from './db.ts'
 
@@ -28,7 +29,7 @@ function campaignMessage(row: MailRow, from: string) {
       `Работает онлайн: ${online ? 'да' : 'нет'}`, `Адреса: ${addresses.filter(Boolean).join('; ') || '—'}`, '',
       `Оффер: ${offer.title}`, `Промокод: ${offer.promo || '—'}`, `Скидка: ${offer.discount ? offer.discount + '%' : '—'}`,
       `Срок действия: ${offer.until || '—'}`, `Цвет: ${offer.tone}`, `Акция 1 + 1: ${offer.gift ? 'да' : 'нет'}`,
-      `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, '',
+      `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, `Макет: ${offer.layout ? offerLayouts[offer.layout] : 'Автоматически'}`, '',
       ...audienceGroups.map(({ title, choices }, i) => `${title}: ${choices[audience[i]]}`),
       `Пожелания: ${triggers || '—'}`, 'Условия оферты приняты.',
     ].join('\n') },

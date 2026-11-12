@@ -31,7 +31,7 @@
 | Визуальные тесты | Storybook + Playwright: скриншоты stories в Docker-образе Playwright |
 | Контрактные тесты | Pact JS |
 | Линтер и форматирование | ESLint + Prettier |
-| Feature toggles | Unleash |
+| Feature toggles | Unleash через API Gateway — без SDK Unleash в браузере, см. [Feature toggles](#feature-toggles) |
 
 **Архитектура:** web-приложения на Module Federation. Каждое web-приложение — host и его module: host инициализирует общие провайдеры, клиент API и store, module — функциональные части приложения. У каждого web-приложения свой файл OpenAPI и один экземпляр клиента API — подробно в [structure.md](structure.md#web--frontend).
 
@@ -52,7 +52,7 @@
 | Внешний вход | API Gateway |
 | Модульные и интеграционные тесты | Vitest |
 | Контрактные тесты | Pact JS |
-| Feature toggles | Unleash |
+| Feature toggles | Unleash, серверный SDK `unleash-client`, см. [Feature toggles](#feature-toggles) |
 
 **Архитектура:** микросервисы, внутри каждого сервиса — чистая архитектура. Frontend и внешние клиенты обращаются к сервисам только через API Gateway. Сервисы общаются между собой по gRPC. У каждого микросервиса своя база данных; в чужую базу сервис не ходит.
 
@@ -88,6 +88,49 @@
 Тестировщик отвечает за план тестов фичи (`test-plan.md`), автотесты и e2e. Модульные, визуальные, контрактные и интеграционные тесты пишут разработчики в рамках своих задач.
 
 **Контрактные тесты** — consumer-driven: потребитель описывает, какие запросы делает и какие ответы ожидает, Pact записывает это в pact-файл, а поставщик проверяет, что выполняет все pact-файлы своих потребителей. Это дополняет контракты в `api/`, а не заменяет их: OpenAPI и `.proto` описывают API целиком, pact-файлы — то, чем потребители реально пользуются. Контрактные тесты и pact-файлы для HTTP и gRPC лежат в `api/` рядом с контрактами, см. [structure.md](structure.md#api--контракты).
+
+## Feature toggles
+
+Решение — [ADR 0001](adr/0001-feature-toggles.md). Правила кода — `ai/rules/architecture.md`, `ai/rules/backend.md`, `ai/rules/frontend.md`.
+
+```
+браузер ── GET /v1/feature-flags ──► api-gateway ── unleash-client ──► Unleash (у себя)
+   host: FeatureFlagsProvider            │ контекст из сессии              ▲
+   module: useFeatureFlag                │ gRPC metadata: пользователь,    │
+                                         ▼ компания                        │
+                                    <name>-service ── unleash-client ──────┘
+```
+
+| Область | Выбор |
+|---|---|
+| Сервер флагов | Unleash OSS, развёрнут у себя; локально — `deploy/docker-compose.yml` |
+| Backend SDK | `unleash-client` — только внутри `@platform/feature-flags` в `server/shared/`; вычисление в процессе |
+| Frontend | без SDK Unleash: флаги отдаёт gateway операцией `getFeatureFlags` из OpenAPI приложения; провайдер — `@platform/feature-flags` в `web/packages/` на TanStack Query |
+| Типы флагов | только boolean; Unleash-типы `release` — временный, по умолчанию; `kill-switch`, `operational` — постоянные, с обоснованием в `design.md` |
+| Контекст | `userId`, `companyId` из сессии — только идентификаторы |
+| Проект и окружения | проект `default`; окружение задаётся токеном: `development` — локально; стенды и production — вместе с их появлением |
+| Метрики | клиент Unleash отправляет в Unleash статистику использования флагов |
+
+### Недоступность Unleash — флаги из кеша
+
+| Где | Кеш | Если кеша нет |
+|---|---|---|
+| сервис, gateway | последнее состояние в памяти SDK и в backup-файле `UNLEASH_BACKUP_PATH` — переживает перезапуск | все флаги выключены |
+| frontend | последний ответ `getFeatureFlags` в провайдере: ошибка обновления не сбрасывает полученные флаги | все флаги выключены |
+
+- Unleash не входит в `/health/ready`, сервис стартует, не дожидаясь Unleash.
+- Выключенный флаг — всегда рабочее старое поведение, поэтому «всё выключено» безопасно.
+
+### Конфигурация сервиса и gateway
+
+| Переменная | Что | Обязательна |
+|---|---|---|
+| `UNLEASH_URL` | адрес API Unleash, например `http://localhost:4242/api` | да |
+| `UNLEASH_API_TOKEN` | backend-токен окружения; свой на каждый сервис на стендах и в production | да |
+| `UNLEASH_BACKUP_PATH` | каталог backup-файла кеша | нет, по умолчанию временный каталог ОС |
+| `UNLEASH_REFRESH_INTERVAL_MS` | период обновления флагов | нет, по умолчанию 15000 |
+
+Имя приложения в Unleash — имя пакета сервиса без `@platform/`. Токены — секреты: только в переменных окружения, frontend токенов Unleash не получает.
 
 ## Логирование, мониторинг и healthcheck
 
@@ -172,4 +215,5 @@
 - **Контракты событий в очередях** — отложено до первых сервисов с очередями. Pact поддерживает их как message-контракты; тогда же решим, где хранить их pact-файлы.
 - **Pact Broker.** Pact-файлы хранятся в репозитории, в `api/pacts/`. Pact Broker понадобится, если сервисы будут выкладываться независимо и нужна проверка совместимости версий перед выкладкой (`can-i-deploy`).
 - **Дизайн-система** пока вне рамок: где лежат токены и базовые компоненты, решается отдельно.
+- **Unleash на стендах и в production.** Выкладка, отказоустойчивость, резервное копирование базы Unleash, доступ к админке и кто включает флаги на production — решается вместе с инфраструктурой стендов. `deploy/unleash/seed.mjs` можно направить на любой Unleash через `UNLEASH_ADMIN_URL` и `UNLEASH_ADMIN_TOKEN`.
 - **Проверка доступности в линтере.** `eslint-plugin-jsx-a11y` не поддерживает ESLint 10, поэтому правила доступности пока не подключены. Варианты: дождаться поддержки, взять форк или проверять доступность в тестах.

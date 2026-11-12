@@ -15,7 +15,7 @@ const SHARED = [
   '@tanstack/react-query',
   '@tanstack/react-store',
   '@platform/api-client',
-  '@platform/feature-flags',
+  '@platform/web-feature-flags',
 ]
 
 /**

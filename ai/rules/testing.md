@@ -38,7 +38,7 @@
 - Действия пользователя — через `@testing-library/user-event`, а не прямой вызов обработчиков.
 - Запросы к API подменяются на уровне клиента `@platform/api-client`, а не мокированием хуков TanStack Query.
 - Проверяются состояния загрузки, пустое, ошибки и нет прав.
-- Флаги задаются через `FeatureFlagsTestProvider` из `@platform/feature-flags`, а не мокированием хука.
+- Флаги задаются через `FeatureFlagsTestProvider` из `@platform/web-feature-flags`, а не мокированием хука.
 
 ## Визуальные тесты
 

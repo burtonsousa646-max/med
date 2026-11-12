@@ -377,11 +377,11 @@ tsconfig.json                 "include": ["src", ".storybook/*.ts", "playwright.
 |---|---|
 | `design-system` | токены и компоненты на Vanilla Extract — пока вне рамок |
 | `api-client` | клиент на openapi-fetch: `createApi<paths>()` для host, `ApiProvider` и `useApi<paths>()` для module, `unwrap`, `ApiRequestError`; типы — `@platform/api-client/generated/<app>` из `api/openapi/<app>.yaml` |
-| `feature-flags` | флаги для React: `FeatureFlagsProvider` для host, `useFeatureFlag` для module, тестовый провайдер — см. ниже |
+| `feature-flags` | `@platform/web-feature-flags` — флаги для React: `FeatureFlagsProvider` для host, `useFeatureFlag` для module, тестовый провайдер — см. ниже |
 | `observability` | Grafana Faro |
 | `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
 
-**`@platform/feature-flags` — web**
+**`@platform/web-feature-flags` — web**
 
 SDK Unleash в браузере нет: флаги приходят от gateway операцией `getFeatureFlags` из `api/openapi/<app>.yaml`. Тип флагов — схема `FeatureFlags` из сгенерированных типов приложения. Пакет входит в singletons пресета Vite, поэтому host и module ставят его у себя в `dependencies`. Пакет создаётся раньше первого web-приложения: без него сборка по пресету не находит singleton.
 

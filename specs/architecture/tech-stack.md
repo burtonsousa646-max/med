@@ -105,7 +105,7 @@
 |---|---|
 | Сервер флагов | Unleash OSS, развёрнут у себя; локально — `deploy/docker-compose.yml` |
 | Backend SDK | `unleash-client` — только внутри `@platform/feature-flags` в `server/shared/`; вычисление в процессе |
-| Frontend | без SDK Unleash: флаги отдаёт gateway операцией `getFeatureFlags` из OpenAPI приложения; провайдер — `@platform/feature-flags` в `web/packages/` на TanStack Query |
+| Frontend | без SDK Unleash: флаги отдаёт gateway операцией `getFeatureFlags` из OpenAPI приложения; провайдер — `@platform/web-feature-flags` в `web/packages/` на TanStack Query |
 | Типы флагов | только boolean; Unleash-типы `release` — временный, по умолчанию; `kill-switch`, `operational` — постоянные, с обоснованием в `design.md` |
 | Контекст | `userId`, `companyId` из сессии — только идентификаторы |
 | Проект и окружения | проект `default`; окружение задаётся токеном: `development` — локально; стенды и production — вместе с их появлением |

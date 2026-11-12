@@ -119,7 +119,7 @@ infrastructure ───────┘
 
 Решение — `specs/architecture/adr/0001-feature-toggles.md`, устройство и пакеты — `specs/architecture/tech-stack.md` и `specs/architecture/structure.md`.
 
-- **Только Unleash и пакеты `@platform/feature-flags`.** SDK Unleash вне этих пакетов запрещён линтером. Frontend получает флаги только от API Gateway операцией `getFeatureFlags`, в Unleash напрямую не обращается.
+- **Только Unleash и пакеты `@platform/feature-flags` (backend) и `@platform/web-feature-flags` (web).** SDK Unleash вне этих пакетов запрещён линтером. Frontend получает флаги только от API Gateway операцией `getFeatureFlags`, в Unleash напрямую не обращается.
 - **Флаги вводит только архитектор** — в разделе «Feature toggles» `design.md` фичи. Разработчик размечает код флагами из дизайна и задач и своих флагов не вводит.
 - **Имя флага:** `<область>.<фича>.<что включает>` в kebab-case, например `campaigns.launch.new-checkout`.
 - **Тип Unleash:**

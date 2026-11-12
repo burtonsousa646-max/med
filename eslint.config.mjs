@@ -82,6 +82,26 @@ export default defineConfig(
     },
   },
 
+  // Feature toggles: SDK Unleash — только внутри пакетов @platform/feature-flags,
+  // остальной код проверяет флаги через них — specs/architecture/adr/0001-feature-toggles.md.
+  {
+    files: ['**/*.{ts,tsx,js,mjs}'],
+    ignores: ['server/shared/feature-flags/**', 'web/packages/feature-flags/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['unleash-client', 'unleash-client/*', '@unleash/*', 'unleash-proxy-client'],
+              message: 'Флаги — только через @platform/feature-flags.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Тесты
   {
     files: ['**/*.{spec,test}.{ts,tsx}'],

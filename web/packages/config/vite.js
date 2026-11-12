@@ -6,7 +6,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, mergeConfig } from 'vite'
 
 // Библиотеки, которые host и module web-приложения делят в одном экземпляре.
-// Сюда входят пакеты, через контекст которых host передаёт module клиент API, store и провайдеры.
+// Сюда входят пакеты, через контекст которых host передаёт module клиент API, store и провайдеры,
+// в том числе провайдер feature toggles.
 const SHARED = [
   'react',
   'react-dom',
@@ -14,6 +15,7 @@ const SHARED = [
   '@tanstack/react-query',
   '@tanstack/react-store',
   '@platform/api-client',
+  '@platform/feature-flags',
 ]
 
 /**

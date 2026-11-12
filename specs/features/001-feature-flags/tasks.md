@@ -45,7 +45,7 @@ design: design.md
   - Backup-файл SDK загружает с событием `ready`, а не `synchronized`: тест чтения из backup ждёт `ready`.
   - SDK `unleash-client` 6.12.2: если запрос флагов падает уже после `destroy()`, ошибка становится необработанной (`unhandledRejection`) — SDK при остановке снимает свои обработчики. В тестах клиент останавливается, только когда запроса в полёте нет. Для сервисов — риск при остановке во время недоступности Unleash, вынесен на решение архитектора.
 
-### [ ] T2. Пакет флагов для web
+### [x] T2. Пакет флагов для web
 
 - **Исполнитель:** FE
 - **Пакет:** `@platform/web-feature-flags` — `web/packages/feature-flags/`
@@ -59,4 +59,6 @@ design: design.md
 - **Готово, когда:**
   - проходят `pnpm --filter @platform/web-feature-flags typecheck` и `test`, а также `pnpm lint` и `pnpm format:check`;
   - тесты подтверждают `fallback` до первого ответа, сохранение флагов при ошибке обновления и выключенные флаги при ошибке первой загрузки.
-- **Заметки:** —
+- **Заметки:**
+  - тест «ошибка первой загрузки» не ждёт реальных задержек: провайдер задаёт `retry: 2` в `useQuery`, а `retryDelay` не задаёт, поэтому `retryDelay: 0` в `defaultOptions` тестового `QueryClient` делает оба повтора сразу; API пакета не менялся;
+  - тип параметра `useFeatureFlag` записан через внутренний псевдоним `FlagName<Flags> = keyof Flags & string`: сигнатура из дизайна иначе не проходит правило ESLint `@typescript-eslint/no-unnecessary-type-parameters`; для вызывающего кода тип тот же.

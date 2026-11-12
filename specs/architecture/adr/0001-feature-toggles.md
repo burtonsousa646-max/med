@@ -75,7 +75,7 @@ Gateway вычисляет флаги серверным SDK Unleash с конт
 3. **Контекст вычисления** — только идентификаторы: `userId`, `companyId`. Gateway берёт их из сессии и передаёт в сервисы в gRPC metadata вместе с пользователем и компанией. Персональных данных в контексте нет.
 4. **Web.** В `api/openapi/<app>.yaml` есть операция `getFeatureFlags` и схема `FeatureFlags`: по одному необязательному boolean-полю на каждый флаг, видимый этому приложению.
    - Схема — белый список: gateway вычисляет и отдаёт ровно эти флаги и берёт их имена из OpenAPI-документа приложения, отдельного списка в коде gateway нет.
-   - Пакет `web/packages/feature-flags` (`@platform/feature-flags`): host подключает `FeatureFlagsProvider`, module читает флаги хуком `useFeatureFlag<FeatureFlags>(name)`, тип флагов берётся из контракта. Пакет загружается в одном экземпляре через Module Federation.
+   - Пакет `web/packages/feature-flags` (`@platform/web-feature-flags` — у пакетов workspace имена уникальны): host подключает `FeatureFlagsProvider`, module читает флаги хуком `useFeatureFlag<FeatureFlags>(name)`, тип флагов берётся из контракта. Пакет загружается в одном экземпляре через Module Federation.
    - На frontend новых зависимостей нет: провайдер — тонкая обёртка над клиентом API и TanStack Query.
 5. **Флаги только boolean.** Варианты для A/B-тестов — отдельным ADR, когда понадобятся.
 
@@ -131,8 +131,8 @@ Gateway вычисляет флаги серверным SDK Unleash с конт
 - [x] `ai/rules/architecture.md`, `frontend.md`, `backend.md`, `testing.md`, `api-contracts.md`
 - [x] `ai/agents/architect.md`, `frontend-developer.md`, `backend-developer.md`; `ai/templates/design.md`, `tasks.md`
 - [x] `deploy/`: токены Unleash, `deploy/unleash/flags.json`, `seed.mjs`; `pnpm env:flags`
-- [x] `eslint.config.mjs` — запрет SDK Unleash вне `@platform/feature-flags`
-- [x] `@platform/web-config/vite` — `@platform/feature-flags` в singletons
+- [x] `eslint.config.mjs` — запрет SDK Unleash вне пакетов `feature-flags`
+- [x] `@platform/web-config/vite` — `@platform/web-feature-flags` в singletons
 - [ ] пакеты `server/shared/feature-flags` и `web/packages/feature-flags` — делают разработчики до первой фичи с флагом
 - [ ] операция `getFeatureFlags` и схема `FeatureFlags` в OpenAPI — вместе с первым web-приложением
 

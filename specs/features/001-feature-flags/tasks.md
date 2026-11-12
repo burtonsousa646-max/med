@@ -1,0 +1,78 @@
+---
+feature: 001-feature-flags
+title: Пакеты @platform/feature-flags для backend и web
+status: approved
+author: architect
+design: design.md
+---
+
+# Задачи: пакеты @platform/feature-flags для backend и web
+
+Техническая фича: требований аналитика нет. Задачи закрывают критерии готовности `К1…К7` из [design.md](design.md#критерии-готовности). Задачи T1 и T2 не зависят друг от друга и могут идти параллельно. T3 закрывает риск из раздела «Риски и решения» `design.md` и ждёт исправления в upstream.
+
+## Покрытие критериев
+
+| Критерий | Задачи |
+|---|---|
+| К1 | T1 |
+| К2 | T1 |
+| К3 | T1 |
+| К4 | T1 |
+| К5 | T2 |
+| К6 | T2 |
+| К7 | T2 |
+
+## Задачи
+
+### [x] T1. Пакет флагов для backend
+
+- **Исполнитель:** BE
+- **Пакет:** `@platform/feature-flags` — `server/shared/feature-flags/`
+- **Закрывает:** К1, К2, К3, К4
+- **Зависит от:** —
+- **Флаг:** —
+- **Что сделать:** создать пакет по разделу «Пакет backend» в `design.md`:
+  - файлы, `package.json`, `tsconfig.json`, `tsconfig.build.json` и `vitest.config.ts` — по образцу `@platform/contracts`;
+  - `readFeatureFlagsConfig`, `FeatureFlagsClient`, `FeatureFlagsModule.forRoot` и `forTesting`, `InMemoryFeatureFlags`, типы `FlagContext` и `FeatureFlagsReader`, экспорт из `src/index.ts`;
+  - обработчики событий `error` и `warn` SDK через `Logger` из `@nestjs/common`;
+  - тесты из таблицы «Тесты» раздела backend, включая `cache.spec.ts` с локальным HTTP-сервером.
+- **Готово, когда:**
+  - проходят `pnpm --filter @platform/feature-flags typecheck`, `test` и `build`, а также `pnpm lint` и `pnpm format:check`;
+  - `cache.spec.ts` подтверждает чтение флагов из памяти и из backup-файла при остановленном сервере и `false` без кеша.
+- **Заметки:**
+  - SDK создаётся внутренней функцией `createUnleash(appName, config)` в `feature-flags.client.ts`, `FeatureFlagsClient` получает готовый SDK в конструкторе. Из `index.ts` функция не экспортируется, публичный API — как в дизайне.
+  - Тесты `forTesting` — в `in-memory-feature-flags.spec.ts`, старт `forRoot` без Unleash — в `cache.spec.ts`; отдельных файлов тестов модуля нет.
+  - Backup-файл SDK загружает с событием `ready`, а не `synchronized`: тест чтения из backup ждёт `ready`.
+  - SDK `unleash-client` 6.12.2: если запрос флагов падает уже после `destroy()`, ошибка становится необработанной (`unhandledRejection`) — SDK при остановке снимает свои обработчики. В тестах клиент останавливается, только когда запроса в полёте нет. Для сервисов — риск при остановке во время недоступности Unleash, вынесен на решение архитектора.
+
+### [x] T2. Пакет флагов для web
+
+- **Исполнитель:** FE
+- **Пакет:** `@platform/web-feature-flags` — `web/packages/feature-flags/`
+- **Закрывает:** К5, К6, К7
+- **Зависит от:** —
+- **Флаг:** —
+- **Что сделать:** создать пакет по разделу «Пакет web» в `design.md`:
+  - файлы, `package.json`, `tsconfig.json` и `vitest.config.ts` — по образцу `@platform/api-client`;
+  - `featureFlagsQueryKey`, `FeatureFlagsProvider` с параметрами `useQuery` из дизайна, `useFeatureFlag`, `FeatureFlagsTestProvider`, общий контекст в `context.ts`, экспорт из `src/index.ts`;
+  - тесты из таблицы «Тесты» раздела web.
+- **Готово, когда:**
+  - проходят `pnpm --filter @platform/web-feature-flags typecheck` и `test`, а также `pnpm lint` и `pnpm format:check`;
+  - тесты подтверждают `fallback` до первого ответа, сохранение флагов при ошибке обновления и выключенные флаги при ошибке первой загрузки.
+- **Заметки:**
+  - тест «ошибка первой загрузки» не ждёт реальных задержек: провайдер задаёт `retry: 2` в `useQuery`, а `retryDelay` не задаёт, поэтому `retryDelay: 0` в `defaultOptions` тестового `QueryClient` делает оба повтора сразу; API пакета не менялся;
+  - тип параметра `useFeatureFlag` записан через внутренний псевдоним `FlagName<Flags> = keyof Flags & string`: сигнатура из дизайна иначе не проходит правило ESLint `@typescript-eslint/no-unnecessary-type-parameters`; для вызывающего кода тип тот же.
+
+### [ ] T3. Обновить unleash-client после исправления ошибки остановки
+
+- **Исполнитель:** BE
+- **Пакет:** `@platform/feature-flags` — `server/shared/feature-flags/`
+- **Закрывает:** риск «Ошибка `unleash-client` 6.12.2 при остановке» из `design.md`
+- **Зависит от:** T1; выход версии `unleash-client`, в которой `destroy()` не оставляет необработанную ошибку запроса в полёте
+- **Флаг:** —
+- **Что сделать:**
+  - обновить `unleash-client` до исправленной версии;
+  - добавить в `cache.spec.ts` тест: `destroy()` во время запроса к недоступному Unleash не даёт `unhandledRejection`;
+  - убрать из `cache.spec.ts` обход «останавливать клиент, только когда запроса в полёте нет».
+- **Готово, когда:** новый тест проходит; проходят `pnpm --filter @platform/feature-flags typecheck`, `test` и `build`, а также `pnpm lint` и `pnpm format:check`.
+- **Заметки:** —

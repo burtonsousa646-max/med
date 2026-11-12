@@ -188,7 +188,7 @@ const { data: campaign } = useSuspenseQuery(campaignQuery(api, campaignId))
 
 ## Feature toggles
 
-Общие правила — `ai/rules/architecture.md`, раздел «Feature toggles», пример кода — `specs/architecture/structure.md`, раздел «`@platform/feature-flags` — web».
+Общие правила — `ai/rules/architecture.md`, раздел «Feature toggles», пример кода — `specs/architecture/structure.md`, раздел «`@platform/web-feature-flags` — web».
 
 - **Флаги приходят только от gateway** — операцией `getFeatureFlags` из OpenAPI приложения. SDK Unleash в браузере нет.
 - **Провайдер подключает host:** `FeatureFlagsProvider` в `src/providers/`, внутри `QueryClientProvider`. После входа и выхода host перезапрашивает флаги по `featureFlagsQueryKey`. Module своего провайдера не создаёт.

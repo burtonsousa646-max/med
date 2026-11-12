@@ -47,7 +47,7 @@ packages:
 
 - Зависимости ставятся только через pnpm; `npm` и `yarn` не используются, lock-файл один — `pnpm-lock.yaml` в корне.
 - Общие пакеты подключаются как `workspace:*`.
-- Задачи по пакетам запускаются средствами pnpm, отдельный оркестратор не используется: `pnpm -r <script>` — во всех пакетах, `pnpm --filter <package> <script>` — в одном пакете, `pnpm --filter "...[origin/main]" <script>` — только в изменённых пакетах и тех, кто от них зависит.
+- Задачи по пакетам запускаются средствами pnpm, отдельный оркестратор не используется: `pnpm -r <script>` — во всех пакетах, `pnpm --filter <package> <script>` — в одном пакете, `pnpm --filter "...[origin/develop]" <script>` — только в изменённых пакетах и тех, кто от них зависит.
 - Имена пакетов: `@platform/<name>` — например, `@platform/campaigns-service`, `@platform/design-system`.
 - Install-скрипты зависимостей по умолчанию запрещены. Разрешённые перечислены в `allowBuilds` в `pnpm-workspace.yaml`, новые добавляются через `pnpm approve-builds <package>`.
 
@@ -60,7 +60,8 @@ packages:
 | `pnpm typecheck` | проверка типов во всех пакетах |
 | `pnpm test` | тесты во всех пакетах |
 | `pnpm build` | сборка всех пакетов |
-| `pnpm env:up` / `pnpm env:down` | локальное окружение из `deploy/` |
+| `pnpm env:up` / `pnpm env:down` | локальное окружение из `deploy/`; `env:up` ждёт готовности и заводит флаги |
+| `pnpm env:flags` | завести в локальном Unleash флаги из `deploy/unleash/flags.json` |
 
 `typecheck`, `test` и `build` запускают одноимённые скрипты пакетов: каждый пакет должен их объявить.
 
@@ -96,7 +97,7 @@ api/
 | Команда | Что делает |
 |---|---|
 | `pnpm --filter @platform/api lint` | Redocly — `api/openapi/*.yaml`, Buf — `api/proto/` |
-| `pnpm --filter @platform/api breaking` | Buf ищет ломающие изменения `.proto` относительно `main`; другую базу задаёт `CONTRACTS_BASE` |
+| `pnpm --filter @platform/api breaking` | Buf ищет ломающие изменения `.proto` относительно `develop`; другую базу задаёт `CONTRACTS_BASE` |
 | `pnpm --filter @platform/api generate` | типы из OpenAPI — в `web/packages/api-client` и `server/apps/api-gateway`, код из `.proto` — в `server/shared/contracts` |
 | `pnpm --filter @platform/api test:contract` | тесты потребителей и проверка поставщиков на Pact JS |
 
@@ -132,7 +133,8 @@ server/apps/<name>-service/
   src/
     domain/               сущности, объекты-значения, доменные события, правила; без NestJS, Prisma и gRPC
     application/          сценарии (use cases), порты — интерфейсы репозиториев и внешних систем
-    infrastructure/       реализации портов: Prisma, BullMQ, gRPC-клиенты других сервисов, внешние системы
+      feature-flags.ts    реестр флагов сервиса — если сервис проверяет флаги
+    infrastructure/       реализации портов: Prisma, BullMQ, gRPC-клиенты других сервисов, внешние системы, флаги
     presentation/         gRPC-контроллеры, обработчики очередей
     main.ts               запуск сервиса
   prisma/
@@ -174,6 +176,7 @@ server/apps/api-gateway/
     routes/               реализация операций из api/openapi/
     auth/                 проверка сессии, роли
     clients/              gRPC-клиенты сервисов
+    feature-flags/        GET /v1/feature-flags и реестр флагов, которые gateway проверяет сам
     main.ts
   Dockerfile
   package.json
@@ -190,12 +193,55 @@ Gateway не содержит бизнес-логики: он проверяет
 | `logger` | настроенный pino |
 | `observability` | OpenTelemetry: метрики и трассировки |
 | `health` | live и ready для HTTP и `grpc.health.v1` |
-| `feature-flags` | клиент Unleash |
+| `feature-flags` | клиент Unleash для сервисов и gateway: NestJS-модуль, кеш, фейк для тестов — см. ниже |
 | `queue` | общая настройка BullMQ |
 | `testing` | помощники для тестов |
 | `tooling` | пресеты TypeScript (`service`, `build`, `lib`) и Vitest со SWC для декораторов NestJS: `defineTestConfig` — модульные, `defineIntegrationTestConfig` — интеграционные |
 
 В общие пакеты не кладётся бизнес-логика: она живёт в сервисах.
+
+**`@platform/feature-flags` — backend**
+
+Решение — [ADR 0001](adr/0001-feature-toggles.md), стек и переменные окружения — [tech-stack.md](tech-stack.md#feature-toggles). SDK `unleash-client` используется только внутри пакета: импорт в другом месте запрещён линтером.
+
+```ts
+// API пакета
+FeatureFlagsModule.forRoot({ appName: 'campaigns-service' })   // конфигурация из env через @platform/config
+class FeatureFlagsClient { isEnabled(name: string, context?: FlagContext): boolean }   // синхронно, из кеша SDK
+interface FlagContext { userId?: string; companyId?: string }
+class InMemoryFeatureFlags { constructor(enabled?: Record<string, boolean>); isEnabled(…); set(name, enabled) }   // для тестов
+```
+
+- Модуль стартует, не дожидаясь Unleash. Кеш — память SDK и backup-файл в `UNLEASH_BACKUP_PATH`. Если нет ни Unleash, ни кеша, `isEnabled` возвращает `false`.
+- Пакет не добавляет проверку Unleash в `/health/ready`.
+
+Как сервис проверяет флаг:
+
+```ts
+// src/application/feature-flags.ts — реестр: имена флагов сервиса только здесь
+export const FLAGS = {
+  /**
+   * Новый расчёт стоимости при запуске кампании.
+   * @spec 004-campaign-launch
+   * @task T3
+   * @remove T9 — после полного включения на production
+   */
+  launchNewCheckout: 'campaigns.launch.new-checkout',
+} as const
+export type Flag = (typeof FLAGS)[keyof typeof FLAGS]
+
+// src/application/ports/feature-flags.port.ts — порт сервиса
+export interface FeatureFlags { isEnabled(flag: Flag, context: { userId?: string; companyId?: string }): boolean }
+export const FEATURE_FLAGS = Symbol('FeatureFlags')
+
+// src/infrastructure/feature-flags/unleash-feature-flags.ts — реализация порта через FeatureFlagsClient
+
+// сценарий — одна точка ветвления
+if (this.flags.isEnabled(FLAGS.launchNewCheckout, { userId, companyId })) { /* новое */ } else { /* старое */ }
+```
+
+- Контекст — пользователь и компания, которые gateway передал в gRPC metadata.
+- Gateway: `GET /v1/feature-flags` берёт имена флагов из свойств схемы `FeatureFlags` в OpenAPI-документе приложения, вычисляет каждый с контекстом сессии и возвращает `{ "<флаг>": true | false }`. Отдельного списка флагов frontend в коде gateway нет. Сессия не обязательна.
 
 **`@platform/contracts`**
 - Импорт — по пути proto-файла: `@platform/contracts/campaigns/v1/campaigns`. Перед использованием пакет собирается: `pnpm --filter @platform/contracts build`, сборка копирует `api/proto/` в пакет.
@@ -331,9 +377,45 @@ tsconfig.json                 "include": ["src", ".storybook/*.ts", "playwright.
 |---|---|
 | `design-system` | токены и компоненты на Vanilla Extract — пока вне рамок |
 | `api-client` | клиент на openapi-fetch: `createApi<paths>()` для host, `ApiProvider` и `useApi<paths>()` для module, `unwrap`, `ApiRequestError`; типы — `@platform/api-client/generated/<app>` из `api/openapi/<app>.yaml` |
-| `feature-flags` | клиент Unleash для React |
+| `feature-flags` | флаги для React: `FeatureFlagsProvider` для host, `useFeatureFlag` для module, тестовый провайдер — см. ниже |
 | `observability` | Grafana Faro |
 | `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
+
+**`@platform/feature-flags` — web**
+
+SDK Unleash в браузере нет: флаги приходят от gateway операцией `getFeatureFlags` из `api/openapi/<app>.yaml`. Тип флагов — схема `FeatureFlags` из сгенерированных типов приложения. Пакет входит в singletons пресета Vite, поэтому host и module ставят его у себя в `dependencies`. Пакет создаётся раньше первого web-приложения: без него сборка по пресету не находит singleton.
+
+```tsx
+// host: src/providers/AppProviders.tsx — внутри QueryClientProvider
+<FeatureFlagsProvider load={async (signal) => unwrap(await api.GET('/v1/feature-flags', { signal }))} fallback={<AppSkeleton />}>
+  …
+</FeatureFlagsProvider>
+// host: после входа и выхода — перезапросить флаги
+queryClient.invalidateQueries({ queryKey: featureFlagsQueryKey })
+
+// module: src/model/featureFlags.ts — реестр флагов module
+import type { components } from '@platform/api-client/generated/cabinet'
+export type FeatureFlags = components['schemas']['FeatureFlags']
+export const FLAGS = {
+  /**
+   * @spec 004-campaign-launch
+   * @task T5
+   * @remove T9
+   */
+  newCheckout: 'campaigns.launch.new-checkout',
+} as const satisfies Record<string, keyof FeatureFlags>
+
+// module: маршрут или вход в экран — одна точка ветвления
+const newCheckout = useFeatureFlag<FeatureFlags>(FLAGS.newCheckout)
+
+// тесты
+<FeatureFlagsTestProvider flags={{ 'campaigns.launch.new-checkout': true }}>…</FeatureFlagsTestProvider>
+```
+
+- Провайдер грузит флаги через TanStack Query (`featureFlagsQueryKey`): обновляет их раз в минуту и при возврате на вкладку. Ошибка обновления оставляет последние полученные флаги.
+- Пока флаги не пришли, провайдер показывает `fallback`, а не старое поведение: так экран не мигает. Если первый запрос упал, все флаги выключены.
+- Флаг, которого нет в ответе, выключен.
+- Компоненты из `components/` флаги не читают: вариант поведения приходит им через props, поэтому stories и визуальные тесты покрывают оба варианта без провайдера.
 
 ## `tests/` — автотесты и e2e
 
@@ -367,11 +449,20 @@ deploy/
   .env.example            порты и доступы; копируется в deploy/.env
   postgres/init/          создание баз — по одной на сервис и для Unleash
   observability/          конфигурация стека наблюдаемости — после подтверждения раздела в tech-stack.md
-  unleash/                начальные feature toggles — когда появятся первые
+  unleash/
+    flags.json            флаги локального окружения — добавляет архитектор вместе с design.md
+    seed.mjs              заводит флаги из flags.json в Unleash — pnpm env:flags
 ```
 
 - PostgreSQL слушает порт 5433, чтобы не конфликтовать с локальным PostgreSQL прототипа.
 - У каждого сервиса своя база в общем локальном PostgreSQL. Новая база добавляется в `postgres/init/01-databases.sql`; скрипт выполняется только при первом создании тома.
+
+- **Unleash** — `http://localhost:4242`, вход `admin` / `unleash4all` — только локально. При первом старте Unleash создаёт токены из `deploy/.env`: backend-токен `UNLEASH_API_TOKEN` для сервисов и gateway, admin-токен `UNLEASH_ADMIN_TOKEN` для `seed.mjs` и автотестов.
+- **Флаги** заводит `pnpm env:flags` (его вызывает и `pnpm env:up`). Скрипт идемпотентен: новый флаг создаётся выключенным, со стратегией «всем» в окружении `development`, а положение существующего не меняется — его переключают в админке. Флаг, которого нет в `flags.json`, не удаляется, но скрипт о нём предупреждает.
+
+```json
+{ "name": "campaigns.launch.new-checkout", "type": "release", "description": "Новый расчёт стоимости при запуске кампании.", "spec": "004-campaign-launch" }
+```
 
 Dockerfile сервисов и frontend лежат рядом с их кодом, а не в `deploy/`.
 

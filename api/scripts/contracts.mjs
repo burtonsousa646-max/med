@@ -50,7 +50,7 @@ function breaking() {
     log('protobuf: контрактов в api/proto/ нет — пропущено')
     return
   }
-  const base = process.env.CONTRACTS_BASE ?? 'main'
+  const base = process.env.CONTRACTS_BASE ?? 'develop'
   const hasBase =
     spawnSync('git', ['cat-file', '-e', `${base}:api/buf.yaml`], { cwd: root }).status === 0
   if (!hasBase) {

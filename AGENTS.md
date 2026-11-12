@@ -49,7 +49,7 @@
 | `pnpm lint` | ESLint по всему репозиторию |
 | `pnpm format` | Prettier по всему репозиторию |
 | `pnpm typecheck` · `pnpm test` · `pnpm build` | проверка типов, модульные тесты, сборка во всех пакетах |
-| `pnpm env:up` · `pnpm env:down` | PostgreSQL, Redis и Unleash из `deploy/` |
+| `pnpm env:up` · `pnpm env:down` | PostgreSQL, Redis и Unleash из `deploy/`; `env:up` заводит флаги из `deploy/unleash/flags.json` |
 | `pnpm ai:adapters` | пересобрать команды ролей после изменения `ai/agents/` или `ai/config/models.yaml` |
 
 Команды пакетов и тестов — в `ai/rules/backend.md`, `ai/rules/frontend.md`, `ai/rules/testing.md`, `ai/rules/api-contracts.md`.

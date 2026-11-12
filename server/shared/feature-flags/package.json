@@ -1,0 +1,34 @@
+{
+  "name": "@platform/feature-flags",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Feature toggles для сервисов и API Gateway: клиент Unleash, модуль NestJS и флаги в памяти для тестов",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "unleash-client": "^6.12.2"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^12.4.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^12.4.0",
+    "@nestjs/core": "^12.4.0",
+    "@platform/server-tooling": "workspace:*",
+    "@types/node": "^26.6.6",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

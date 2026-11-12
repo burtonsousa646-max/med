@@ -24,7 +24,7 @@ design: design.md
 
 ## Задачи
 
-### [ ] T1. Пакет флагов для backend
+### [x] T1. Пакет флагов для backend
 
 - **Исполнитель:** BE
 - **Пакет:** `@platform/feature-flags` — `server/shared/feature-flags/`
@@ -39,7 +39,11 @@ design: design.md
 - **Готово, когда:**
   - проходят `pnpm --filter @platform/feature-flags typecheck`, `test` и `build`, а также `pnpm lint` и `pnpm format:check`;
   - `cache.spec.ts` подтверждает чтение флагов из памяти и из backup-файла при остановленном сервере и `false` без кеша.
-- **Заметки:** —
+- **Заметки:**
+  - SDK создаётся внутренней функцией `createUnleash(appName, config)` в `feature-flags.client.ts`, `FeatureFlagsClient` получает готовый SDK в конструкторе. Из `index.ts` функция не экспортируется, публичный API — как в дизайне.
+  - Тесты `forTesting` — в `in-memory-feature-flags.spec.ts`, старт `forRoot` без Unleash — в `cache.spec.ts`; отдельных файлов тестов модуля нет.
+  - Backup-файл SDK загружает с событием `ready`, а не `synchronized`: тест чтения из backup ждёт `ready`.
+  - SDK `unleash-client` 6.12.2: если запрос флагов падает уже после `destroy()`, ошибка становится необработанной (`unhandledRejection`) — SDK при остановке снимает свои обработчики. В тестах клиент останавливается, только когда запроса в полёте нет. Для сервисов — риск при остановке во время недоступности Unleash, вынесен на решение архитектора.
 
 ### [ ] T2. Пакет флагов для web
 

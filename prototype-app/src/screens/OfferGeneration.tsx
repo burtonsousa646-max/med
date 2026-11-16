@@ -24,9 +24,8 @@ export function OfferReveal({ ready, paused, onReveal }: { ready: boolean; pause
   useEffect(() => {
     const element = canvas.current
     const context = element?.getContext('2d')
-    if (!element || !context || paused || reduce) return
+    if (!element || !context || ready || paused || reduce) return
     const ink = getComputedStyle(element).color
-    const duration = ready ? 1200 : 12000
     let width = 0, height = 0, frame = 0, lastDraw = 0
     function resize() {
       const ratio = Math.min(window.devicePixelRatio || 1, 2)
@@ -42,7 +41,7 @@ export function OfferReveal({ ready, paused, onReveal }: { ready: boolean; pause
       if (now - lastDraw >= 1000 / 30) {
         lastDraw = now
         const time = clock.current / 1000
-        const fraction = Math.min(clock.current / duration, 1)
+        const fraction = Math.min(clock.current / 12000, 1)
         context!.clearRect(0, 0, width, height)
         context!.fillStyle = ink
         const spacing = 12

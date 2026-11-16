@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { campaignAllowedStage, campaignDraftForServer, campaignStage, emptyCampaignDraft, isCampaignDraft } from '../src/screens/campaign-draft.ts'
+import { campaignAllowedStage, campaignDraftForServer, campaignStage, emptyCampaignDraft, isCampaignDraft, restoreCampaignDraft } from '../src/screens/campaign-draft.ts'
 
 function completedDraft() {
   const draft = { ...emptyCampaignDraft(), submitted: true }
@@ -10,7 +10,7 @@ function completedDraft() {
   draft.addresses = ['Покровка, 12']
   draft.offer = { ...draft.offer, title: 'Загляните на завтрак', discount: '20' }
   draft.filled = true
-  draft.stage = draft.reached = 4
+  draft.stage = draft.reached = 5
   return draft
 }
 
@@ -37,7 +37,7 @@ test('offer consent is required for lookup continuation and restored routes, inc
     for (const route of ['details', 'offer', 'audience', 'success', undefined]) assert.equal(campaignStage(route, draft), 0)
   }
   draft.offerAccepted = true
-  assert.equal(campaignStage('success', draft), 4)
+  assert.equal(campaignStage('success', draft), 5)
   assert.equal(emptyCampaignDraft().offerAccepted, false)
 })
 
@@ -52,9 +52,11 @@ test('URLs restore a visited step and cannot skip unfinished setup', () => {
 
 test('success preserves completed drafts and legacy URLs without skipping setup', () => {
   assert.equal(campaignStage('success', { ...completedDraft(), stage: 3, reached: 3 }), 3)
-  assert.equal(campaignStage('success', { ...completedDraft(), submitted: undefined }), 3, 'Old local success needs server confirmation')
-  assert.equal(campaignStage('success', completedDraft()), 4)
-  assert.equal(campaignStage('preview', completedDraft()), 4)
+  assert.equal(campaignStage('success', { ...completedDraft(), submitted: undefined }), 4, 'Unsubmitted drafts can only get to email')
+  assert.equal(campaignStage('email', { ...completedDraft(), stage: 3, reached: 3 }), 3, 'Direct navigation cannot skip audience')
+  assert.equal(campaignStage('success', restoreCampaignDraft({ ...completedDraft(), stage: 4, reached: 4 })), 5, 'Old accepted drafts keep their success screen')
+  assert.equal(campaignStage('success', completedDraft()), 5)
+  assert.equal(campaignStage('preview', completedDraft()), 5)
   assert.equal(isCampaignDraft({ ...emptyCampaignDraft(), stage: 4, reached: 4 }), true)
 })
 
@@ -86,6 +88,19 @@ test('all previous steps must stay valid before finalizing', () => {
   assert.equal(campaignStage('success', draft), 3, 'City targeting needs a city')
   draft.audience[0] = 2
   assert.equal(campaignAllowedStage(draft), 4, 'Online nationwide setup needs no address')
+})
+
+test('targeting city is validated independently and legacy drafts still use the business city', () => {
+  const draft = completedDraft()
+  draft.audience[0] = 1
+  assert.equal(campaignAllowedStage(draft), 4)
+  assert.equal(campaignAllowedStage({ ...draft, audienceCity: '' }), 3)
+  assert.equal(isCampaignDraft({ ...draft, audienceCity: 'а'.repeat(81) }), false)
+  const targeted = { ...draft, audienceCity: 'Казань' }
+  assert.equal(campaignAllowedStage(targeted), 4)
+  const payload = campaignDraftForServer(targeted)
+  assert.equal(payload.audienceCity, 'Казань')
+  assert.equal(payload.business.city, 'Москва')
 })
 
 test('server receives the photo shown in the offer while the draft keeps the original', () => {

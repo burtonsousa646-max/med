@@ -2,6 +2,7 @@ import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { MotionConfig } from 'motion/react'
+import { platformName } from '../shared/brand'
 import { analytics, pages, type AnalyticsPage } from './analytics'
 import { QueryClientProvider } from '@tanstack/react-query'
 import '../../design-system/tokens.css'
@@ -70,7 +71,7 @@ function OnRoute() {
   useEffect(() => {
     scrollTo(0, 0)
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
-    document.title = pathname === '/' || pathname === '/v4' ? 'Партнёрская платформа билайна · версия 4' : pathname === '/v3' ? 'Партнёрская платформа билайна · версия 3' : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? 'Партнёрская платформа билайна' : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · партнёрская платформа билайна`
+    document.title = pathname === '/' || pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
   }, [pathname])
   return null
 }

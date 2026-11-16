@@ -1,6 +1,8 @@
+import { platformName } from '../shared/brand.ts'
+
 const values = {
-  step: ['business', 'details', 'offer', 'audience', 'success'],
-  target_step: ['business', 'details', 'offer', 'audience', 'success'],
+  step: ['business', 'details', 'offer', 'audience', 'email', 'success'],
+  target_step: ['business', 'details', 'offer', 'audience', 'email', 'success'],
   source: ['hero', 'header', 'how', 'where', 'final', 'direct', 'back', 'progress', 'success', 'footer'],
   section: ['hero', 'metrics', 'how', 'where', 'final'],
   target: ['how', 'where', 'login', 'offer_document', 'privacy_document', 'landing'],
@@ -21,7 +23,7 @@ export type EventParams = Choice & {
 }
 
 export const goals = [
-  'v4_landing_view', 'v4_business_view', 'v4_details_view', 'v4_offer_view', 'v4_audience_view', 'v4_success_view',
+  'v4_landing_view', 'v4_business_view', 'v4_details_view', 'v4_offer_view', 'v4_audience_view', 'v4_email_view', 'v4_success_view',
   'v4_login_view', 'v4_document_view', 'v4_section_view', 'v4_cta_click', 'v4_navigation_click', 'v4_placement_select',
   'v4_flow_start', 'v4_field_error', 'v4_lookup_start', 'v4_lookup_result', 'v4_lookup_cancel', 'v4_identify_complete',
   'v4_company_change', 'v4_address_change', 'v4_business_mode', 'v4_business_complete',
@@ -33,11 +35,12 @@ export const goals = [
 export type Goal = typeof goals[number]
 
 export const pages = {
-  '/v4': ['v4_landing_view', 'Партнёрская платформа'],
+  '/v4': ['v4_landing_view', platformName],
   '/v4/create/business': ['v4_business_view', 'Информация о компании'],
   '/v4/create/details': ['v4_details_view', 'Данные компании'],
   '/v4/create/offer': ['v4_offer_view', 'Дизайн оффера'],
   '/v4/create/audience': ['v4_audience_view', 'Выбор клиентов'],
+  '/v4/create/email': ['v4_email_view', 'Подтверждение почты'],
   '/v4/create/success': ['v4_success_view', 'Настройка завершена'],
   '/login': ['v4_login_view', 'Вход'],
   '/v4/offer': ['v4_document_view', 'Оферта'],

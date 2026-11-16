@@ -29,7 +29,7 @@ export function BusinessSetup({phase,business,onChange,hasProfile,registeredAddr
           <span className="bl-check__box" aria-hidden="true"/>
           <span>Принимаю условия <a href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer">оферты</a></span>
         </label>
-        <p className="bl-caption">Черновик сохраняется в браузере, а после принятия оферты и на сервере. Когда вы завершите настройку, данные заявки получит команда билайна.</p>
+        <p className="bl-caption">Черновик сохраняется в браузере, а после принятия оферты и на сервере. После отправки заявки данные получит команда билайна.</p>
         {consentError && !offerAccepted && <p id={consentId} className="v3-offer-consent-error" role="alert">Чтобы продолжить, примите условия оферты</p>}
       </div>}
       <div className="v3-lookup-feedback" role="status" aria-live="polite">

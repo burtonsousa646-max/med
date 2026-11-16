@@ -43,22 +43,31 @@ export async function requestOfferAi(input: OfferAiInput, signal: AbortSignal): 
   return data
 }
 
-export async function sendCampaignDraft(method: 'put' | 'post', key: string, revision: number, value: CampaignDraft, signal?: AbortSignal) {
+export async function sendCampaignEmailCode(key: string, email: string) {
+  const { data, error } = await client.POST('/v4/draft/email', {
+    params: { header: { 'X-Draft-Key': key } }, body: { email }, signal: AbortSignal.timeout(60_000),
+  })
+  if (data?.status !== 'sent') throw new Error(error?.message || 'Не удалось отправить письмо. Попробуйте ещё раз')
+}
+
+export async function sendCampaignDraft(method: 'put' | 'post', key: string, revision: number, value: CampaignDraft, options: { signal?: AbortSignal; emailCode?: string } = {}) {
   const { offerImage, logoImage, ...fields } = value
   const timeout = AbortSignal.timeout(60_000)
-  const { data, response } = await client.request(method, '/v4/draft', {
+  const { signal, emailCode } = options
+  const { data, error, response } = await client.request(method, '/v4/draft', {
     params: { header: { 'X-Draft-Key': key, 'X-Draft-Revision': revision } },
-    body: { draft: JSON.stringify(fields) },
-    bodySerializer: ({ draft }) => {
+    body: { draft: JSON.stringify(fields), emailCode },
+    bodySerializer: ({ draft, emailCode }) => {
       const form = new FormData()
       form.append('draft', draft)
+      if (emailCode) form.append('emailCode', emailCode)
       if (offerImage) form.append('offerImage', offerImage)
       if (logoImage) form.append('logoImage', logoImage)
       return form
     },
     signal: signal ? AbortSignal.any([timeout, signal]) : timeout,
   })
-  if (!response.ok || data?.status !== (method === 'post' ? 'accepted' : 'saved')) throw new Error('Campaign save failed')
+  if (!response.ok || data?.status !== (method === 'post' ? 'accepted' : 'saved')) throw new Error(error?.message || 'Не удалось сохранить заявку. Попробуйте ещё раз')
 }
 
 export const $api = createClient(client)

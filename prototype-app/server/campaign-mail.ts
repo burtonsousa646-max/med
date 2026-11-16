@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
+import { platformName } from '../shared/brand.ts'
 import { audienceGroups } from '../shared/campaign-draft.ts'
 import { offerLayouts } from '../shared/campaign-offer.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
@@ -14,23 +15,25 @@ const acceptedPart = db.prepare('select 1 from v4_mail_parts where submission_id
 const markPartAccepted = db.prepare('insert into v4_mail_parts (submission_id, part) values (?, ?)')
 
 function campaignMessage(row: MailRow, from: string) {
-  const { business, addresses, online, offer, audience, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
+  const { business, addresses, online, offer, audience, audienceCity, email, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
   return {
-    from,
+    from: { name: platformName, address: from },
     to: recipient,
-    subject: 'Новая заявка на рекламную кампанию МЁД',
+    subject: `Новая заявка на рекламную кампанию · ${platformName}`,
     // shortcut: SMTP can accept a message before a connection drops; reconcile ambiguous deliveries if duplicates must be ruled out.
     messageId: `<v4-campaign-${row.id}@${from.split('@')[1]}>`,
     text: [
       `Заявка ${row.id}`, `Дата: ${new Date(row.submitted_at).toISOString()}`, '',
       `Название: ${business.name}`, `ИНН: ${business.inn}`, `Телефон: ${business.phone}`, `Сфера: ${business.category}`,
-      `Сайт: ${business.website || '—'}`, `Город: ${business.city || '—'}`,
+      ...(email ? [`Подтверждённый email: ${email}`] : []),
+      `Сайт: ${business.website || '—'}`, `Город бизнеса: ${business.city || '—'}`,
       `Работает онлайн: ${online ? 'да' : 'нет'}`, `Адреса: ${addresses.filter(Boolean).join('; ') || '—'}`, '',
       `Оффер: ${offer.title}`, `Промокод: ${offer.promo || '—'}`, `Скидка: ${offer.discount ? offer.discount + '%' : '—'}`,
       `Срок действия: ${offer.until || '—'}`, `Цвет: ${offer.tone}`, `Акция 1 + 1: ${offer.gift ? 'да' : 'нет'}`,
       `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, `Макет: ${offer.layout ? offerLayouts[offer.layout] : 'Автоматически'}`, '',
       ...audienceGroups.map(({ title, choices }, i) => `${title}: ${choices[audience[i]]}`),
-      `Пожелания: ${triggers || '—'}`, 'Условия оферты приняты.',
+      ...(audience[0] === 1 ? [`Город показа: ${audienceCity ?? business.city}`] : []),
+      `Пожелания: ${triggers || '—'}`, 'Условия оферты приняты.', '', platformName,
     ].join('\n'),
     attachments: [{ file: offerImage, label: 'offer' }, { file: logoImage, label: 'logo' }].flatMap(({ file, label }) => file ? [{
       filename: `${label}.${imageExtension(file.type)}`, contentType: file.type, content: Buffer.from(file.base64, 'base64'),
@@ -81,7 +84,7 @@ export async function deliverCampaignMail(send: (row: MailRow) => Promise<void>,
   markSent.run(Date.now(), row.id)
 }
 
-export function startCampaignMail() {
+function campaignSmtp() {
   const {
     CAMPAIGN_MAIL_FROM: from, CAMPAIGN_SMTP_USER: user,
     CAMPAIGN_SMTP_HOST: host = 'postbox.cloud.yandex.net', CAMPAIGN_SMTP_PORT: port = '587',
@@ -93,22 +96,47 @@ export function startCampaignMail() {
     if (passwordPath) pass = readFileSync(passwordPath, 'utf8').trim()
   } catch {
     console.warn('V4 campaign email is queued: SMTP credential file could not be read')
-    return () => {}
+    return undefined
   }
   if (!user || !pass || !host || (port !== '587' && port !== '465') || !from || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(from)) {
     console.warn('V4 campaign email is queued: configure SMTP credentials, port (587 or 465), and CAMPAIGN_MAIL_FROM')
-    return () => {}
+    return undefined
   }
   const transport = nodemailer.createTransport({
     host, port: Number(port), secure: port === '465', requireTLS: port === '587', auth: { user, pass },
     connectionTimeout: 30_000, greetingTimeout: 30_000, socketTimeout: 60_000,
   })
+  return { from, send: (message: SendMailOptions) => transport.sendMail(message) }
+}
+
+export function campaignCodeMessage(email: string, code: string, from: string) {
+  return {
+    from: { name: platformName, address: from },
+    to: [{ address: email, name: '' }],
+    subject: `Код подтверждения почты · ${platformName}`,
+    text: `Код подтверждения почты: ${code}
+
+Он действует 10 минут. Если вы не запрашивали код, просто проигнорируйте письмо.
+
+${platformName}`,
+  }
+}
+
+export async function sendCampaignCode(email: string, code: string) {
+  const smtp = campaignSmtp()
+  if (!smtp) throw new Error('Campaign SMTP unavailable')
+  await smtp.send(campaignCodeMessage(email, code, smtp.from))
+}
+
+export function startCampaignMail() {
+  const smtp = campaignSmtp()
+  if (!smtp) return () => {}
   let running = false
   const tick = async () => {
     if (running) return
     running = true
     try {
-      await deliverCampaignMail(row => sendCampaignMail(row, from, message => transport.sendMail(message)))
+      await deliverCampaignMail(row => sendCampaignMail(row, smtp.from, smtp.send))
     } catch { console.error('V4 campaign mail queue error') }
     finally { running = false }
   }

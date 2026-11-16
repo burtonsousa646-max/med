@@ -1,3 +1,4 @@
+import { platformName } from '../../shared/brand'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -416,7 +417,7 @@ export default function Landing() {
           <FinalCta />
         </main>
         <footer className="footer bl-caption">
-          <span>© 2026 партнёрская платформа билайна</span>
+          <span>© 2026 {platformName}</span>
           <span className="bl-row" style={{ ['--bl-gap' as string]: '24px' }}><Link to="/offer">оферта</Link><Link to="/offer">обработка данных</Link><span className="bl-row" style={{ gap: 4 }}><MapPin size={14} /> Москва</span></span>
         </footer>
       </div>

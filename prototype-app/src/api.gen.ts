@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v4/draft/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Отправить код подтверждения на email для заполненной заявки V4 */
+        post: operations["sendV4EmailCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v4/draft": {
         parameters: {
             query?: never;
@@ -108,7 +125,7 @@ export interface paths {
         put: operations["saveV4Draft"];
         /**
          * Сохранить заполненную заявку и поставить письмо в очередь
-         * @description Повторная отправка тех же данных с тем же ключом возвращает ранее принятую заявку.
+         * @description Для POST нужны email в JSON заявки и emailCode. Повторная отправка тех же данных с действительным кодом возвращает ранее принятую заявку.
          */
         post: operations["submitV4Draft"];
         delete?: never;
@@ -1334,6 +1351,8 @@ export interface components {
                      * @description Логотип, до 5 МиБ
                      */
                     logoImage?: string;
+                    /** @description Одноразовый код из письма. Обязателен при POST. */
+                    emailCode?: string;
                 };
             };
         };
@@ -1492,6 +1511,42 @@ export interface operations {
             429: components["responses"]["Error"];
         };
     };
+    sendV4EmailCode: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Draft-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Код отправлен */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        status: "sent";
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     saveV4Draft: {
         parameters: {
             query?: never;
@@ -1538,6 +1593,7 @@ export interface operations {
             201: components["responses"]["V4Accepted"];
             400: components["responses"]["Error"];
             413: components["responses"]["Error"];
+            422: components["responses"]["Error"];
             429: components["responses"]["Error"];
         };
     };

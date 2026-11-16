@@ -154,6 +154,39 @@ paths:
         '413': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
+  /v4/draft/email:
+    post:
+      tags: [кампании]
+      summary: Отправить код подтверждения на email для заполненной заявки V4
+      operationId: sendV4EmailCode
+      parameters:
+        - name: X-Draft-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, maxLength: 254 }
+      responses:
+        '200':
+          description: Код отправлен
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: sent }
+        '400': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /v4/draft:
     parameters:
       - name: X-Draft-Key
@@ -185,7 +218,7 @@ paths:
     post:
       tags: [кампании]
       summary: Сохранить заполненную заявку и поставить письмо в очередь
-      description: Повторная отправка тех же данных с тем же ключом возвращает ранее принятую заявку.
+      description: Для POST нужны email в JSON заявки и emailCode. Повторная отправка тех же данных с действительным кодом возвращает ранее принятую заявку.
       operationId: submitV4Draft
       requestBody: { $ref: '#/components/requestBodies/V4Draft' }
       responses:
@@ -193,6 +226,7 @@ paths:
         '201': { $ref: '#/components/responses/V4Accepted' }
         '400': { $ref: '#/components/responses/Error' }
         '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
   /catalog:
     get:
@@ -578,6 +612,7 @@ components:
               draft: { type: string, description: 'JSON с полями бизнеса, оффера и аудитории, без файлов' }
               offerImage: { type: string, format: binary, description: 'Изображение оффера, до 5 МиБ' }
               logoImage: { type: string, format: binary, description: 'Логотип, до 5 МиБ' }
+              emailCode: { type: string, pattern: '^[0-9]{6}$', description: 'Одноразовый код из письма. Обязателен при POST.' }
   parameters:
     CampaignId: { name: id, in: path, required: true, schema: { type: integer } }
 

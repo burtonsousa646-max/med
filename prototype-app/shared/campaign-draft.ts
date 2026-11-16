@@ -1,10 +1,10 @@
 import { innError, phoneError, textError, websiteError, type Business } from './campaign-business.ts'
 import { emptyOffer, offerErrors, offerLayouts, type OfferDraft } from './campaign-offer.ts'
 
-export const campaignStages = ['business', 'details', 'offer', 'audience', 'success'] as const
+export const campaignStages = ['business', 'details', 'offer', 'audience', 'email', 'success'] as const
 export type CampaignDraft = {
   business: Business; addresses: string[]; online: boolean; offer: OfferDraft;
-  offerImage: File | null; logoImage: File | null; audience: number[]; triggers: string;
+  offerImage: File | null; logoImage: File | null; audience: number[]; audienceCity?: string; email?: string; triggers: string;
   confirmedInn: string; generatedTitle: string; filled: boolean; hasProfile: boolean;
   stage: number; reached: number; offerAccepted?: boolean;
 }
@@ -13,9 +13,18 @@ export function emptyCampaignDraft(): CampaignDraft {
   return {
     business: { name: '', inn: '', phone: '', category: '', website: '', city: '' },
     addresses: [''], online: false, offer: { ...emptyOffer }, offerImage: null, logoImage: null,
-    audience: [0, 0, 0, 0, 0], triggers: '', confirmedInn: '', generatedTitle: '',
+    audience: [0, 0, 0, 0, 0], audienceCity: undefined, email: undefined, triggers: '', confirmedInn: '', generatedTitle: '',
     filled: false, hasProfile: false, stage: 0, reached: 0, offerAccepted: false,
   }
+}
+
+export function normalizeCampaignEmail(value: string) {
+  const email = value.trim()
+  const parts = email.split('@')
+  if (email.length > 254 || parts.length !== 2 || parts[0].length > 64
+    || !/^[a-z\d_+%=-]+(?:\.[a-z\d_+%=-]+)*$/i.test(parts[0])
+    || !/^(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?$/i.test(parts[1])) return ''
+  return parts[0] + '@' + parts[1].toLowerCase()
 }
 
 export function isCampaignDraft(value: unknown): value is CampaignDraft {
@@ -29,6 +38,8 @@ export function isCampaignDraft(value: unknown): value is CampaignDraft {
     && ['red', 'green', 'blue', 'violet', 'magenta', 'teal', 'dark', 'light'].includes(draft.offer.tone)
     && Array.isArray(draft.addresses) && draft.addresses.length > 0 && draft.addresses.length <= 10 && draft.addresses.every(address => typeof address === 'string')
     && Array.isArray(draft.audience) && draft.audience.length === 5 && draft.audience.every(index => Number.isInteger(index) && index >= 0 && index <= 2)
+    && (draft.audienceCity === undefined || (typeof draft.audienceCity === 'string' && draft.audienceCity.length <= 80))
+    && (draft.email === undefined || (typeof draft.email === 'string' && Boolean(normalizeCampaignEmail(draft.email))))
     && ['triggers', 'confirmedInn', 'generatedTitle'].every(key => typeof draft[key as keyof CampaignDraft] === 'string')
     && ['online', 'filled', 'hasProfile'].every(key => typeof draft[key as keyof CampaignDraft] === 'boolean')
     && (draft.offerAccepted === undefined || typeof draft.offerAccepted === 'boolean')
@@ -42,7 +53,8 @@ export function campaignAllowedStage(draft: CampaignDraft) {
   if (websiteError(business.website) || textError(business.name) || business.name.length > 80 || textError(business.category, '', 3) || business.category.length > 100
     || (!online && (textError(business.city) || business.city.length > 80 || !addresses.length || addresses.some((address, index) => textError(address, '', 5) || address.length > 200 || addresses.some((other, i) => i !== index && other.trim().toLowerCase() === address.trim().toLowerCase()))))) return 1
   if (!draft.filled || Object.values(offerErrors(offer)).some(Boolean)) return 2
-  if (audience[0] === 1 && (textError(business.city) || business.city.length > 80)) return 3
+  const city = draft.audienceCity ?? business.city
+  if (audience[0] === 1 && (textError(city) || city.length > 80)) return 3
   return 4
 }
 

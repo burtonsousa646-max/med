@@ -8,7 +8,7 @@ export function assertCampaignDemo() {
   assert(body.scrollWidth <= body.clientWidth + 1, 'No horizontal overflow in the form')
   assert(dialog.contains(document.activeElement), 'Focus stays inside the dialog')
   if (dialog.matches('main')) assert(!document.querySelector('dialog[open]'), 'Page flow has no modal dialog')
-  assert(dialog.querySelectorAll('.v3-progress li').length === 3, 'Three setup steps remain')
+  assert(dialog.querySelectorAll('.v3-progress li').length === (dialog.matches('main') ? 4 : 3), 'Campaign progress reflects the number of steps')
   const footer = dialog.querySelector('footer').getBoundingClientRect()
   assert(footer.bottom <= innerHeight && footer.top > 0, 'Next action remains visible')
   const completed = dialog.querySelector('.v3-complete')
@@ -25,7 +25,9 @@ export function assertCampaignDemo() {
     const controls = editor.querySelector('.campaign-offer-controls')
     assert(controls.hasAttribute('inert') === generating, 'Editing is enabled only when the offer is ready')
     if (generating) {
-      assert(dialog.querySelector('button[type="submit"]').disabled, 'Cannot advance during generation')
+      const next = dialog.querySelector('button[type="submit"]')
+      if (dialog.matches('main')) assert(!next.disabled && next.textContent.includes('Продолжить с черновиком'), 'V4 offers an immediate draft in the primary action')
+      else assert(next.disabled, 'Dialog cannot advance during generation')
       assert(editor.querySelector('.offer-generation canvas'), 'Dot generation stays inside the existing card')
       assert(editor.querySelector('.offer-canvas-status [role="status"]').textContent.trim(), 'Generation has a concise accessible status')
     }
@@ -33,8 +35,11 @@ export function assertCampaignDemo() {
   if (completed) {
     assert(completed.textContent.includes('оффер'), 'Offer reaches the success screen')
     assert(completed.querySelector('.campaign-summary-creative'), 'Success shows the configured creative')
-    assert(dialog.querySelectorAll('.v3-progress li.is-done').length === 3, 'All three steps are complete')
-    if (dialog.matches('main')) assert(location.hash.endsWith('/success'), 'Audience leads straight to success')
+    assert(dialog.querySelectorAll('.v3-progress li.is-done').length === (dialog.matches('main') ? 4 : 3), 'All steps are complete')
+    if (dialog.matches('main')) {
+      assert(location.hash.endsWith('/success'), 'Confirmed email leads to success')
+      assert(completed.querySelector('h3').textContent.trim() === 'Заявка принята', 'V4 confirms that the request was accepted')
+    }
   }
   const audience = dialog.querySelector('.campaign-audience-layout')
   if (audience) {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { analytics } from '../analytics'
-import { sendCampaignDraft } from '../api'
+import { sendCampaignDraft, sendCampaignEmailCode } from '../api'
 import { Brand } from '../ui'
 import CampaignWizard from './CampaignWizard'
 import { campaignDraftForServer, campaignStages, emptyCampaignDraft, loadCampaignDraft, saveCampaignDraft, type StoredCampaignDraft } from './campaign-draft'
@@ -46,7 +46,7 @@ export default function CampaignPage() {
     request.current?.abort()
     const controller = new AbortController()
     request.current = controller
-    void sendCampaignDraft('put', syncId.current, next.revision, campaignDraftForServer(next.draft), controller.signal).then(() => {
+    void sendCampaignDraft('put', syncId.current, next.revision, campaignDraftForServer(next.draft), { signal: controller.signal }).then(() => {
       if (pending.current === next && !controller.signal.aborted) { pending.current = null; setServerError(false) }
     }).catch(() => {
       if (pending.current === next && !controller.signal.aborted) setServerError(true)
@@ -96,14 +96,21 @@ export default function CampaignPage() {
     timer.current = setTimeout(flush, 650)
   }, [flush, saveLocal])
 
-  const submit = useCallback(async (value: StoredCampaignDraft) => {
+  const requestEmailCode = useCallback(async (value: StoredCampaignDraft, email: string) => {
+    syncId.current ||= crypto.randomUUID()
+    const token = await saveLocal(value)
+    await sendCampaignDraft('put', syncId.current, token, campaignDraftForServer(value))
+    await sendCampaignEmailCode(syncId.current, email)
+  }, [saveLocal])
+
+  const submit = useCallback(async (value: StoredCampaignDraft, emailCode: string) => {
     syncId.current ||= crypto.randomUUID()
     clearTimeout(timer.current)
     request.current?.abort()
     try {
       const token = await saveLocal(value)
       if (token === revision.current) pending.current = { draft: value, revision: token }
-      await sendCampaignDraft('post', syncId.current, token, campaignDraftForServer(value))
+      await sendCampaignDraft('post', syncId.current, token, campaignDraftForServer(value), { emailCode })
       if (pending.current?.revision === token) pending.current = null
       setServerError(false)
     } catch (error) {
@@ -117,7 +124,7 @@ export default function CampaignPage() {
       <header className="campaign-page-header" onClickCapture={event => { if (event.target instanceof Element && event.target.closest('a')) analytics.event('v4_flow_exit', { target: 'landing', source: 'header' }) }}><Brand/><Link className="bl-btn" to="/"><ArrowLeft size={18}/>к лендингу</Link></header>
       {storage === 'error' && <p className="campaign-page-storage bl-caption" role="status">Не удалось сохранить черновик в браузере. Оставьте страницу открытой, чтобы не потерять данные</p>}
       {serverError && <p className="campaign-page-storage bl-caption" role="status">Черновик пока не сохранился на сервере. <button type="button" className="v3-text-button" onClick={flush}>Повторить сохранение</button></p>}
-      {draft ? <CampaignWizard open onClose={() => navigate('/')} presentation="page" initialDraft={draft} onDraftChange={save} onSubmitDraft={submit} storageState={storage}/> : <main className="campaign-page-loading" aria-busy="true" aria-label="Загрузка черновика"><div/><div/><div/></main>}
+      {draft ? <CampaignWizard open onClose={() => navigate('/')} presentation="page" initialDraft={draft} onDraftChange={save} onRequestEmailCode={requestEmailCode} onSubmitDraft={submit} storageState={storage}/> : <main className="campaign-page-loading" aria-busy="true" aria-label="Загрузка черновика"><div/><div/><div/></main>}
     </div>
   </div>
 }

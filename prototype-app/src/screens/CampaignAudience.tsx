@@ -70,20 +70,21 @@ export function AudienceSetup({ groups, values, onChange, city, onCityChange, on
   </div>
 }
 
-export function CampaignSuccess({ headingRef, preview, name, summary, offerTitle, saved }: {
-  headingRef: Ref<HTMLHeadingElement>; preview: ReactNode; name: string; summary: AudienceSummary; offerTitle: string; saved: boolean;
+export function CampaignSuccess({ headingRef, preview, name, summary, offerTitle, email, submitted, saved }: {
+  headingRef: Ref<HTMLHeadingElement>; preview: ReactNode; name: string; summary: AudienceSummary; offerTitle: string; email?: string; submitted: boolean; saved: boolean;
 }) {
   const reduce = useReducedMotion()
   return <section className="campaign-success v3-complete" aria-label="Настройка завершена">
     <div className="campaign-success-copy">
       <div className="campaign-success-check" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><motion.path d="M12 24.5 20 33 37 15" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: .55, ease: 'easeOut' }}/></svg></div>
-      <h3 ref={headingRef} tabIndex={-1}>Отлично,<br/>всё готово!</h3>
-      <p>Предложение готово, аудитория выбрана. Вы можете вернуться к настройкам</p>
+      <h3 ref={headingRef} tabIndex={-1}>{submitted ? 'Заявка принята' : <>Отлично,<br/>всё готово!</>}</h3>
+      <p>{submitted ? 'Команда билайна получит настройки вашей кампании. Показы начнутся после запуска.' : 'Предложение готово, аудитория выбрана. Вы можете вернуться к настройкам'}</p>
       <ul className="campaign-success-list">
         <li><Check size={18}/><span>Ваш бизнес<b>{name}</b></span></li>
         <li><Check size={18}/><span>Ваш оффер<b>{offerTitle}</b></span></li>
         <li><Check size={18}/><span>Ваши клиенты<b>{summary.place} · {summary.people}</b></span></li>
       </ul>
+      {email && <p className="campaign-success-saved"><Check size={14}/>Почта подтверждена</p>}
       {saved && <p className="campaign-success-saved"><Check size={14}/>Настройки сохранены</p>}
     </div>
     <div className="campaign-success-art"><div className="campaign-success-offer">{preview}<div><span>Когда покажем</span><p>{summary.moment}</p></div></div></div>

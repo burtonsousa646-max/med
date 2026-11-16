@@ -2,15 +2,16 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { animate, motion, useInView, useReducedMotion, AnimatePresence } from 'motion/react'
 import { Check as CheckIcon, X } from 'lucide-react'
+import { platformName } from '../shared/brand'
 import logoUrl from '../../design-system/assets/beeline-logo.svg'
 import { $api, act, queryClient, useCampaigns, useCatalog, useCompany, type S } from './api'
 
 /* ───────── бренд и шапка сценария ───────── */
 export function Brand({ to = '/' }: { to?: string }) {
   return (
-    <Link className="brand" to={to} aria-label="Партнёрская платформа билайна, на главную">
+    <Link className="brand" to={to} aria-label={`${platformName}, на главную`}>
       <img className="bl-logo" src={logoUrl} alt="" width={44} height={44} />
-      <span className="brand__name">партнёрская<br />платформа</span>
+      <span className="brand__name">партнерская<br />платформа</span>
     </Link>
   )
 }

@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { campaignAllowedStage, emptyCampaignDraft, isCampaignDraft, type CampaignDraft } from '../shared/campaign-draft.ts'
+import { campaignAllowedStage, emptyCampaignDraft, isCampaignDraft, normalizeCampaignEmail, type CampaignDraft } from '../shared/campaign-draft.ts'
 import { db } from './db.ts'
+import { consumeCampaignCode, draftKeyPattern } from './campaign-email.ts'
 
 type ImageData = { name: string; type: string; base64: string }
 export type IntakeData = Omit<CampaignDraft, 'offerImage' | 'logoImage'> & { offerImage: ImageData | null; logoImage: ImageData | null }
@@ -40,10 +41,11 @@ async function parseDraft(form: FormData, submit: boolean): Promise<IntakeData> 
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) throw new Error('Invalid draft')
   const value = { ...fields, offerImage: form.get('offerImage'), logoImage: form.get('logoImage') }
   if (!isCampaignDraft(value) || !value.offerAccepted || (submit && campaignAllowedStage(value) < 4)) throw new Error('Invalid draft')
+  const stage = submit ? 5 : Math.min(value.stage, campaignAllowedStage(value))
   return {
-    ...pick(value, sample), business: pick(value.business, sample.business),
+    ...pick(value, sample), email: submit && value.email ? normalizeCampaignEmail(value.email) : undefined, business: pick(value.business, sample.business),
     offer: { ...pick(value.offer, sample.offer), ...(value.offer.layout && { layout: value.offer.layout }) },
-    stage: submit ? 4 : Math.min(3, value.stage), reached: submit ? 4 : Math.min(3, value.reached),
+    stage, reached: submit ? 5 : Math.min(4, value.reached),
     offerImage: await packImage(value.offerImage), logoImage: await packImage(value.logoImage),
   }
 }
@@ -63,33 +65,45 @@ for (const method of ['PUT', 'POST'] as const) {
     const key = c.req.header('X-Draft-Key') ?? ''
     const revision = Number(c.req.header('X-Draft-Revision'))
     const submit = method === 'POST'
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(key)
+    if (!draftKeyPattern.test(key)
       || !Number.isSafeInteger(revision) || revision < 1) {
       return c.json({ message: 'Не удалось определить черновик' }, 400)
     }
     if (!c.req.header('content-type')?.startsWith('multipart/form-data;')) return c.json({ message: 'Неверный формат заявки' }, 400)
 
-    let data: string
-    try { data = JSON.stringify(await parseDraft(await c.req.formData(), submit)) }
+    let draft: IntakeData
+    let code: FormDataEntryValue | null
+    try {
+      const form = await c.req.formData()
+      draft = await parseDraft(form, submit)
+      code = form.get('emailCode')
+    }
     catch { return c.json({ message: 'Проверьте данные и изображения заявки' }, 400) }
 
+    const data = JSON.stringify(draft)
     const now = Date.now()
     if (!submit) {
       saveDraft.run(key, revision, data, now)
       return c.json({ status: 'saved' })
     }
+    if (!draft.email || typeof code !== 'string' || !/^\d{6}$/.test(code)) return c.json({ message: 'Введите код из письма' }, 422)
     const digest = createHash('sha256').update(data).digest('hex')
     db.exec('begin immediate')
     try {
       const existing = findSubmission.get(key, digest) as { id: string } | undefined
+      const { total } = recentSubmissions.get(now - 60_000) as { total: number }
+      if (!existing && total >= 30) {
+        db.exec('rollback')
+        return c.json({ message: 'Слишком много заявок. Попробуйте через минуту' }, 429)
+      }
+      const codeError = consumeCampaignCode(key, draft.email, code, digest, now)
+      if (codeError) {
+        db.exec('commit')
+        return c.json({ message: codeError }, 422)
+      }
       if (existing) {
         db.exec('commit')
         return c.json({ id: existing.id, status: 'accepted' })
-      }
-      const { total } = recentSubmissions.get(now - 60_000) as { total: number }
-      if (total >= 30) {
-        db.exec('rollback')
-        return c.json({ message: 'Слишком много заявок. Попробуйте через минуту' }, 429)
       }
       const id = randomUUID()
       saveDraft.run(key, revision, data, now)

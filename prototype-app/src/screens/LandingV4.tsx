@@ -1,13 +1,14 @@
+import { platformName } from '../../shared/brand'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { analytics, type EventParams } from '../analytics'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react'
 import { ArrowRight, Check } from 'lucide-react'
 import { Brand } from '../ui'
 import { Creative, creativeOf } from '../creative'
 import { DEMO_AD } from '../mock'
 import { AppScreenshotPhone } from './AppScreenshotPhone'
-import { CampaignAction, Hero, LaunchContext, SketchMetrics, SURFACES as BASE_SURFACES, useHeaderCta } from './LandingV2'
+import { Hero, SketchMetrics, SURFACES as BASE_SURFACES, useHeaderCta } from './LandingV2'
 import { HowGraphic } from './HowGraphics'
 import './landing-v3.css'
 import './landing-motion.css'
@@ -15,18 +16,23 @@ import './v3-v2-theme.css'
 import './landing-v4.css'
 
 const SURFACES = BASE_SURFACES.map(surface => ({ ...surface, ...{
-  main: { d: 'Когда абонент открывает приложение и проверяет баланс' },
-  showcase: { t: 'в разделе «подарки и акции»', d: 'Среди акций магазинов и кафе рядом' },
-  paid: { d: 'После оплаты услуг билайна' },
-  rest: { t: 'на витринах партнёров', d: 'На сайтах и в приложениях партнёров' },
+  main: { short: 'Главная', d: 'Когда абонент открывает приложение и проверяет баланс' },
+  showcase: { short: 'Подарки и акции', t: 'в разделе «подарки и акции»', d: 'Среди акций магазинов и кафе рядом' },
+  paid: { short: 'После оплаты', d: 'После оплаты услуг билайна' },
+  rest: { short: 'Витрины партнёров', t: 'на витринах партнёров', d: 'На сайтах и в приложениях партнёров' },
 }[surface.k] }))
 const STEPS = [
   { kind: 'business', title: 'Информация о компании', text: 'Введите ИНН и телефон, затем добавьте адреса ваших точек' },
   { kind: 'offer', title: 'соберите оффер', text: 'Подготовим предложение по данным компании. Вы сможете изменить фото, скидку и промокод' },
   { kind: 'audience', title: 'выберите клиентов', text: 'Выберите клиентов, город и подходящий момент для показа' },
-  { kind: 'guests', title: 'встречайте новых гостей', text: 'Принимайте гостей и помогайте им воспользоваться акцией' },
+  { kind: 'guests', title: 'встречайте новых гостей', text: 'После запуска кампании гости смогут воспользоваться вашей акцией' },
 ] as const
 const CAMPAIGN_START = '/v4/create'
+
+function StartCampaignLink({ className, arrow }: { className: string; arrow?: number }) {
+  return <Link data-campaign-start className={className} to={CAMPAIGN_START}>запустить сейчас{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
+}
+
 const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
 const STEP_STATUS = [
   'точка добавлена', 'креатив готов', 'аудитория подобрана', 'визит подтверждён',
@@ -54,28 +60,32 @@ function HowItWorks() {
   return <section id="how" className="bl-section bl-section--wide v4-how" aria-labelledby="v4-how-title">
     <div className="v4-how-head">
       <h2 id="v4-how-title" className="bl-display-l">как это работает</h2>
-      <CampaignAction className="bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction>
+      <StartCampaignLink className="bl-btn bl-btn--dark" arrow={18}/>
     </div>
     <ol className="v4-step-stack" ref={ref}>{STEPS.map((step, index) => <HowStep key={step.kind} step={step} index={index} progress={scrollYProgress}/>)}</ol>
   </section>
 }
 
 function Placements() {
-  const [selected, setSelected] = useState(0)
+  const [{ selected, animate }, setPlacement] = useState({ selected: 0, animate: false })
   return <section id="where" className="bl-section bl-section--wide v4-placements">
     <div className="section-head"><h2 className="bl-display-l">где покажем</h2><p className="bl-body bl-secondary">В приложении билайна и на площадках партнёров</p></div>
     <div className="v4-placement-layout">
-      <div className="v4-placement-controls">
-        {SURFACES.map((surface, index) => <button key={surface.k} type="button" aria-pressed={selected === index} aria-controls="v4-placement-phone" className={`v4-placement-choice${selected === index ? ' is-selected' : ''}`} onClick={() => { if (selected !== index) analytics.event('v4_placement_select', { placement: surface.k }); setSelected(index) }}>
-          <span className="v4-placement-number">0{index + 1}</span><span><span className="bl-h3">{surface.t}</span><span className="bl-body bl-secondary">{surface.d}</span></span><ArrowRight size={20}/>
+      <div className="v4-placement-controls" data-animate={animate}>
+        {SURFACES.map((surface, index) => <button key={surface.k} type="button" aria-pressed={selected === index} aria-controls="v4-placement-phone" className={`v4-placement-choice${selected === index ? ' is-selected' : ''}`} onClick={event => {
+          if (selected === index) return
+          analytics.event('v4_placement_select', { placement: surface.k })
+          setPlacement({ selected: index, animate: event.detail > 0 })
+        }}>
+          <span className="v4-placement-number">0{index + 1}</span><span><span className="bl-h3">{surface.t}</span><span className="v4-placement-label">{surface.short}</span><span className="bl-body bl-secondary">{surface.d}</span></span><ArrowRight size={20}/>
         </button>)}
       </div>
       <div className="v4-placement-stage" id="v4-placement-phone">
         <span className="v4-placement-orbit" aria-hidden="true"/>
-        <AppScreenshotPhone kind={SURFACES[selected].k}/>
+        <AppScreenshotPhone kind={SURFACES[selected].k} animate={animate}/>
         <div className="v4-placement-caption" aria-live="polite"><span><i className="v4-status-dot"/>{SURFACES[selected].t}</span><p>{SURFACES[selected].d}</p></div>
       </div>
-      <CampaignAction className="v4-placement-start bl-btn bl-btn--dark">запустить сейчас <ArrowRight size={18}/></CampaignAction>
+      <StartCampaignLink className="v4-placement-start bl-btn bl-btn--dark" arrow={18}/>
     </div>
   </section>
 }
@@ -83,7 +93,7 @@ function Placements() {
 function Final() {
   return <section id="v2-final" className="bl-section bl-section--wide v4-final" data-theme="invert">
     <div className="v4-final-copy"><h2 className="bl-display-l">привлекайте клиентов с билайном</h2>
-      <CampaignAction className="bl-btn bl-btn--primary bl-btn--xl">запустить сейчас <ArrowRight size={22}/></CampaignAction>
+      <StartCampaignLink className="bl-btn bl-btn--primary bl-btn--xl" arrow={22}/>
       <p className="bl-caption bl-secondary">начните с данных компании</p>
     </div>
     <div className="v4-final-preview" aria-label="Пример кампании кофейни Зерно">
@@ -95,10 +105,8 @@ function Final() {
 }
 
 export default function LandingV4() {
-  const start = useNavigate()
   const showCta = useHeaderCta()
   const reduce = useReducedMotion()
-  const [motionPaused, setMotionPaused] = useState(false)
   const seen = useRef(new Set<string>())
   useEffect(() => {
     const names: Record<string, EventParams['section']> = { 'v2-hero': 'hero', how: 'how', where: 'where', 'v2-final': 'final' }
@@ -127,7 +135,7 @@ export default function LandingV4() {
     const section = target.closest('section')?.id
     const source = target.closest('header') ? 'header' : section === 'v2-hero' ? 'hero' : section === 'how' ? 'how' : section === 'where' ? 'where' : section === 'v2-final' ? 'final' : 'direct'
     analytics.event('v4_cta_click', { source })
-  }}><LaunchContext.Provider value={() => start(CAMPAIGN_START)}>
+  }}>
     <div className="bl-page wrap v2 v4">
       <a className="v2-skip-link" href="#v4-content" onClick={event => { event.preventDefault(); navigate('v4-content') }}>к содержимому</a>
       <header className="bl-header landing-head v2-head">
@@ -135,25 +143,23 @@ export default function LandingV4() {
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
           <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
-          <Link data-campaign-start className={`bl-btn ${showCta ? 'bl-btn--primary' : 'bl-btn--dark'}`} to={CAMPAIGN_START}>запустить сейчас</Link>
+          <StartCampaignLink className={`bl-btn ${showCta ? 'bl-btn--primary' : 'bl-btn--dark'}`}/>
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
-        <Hero phone={<AppScreenshotPhone kind="main"/>} motionPaused={motionPaused}/><SketchMetrics calm pulse motionPaused={motionPaused}/><HowItWorks/>
+        <Hero phone={<AppScreenshotPhone kind="main"/>} motionPaused={false} actions={<StartCampaignLink className="bl-btn bl-btn--primary bl-btn--xl"/>}/><SketchMetrics calm pulse/><HowItWorks/>
         {/* Временно скрыто: <Clients calm/> */}
         <Placements/>
         {/* Временно скрыто: <ForEveryone calm/> */}
         <Final/>
       </main>
       <footer className="footer bl-caption">
-        <span>© 2026 партнёрская платформа билайна</span>
+        <span>© 2026 {platformName}</span>
         <span className="bl-row">
           <a href={`${import.meta.env.BASE_URL}docs/oferta_0.1.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'offer_document' })}>оферта</a>
           <Link to="/v4/privacy" onClick={() => analytics.event('v4_navigation_click', { source: 'footer', target: 'privacy_document' })}>обработка данных</Link>
-          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Карта © OpenStreetMap</a>
-          <button type="button" className="v4-motion-toggle" onClick={() => setMotionPaused(value => !value)}>{motionPaused ? 'возобновить анимацию' : 'остановить анимацию'}</button>
         </span>
       </footer>
     </div>
-  </LaunchContext.Provider></div>
+  </div>
 }

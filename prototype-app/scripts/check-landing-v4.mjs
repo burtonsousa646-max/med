@@ -8,14 +8,15 @@ export function assertLandingV4Layout() {
   const video = document.querySelector('#v2-hero video')
   assert(video?.loop && video.muted && video.playsInline && video.poster.endsWith('/video/hero.jpg'), 'Hero video must loop with a poster and no audio')
   assert(video.autoplay === !reduced, 'Hero video must respect reduced motion')
-  assert(!document.querySelector('main .v2-hero__pause, main .v4-map-toggle'), 'The hero and map must have no playback icons')
-  const motionToggle = document.querySelector('footer .v4-motion-toggle')
-  assert(motionToggle && Boolean(motionToggle.getClientRects().length) === !reduced, 'The footer motion control must be available when motion is enabled')
+  assert(!document.querySelector('.v2-hero__pause, .v4-map-toggle, .v4-motion-toggle'), 'No standalone playback controls in V4')
+  assert(document.querySelector('.v2-sketch-metrics .v4-map-credit') && !document.querySelector('footer a[href*="openstreetmap.org"]'), 'Map credit is next to the map')
   const box = selector => document.querySelector(selector).getBoundingClientRect()
   const header = document.querySelector('.v4 header')
   assert(box('.v4 header a').right <= box('.v4 header nav').left, 'Header controls overlap the brand')
   const headerStart = header.querySelector('nav a[data-campaign-start]')
   assert(headerStart?.getAttribute('href') === '#/v4/create' && headerStart.getClientRects().length > 0, 'The visible header CTA must open V4 campaign setup')
+  assert([...document.querySelectorAll('[data-campaign-start]')].every(link => link.matches('a[href="#/v4/create"]:not([aria-haspopup])') &&
+    link.textContent.trim() === 'запустить сейчас'), 'All V4 entry points must be links with the same campaign label')
   assert(!header.querySelector('a[href*="/login"]'), 'V4 header must not link to the old login')
 
   const hero = box('#v2-hero')

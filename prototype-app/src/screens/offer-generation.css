@@ -13,6 +13,7 @@
 .offer-reveal.offer-generation[data-ready=true] {
   animation: offer-generation-resolve 1200ms cubic-bezier(.22,1,.36,1) both;
 }
+.campaign-page .offer-reveal.offer-generation[data-ready=true] { animation-duration: 180ms; }
 .offer-reveal.offer-generation[data-paused=true] { animation-play-state: paused; }
 @keyframes offer-generation-resolve {
   0%, 32% { opacity: 1; }

@@ -1,0 +1,70 @@
+.staff-page { width: min(1440px, 100%); margin-inline: auto; padding-inline: clamp(16px, 4vw, 48px); }
+.staff-page .cab { padding-bottom: 56px; }
+.staff-page .cab-main, .staff-case-column { gap: 16px; }
+.staff-page-title { gap: 12px; align-items: end; }
+.staff-page-title p, .staff-case-title p { margin: 8px 0 0; }
+.staff-nav { gap: 20px; }
+.staff-account { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; overflow-wrap: anywhere; }
+.staff-account button { min-height: 36px; }
+.staff-panel { width: 100%; max-width: none; min-width: 0; }
+.staff-panel h2 { margin: 0 0 16px; }
+.staff-search { gap: 8px; margin-bottom: 20px; }
+.staff-search-field { position: relative; display: flex; align-items: center; width: min(100%, 390px); }
+.staff-search-field svg { position: absolute; left: 16px; pointer-events: none; color: var(--color-text-secondary); }
+.staff-search-field .bl-input { padding-inline-start: 44px; width: 100%; }
+.staff-table td { vertical-align: top; }
+.staff-table td:nth-child(1), .staff-table td:nth-child(2), .staff-table td:nth-child(3) { white-space: normal; overflow-wrap: anywhere; }
+.staff-table td:nth-child(2) { width: 29%; }
+.staff-row-link { color: var(--color-text-primary); font-weight: 600; }
+.staff-row-link:hover { text-decoration: underline; }
+.staff-subline { display: block; margin-top: 4px; }
+.staff-empty { margin: 20px 0 8px; }
+.staff-pagination { justify-content: space-between; gap: 8px; margin-top: 16px; }
+.staff-retry { flex-wrap: wrap; justify-content: space-between; }
+.staff-back { align-self: flex-start; }
+.staff-case { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px; }
+.staff-case-column { display: grid; min-width: 0; }
+.staff-case-title h1 { overflow-wrap: anywhere; }
+.staff-fields { display: grid; gap: 0; margin: 0; }
+.staff-fields > div { display: grid; grid-template-columns: minmax(100px, .75fr) minmax(0, 1fr); gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--color-border-secondary); }
+.staff-fields > div:last-child { border: 0; }
+.staff-fields dt { color: var(--color-text-secondary); }
+.staff-fields dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.staff-fields ul { margin: 0; padding-left: 18px; }
+.staff-fields .bl-tag { margin-top: 4px; }
+.staff-offer .campaign-creative { margin-bottom: 16px; border-radius: var(--radius-500); }
+.staff-attachments { gap: 8px; margin-top: 16px; }
+.staff-member-form { align-items: end; gap: 12px; }
+.staff-member-form .bl-field { width: min(100%, 390px); }
+.staff-member-form button { min-height: 44px; }
+.staff-member-feedback { margin: 14px 0 0; overflow-wrap: anywhere; }
+.staff-members-table td:first-child { overflow-wrap: anywhere; }
+.staff-members-table td:nth-child(2) { white-space: normal; }
+.staff-login { width: min(1440px, 100%); margin-inline: auto; padding: 28px clamp(16px, 4vw, 48px) 48px; }
+.staff-login-card { width: min(100%, 500px); margin: clamp(40px, 10vh, 104px) auto 0; }
+.staff-login-card .bl-h1 { margin-block: 12px 6px; }
+.staff-login-card p { margin-block: 0 16px; }
+.staff-login-card form { --bl-gap: 12px; }
+.staff-login-card form p { margin: 0; }
+.staff-login-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--color-brand-primary); color: var(--color-static-grey-800); }
+.staff-login-actions { gap: 8px; margin-top: 16px; }
+.staff-login-address { overflow-wrap: anywhere; }
+.staff-page :is(a, button, input):focus-visible, .staff-login :is(a, button, input):focus-visible { outline: 2px solid var(--color-text-link); outline-offset: 3px; }
+@media (max-width: 1023px) {
+  .staff-page .cab { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .staff-nav { position: relative; top: auto; flex-direction: row; align-items: center; flex-wrap: wrap; padding: 12px; gap: 10px; }
+  .staff-account { margin-left: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .staff-account button { min-height: 44px; }
+  .staff-nav nav { display: flex; flex-wrap: wrap; }
+  .staff-case { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .staff-page-title { align-items: start; }
+  .staff-table :is(th, td):nth-child(3) { display: none; }
+  .staff-table :is(th, td):nth-child(4) { white-space: normal; }
+  .staff-panel { padding: 16px; }
+  .staff-members-table :is(th, td):last-child { display: none; }
+}
+@media (max-width: 400px) {
+  .staff-table :is(th, td):nth-child(2) { display: none; }
+}

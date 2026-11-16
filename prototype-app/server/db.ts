@@ -26,6 +26,16 @@ db.exec(`
     id integer primary key, draft_id text not null, email text not null, code_hash text not null,
     sent_at integer not null, attempts integer not null default 0, accepted_digest text
   );
+  create table if not exists v4_staff_codes (
+    email text primary key, code_hash text not null, sent_at integer not null, attempts integer not null default 0,
+    window_start integer not null, sent_count integer not null
+  );
+  create table if not exists v4_staff_members (
+    email text primary key, added_at integer not null, added_by text not null
+  );
+  create table if not exists v4_staff_sessions (
+    token_hash text primary key, email text not null, expires_at integer not null
+  );
   create table if not exists v4_mail_parts (
     submission_id text not null references v4_submissions on delete cascade,
     part integer not null,

@@ -14,6 +14,7 @@ const Landing = lazy(() => import('./screens/Landing'))
 const LandingV2 = lazy(() => import('./screens/LandingV2'))
 const LandingV4 = lazy(() => import('./screens/LandingV4'))
 const CampaignPage = lazy(() => import('./screens/CampaignPage'))
+const V4Staff = lazy(() => import('./screens/V4Staff'))
 const LandingV3 = lazy(() => import('./screens/LandingV3'))
 const Build = lazy(() => import('./screens/Build'))
 const Near = lazy(() => import('./screens/Near'))
@@ -63,6 +64,7 @@ function LatestStats() {
 function OnRoute() {
   const { pathname, search } = useLocation()
   useEffect(() => {
+    if (pathname.startsWith('/v4/staff')) { analytics.view(null); return }
     if (pathname.startsWith('/v4/create')) return // Wizard sends only validated, visible steps.
     const page = pathname === '/' ? '/v4' : pathname
     const tracked = Object.hasOwn(pages, page) && (pathname !== '/login' || new URLSearchParams(search).get('from') === 'v4')
@@ -70,6 +72,7 @@ function OnRoute() {
   }, [pathname, search])
   useEffect(() => {
     scrollTo(0, 0)
+    if (pathname.startsWith('/v4/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/' || pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
   }, [pathname])
@@ -107,6 +110,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
                 <Route path="/v4/create/:stage?" element={<CampaignPage />} />
+                <Route path="/v4/staff/:id?" element={<V4Staff />} />
                 <Route path="/v4/offer" element={<PublicDocument />} />
                 <Route path="/v4/privacy" element={<PublicDocument privacy />} />
                 <Route path="/mvp" element={<LandingV2 />} />

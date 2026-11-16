@@ -109,12 +109,13 @@ function campaignSmtp() {
   return { from, send: (message: SendMailOptions) => transport.sendMail(message) }
 }
 
-export function campaignCodeMessage(email: string, code: string, from: string) {
+export function campaignCodeMessage(email: string, code: string, from: string, purpose: 'confirmation' | 'staff' = 'confirmation') {
+  const label = purpose === 'staff' ? 'Код входа для сотрудника' : 'Код подтверждения почты'
   return {
     from: { name: platformName, address: from },
     to: [{ address: email, name: '' }],
-    subject: `Код подтверждения почты · ${platformName}`,
-    text: `Код подтверждения почты: ${code}
+    subject: `${label} · ${platformName}`,
+    text: `${label}: ${code}
 
 Он действует 10 минут. Если вы не запрашивали код, просто проигнорируйте письмо.
 
@@ -126,6 +127,12 @@ export async function sendCampaignCode(email: string, code: string) {
   const smtp = campaignSmtp()
   if (!smtp) throw new Error('Campaign SMTP unavailable')
   await smtp.send(campaignCodeMessage(email, code, smtp.from))
+}
+
+export async function sendV4StaffCode(email: string, code: string) {
+  const smtp = campaignSmtp()
+  if (!smtp) throw new Error('Campaign SMTP unavailable')
+  await smtp.send(campaignCodeMessage(email, code, smtp.from, 'staff'))
 }
 
 export function startCampaignMail() {

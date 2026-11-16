@@ -12,9 +12,12 @@ import { campaignIntake } from './campaign-intake.ts'
 import { campaignSite } from './campaign-site.ts'
 import { offerAi } from './offer-ai.ts'
 import { offerCutout } from './offer-cutout.ts'
-import { sendCampaignCode, startCampaignMail } from './campaign-mail.ts'
+import { sendCampaignCode, sendV4StaffCode, startCampaignMail } from './campaign-mail.ts'
 import { createCampaignEmail } from './campaign-email.ts'
 import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, trackingUrl, view, type CampaignRow, type OfferType } from './domain.ts'
+
+import { createV4Staff } from './v4-staff.ts'
+import { v4StaffAddresses, v4StaffAdministrators } from './v4-staff-addresses.ts'
 
 type S = components['schemas']
 type Env = { Variables: { cid: string } }
@@ -30,6 +33,7 @@ app.route('/v4', createCampaignEmail(sendCampaignCode))
 app.route('/v4', campaignSite)
 app.route('/v4', offerAi)
 app.route('/v4', offerCutout)
+app.route('/v4/staff', createV4Staff({ addresses: v4StaffAddresses, administrators: v4StaffAdministrators }, sendV4StaffCode))
 
 /* ───────── демо-копия компании по cookie. Справочники и подтверждение по ссылке её не требуют ───────── */
 const COOKIE = 'demo'

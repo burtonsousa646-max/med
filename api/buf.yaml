@@ -5,6 +5,15 @@ modules:
 lint:
   use:
     - STANDARD
+  # Имена стандартного grpc.health.v1 сохраняются для совместимости.
+  # Исключения относятся только к этому внешнему протоколу.
+  ignore_only:
+    SERVICE_SUFFIX:
+      - proto/grpc/health/v1/health.proto
+    ENUM_VALUE_PREFIX:
+      - proto/grpc/health/v1/health.proto
+    ENUM_ZERO_VALUE_SUFFIX:
+      - proto/grpc/health/v1/health.proto
 breaking:
   use:
     - FILE

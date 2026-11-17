@@ -78,7 +78,10 @@ packages:
 api/
   openapi/
     <name>.yaml                 внешний API, который отдаёт API Gateway
+  operational/
+    gateway-health.yaml        технический HTTP-контракт healthcheck; не API web-приложения
   proto/
+    grpc/health/v1/health.proto стандартный unary gRPC healthcheck
     <service>/v1/*.proto        gRPC-контракты сервисов, версионируются по каталогу
   pacts/
     http/                       pact-файлы HTTP: web-приложение → api-gateway
@@ -96,7 +99,7 @@ api/
 
 | Команда | Что делает |
 |---|---|
-| `pnpm --filter @platform/api lint` | Redocly — `api/openapi/*.yaml`, Buf — `api/proto/` |
+| `pnpm --filter @platform/api lint` | Redocly — `api/openapi/*.yaml` и `api/operational/*.yaml`, Buf — `api/proto/` |
 | `pnpm --filter @platform/api breaking` | Buf ищет ломающие изменения `.proto` относительно `develop`; другую базу задаёт `CONTRACTS_BASE` |
 | `pnpm --filter @platform/api generate` | типы из OpenAPI — в `web/packages/api-client` и `server/apps/api-gateway`, код из `.proto` — в `server/shared/contracts` |
 | `pnpm --filter @platform/api test:contract` | тесты потребителей и проверка поставщиков на Pact JS |
@@ -104,6 +107,7 @@ api/
 - Если контрактов или пакета-получателя ещё нет, команда пропускает этот шаг и сообщает об этом, а не падает.
 - Файл контрактного теста — `*.pact.test.ts`. Тесты запускаются по одному файлу: тесты потребителей пишут pact-файлы, проверка поставщиков их читает.
 
+- `api/operational/` содержит технические HTTP-контракты без клиента web-приложения. Они проверяются Redocly, но не входят в генерацию типов приложений. Стандартный gRPC healthcheck хранится в `api/proto/grpc/health/v1/health.proto`; его внешние имена не подчиняются соглашениям платформенных сервисов.
 - Контракты — источник правды. Код сервисов и клиенты frontend генерируются из них, а не наоборот.
 - OpenAPI и `.proto` меняет архитектор, разработчики их только реализуют.
 - Контрактные тесты пишут разработчики:
@@ -170,27 +174,39 @@ export default defineIntegrationTestConfig()
 
 ### API Gateway
 
-```
+Решение — [ADR 0003](adr/0003-api-gateway.md), реализация — [002-api-gateway-foundation](../features/002-api-gateway-foundation/design.md).
+
+```text
 server/apps/api-gateway/
   src/
-    routes/               реализация операций из api/openapi/
-    auth/                 проверка сессии, роли
-    clients/              gRPC-клиенты сервисов
-    feature-flags/        GET /v1/feature-flags и реестр флагов, которые gateway проверяет сам
+    routes/               контроллеры операций приложений, сборка ответов
+    auth/                 закрытый доступ по умолчанию; аутентификация — отдельный этап
+    clients/              gRPC-клиенты, дедлайны и отмена
+    feature-flags/        getFeatureFlags и реестр собственных флагов gateway
+    openapi/              реестр приложений, загрузка и валидация OpenAPI
+    errors/               единый формат ошибок Express, NestJS и gRPC
+    health/               подключение @platform/health
+    generated/            типы OpenAPI, генерируются в @platform/api
+    app.module.ts
     main.ts
+  test/                   интеграционные проверки и синтетические контракты
   Dockerfile
   package.json
 ```
 
-Gateway не содержит бизнес-логики: он проверяет доступ, валидирует запрос по контракту, вызывает сервисы и собирает ответ.
+Gateway работает на NestJS с явным `ExpressAdapter` из `@nestjs/platform-express`; запросы проверяет `express-openapi-validator`. Бизнес-логики, прямого доступа к базам сервисов, Prisma, очередей и собственного Redis у gateway нет.
+
+Для приложения `<app>` внешний адрес — `/api/<app>/v1/...`; в OpenAPI `servers.url` равен `/api/<app>`, путь операции — `/v1/...`. Поэтому одинаковые пути разных приложений не конфликтуют. Выбор приложения не даёт прав доступа. Неизвестная операция возвращает 404.
+
+В первой поставке реестр приложений пуст: доступны только `/health/live`, `/health/ready` и внутренний `grpc.health.v1.Health/Check`. Механизм операций и флагов проверяется на контрактах из `test/fixtures/`, которые не входят в рабочий образ. Реальные прикладные контракты добавляются спецификациями приложений. Исходные документы и локальные `$ref` упаковываются вместе с gateway; сеть для загрузки схем не используется.
 
 ### Общие пакеты `server/shared/`
 
 | Пакет | Что в нём |
 |---|---|
 | `contracts` | интерфейсы gRPC, сгенерированные из `api/proto/`; `protoPath()` и `PROTO_LOADER_OPTIONS` для `@grpc/proto-loader` |
-| `config` | чтение и проверка конфигурации из переменных окружения |
-| `logger` | настроенный pino |
+| `config` | чтение и проверка конфигурации из переменных окружения; первый интерфейс — в 002-api-gateway-foundation |
+| `logger` | pino и NestJS-адаптер nestjs-pino; безопасный список полей логов |
 | `observability` | OpenTelemetry: метрики и трассировки |
 | `health` | live и ready для HTTP и `grpc.health.v1` |
 | `feature-flags` | клиент Unleash для сервисов и gateway: NestJS-модуль, кеш, фейк для тестов — см. ниже |

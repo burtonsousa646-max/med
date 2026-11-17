@@ -35,11 +35,13 @@ function log(message) {
 }
 
 const openapi = files(join(apiDir, 'openapi'), '.yaml')
+const operational = files(join(apiDir, 'operational'), '.yaml')
 const proto = files(join(apiDir, 'proto'), '.proto')
 
 function lint() {
-  if (openapi.length > 0) run(bin('redocly'), ['lint', ...openapi])
-  else log('OpenAPI: контрактов в api/openapi/ нет — пропущено')
+  if (openapi.length + operational.length > 0)
+    run(bin('redocly'), ['lint', ...openapi, ...operational])
+  else log('OpenAPI: прикладных и технических контрактов нет — пропущено')
 
   if (proto.length > 0) run(bin('buf'), ['lint'])
   else log('protobuf: контрактов в api/proto/ нет — пропущено')
@@ -55,6 +57,15 @@ function breaking() {
     spawnSync('git', ['cat-file', '-e', `${base}:api/buf.yaml`], { cwd: root }).status === 0
   if (!hasBase) {
     log(`protobuf: в ${base} ещё нет api/buf.yaml — сравнивать не с чем, пропущено`)
+    return
+  }
+  const baseFiles = spawnSync('git', ['ls-tree', '-r', '--name-only', base, '--', 'api/proto/'], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+  if (baseFiles.status !== 0) process.exit(baseFiles.status ?? 1)
+  if (!baseFiles.stdout.split('\n').some((file) => file.endsWith('.proto'))) {
+    log(`protobuf: в ${base} ещё нет .proto — база сравнения отсутствует, пропущено`)
     return
   }
   run(bin('buf'), ['breaking', '--against', `../.git#branch=${base},subdir=api`])

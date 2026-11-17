@@ -49,7 +49,7 @@
 | Идентификаторы | UUID v7 |
 | Очереди | BullMQ на Redis |
 | Общение между сервисами | gRPC |
-| Внешний вход | API Gateway |
+| Внешний вход | API Gateway на NestJS с Express (`@nestjs/platform-express`) — [ADR 0003](adr/0003-api-gateway.md) |
 | Модульные и интеграционные тесты | Vitest |
 | Контрактные тесты | Pact JS |
 | Feature toggles | Unleash, серверный SDK `unleash-client`, см. [Feature toggles](#feature-toggles) |
@@ -67,10 +67,18 @@
 | Внешний API | OpenAPI 3.1 |
 | Проверка OpenAPI | Redocly CLI |
 | Клиент и типы для frontend | openapi-typescript + openapi-fetch |
-| Валидация запросов в gateway | по OpenAPI во время работы |
+| Валидация запросов в gateway | `express-openapi-validator`, по исходному OpenAPI 3.1 во время работы — [ADR 0003](adr/0003-api-gateway.md) |
 | Protobuf: проверка, поиск ломающих изменений, генерация | Buf |
 | Код из `.proto` для NestJS | ts-proto |
 | Контрактные тесты | Pact JS |
+
+### API Gateway
+
+По [ADR 0003](adr/0003-api-gateway.md) gateway использует Express-адаптер NestJS и `express-openapi-validator`. У API каждого приложения свой префикс `/api/<app>` в `servers.url`, пути документа начинаются с `/v1/`. В образ входят исходные контракты и их локальные зависимости; схемы по сети не загружаются.
+
+Первая поставка — [техническая основа](../features/002-api-gateway-foundation/design.md): конфигурация, безопасные логи, HTTP/gRPC healthcheck, валидация, ошибки, дедлайны и механизм выдачи флагов. У gateway нет бизнес-базы, Prisma, очередей или собственного Redis. Пока контракты приложений не добавлены, рабочий процесс предоставляет только healthcheck. Аутентификация проектируется отдельно; доступ ко всем операциям без явного `security: []` закрыт.
+
+Пакеты `@platform/config`, `@platform/logger` и `@platform/health` создаются в этой поставке. Для логирования используются pino и `nestjs-pino`; это не означает принятия всего предложенного ниже стека наблюдаемости.
 
 ## Тестирование
 

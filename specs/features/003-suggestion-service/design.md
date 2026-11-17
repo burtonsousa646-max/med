@@ -1,7 +1,7 @@
 ---
 feature: 003-suggestion-service
 title: Справочные подсказки Suggestion
-status: review
+status: approved
 author: architect
 requirements: requirements.md
 adr: ['0001', '0004']

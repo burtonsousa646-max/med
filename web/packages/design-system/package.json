@@ -1,0 +1,17 @@
+{
+  "name": "@platform/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Дизайн-система Carnica: пакеты @carnica/* и @beef/* из архивов .tgz в этом каталоге",
+  "dependencies": {
+    "@beef/conf": "file:./beef-conf-2.0.0-carnica-3830.0.tgz",
+    "@beef/react": "file:./beef-react-2.0.0-carnica-3830.0.tgz",
+    "@beef/testing": "file:./beef-testing-2.0.0-carnica-3830.0.tgz",
+    "@beef/utils": "file:./beef-utils-2.0.0-carnica-3830.0.tgz",
+    "@carnica/fork-react-qr-rounded": "file:./fork-react-qr-rounded-1.0.1.tgz",
+    "@carnica/graphics": "file:./graphics-2.0.0-carnica-3830.0.tgz",
+    "@carnica/themes": "file:./themes-2.0.0-carnica-3830.0.tgz",
+    "@carnica/ui-kit": "file:./ui-kit-2.0.0-carnica-3830.0.tgz",
+    "@carnica/utils": "file:./utils-2.0.0-carnica-3830.0.tgz"
+  }
+}

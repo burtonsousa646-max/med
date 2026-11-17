@@ -78,6 +78,8 @@ packages:
 api/
   openapi/
     <name>.yaml                 внешний API, который отдаёт API Gateway
+  openapi-shared/
+    suggestions.yaml            общие локальные path items и схемы; не корневой документ
   proto/
     <service>/v1/*.proto        gRPC-контракты сервисов, версионируются по каталогу
   pacts/
@@ -105,6 +107,7 @@ api/
 - Файл контрактного теста — `*.pact.test.ts`. Тесты запускаются по одному файлу: тесты потребителей пишут pact-файлы, проверка поставщиков их читает.
 
 - Контракты — источник правды. Код сервисов и клиенты frontend генерируются из них, а не наоборот.
+- `landing.yaml`, `cabinet.yaml`, `backoffice.yaml` описывают подсказки и выдачу флагов каждого приложения; префиксы Gateway — `/api/landing`, `/api/cabinet`, `/api/backoffice`. Общие определения подсказок подключаются локальными ссылками из `openapi-shared/`. Регистрация API не создаёт frontend-host/module в этой поставке.
 - OpenAPI и `.proto` меняет архитектор, разработчики их только реализуют.
 - Контрактные тесты пишут разработчики:
   - `consumers/<app>/` — frontend-разработчик;
@@ -165,8 +168,25 @@ export default defineIntegrationTestConfig()
 ```
 
 - Модульные тесты лежат рядом с кодом: `*.spec.ts`.
-- У сервиса своя база, и описана она только в его `prisma/`. В чужую базу сервис не ходит.
+- Если сервис хранит бизнес-данные, у него своя база, описанная только в его `prisma/`. В чужую базу сервис не ходит. У `suggestion-service` нет PostgreSQL и каталога `prisma/`, только необязательный кеш справочных ответов — [ADR 0004](adr/0004-suggestion-service.md).
 - Наружу сервис отдаёт только gRPC и события. HTTP у сервиса — только health и метрики.
+
+### Suggestion
+
+Принято в [ADR 0004](adr/0004-suggestion-service.md), реализация описана в [дизайне 003-suggestion-service](../features/003-suggestion-service/design.md).
+
+```
+server/apps/suggestion-service/src/
+  domain/suggestion/                 четыре модели, строка запроса и инварианты
+  application/suggest/               поиск: короткий ввод → кеш → источник → кеш
+  application/ports/                 источник, кеш, часы
+  infrastructure/dadata/             fetch transport и whitelist-маппинг
+  infrastructure/stub/               stub и заглушка внутреннего cloud-протокола
+  infrastructure/cache/              необязательный Redis-кеш
+  presentation/grpc/                 четыре RPC и безопасные ошибки
+```
+
+Gateway добавляет `src/suggestions/`, `src/clients/suggestion/`, `src/rate-limit/`, `src/client-identity/`. Его ограничитель использует собственный Redis, отдельно от Redis ответов Suggestion. Общая библиотека Redis не создаётся; каждый адаптер реализует порт своего приложения через разрешённый пакет `redis`. Логика поиска и ключи DaData остаются в сервисе, сетевой/пользовательский допуск — в Gateway. Рабочие приложения и новые общие пакеты создаёт BE по задачам, наличие раздела описывает целевую структуру.
 
 ### API Gateway
 
@@ -445,7 +465,7 @@ tests/
 
 ```
 deploy/
-  docker-compose.yml      локальное окружение: PostgreSQL, Redis, Unleash
+  docker-compose.yml      PostgreSQL, Redis, Unleash и отдельные Redis кеша/ограничителя Suggestion
   .env.example            порты и доступы; копируется в deploy/.env
   postgres/init/          создание баз — по одной на сервис и для Unleash
   observability/          конфигурация стека наблюдаемости — после подтверждения раздела в tech-stack.md

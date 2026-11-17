@@ -5,6 +5,11 @@ modules:
 lint:
   use:
     - STANDARD
+  # По правилам платформы namespace имеет префикс platform, а путь — <service>/v1/.
+  # Исключение ограничено единственным прикладным контрактом этой фичи.
+  ignore_only:
+    PACKAGE_DIRECTORY_MATCH:
+      - proto/suggestion/v1/suggestion.proto
 breaking:
   use:
     - FILE

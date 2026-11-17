@@ -34,6 +34,54 @@ services:
       timeout: 3s
       retries: 10
 
+  # Suggestion — два отдельных экземпляра с разными ролями отказа (ADR 0004).
+  # Состояние кратковременное; AOF/RDB, дисковые тома и резервные копии запрещены.
+  suggestion-rate-redis:
+    image: redis:8-alpine
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'no',
+        '--maxmemory',
+        '64mb',
+        '--maxmemory-policy',
+        'noeviction',
+      ]
+    ports:
+      - '127.0.0.1:${SUGGESTION_RATE_REDIS_PORT:-6380}:6379'
+    mem_limit: 128m
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  suggestion-cache-redis:
+    image: redis:8-alpine
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'no',
+        '--maxmemory',
+        '128mb',
+        '--maxmemory-policy',
+        'allkeys-lru',
+      ]
+    ports:
+      - '127.0.0.1:${SUGGESTION_CACHE_REDIS_PORT:-6381}:6379'
+    mem_limit: 256m
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # Feature toggles — specs/architecture/adr/0001-feature-toggles.md.
   # Админка: http://localhost:4242, вход admin / unleash4all — только для локального окружения.
   # Токены создаются при первом старте; флаги заводит pnpm env:flags из deploy/unleash/flags.json.

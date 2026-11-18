@@ -121,6 +121,12 @@ services:
       HTTP_PORT: '3000'
       GRPC_HEALTH_HOST: 0.0.0.0
       GRPC_HEALTH_PORT: '50050'
+      APP_VERSION: ${APP_VERSION:-0.0.0}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      HTTP_REQUEST_TIMEOUT_MS: ${HTTP_REQUEST_TIMEOUT_MS:-10000}
+      GRPC_CALL_TIMEOUT_MS: ${GRPC_CALL_TIMEOUT_MS:-3000}
+      HTTP_BODY_LIMIT_BYTES: ${HTTP_BODY_LIMIT_BYTES:-1048576}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-15000}
       UNLEASH_URL: http://unleash:4242/api
       UNLEASH_API_TOKEN: ${UNLEASH_API_TOKEN:-default:development.local-backend-token}
       # Адреса внутри сети Compose отличаются от адресов процессов на хосте.

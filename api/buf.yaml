@@ -8,6 +8,12 @@ lint:
   # По правилам платформы namespace имеет префикс platform, а путь — <service>/v1/.
   # Исключение ограничено единственным прикладным контрактом этой фичи.
   ignore_only:
+    SERVICE_SUFFIX:
+      - proto/grpc/health/v1/health.proto
+    ENUM_VALUE_PREFIX:
+      - proto/grpc/health/v1/health.proto
+    ENUM_ZERO_VALUE_SUFFIX:
+      - proto/grpc/health/v1/health.proto
     PACKAGE_DIRECTORY_MATCH:
       - proto/suggestion/v1/suggestion.proto
 breaking:

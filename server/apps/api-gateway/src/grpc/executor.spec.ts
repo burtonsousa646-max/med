@@ -1,4 +1,5 @@
 import { ClientUnaryCall } from '@grpc/grpc-js'
+import { getEventListeners } from 'node:events'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { normalizeError } from '../errors'
 import { GrpcCallExecutor, RequestScope } from './executor.ts'
@@ -62,6 +63,19 @@ describe('GrpcCallExecutor', () => {
     await expect(failure).rejects.toThrow('synthetic-upstream-error')
     await expect(waiting).rejects.toThrow()
     expect(cancel).toHaveBeenCalledOnce()
+  })
+
+  it('K9: удаляет обработчик отмены после успешного RPC', async () => {
+    const scope = new RequestScope(1000)
+    const executor = new GrpcCallExecutor(1000)
+
+    const result = await executor.execute<string>((_metadata, _deadline, callback) => {
+      callback(null, 'ok')
+      return { cancel: vi.fn() } as unknown as ClientUnaryCall
+    }, scope)
+
+    expect(result).toBe('ok')
+    expect(getEventListeners(scope.signal, 'abort')).toHaveLength(0)
   })
 
   // Ошибка upstream не должна раскрывать исходное сообщение клиенту.

@@ -1,8 +1,5 @@
 import {
-  CallOptions,
-  Client,
   ClientOptions,
-  ClientUnaryCall,
   credentials,
   loadPackageDefinition,
   makeGenericClientConstructor,
@@ -12,29 +9,21 @@ import {
   ServerCredentials,
   ServerUnaryCall,
   ServiceDefinition,
-  ServiceError,
   status,
 } from '@grpc/grpc-js'
 import { loadSync } from '@grpc/proto-loader'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { GrpcCallExecutor, RequestScope } from '../src/grpc'
-interface Echo {
-  value: string
-}
-interface EchoClient extends Client {
-  echo(
-    request: Echo,
-    metadata: Metadata,
-    options: CallOptions,
-    callback: (error: ServiceError | null, value?: Echo) => void,
-  ): ClientUnaryCall
-}
+import type { Echo, EchoClient } from './grpc.types.ts'
+
 let server: Server | undefined
 let client: EchoClient | undefined
 let count = 0
 let received: Metadata
 let onCancelled: (() => void) | undefined
+
+// Локальный сервис позволяет наблюдать число вызовов и фактическую отмену транспорта.
 beforeAll(async () => {
   const definition = loadSync(fileURLToPath(new URL('./fixtures/echo.proto', import.meta.url)))
 
@@ -72,10 +61,13 @@ beforeAll(async () => {
     'grpc.enable_retries': 0,
   })
 })
+
 afterAll(() => {
   client?.close()
   server?.forceShutdown()
 })
+
+/** Отправляет один unary RPC с заданным бюджетом. */
 function call(value: string, timeout = 1000) {
   const scope = new RequestScope(timeout)
   return new GrpcCallExecutor(timeout).execute<Echo>(
@@ -83,22 +75,27 @@ function call(value: string, timeout = 1000) {
     scope,
   )
 }
+
 describe('gRPC transport', () => {
   it('K9: реальный unary-вызов передаёт только серверную metadata', async () => {
     expect(await call('ok')).toEqual({ value: 'ok' })
     expect(received.get('x-request-id')).toHaveLength(1)
     expect(received.get('cookie')).toEqual([])
   })
+
   it('K9: UNAVAILABLE не вызывает повторов', async () => {
     const before = count
     await expect(call('unavailable')).rejects.toMatchObject({ code: status.UNAVAILABLE })
     expect(count - before).toBe(1)
   })
+
   it('K9: дедлайн отменяет реальный вызов', async () => {
+    const before = count
     const cancelled = new Promise<void>((resolve) => {
       onCancelled = resolve
     })
     await expect(call('hang', 100)).rejects.toThrow()
     await cancelled
+    expect(count - before).toBe(1)
   })
 })

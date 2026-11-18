@@ -123,6 +123,14 @@ services:
       GRPC_HEALTH_PORT: '50050'
       UNLEASH_URL: http://unleash:4242/api
       UNLEASH_API_TOKEN: ${UNLEASH_API_TOKEN:-default:development.local-backend-token}
+      # Адреса внутри сети Compose отличаются от адресов процессов на хосте.
+      SUGGESTION_GRPC_TARGET: suggestion-service:50051
+      SUGGESTION_RATE_REDIS_URL: redis://suggestion-rate-redis:6379
+      SUGGESTION_RATE_HMAC_SECRET: ${SUGGESTION_RATE_HMAC_SECRET:-}
+      SUGGESTION_SCOPE: ${SUGGESTION_SCOPE:-local}
+      SUGGESTION_RATE_LIMIT_RPS: ${SUGGESTION_RATE_LIMIT_RPS:-5}
+      SUGGESTION_REDIS_TIMEOUT_MS: ${SUGGESTION_REDIS_TIMEOUT_MS:-100}
+      GATEWAY_TRUSTED_PROXY_CIDRS: ${GATEWAY_TRUSTED_PROXY_CIDRS:-}
     ports:
       - '${GATEWAY_HTTP_PORT:-3000}:3000'
     depends_on:

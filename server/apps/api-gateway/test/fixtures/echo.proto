@@ -1,0 +1,5 @@
+syntax = "proto3";
+package fixture;
+service Echo { rpc Echo(EchoRequest) returns (EchoResponse); }
+message EchoRequest { string value = 1; }
+message EchoResponse { string value = 1; }

@@ -1,0 +1,17 @@
+.git
+**/node_modules
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+prototype
+docs
+.agents
+.claude
+.gemini
+.codex
+.aws
+**/.env
+**/.env.*
+**/.npmrc
+**/*.log

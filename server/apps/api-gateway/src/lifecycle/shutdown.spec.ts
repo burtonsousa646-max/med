@@ -28,7 +28,8 @@ describe('ShutdownCoordinator', () => {
   it('K10: исчерпание бюджета отменяет остаток', async () => {
     vi.useFakeTimers()
     const state = new HealthState('test')
-    const coordinator = new ShutdownCoordinator(state, 10, async () => {})
+    const close = vi.fn(async () => {})
+    const coordinator = new ShutdownCoordinator(state, 10, close)
     const scope = new RequestScope(1000)
     coordinator.active.add(scope)
     const pending = coordinator.stop()
@@ -36,6 +37,9 @@ describe('ShutdownCoordinator', () => {
     await vi.advanceTimersByTimeAsync(11)
     await assertion
     expect(scope.signal.aborted).toBe(true)
+    expect(close).toHaveBeenCalledOnce()
     coordinator.complete(scope)
+    await Promise.resolve()
+    expect(close).toHaveBeenCalledOnce()
   })
 })

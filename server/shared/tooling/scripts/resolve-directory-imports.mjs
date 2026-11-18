@@ -58,4 +58,5 @@ async function rewriteFile(file) {
   await writeFile(file, result)
 }
 
-await resolveDirectoryImports(new URL('../dist', import.meta.url).pathname)
+const outputDirectory = resolve(process.argv[2] ?? 'dist')
+await resolveDirectoryImports(outputDirectory)

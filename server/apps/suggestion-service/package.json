@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json && node scripts/resolve-directory-imports.mjs",
+    "build": "tsc -p tsconfig.build.json && node ../../shared/tooling/scripts/resolve-directory-imports.mjs dist",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "start": "node dist/main.js"
   },

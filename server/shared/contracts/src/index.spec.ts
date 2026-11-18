@@ -2,7 +2,7 @@ import { loadSync, type MethodDefinition } from '@grpc/proto-loader'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-import { PROTO_LOADER_OPTIONS, protoPath } from './index.js'
+import { PROTO_LOADER_OPTIONS, protoPath } from './proto.ts'
 
 const fixtures = fileURLToPath(new URL('./__fixtures__/', import.meta.url))
 

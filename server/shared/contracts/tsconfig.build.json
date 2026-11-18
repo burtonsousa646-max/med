@@ -1,3 +1,6 @@
 {
-  "extends": "@platform/server-tooling/tsconfig/lib.json"
+  "extends": "@platform/server-tooling/tsconfig/lib.json",
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true
+  }
 }

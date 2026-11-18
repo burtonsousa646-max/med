@@ -123,6 +123,8 @@ src/
 
 ## API Gateway
 
+Решение — [ADR 0003](../../specs/architecture/adr/0003-api-gateway.md), дизайн первого этапа — [002-api-gateway-foundation](../../specs/features/002-api-gateway-foundation/design.md). Gateway использует явный ExpressAdapter и express-openapi-validator; его модули не повторяют доменные слои сервиса. На первом этапе у него нет базы, Prisma, очередей и собственного Redis.
+
 - Маршруты реализуют операции из `api/openapi/`; входящие запросы валидируются по OpenAPI.
 - Gateway проверяет сессию и права, берёт компанию и пользователя из сессии и передаёт их в сервисы.
 - Ошибки gRPC преобразуются в HTTP-статусы и тело `{ code, message }` по `ai/rules/api-contracts.md`.

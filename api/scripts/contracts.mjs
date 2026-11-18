@@ -35,11 +35,13 @@ function log(message) {
 }
 
 const openapi = files(join(apiDir, 'openapi'), '.yaml')
+const operational = files(join(apiDir, 'operational'), '.yaml')
 const proto = files(join(apiDir, 'proto'), '.proto')
 
 function lint() {
-  if (openapi.length > 0) run(bin('redocly'), ['lint', ...openapi])
-  else log('OpenAPI: контрактов в api/openapi/ нет — пропущено')
+  if (openapi.length + operational.length > 0)
+    run(bin('redocly'), ['lint', ...openapi, ...operational])
+  else log('OpenAPI: прикладных и технических контрактов нет — пропущено')
 
   if (proto.length > 0) run(bin('buf'), ['lint'])
   else log('protobuf: контрактов в api/proto/ нет — пропущено')

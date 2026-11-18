@@ -244,7 +244,12 @@ describe('K3–K8: реальный HTTP-конвейер', () => {
 
   it('security уровня документа не открывает закрытую операцию', async () => {
     const response = await fetch(`${base}/api/alpha/v1/private`, {
-      headers: { Cookie: 'session=forged', 'x-user-id': 'forged' },
+      headers: {
+        Cookie: 'session=forged',
+        Authorization: 'Bearer forged',
+        'x-user-id': 'forged',
+        'x-company-id': 'forged',
+      },
     })
     expect(response.status).toBe(401)
     expect(await response.json()).toEqual({ code: 'unauthenticated', message: 'Требуется вход' })

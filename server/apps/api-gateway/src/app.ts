@@ -100,6 +100,7 @@ export async function createGateway(options: GatewayOptions) {
     bodyParser: false,
     logger: createPlatformLogger(loggerOptions),
     abortOnError: false,
+    routeResolutionStrategy: 'specificity',
   })
   const logger = app.get(PlatformLogger)
   app.useLogger(logger)

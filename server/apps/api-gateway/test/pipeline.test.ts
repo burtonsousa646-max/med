@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import 'reflect-metadata'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createGateway } from '../src/app'
 import { createFeatureFlagsController } from '../src/feature-flags'
 import { AppDefinition, OpenApiRegistry } from '../src/openapi'
@@ -149,6 +149,29 @@ describe('K3–K8: реальный HTTP-конвейер', () => {
   it('выдаёт health без сессии и отклоняет неизвестные query', async () => {
     expect((await fetch(`${base}/health/live`)).status).toBe(200)
     expect((await fetch(`${base}/health/ready?secret=x`)).status).toBe(400)
+  })
+  it('K2: не создаёт запись HTTP-запроса для healthcheck', async () => {
+    const events = vi.spyOn(gateway!.logger, 'event')
+    try {
+      expect((await fetch(`${base}/health/live`)).status).toBe(200)
+      expect((await fetch(`${base}/health/ready`)).status).toBe(200)
+      expect(events.mock.calls.filter(([event]) => event === 'request')).toHaveLength(0)
+    } finally {
+      events.mockRestore()
+    }
+  })
+  it('K2: журнал неизвестного маршрута не содержит исходный URL', async () => {
+    const events = vi.spyOn(gateway!.logger, 'event')
+    try {
+      const response = await fetch(`${base}/unknown-synthetic-secret?token=synthetic-token`)
+      expect(response.status).toBe(404)
+      const record = events.mock.calls.find(([event]) => event === 'request')?.[1]
+      expect(record).toMatchObject({ method: 'GET', status: 404 })
+      expect(JSON.stringify(record)).not.toContain('synthetic')
+      expect(record).not.toHaveProperty('route')
+    } finally {
+      events.mockRestore()
+    }
   })
   it('проверяет тело по OpenAPI и создаёт свой request ID', async () => {
     const response = await post('{"count":2}')

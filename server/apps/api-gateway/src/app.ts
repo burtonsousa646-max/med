@@ -120,6 +120,14 @@ export async function createGateway(options: GatewayOptions) {
     res.setHeader('X-Request-Id', scope.requestId)
     const route = registry.resolve(req.method, req.path)
     if (!route) {
+      res.once('finish', () => {
+        logger.event('request', {
+          requestId: scope.requestId,
+          method: req.method,
+          status: res.statusCode,
+          durationMs: performance.now() - scope.startedAt,
+        })
+      })
       sendError(res, new GatewayError(404))
       return
     }

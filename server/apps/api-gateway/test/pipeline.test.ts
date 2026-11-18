@@ -147,8 +147,12 @@ async function post(body: string, suffix = uuid, type = 'application/json') {
 }
 describe('K3–K8: реальный HTTP-конвейер', () => {
   it('выдаёт health без сессии и отклоняет неизвестные query', async () => {
-    expect((await fetch(`${base}/health/live`)).status).toBe(200)
-    expect((await fetch(`${base}/health/ready?secret=x`)).status).toBe(400)
+    const live = await fetch(`${base}/health/live`)
+    expect(live.status).toBe(200)
+    expect(live.headers.get('cache-control')).toBe('no-store')
+    const invalid = await fetch(`${base}/health/ready?secret=x`)
+    expect(invalid.status).toBe(400)
+    expect(invalid.headers.get('cache-control')).toBe('no-store')
   })
   it('K2: не создаёт запись HTTP-запроса для healthcheck', async () => {
     const events = vi.spyOn(gateway!.logger, 'event')

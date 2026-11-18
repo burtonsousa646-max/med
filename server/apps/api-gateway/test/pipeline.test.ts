@@ -91,7 +91,10 @@ async function definition(id: string): Promise<AppDefinition> {
     },
     components: {
       schemas: {
-        FeatureFlags: { type: 'object', properties: { [`${id}.flag`]: { type: 'boolean' } } },
+        FeatureFlags: {
+          type: 'object',
+          properties: id === 'gamma' ? {} : { [`${id}.flag`]: { type: 'boolean' } },
+        },
       },
     },
   }
@@ -128,7 +131,7 @@ async function definition(id: string): Promise<AppDefinition> {
 // Приложения используют одинаковые пути, чтобы проверить выбор схемы по префиксу.
 beforeAll(async () => {
   folder = await mkdtemp(join(tmpdir(), 'gateway-pipeline-'))
-  apps = [await definition('alpha'), await definition('beta')]
+  apps = [await definition('alpha'), await definition('beta'), await definition('gamma')]
   const initial = readGatewayConfig({
     UNLEASH_URL: 'http://127.0.0.1:1/api',
     UNLEASH_API_TOKEN: 'synthetic',
@@ -259,6 +262,14 @@ describe('K3–K8: реальный HTTP-конвейер', () => {
       404,
     )
     expect((await fetch(`${base}/api/alpha-extra/v1/feature-flags`)).status).toBe(404)
+  })
+
+  it('K8: пустая схема флагов возвращает пустой объект без кеширования', async () => {
+    const response = await fetch(`${base}/api/gamma/v1/feature-flags`)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(await response.json()).toEqual({})
   })
 
   it('отклоняет конфликт и потерянный binding до запуска', () => {

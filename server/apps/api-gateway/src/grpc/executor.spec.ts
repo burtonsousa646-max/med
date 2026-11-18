@@ -6,6 +6,7 @@ import type { UnaryFactory } from './executor.types.ts'
 
 // Возвращаем реальные таймеры после сценариев с виртуальным временем.
 afterEach(() => vi.useRealTimers())
+
 describe('GrpcCallExecutor', () => {
   // Отмена до отправки должна завершить вызов, не создавая gRPC-запрос.
 
@@ -33,6 +34,34 @@ describe('GrpcCallExecutor', () => {
     await assertion
     expect(cancel).toHaveBeenCalledOnce()
     expect(factory).toHaveBeenCalledOnce()
+  })
+
+  it('K9: не отправляет вызов после исчерпания общего бюджета', async () => {
+    vi.useFakeTimers()
+    const scope = new RequestScope(10)
+    const factory = vi.fn()
+
+    await vi.advanceTimersByTimeAsync(11)
+    await expect(new GrpcCallExecutor(50).execute(factory, scope)).rejects.toThrow()
+    expect(factory).not.toHaveBeenCalled()
+  })
+
+  it('K9: ошибка обязательного вызова отменяет остальные вызовы запроса', async () => {
+    const scope = new RequestScope(1000)
+    const executor = new GrpcCallExecutor(1000)
+    const cancel = vi.fn()
+    const waiting = executor.execute<unknown>(
+      () => ({ cancel }) as unknown as ClientUnaryCall,
+      scope,
+    )
+
+    const failure = executor.execute<unknown>(() => {
+      throw new Error('synthetic-upstream-error')
+    }, scope)
+
+    await expect(failure).rejects.toThrow('synthetic-upstream-error')
+    await expect(waiting).rejects.toThrow()
+    expect(cancel).toHaveBeenCalledOnce()
   })
 
   // Ошибка upstream не должна раскрывать исходное сообщение клиенту.

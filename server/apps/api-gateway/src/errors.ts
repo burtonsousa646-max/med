@@ -33,10 +33,18 @@ export function normalizeError(error: unknown) {
     else if (typeof e.code === 'number')
       status =
         (
-          { 3: 400, 16: 401, 7: 403, 5: 404, 6: 409, 10: 409, 9: 422, 4: 503, 14: 503 } as Record<
-            number,
-            number
-          >
+          {
+            3: 400,
+            16: 401,
+            7: 403,
+            5: 404,
+            6: 409,
+            10: 409,
+            9: 422,
+            4: 503,
+            8: 503,
+            14: 503,
+          } as Record<number, number>
         )[e.code] ?? 500
   }
   const [code, message] = errors[status] ?? ['internal_error', 'Внутренняя ошибка сервера']
@@ -66,7 +74,7 @@ export class SafeExceptionFilter implements ExceptionFilter {
 
 /** Разрешает только операции с явно публичной политикой доступа. */
 export class PublicOnlyAccessPolicy {
-  /** Проверяет лимиты клиента и возвращает отказ при превышении или недоступности Redis. */
+  /** Запрещает операцию, если она не объявлена публичной на уровне операции. */
   assertAllowed(operation: { security?: unknown }): void {
     if (!Array.isArray(operation.security) || operation.security.length !== 0)
       throw new GatewayError(401)

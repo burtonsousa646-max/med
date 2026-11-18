@@ -59,13 +59,18 @@ function breaking() {
     log(`protobuf: в ${base} ещё нет api/buf.yaml — сравнивать не с чем, пропущено`)
     return
   }
+  // До первого прикладного контракта в базовом модуле есть лишь .gitkeep.
+  // Buf не может построить такой модуль: это отсутствие прежнего API, не ошибка нового.
   const baseFiles = spawnSync('git', ['ls-tree', '-r', '--name-only', base, '--', 'api/proto/'], {
     cwd: root,
     encoding: 'utf8',
   })
-  if (baseFiles.status !== 0) process.exit(baseFiles.status ?? 1)
+  if (baseFiles.status !== 0) {
+    process.stderr.write(baseFiles.stderr ?? 'Не удалось прочитать базовые protobuf-контракты\n')
+    process.exit(baseFiles.status ?? 1)
+  }
   if (!baseFiles.stdout.split('\n').some((file) => file.endsWith('.proto'))) {
-    log(`protobuf: в ${base} ещё нет .proto — база сравнения отсутствует, пропущено`)
+    log(`protobuf: в ${base} ещё нет .proto — первый контракт, прежнего API для сравнения нет`)
     return
   }
   run(bin('buf'), ['breaking', '--against', `../.git#branch=${base},subdir=api`])

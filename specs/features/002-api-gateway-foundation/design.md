@@ -1,7 +1,7 @@
 ---
 feature: 002-api-gateway-foundation
 title: Техническая основа API Gateway
-status: review
+status: approved
 author: architect
 requirements: null
 adr: ['0001', '0003']

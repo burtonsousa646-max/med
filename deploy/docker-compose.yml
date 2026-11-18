@@ -34,6 +34,54 @@ services:
       timeout: 3s
       retries: 10
 
+  # Suggestion — два отдельных экземпляра с разными ролями отказа (ADR 0004).
+  # Состояние кратковременное; AOF/RDB, дисковые тома и резервные копии запрещены.
+  suggestion-rate-redis:
+    image: redis:8-alpine
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'no',
+        '--maxmemory',
+        '64mb',
+        '--maxmemory-policy',
+        'noeviction',
+      ]
+    ports:
+      - '127.0.0.1:${SUGGESTION_RATE_REDIS_PORT:-6380}:6379'
+    mem_limit: 128m
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  suggestion-cache-redis:
+    image: redis:8-alpine
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'no',
+        '--maxmemory',
+        '128mb',
+        '--maxmemory-policy',
+        'allkeys-lru',
+      ]
+    ports:
+      - '127.0.0.1:${SUGGESTION_CACHE_REDIS_PORT:-6381}:6379'
+    mem_limit: 256m
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # Feature toggles — specs/architecture/adr/0001-feature-toggles.md.
   # Админка: http://localhost:4242, вход admin / unleash4all — только для локального окружения.
   # Токены создаются при первом старте; флаги заводит pnpm env:flags из deploy/unleash/flags.json.
@@ -61,6 +109,25 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+
+  api-gateway:
+    profiles: [gateway]
+    build:
+      context: ..
+      dockerfile: server/apps/api-gateway/Dockerfile
+    environment:
+      NODE_ENV: development
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: '3000'
+      GRPC_HEALTH_HOST: 0.0.0.0
+      GRPC_HEALTH_PORT: '50050'
+      UNLEASH_URL: http://unleash:4242/api
+      UNLEASH_API_TOKEN: ${UNLEASH_API_TOKEN:-default:development.local-backend-token}
+    ports:
+      - '${GATEWAY_HTTP_PORT:-3000}:3000'
+    depends_on:
+      unleash:
+        condition: service_started
 
 volumes:
   postgres-data:

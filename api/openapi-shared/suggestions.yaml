@@ -1,0 +1,459 @@
+# Общие определения; корневые OpenAPI-документы — api/openapi/*.yaml.
+pathItems:
+  parties:
+    post:
+      operationId: suggestParties
+      summary: Подсказки организаций и ИП
+      tags:
+        - suggestions
+      security: []
+      x-suggestion-rate-limit: true
+      description: 'Доступно без сессии и с подтверждённой сессией. Лимит по умолчанию
+        — 5 RPS; общий для всех видов подсказок и приложений. Применяется также к
+        пустому вводу и ответам из кеша. Ответы не содержат null: отсутствующие сведения
+        не передаются.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRequest'
+      responses:
+        '200':
+          description: Варианты найдены либо пустой список при отсутствии совпадений
+            или вводе короче 3 символов.
+          headers: &id001
+            Cache-Control: &id002
+              description: Ответ не хранится в HTTP-кешах.
+              schema:
+                type: string
+                const: no-store
+            X-Request-Id: &id003
+              description: Идентификатор запроса, созданный Gateway.
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartySuggestionsResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  addresses:
+    post:
+      operationId: suggestAddresses
+      summary: Подсказки адресов
+      tags:
+        - suggestions
+      security: []
+      x-suggestion-rate-limit: true
+      description: 'Доступно без сессии и с подтверждённой сессией. Лимит по умолчанию
+        — 5 RPS; общий для всех видов подсказок и приложений. Применяется также к
+        пустому вводу и ответам из кеша. Ответы не содержат null: отсутствующие сведения
+        не передаются.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRequest'
+      responses:
+        '200':
+          description: Варианты найдены либо пустой список при отсутствии совпадений
+            или вводе короче 3 символов.
+          headers: *id001
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressSuggestionsResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  banks:
+    post:
+      operationId: suggestBanks
+      summary: Подсказки банков
+      tags:
+        - suggestions
+      security: []
+      x-suggestion-rate-limit: true
+      description: 'Доступно без сессии и с подтверждённой сессией. Лимит по умолчанию
+        — 5 RPS; общий для всех видов подсказок и приложений. Применяется также к
+        пустому вводу и ответам из кеша. Ответы не содержат null: отсутствующие сведения
+        не передаются.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRequest'
+      responses:
+        '200':
+          description: Варианты найдены либо пустой список при отсутствии совпадений
+            или вводе короче 3 символов.
+          headers: *id001
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSuggestionsResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  emails:
+    post:
+      operationId: suggestEmails
+      summary: Подсказки email
+      tags:
+        - suggestions
+      security: []
+      x-suggestion-rate-limit: true
+      description: 'Доступно без сессии и с подтверждённой сессией. Лимит по умолчанию
+        — 5 RPS; общий для всех видов подсказок и приложений. Применяется также к
+        пустому вводу и ответам из кеша. Ответы не содержат null: отсутствующие сведения
+        не передаются.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRequest'
+      responses:
+        '200':
+          description: Варианты найдены либо пустой список при отсутствии совпадений
+            или вводе короче 3 символов.
+          headers: *id001
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailSuggestionsResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+components:
+  schemas:
+    SuggestionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Строка ввода. Обрезаются пробельные символы по краям (ECMAScript
+            trim); внутренние сохраняются. Длина после обрезки — не более 150 кодовых
+            точек Unicode. Для длины 0–2 возвращается пустой список без источника.
+            Сырой JSON ограничен 16384 байтами.
+          pattern: ^\s*(?:\S(?:[\s\S]{0,148}\S)?)?\s*$
+          example: пример
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машинный код ошибки.
+        message:
+          type: string
+          description: Безопасное сообщение на русском языке.
+    Coordinates:
+      type: object
+      additionalProperties: false
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+          description: Широта.
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+          description: Долгота.
+    PartySuggestion:
+      type: object
+      additionalProperties: false
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: Наименование организации или ИП для отображения.
+          minLength: 1
+          maxLength: 4096
+        inn:
+          type: string
+          description: ИНН, если присутствует в источнике.
+          pattern: ^(?:[0-9]{10}|[0-9]{12})$
+        kpp:
+          type: string
+          description: КПП; у ИП отсутствует.
+          pattern: ^[0-9]{9}$
+        ogrn:
+          type: string
+          description: ОГРН или ОГРНИП.
+          pattern: ^(?:[0-9]{13}|[0-9]{15})$
+        address:
+          type: string
+          description: Полный адрес, если присутствует в источнике.
+          minLength: 1
+          maxLength: 4096
+        status:
+          type: string
+          description: Справочный статус; не подтверждает результаты юридической проверки.
+          enum:
+            - active
+            - liquidating
+            - liquidated
+            - reorganizing
+            - bankrupt
+            - unknown
+    AddressSuggestion:
+      type: object
+      additionalProperties: false
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: Полный адрес для отображения.
+          minLength: 1
+          maxLength: 4096
+        region:
+          type: string
+          description: Регион с типом.
+          minLength: 1
+          maxLength: 4096
+        district:
+          type: string
+          description: Район региона с типом.
+          minLength: 1
+          maxLength: 4096
+        city:
+          type: string
+          description: Город с типом.
+          minLength: 1
+          maxLength: 4096
+        settlement:
+          type: string
+          description: Населённый пункт с типом.
+          minLength: 1
+          maxLength: 4096
+        street:
+          type: string
+          description: Улица с типом.
+          minLength: 1
+          maxLength: 4096
+        house:
+          type: string
+          description: Номер дома.
+          minLength: 1
+          maxLength: 4096
+        block:
+          type: string
+          description: Корпус или строение с типом.
+          minLength: 1
+          maxLength: 4096
+        flat:
+          type: string
+          description: Квартира или помещение с типом.
+          minLength: 1
+          maxLength: 4096
+        postalCode:
+          type: string
+          description: Почтовый индекс.
+          pattern: ^[0-9]{6}$
+        fiasId:
+          type: string
+          description: Идентификатор ФИАС.
+          format: uuid
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+    BankSuggestion:
+      type: object
+      additionalProperties: false
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: Наименование банка для отображения.
+          minLength: 1
+          maxLength: 4096
+        bic:
+          type: string
+          description: БИК.
+          pattern: ^[0-9]{9}$
+        correspondentAccount:
+          type: string
+          description: Корреспондентский счёт.
+          pattern: ^[0-9]{20}$
+        address:
+          type: string
+          description: Адрес банка, если присутствует в источнике.
+          minLength: 1
+          maxLength: 4096
+    EmailSuggestion:
+      type: object
+      additionalProperties: false
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: Предложенный email; существование почтового ящика не подтверждается.
+          minLength: 1
+          maxLength: 4096
+    PartySuggestionsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          description: Первые варианты в порядке источника, без пагинации.
+          items:
+            $ref: '#/components/schemas/PartySuggestion'
+    AddressSuggestionsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          description: Первые варианты в порядке источника, без пагинации.
+          items:
+            $ref: '#/components/schemas/AddressSuggestion'
+    BankSuggestionsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          description: Первые варианты в порядке источника, без пагинации.
+          items:
+            $ref: '#/components/schemas/BankSuggestion'
+    EmailSuggestionsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          description: Первые варианты в порядке источника, без пагинации.
+          items:
+            $ref: '#/components/schemas/EmailSuggestion'
+  responses:
+    InvalidRequest:
+      description: Ошибка структуры JSON, неизвестные поля или параметры, неверный
+        тип или длина нормализованного ввода более 150 символов.
+      headers:
+        Cache-Control: *id002
+        X-Request-Id: *id003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PayloadTooLarge:
+      description: Тело запроса превышает 16384 байта.
+      headers:
+        Cache-Control: *id002
+        X-Request-Id: *id003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnsupportedMediaType:
+      description: Поддерживается только application/json в UTF-8.
+      headers:
+        Cache-Control: *id002
+        X-Request-Id: *id003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimitExceeded:
+      description: Превышен общий лимит подсказок для клиента. Источник не вызывается.
+      headers:
+        Cache-Control: *id002
+        X-Request-Id: *id003
+        Retry-After:
+          description: Минимальное число секунд до новой попытки, округлено вверх
+            (не менее 1).
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Непредвиденная ошибка платформы.
+      headers:
+        Cache-Control: *id002
+        X-Request-Id: *id003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Недоступны ограничитель, сервис или источник; либо истёк бюджет
+        операции. Не означает отсутствие совпадений.
+      headers:
+        Cache-Control: *id002
+        X-Request-Id: *id003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

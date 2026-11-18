@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package platform.suggestion.v1;
+
+// Справочные подсказки. Доступен только Gateway во внутренней сети.
+// Дедлайн и отмена распространяются до источника; повторов нет.
+service SuggestionService {
+  // Организации и ИП по ИНН, ОГРН/ОГРНИП или части названия.
+  rpc SuggestParties(SuggestPartiesRequest) returns (SuggestPartiesResponse);
+  // Адреса по части адреса.
+  rpc SuggestAddresses(SuggestAddressesRequest) returns (SuggestAddressesResponse);
+  // Банки по БИК или части названия.
+  rpc SuggestBanks(SuggestBanksRequest) returns (SuggestBanksResponse);
+  // Варианты написания email, без проверки существования ящика.
+  rpc SuggestEmails(SuggestEmailsRequest) returns (SuggestEmailsResponse);
+}
+
+// Для всех запросов: trim, затем не более 150 кодовых точек Unicode.
+// 0–2 символа дают пустую выдачу без источника. Лимит выдачи фиксирован: 10.
+// Ошибки: INVALID_ARGUMENT — неверный ввод; UNAVAILABLE — источник недоступен,
+// квота исчерпана или ответ не соответствует протоколу; INTERNAL — сбой сервиса.
+message SuggestPartiesRequest {
+  string query = 1;
+}
+
+message SuggestPartiesResponse {
+  // Не более 10 элементов, порядок источника; пагинации нет.
+  repeated PartySuggestion items = 1;
+}
+
+message SuggestAddressesRequest {
+  string query = 1;
+}
+
+message SuggestAddressesResponse {
+  // Не более 10 элементов, порядок источника; пагинации нет.
+  repeated AddressSuggestion items = 1;
+}
+
+message SuggestBanksRequest {
+  string query = 1;
+}
+
+message SuggestBanksResponse {
+  // Не более 10 элементов, порядок источника; пагинации нет.
+  repeated BankSuggestion items = 1;
+}
+
+message SuggestEmailsRequest {
+  string query = 1;
+}
+
+message SuggestEmailsResponse {
+  // Не более 10 элементов, порядок источника; пагинации нет.
+  repeated EmailSuggestion items = 1;
+}
+
+// Отсутствующие справочные поля сохраняют presence через proto3 optional.
+// Пустые строки и null не заменяют отсутствие значения.
+message PartySuggestion {
+  string value = 1;
+  optional string inn = 2;
+  optional string kpp = 3;
+  // ОГРН и ОГРНИП передаются одним строковым полем.
+  optional string ogrn = 4;
+  optional string address = 5;
+  // active, liquidating, liquidated, reorganizing, bankrupt или unknown.
+  optional string status = 6;
+}
+
+message AddressSuggestion {
+  string value = 1;
+  optional string region = 2;
+  optional string district = 3;
+  optional string city = 4;
+  optional string settlement = 5;
+  optional string street = 6;
+  optional string house = 7;
+  optional string block = 8;
+  optional string flat = 9;
+  optional string postal_code = 10;
+  optional string fias_id = 11;
+  // Только если обе координаты присутствуют и корректны.
+  Coordinates coordinates = 12;
+}
+
+message Coordinates {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message BankSuggestion {
+  string value = 1;
+  optional string bic = 2;
+  optional string correspondent_account = 3;
+  optional string address = 4;
+}
+
+message EmailSuggestion {
+  string value = 1;
+}

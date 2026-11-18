@@ -1,7 +1,10 @@
 {
   "extends": "@platform/server-tooling/tsconfig/service.json",
   "compilerOptions": {
-    "lib": ["es2024", "dom"]
+    "lib": ["es2024", "dom"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rewriteRelativeImportExtensions": true
   },
   "include": ["contract-tests", "vitest.config.ts"]
 }

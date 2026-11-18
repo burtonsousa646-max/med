@@ -1,0 +1,16 @@
+{
+  "name": "@platform/api-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Автотесты API через API Gateway — пишет тестировщик",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "playwright test --pass-with-no-tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "typescript": "~6.0.3"
+  }
+}

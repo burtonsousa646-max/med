@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: Технический API проверки состояния gateway
+  version: 1.0.0
+  description: >-
+    Контракт инфраструктуры по ADR 0003. Не является API web-приложения
+    и не участвует в генерации клиента frontend.
+servers:
+  - url: /
+security: []
+tags:
+  - name: health
+    description: Состояние процесса и готовность принимать трафик
+paths:
+  /health/live:
+    get:
+      operationId: getGatewayLiveness
+      summary: Проверить работоспособность процесса
+      tags: [health]
+      security: []
+      responses:
+        '200':
+          description: Процесс способен отвечать на запросы
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthy'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+  /health/ready:
+    get:
+      operationId: getGatewayReadiness
+      summary: Проверить готовность принимать прикладные запросы
+      tags: [health]
+      security: []
+      responses:
+        '200':
+          description: Локальная инициализация завершена, остановка не начата
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthy'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '503':
+          description: Инициализация не завершена или процесс останавливается
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotReady'
+components:
+  schemas:
+    Healthy:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: ok
+    NotReady:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          const: not_ready
+        message:
+          type: string
+          const: Сервис не готов принимать запросы
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          const: invalid_request
+        message:
+          type: string
+          const: Некорректный запрос
+  responses:
+    InvalidRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

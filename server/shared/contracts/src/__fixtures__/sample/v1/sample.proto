@@ -1,0 +1,19 @@
+// Образец для проверки PROTO_LOADER_OPTIONS — не контракт платформы.
+syntax = "proto3";
+
+package sample.v1;
+
+enum SampleStatus {
+  SAMPLE_STATUS_UNSPECIFIED = 0;
+  SAMPLE_STATUS_ACTIVE = 1;
+}
+
+message SampleMessage {
+  string sample_id = 1;
+  int64 amount_kop = 2;
+  SampleStatus status = 3;
+}
+
+service SampleService {
+  rpc Echo(SampleMessage) returns (SampleMessage);
+}

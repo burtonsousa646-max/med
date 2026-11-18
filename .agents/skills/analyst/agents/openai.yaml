@@ -1,0 +1,4 @@
+# Сгенерировано ai/adapters/generate.mjs из ai/agents/analyst.md — не править руками.
+# Роль вызывается только явно: $analyst
+policy:
+  allow_implicit_invocation: false

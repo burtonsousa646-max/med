@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  title: 'Бэкофис: API платформы'
+  version: 1.0.0
+  description: Справочные подсказки Suggestion и техническая выдача флагов. Спецификация
+    003-suggestion-service.
+servers:
+  - url: /api/backoffice
+tags:
+  - name: suggestions
+    description: Справочные подсказки.
+  - name: feature-flags
+    description: Флаги приложения.
+paths:
+  /v1/suggestions/parties:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/parties
+  /v1/suggestions/addresses:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/addresses
+  /v1/suggestions/banks:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/banks
+  /v1/suggestions/emails:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/emails
+  /v1/feature-flags:
+    get:
+      operationId: getFeatureFlags
+      summary: Флаги функциональности приложения
+      tags:
+        - feature-flags
+      security: []
+      responses:
+        '200':
+          description: Флаги из схемы FeatureFlags; пока пустой объект.
+          headers:
+            Cache-Control:
+              description: Ответ не хранится в HTTP-кешах.
+              schema:
+                type: string
+                const: no-store
+            X-Request-Id:
+              description: Идентификатор запроса, созданный Gateway.
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlags'
+        '400':
+          $ref: ../openapi-shared/suggestions.yaml#/components/responses/InvalidRequest
+        '500':
+          $ref: ../openapi-shared/suggestions.yaml#/components/responses/InternalError
+        '503':
+          $ref: ../openapi-shared/suggestions.yaml#/components/responses/ServiceUnavailable
+components:
+  schemas:
+    FeatureFlags:
+      type: object
+      description: Белый список флагов приложения. В этой фиче новых флагов нет.
+      additionalProperties: false
+      properties: {}

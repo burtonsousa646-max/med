@@ -1,0 +1,7 @@
+{
+  "extends": "@platform/server-tooling/tsconfig/service.json",
+  "include": ["src", "test", "vitest.config.ts", "vitest.integration.config.ts"],
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true
+  }
+}

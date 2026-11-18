@@ -1,0 +1,4 @@
+{
+  "extends": "@platform/server-tooling/tsconfig/service.json",
+  "include": ["src", "vitest.config.ts"]
+}

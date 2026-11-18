@@ -1,0 +1,29 @@
+packages:
+  - server/apps/*
+  - server/shared/*
+  - web/apps/*/host
+  - web/apps/*/modules/*
+  - web/packages/*
+  - tests/*
+  - api
+allowBuilds:
+  '@bufbuild/buf': true
+  '@scarf/scarf': false
+  '@swc/core': true
+  core-js: false
+  core-js-pure: false
+  esbuild: true
+  nx: false
+  protobufjs: false
+# Дизайн-система — архивы .tgz в web/packages/design-system/.
+# Пакеты ссылаются друг на друга по версиям, которых нет в реестре npm, — подменяем их на архивы.
+overrides:
+  '@beef/conf': file:web/packages/design-system/beef-conf-2.0.0-carnica-3830.0.tgz
+  '@beef/react': file:web/packages/design-system/beef-react-2.0.0-carnica-3830.0.tgz
+  '@beef/testing': file:web/packages/design-system/beef-testing-2.0.0-carnica-3830.0.tgz
+  '@beef/utils': file:web/packages/design-system/beef-utils-2.0.0-carnica-3830.0.tgz
+  '@carnica/fork-react-qr-rounded': file:web/packages/design-system/fork-react-qr-rounded-1.0.1.tgz
+  '@carnica/graphics': file:web/packages/design-system/graphics-2.0.0-carnica-3830.0.tgz
+  '@carnica/themes': file:web/packages/design-system/themes-2.0.0-carnica-3830.0.tgz
+  '@carnica/ui-kit': file:web/packages/design-system/ui-kit-2.0.0-carnica-3830.0.tgz
+  '@carnica/utils': file:web/packages/design-system/utils-2.0.0-carnica-3830.0.tgz

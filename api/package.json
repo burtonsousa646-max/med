@@ -1,0 +1,25 @@
+{
+  "name": "@platform/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Контракты платформы: OpenAPI, protobuf, контрактные тесты и pact-файлы",
+  "type": "module",
+  "scripts": {
+    "lint": "node scripts/contracts.mjs lint",
+    "breaking": "node scripts/contracts.mjs breaking",
+    "generate": "node scripts/contracts.mjs generate",
+    "test:contract": "vitest run",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.75.0",
+    "@pact-foundation/pact": "^17.1.4",
+    "@platform/server-tooling": "workspace:*",
+    "@redocly/cli": "^2.76.0",
+    "@types/node": "^26.6.6",
+    "openapi-typescript": "^7.13.0",
+    "ts-proto": "^2.18.4",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

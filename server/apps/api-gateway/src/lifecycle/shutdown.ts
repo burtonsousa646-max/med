@@ -30,21 +30,32 @@ export class ShutdownCoordinator {
   private async run(): Promise<void> {
     this.health.beginShutdown()
     let timeout: ReturnType<typeof setTimeout> | undefined
+    let closing: Promise<void> | undefined
+
+    /** Закрывает ресурсы один раз независимо от исхода ожидания запросов. */
+    const closeOnce = () => (closing ??= Promise.resolve().then(() => this.close()))
+
     try {
       const budget = new Promise<never>((_, reject) => {
         timeout = setTimeout(() => {
           for (const scope of this.active) scope.abort()
+
+          // После отмены запросов закрываем ресурсы, даже если они не завершили drain.
+          void closeOnce().catch(reject)
           reject(new Error('Истёк срок остановки'))
         }, this.timeoutMs)
       })
+
+      /** Ожидает завершения активных запросов и закрывает ресурсы. */
       const drain = async () => {
         if (this.active.size)
           await new Promise<void>((resolve) => {
             this.drained = resolve
             if (!this.active.size) resolve()
           })
-        await this.close()
+        await closeOnce()
       }
+
       await Promise.race([drain(), budget])
     } finally {
       clearTimeout(timeout)

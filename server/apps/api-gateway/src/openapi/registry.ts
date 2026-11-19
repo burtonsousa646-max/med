@@ -68,11 +68,16 @@ export class OpenApiRegistry {
       }
       if (found.size !== app.operations.length) throw new Error('Лишний binding')
     }
-    this.routes.sort(
-      (a, b) =>
-        a.parts.filter((p) => p.startsWith('{')).length -
-        b.parts.filter((p) => p.startsWith('{')).length,
-    )
+    this.routes.sort((a, b) => {
+      for (let index = 0; index < Math.min(a.parts.length, b.parts.length); index++) {
+        const firstIsParameter = a.parts[index]?.startsWith('{') === true
+        const secondIsParameter = b.parts[index]?.startsWith('{') === true
+
+        if (firstIsParameter !== secondIsParameter) return firstIsParameter ? 1 : -1
+      }
+
+      return 0
+    })
   }
 
   /** Ищет операцию по HTTP-методу и пути с учётом префикса приложения. */

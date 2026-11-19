@@ -10,7 +10,16 @@ describe('конфигурация gateway — K1', () => {
   it('проверяет значения по умолчанию и запрещает изменение результата', () => {
     const config = readGatewayConfig(valid)
     expect(config.http.port).toBe(3000)
+    expect(config).toMatchObject({
+      env: 'development',
+      version: '0.0.0',
+      logLevel: 'info',
+      shutdownTimeoutMs: 15000,
+      http: { host: '0.0.0.0', port: 3000, requestTimeoutMs: 10000, bodyLimitBytes: 1048576 },
+      grpc: { healthHost: '127.0.0.1', healthPort: 50050, callTimeoutMs: 3000 },
+    })
     expect(Object.isFrozen(config.http)).toBe(true)
+    expect(Object.isFrozen(config.grpc)).toBe(true)
     expect(Object.isFrozen(config)).toBe(true)
   })
   it.each([
@@ -19,6 +28,7 @@ describe('конфигурация gateway — K1', () => {
     ['HTTP_PORT', '1.5'],
     ['HTTP_HOST', 'localhost'],
     ['GRPC_HEALTH_PORT', '-1'],
+    ['GRPC_HEALTH_HOST', 'localhost'],
     ['GRPC_CALL_TIMEOUT_MS', '10001'],
     ['HTTP_REQUEST_TIMEOUT_MS', '0'],
     ['HTTP_BODY_LIMIT_BYTES', '0'],
@@ -37,6 +47,28 @@ describe('конфигурация gateway — K1', () => {
       readGatewayConfig({ ...valid, NODE_ENV: 'production', LOG_LEVEL: 'debug' }),
     ).toThrow('LOG_LEVEL')
     expect(() => readGatewayConfig({ ...valid, HTTP_PORT: '50050' })).toThrow('HTTP_PORT')
+  })
+  it('разрешает одинаковые порты на разных непересекающихся адресах', () => {
+    const config = readGatewayConfig({
+      ...valid,
+      HTTP_HOST: '127.0.0.1',
+      GRPC_HEALTH_HOST: '127.0.0.2',
+      HTTP_PORT: '50050',
+    })
+    expect(config.http.port).toBe(config.grpc.healthPort)
+  })
+  it('принимает допустимые граничные значения', () => {
+    const config = readGatewayConfig({
+      ...valid,
+      HTTP_PORT: '65535',
+      GRPC_HEALTH_PORT: '1',
+      HTTP_REQUEST_TIMEOUT_MS: '1',
+      GRPC_CALL_TIMEOUT_MS: '1',
+      HTTP_BODY_LIMIT_BYTES: '2147483647',
+      SHUTDOWN_TIMEOUT_MS: '2147483647',
+    })
+    expect(config.grpc.callTimeoutMs).toBe(1)
+    expect(config.http.bodyLimitBytes).toBe(2147483647)
   })
   it('не раскрывает секрет неверной конфигурации', () => {
     expect(() => readGatewayConfig({ ...valid, UNLEASH_URL: 'synthetic-password' })).not.toThrow(

@@ -130,6 +130,18 @@ export interface components {
              * @enum {string}
              */
             status?: "active" | "liquidating" | "liquidated" | "reorganizing" | "bankrupt" | "unknown";
+            /** @description Полное наименование. */
+            fullName?: string;
+            /** @description Код ОКВЭД. */
+            okved?: string;
+            /** @description Название бизнеса. */
+            businessName?: string;
+            /** @description Сфера деятельности. */
+            industry?: string;
+            /** @description Город бизнеса. */
+            city?: string;
+            /** @description Сайт бизнеса. */
+            website?: string;
         };
         PartySuggestionsResponse: {
             /** @description Первые варианты в порядке источника, без пагинации. */

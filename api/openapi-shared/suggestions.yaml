@@ -250,6 +250,36 @@ components:
             - reorganizing
             - bankrupt
             - unknown
+        fullName:
+          type: string
+          description: Полное наименование.
+          minLength: 1
+          maxLength: 4096
+        okved:
+          type: string
+          description: Код ОКВЭД.
+          minLength: 1
+          maxLength: 4096
+        businessName:
+          type: string
+          description: Название бизнеса.
+          minLength: 1
+          maxLength: 4096
+        industry:
+          type: string
+          description: Сфера деятельности.
+          minLength: 1
+          maxLength: 4096
+        city:
+          type: string
+          description: Город бизнеса.
+          minLength: 1
+          maxLength: 4096
+        website:
+          type: string
+          description: Сайт бизнеса.
+          minLength: 1
+          maxLength: 4096
     AddressSuggestion:
       type: object
       additionalProperties: false

@@ -66,6 +66,12 @@ message PartySuggestion {
   optional string address = 5;
   // active, liquidating, liquidated, reorganizing, bankrupt или unknown.
   optional string status = 6;
+  optional string full_name = 7;
+  optional string okved = 8;
+  optional string business_name = 9;
+  optional string industry = 10;
+  optional string city = 11;
+  optional string website = 12;
 }
 
 message AddressSuggestion {

@@ -16,6 +16,7 @@ lint:
       - proto/grpc/health/v1/health.proto
     PACKAGE_DIRECTORY_MATCH:
       - proto/suggestion/v1/suggestion.proto
+      - proto/campaign-launcher/v1/campaign_launcher.proto
 breaking:
   use:
     - FILE

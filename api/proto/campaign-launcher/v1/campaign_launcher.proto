@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package platform.campaign_launcher.v1;
+
+// Внутренний контракт API Gateway. Идентичность берётся из подтверждённого контекста.
+service CampaignLauncherService {
+  rpc CreateDraft(CreateDraftRequest) returns (CreateDraftResponse);
+  rpc GetDraft(GetDraftRequest) returns (GetDraftResponse);
+  rpc UpdateDraftBusiness(UpdateDraftBusinessRequest) returns (UpdateDraftBusinessResponse);
+  rpc DeleteDraft(DeleteDraftRequest) returns (DeleteDraftResponse);
+}
+
+message DraftOwner {
+  oneof principal {
+    string visitor_id = 1;
+    AuthenticatedOwner authenticated = 2;
+  }
+}
+
+message AuthenticatedOwner {
+  string user_id = 1;
+  string company_id = 2;
+}
+
+// Для посетителя draft_id не передаётся: доступен текущий черновик владельца.
+message DraftTarget {
+  DraftOwner owner = 1;
+  optional string draft_id = 2;
+}
+
+message CreateDraftRequest {
+  DraftOwner owner = 1;
+  BusinessData business = 2;
+  string idempotency_key = 3;
+}
+
+message CreateDraftResponse {
+  Draft draft = 1;
+}
+
+message GetDraftRequest {
+  DraftTarget target = 1;
+}
+
+message GetDraftResponse {
+  Draft draft = 1;
+}
+
+message UpdateDraftBusinessRequest {
+  DraftTarget target = 1;
+  BusinessData business = 2;
+  uint32 revision = 3;
+}
+
+message UpdateDraftBusinessResponse {
+  Draft draft = 1;
+}
+
+message DeleteDraftRequest {
+  DraftTarget target = 1;
+}
+
+message DeleteDraftResponse {}
+
+message Draft {
+  string id = 1;
+  DraftStatus status = 2;
+  uint32 revision = 3;
+  BusinessData business = 4;
+  repeated ProfileField locked_fields = 5;
+}
+
+enum DraftStatus {
+  DRAFT_STATUS_UNSPECIFIED = 0;
+  DRAFT_STATUS_DRAFT = 1;
+}
+
+enum ProfileField {
+  PROFILE_FIELD_UNSPECIFIED = 0;
+  PROFILE_FIELD_INN = 1;
+  PROFILE_FIELD_PHONE = 2;
+  PROFILE_FIELD_EMAIL = 3;
+  PROFILE_FIELD_CUSTOMER_NAME = 4;
+}
+
+// Полный снимок шага. Отсутствующий атрибут очищает редактируемое поле.
+message BusinessData {
+  string inn = 1;
+  string phone = 2;
+  optional string email = 3;
+  optional bool offer_accepted = 4;
+  optional string customer_name = 5;
+  optional string industry = 6;
+  optional string city = 7;
+  optional string website = 8;
+  repeated CustomerLocation locations = 9;
+  optional string kpp = 10;
+  optional string ogrn = 11;
+  optional string okved = 12;
+  optional string registry_address = 13;
+  optional string business_name = 14;
+}
+
+message CustomerLocation {
+  string name = 1;
+  string address = 2;
+}

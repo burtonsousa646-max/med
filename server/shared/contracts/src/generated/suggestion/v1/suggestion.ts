@@ -71,6 +71,12 @@ export interface PartySuggestion {
     | undefined;
   /** active, liquidating, liquidated, reorganizing, bankrupt или unknown. */
   status?: string | undefined;
+  fullName?: string | undefined;
+  okved?: string | undefined;
+  businessName?: string | undefined;
+  industry?: string | undefined;
+  city?: string | undefined;
+  website?: string | undefined;
 }
 
 export interface AddressSuggestion {

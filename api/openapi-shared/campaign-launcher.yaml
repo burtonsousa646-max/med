@@ -1,0 +1,663 @@
+pathItems:
+  visitorSession:
+    post:
+      operationId: openCampaignDraftSession
+      summary: Открыть гостевую сессию черновика
+      tags:
+        - campaign-launcher
+      security: []
+      responses:
+        '204':
+          description: Гостевой контекст подготовлен.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+  visitorDraft:
+    get:
+      operationId: getVisitorCampaignDraft
+      summary: Получить черновик кампании
+      tags:
+        - campaign-launcher
+      security:
+        - campaignVisitorCookie: []
+      responses:
+        '200':
+          description: Черновик автора.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+    delete:
+      operationId: deleteVisitorCampaignDraft
+      summary: Удалить черновик кампании
+      tags:
+        - campaign-launcher
+      security:
+        - campaignVisitorCookie: []
+      responses:
+        '204':
+          description: Черновик удалён.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+    post:
+      operationId: createVisitorCampaignDraft
+      summary: Создать черновик кампании
+      tags:
+        - campaign-launcher
+      security:
+        - campaignVisitorCookie: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignBusinessInput'
+      responses:
+        '201':
+          description: Черновик создан или возвращён при повторе.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          $ref: '#/components/responses/CampaignInvalidRequest'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '409':
+          $ref: '#/components/responses/CampaignDraftConflict'
+        '413':
+          $ref: '#/components/responses/CampaignPayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/CampaignUnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/CampaignInvalidBusinessData'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+  visitorBusiness:
+    put:
+      operationId: saveVisitorCampaignBusiness
+      summary: Сохранить данные бизнеса в черновике
+      tags:
+        - campaign-launcher
+      security:
+        - campaignVisitorCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignBusinessUpdate'
+      responses:
+        '200':
+          description: Данные бизнеса сохранены.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          $ref: '#/components/responses/CampaignInvalidRequest'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '409':
+          $ref: '#/components/responses/CampaignDraftConflict'
+        '413':
+          $ref: '#/components/responses/CampaignPayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/CampaignUnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/CampaignInvalidBusinessData'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+  authenticatedCreate:
+    post:
+      operationId: createCampaignDraft
+      summary: Создать черновик кампании
+      tags:
+        - campaign-launcher
+      security:
+        - platformSession: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignBusinessInput'
+      responses:
+        '201':
+          description: Черновик создан или возвращён при повторе.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          $ref: '#/components/responses/CampaignInvalidRequest'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '409':
+          $ref: '#/components/responses/CampaignDraftConflict'
+        '413':
+          $ref: '#/components/responses/CampaignPayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/CampaignUnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/CampaignInvalidBusinessData'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+  authenticatedDraft:
+    get:
+      operationId: getCampaignDraft
+      summary: Получить черновик кампании
+      tags:
+        - campaign-launcher
+      security:
+        - platformSession: []
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      responses:
+        '200':
+          description: Черновик автора.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+    delete:
+      operationId: deleteCampaignDraft
+      summary: Удалить черновик кампании
+      tags:
+        - campaign-launcher
+      security:
+        - platformSession: []
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      responses:
+        '204':
+          description: Черновик удалён.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+  authenticatedBusiness:
+    put:
+      operationId: saveCampaignBusiness
+      summary: Сохранить данные бизнеса в черновике
+      tags:
+        - campaign-launcher
+      security:
+        - platformSession: []
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignBusinessUpdate'
+      responses:
+        '200':
+          description: Данные бизнеса сохранены.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          $ref: '#/components/responses/CampaignInvalidRequest'
+        '401':
+          $ref: '#/components/responses/CampaignAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/CampaignInvalidOrigin'
+        '404':
+          $ref: '#/components/responses/CampaignDraftNotFound'
+        '409':
+          $ref: '#/components/responses/CampaignDraftConflict'
+        '413':
+          $ref: '#/components/responses/CampaignPayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/CampaignUnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/CampaignInvalidBusinessData'
+        '429':
+          $ref: '#/components/responses/CampaignTooManyRequests'
+        '500':
+          $ref: '#/components/responses/CampaignInternalError'
+        '503':
+          $ref: '#/components/responses/CampaignServiceUnavailable'
+components:
+  parameters:
+    DraftId:
+      name: draftId
+      in: path
+      required: true
+      description: Идентификатор заявки автора.
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Один UUID для всех повторов одного запроса создания.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    CampaignBusinessInput:
+      type: object
+      additionalProperties: false
+      required:
+        - inn
+        - phone
+        - locations
+      properties:
+        inn:
+          type: string
+          description: ИНН.
+          pattern: ^(?:[0-9]{10}|[0-9]{12})$
+        phone:
+          type: string
+          description: Контактный телефон.
+          pattern: ^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$
+        email:
+          type: string
+          description: Контактный email.
+          format: email
+          pattern: ^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$
+        offerAccepted:
+          type: boolean
+          description: Признак принятия оферты.
+        customerName:
+          type: string
+          description: Название для клиентов.
+          minLength: 1
+        industry:
+          type: string
+          description: Сфера деятельности.
+          minLength: 1
+        city:
+          type: string
+          description: Город.
+          minLength: 1
+        website:
+          type: string
+          description: Адрес сайта.
+          format: uri
+          pattern: ^https?://[^\s]+$
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignLocation'
+        kpp:
+          type: string
+          description: КПП из справочных данных.
+          pattern: ^[0-9]{9}$
+        ogrn:
+          type: string
+          description: ОГРН или ОГРНИП из справочных данных.
+          pattern: ^(?:[0-9]{13}|[0-9]{15})$
+        okved:
+          type: string
+          description: Код ОКВЭД из справочных данных.
+          minLength: 1
+        registryAddress:
+          type: string
+          description: Адрес по реестру.
+          minLength: 1
+        businessName:
+          type: string
+          description: Название бизнеса из справочных данных.
+          minLength: 1
+    CampaignBusinessData:
+      type: object
+      additionalProperties: false
+      required:
+        - inn
+        - phone
+        - locations
+      properties:
+        inn:
+          type: string
+          description: ИНН.
+          pattern: ^(?:[0-9]{10}|[0-9]{12})$
+        phone:
+          type: string
+          description: Контактный телефон.
+          pattern: ^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$
+        email:
+          type: string
+          description: Контактный email.
+          format: email
+          pattern: ^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$
+        offerAccepted:
+          type: boolean
+          description: Признак принятия оферты.
+        customerName:
+          type: string
+          description: Название для клиентов.
+          minLength: 1
+        industry:
+          type: string
+          description: Сфера деятельности.
+          minLength: 1
+        city:
+          type: string
+          description: Город.
+          minLength: 1
+        website:
+          type: string
+          description: Адрес сайта.
+          format: uri
+          pattern: ^https?://[^\s]+$
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignLocation'
+        kpp:
+          type: string
+          description: КПП из справочных данных.
+          pattern: ^[0-9]{9}$
+        ogrn:
+          type: string
+          description: ОГРН или ОГРНИП из справочных данных.
+          pattern: ^(?:[0-9]{13}|[0-9]{15})$
+        okved:
+          type: string
+          description: Код ОКВЭД из справочных данных.
+          minLength: 1
+        registryAddress:
+          type: string
+          description: Адрес по реестру.
+          minLength: 1
+        businessName:
+          type: string
+          description: Название бизнеса из справочных данных.
+          minLength: 1
+    CampaignLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - address
+      properties:
+        name:
+          type: string
+          description: Название точки.
+          minLength: 1
+        address:
+          type: string
+          description: Адрес точки.
+          minLength: 1
+    CampaignBusinessUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - business
+      properties:
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+          description: Версия черновика.
+        business:
+          $ref: '#/components/schemas/CampaignBusinessInput'
+    CampaignDraft:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - revision
+        - business
+        - lockedFields
+      properties:
+        id:
+          type: string
+          description: Идентификатор черновика.
+          format: uuid
+        status:
+          type: string
+          const: draft
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+          description: Версия черновика.
+        business:
+          $ref: '#/components/schemas/CampaignBusinessData'
+        lockedFields:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - inn
+              - phone
+              - email
+              - customer_name
+    CampaignError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машинный код в lower_snake_case.
+          pattern: ^[a-z][a-z0-9_]*$
+        message:
+          type: string
+          description: Сообщение на русском языке.
+  headers:
+    Cache-Control:
+      description: Запрет HTTP-кеширования.
+      schema:
+        type: string
+        const: no-store
+    Set-Cookie:
+      description: Cookie доступа к черновику. Значение не доступно клиентскому коду.
+      schema:
+        type: string
+  responses:
+    CampaignInvalidOrigin:
+      description: Не пройдена проверка источника запроса.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignDraftNotFound:
+      description: Черновик отсутствует или недоступен автору.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignTooManyRequests:
+      description: Превышено ограничение частоты запросов.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignInternalError:
+      description: Внутренняя ошибка.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignServiceUnavailable:
+      description: Сервис временно недоступен.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignAuthenticationRequired:
+      description: Требуется подтверждённая сессия или гостевая cookie.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignInvalidRequest:
+      description: Некорректный запрос.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignDraftConflict:
+      description: Конфликт версии, ключа повтора или существующего черновика.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignPayloadTooLarge:
+      description: Превышен транспортный размер запроса.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignUnsupportedMediaType:
+      description: Неподдерживаемый тип содержимого.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'
+    CampaignInvalidBusinessData:
+      description: Данные нарушают правило сохранения.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignError'

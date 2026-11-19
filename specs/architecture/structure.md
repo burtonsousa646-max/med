@@ -190,6 +190,10 @@ server/apps/suggestion-service/src/
 
 Gateway добавляет `src/suggestions/`, `src/clients/suggestion/`, `src/rate-limit/`, `src/client-identity/`. Его ограничитель использует собственный Redis, отдельно от Redis ответов Suggestion. Общая библиотека Redis не создаётся; каждый адаптер реализует порт своего приложения через разрешённый пакет `redis`. Логика поиска и ключи DaData остаются в сервисе, сетевой/пользовательский допуск — в Gateway. Рабочие приложения и новые общие пакеты создаёт BE по задачам, наличие раздела описывает целевую структуру.
 
+### Campaign Launcher
+
+По [ADR 0005](adr/0005-campaign-launcher.md) `server/apps/campaign-launcher-service/` владеет черновиками рекламных кампаний и их данными. На первом этапе сервис хранит данные бизнеса и точки приёма клиентов в собственной PostgreSQL через Prisma. Схема и миграции находятся в `prisma/` сервиса. Оффер и выбор аудитории добавляются как части черновика после согласования требований к этим шагам. Gateway вызывает Campaign Launcher по gRPC. Справочные данные поступают клиенту через Suggestion. Подробности — в [дизайне фичи](../features/004-campaign-launcher/design.md).
+
 ### API Gateway
 
 Решение — [ADR 0003](adr/0003-api-gateway.md), реализация — [002-api-gateway-foundation](../features/002-api-gateway-foundation/design.md).

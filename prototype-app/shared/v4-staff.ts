@@ -8,6 +8,8 @@ export type V4StaffMember = V4StaffSession & { addedAt: number | null; addedBy: 
 export const v4StaffPageSize = 25
 
 export type V4SubmissionSummary = {
+  status: import('./mvp-promo.ts').PartnerCampaignStatus
+  contactName: string | null; phone: string | null;
   id: string; submittedAt: number; name: string; inn: string; city: string; email: string | null; title: string
 }
 
@@ -16,6 +18,11 @@ export type V4SubmissionList = {
 }
 
 export type V4Submission = {
+  status: import('./mvp-promo.ts').PartnerCampaignStatus
+  review: import('./market.ts').Review
+  mvp?: import('./mvp-promo.ts').Promo
+  mvpProfile?: import('./mvp-promo.ts').Profile
+  setupMode?: 'quick' | 'manual'; contactName?: string;
   partnerDetails?: PartnerDetails; registryDetails?: RegistryDetails | null
   id: string; submittedAt: number; business: Business; email?: string; addresses: string[]; online: boolean
   offer: OfferDraft; audience: number[]; audienceCity?: string; triggers: string; offerAccepted?: boolean

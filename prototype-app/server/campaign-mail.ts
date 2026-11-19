@@ -6,6 +6,7 @@ import { audienceGroups } from '../shared/campaign-draft.ts'
 import { offerLayouts } from '../shared/campaign-offer.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
 import { db } from './db.ts'
+import { emailFont, emailHeading, emailLayout, emailLogo, escapeMailText } from './email-layout.ts'
 import { partnerDetailsRows } from '../shared/partner-details.ts'
 
 type MailRow = { id: string; data: string; submitted_at: number; mail_attempts: number }
@@ -16,28 +17,55 @@ const acceptedPart = db.prepare('select 1 from v4_mail_parts where submission_id
 const markPartAccepted = db.prepare('insert into v4_mail_parts (submission_id, part) values (?, ?)')
 
 function campaignMessage(row: MailRow, from: string) {
-  const { business, partnerDetails, registryDetails, addresses, online, offer, audience, audienceCity, email, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
+  const { mvp, mvpProfile, business, contactName, partnerDetails, registryDetails, addresses, online, offer, audience, audienceCity, email, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
+  const title = 'Новая заявка на рекламную кампанию'
+  const subject = `${title} · ${platformName}`
+  const submission = [`Заявка ${row.id}`, `Дата: ${new Date(row.submitted_at).toISOString()}`]
+  const sections = [
+    { title: 'Бизнес', lines: [
+      `Название: ${business.name}`, `ИНН: ${business.inn}`, ...(contactName ? [`Представитель: ${contactName}`] : []), `Телефон: ${business.phone}`, `Сфера: ${business.category}`,
+      ...(email ? [`Подтверждённый email: ${email}`] : []),
+      `Сайт: ${business.website || '—'}`, `Город бизнеса: ${business.city || '—'}`,
+      ...(mvpProfile?.addr ? ['Адрес при оформлении: ' + mvpProfile.addr] : []),
+      `Работает онлайн: ${online ? 'да' : 'нет'}`, `Адреса: ${addresses.filter(Boolean).join('; ') || '—'}`,
+    ] },
+    { title: 'Реквизиты для партнёрского договора', lines: partnerDetailsRows(business.inn, registryDetails, partnerDetails)
+      .map(([label, value]) => `${label}: ${value}`) },
+    { title: 'Предложение', lines: [
+      `Оффер: ${offer.title}`, `Промокод: ${offer.promo || '—'}`, `Скидка: ${offer.discount ? offer.discount + '%' : '—'}`,
+      `Срок действия: ${offer.until || '—'}`, `Цвет: ${offer.background ?? offer.tone}`, `Акция 1 + 1: ${offer.gift ? 'да' : 'нет'}`,
+      `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, `Макет: ${offer.layout ? offerLayouts[offer.layout] : 'Автоматически'}`,
+    ] },
+    ...(mvp ? [{ title: 'Настройки промокампании', lines: [
+      'Средний чек: ' + mvp.check + ' ₽', 'Комиссия: ' + mvp.fee + ' %', 'Передача заказов: ' + mvp.via,
+      'Настройка аудитории: ' + (mvp.mode === 'manual' ? 'вручную' : 'автоматически'), 'Оформление: ' + (offerImage?.name ?? mvp.design),
+    ] }] : []),
+    { title: 'Аудитория', lines: [
+      ...audienceGroups.map(({ title, choices }, i) => `${title}: ${choices[audience[i]]}`),
+      ...(audience[0] === 1 ? [`Город показа: ${audienceCity ?? business.city}`] : []),
+      `Пожелания: ${triggers || '—'}`,
+    ] },
+  ]
+  const acceptedTerms = 'Условия оферты приняты.'
+  const plainDetails = [submission, ...sections.map(({ lines }) => lines)].map(lines => lines.join('\n')).join('\n\n')
+  const text = `${plainDetails}\n${acceptedTerms}\n\n${platformName}`
+  const details = sections.map(({ title, lines }) => `
+    <h2 style="margin:20px 0 8px;padding-top:16px;border-top:1px solid #e2e6ed;font-family:${emailFont};font-size:18px;line-height:24px;font-weight:700;">${title}</h2>
+    <p style="margin:0;word-wrap:break-word;overflow-wrap:anywhere;">${escapeMailText(lines.join('\n')).replaceAll('\n', '<br>')}</p>
+  `).join('\n')
   return {
     from: { name: platformName, address: from },
     to: recipient,
-    subject: `Новая заявка на рекламную кампанию · ${platformName}`,
+    subject,
     // shortcut: SMTP can accept a message before a connection drops; reconcile ambiguous deliveries if duplicates must be ruled out.
     messageId: `<v4-campaign-${row.id}@${from.split('@')[1]}>`,
-    text: [
-      `Заявка ${row.id}`, `Дата: ${new Date(row.submitted_at).toISOString()}`, '',
-      `Название: ${business.name}`, `ИНН: ${business.inn}`, `Телефон: ${business.phone}`, `Сфера: ${business.category}`,
-      ...(email ? [`Подтверждённый email: ${email}`] : []),
-      `Сайт: ${business.website || '—'}`, `Город бизнеса: ${business.city || '—'}`,
-      `Работает онлайн: ${online ? 'да' : 'нет'}`, `Адреса: ${addresses.filter(Boolean).join('; ') || '—'}`, '',
-      'Реквизиты для партнёрского договора',
-      ...partnerDetailsRows(business.inn, registryDetails, partnerDetails).map(([label, value]) => `${label}: ${value}`), '',
-      `Оффер: ${offer.title}`, `Промокод: ${offer.promo || '—'}`, `Скидка: ${offer.discount ? offer.discount + '%' : '—'}`,
-      `Срок действия: ${offer.until || '—'}`, `Цвет: ${offer.tone}`, `Акция 1 + 1: ${offer.gift ? 'да' : 'нет'}`,
-      `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, `Макет: ${offer.layout ? offerLayouts[offer.layout] : 'Автоматически'}`, '',
-      ...audienceGroups.map(({ title, choices }, i) => `${title}: ${choices[audience[i]]}`),
-      ...(audience[0] === 1 ? [`Город показа: ${audienceCity ?? business.city}`] : []),
-      `Пожелания: ${triggers || '—'}`, 'Условия оферты приняты.', '', platformName,
-    ].join('\n'),
+    text,
+    html: emailLayout(subject, `
+      ${emailHeading(title)}
+      <p style="margin:0;color:#555d6d;font-size:14px;line-height:20px;word-wrap:break-word;overflow-wrap:anywhere;">${submission.map(escapeMailText).join('<br>')}</p>
+      ${details}
+      <p style="margin:20px 0 0;">${acceptedTerms}</p>
+    `),
     attachments: [{ file: offerImage, label: 'offer' }, { file: logoImage, label: 'logo' }].flatMap(({ file, label }) => file ? [{
       filename: `${label}.${imageExtension(file.type)}`, contentType: file.type, content: Buffer.from(file.base64, 'base64'),
     }] : []),
@@ -48,7 +76,7 @@ export async function sendCampaignMail(row: MailRow, from: string, send: (messag
   const message = campaignMessage(row, from)
   // Finish partially sent submissions from the old transport without resending accepted parts.
   if (message.attachments.length !== 2 || ![1, 2].some(part => acceptedPart.get(row.id, part))) {
-    await send(message)
+    await send({ ...message, attachments: [emailLogo, ...message.attachments] })
     return
   }
 
@@ -59,7 +87,7 @@ export async function sendCampaignMail(row: MailRow, from: string, send: (messag
       ...message,
       subject: `${message.subject} (${part}/${message.attachments.length})`,
       messageId: message.messageId.replace('@', `-${part}@`),
-      attachments: [attachment],
+      attachments: [emailLogo, attachment],
     })
     markPartAccepted.run(row.id, part)
   }
@@ -114,15 +142,29 @@ function campaignSmtp() {
 
 export function campaignCodeMessage(email: string, code: string, from: string, purpose: 'confirmation' | 'staff' = 'confirmation') {
   const label = purpose === 'staff' ? 'Код входа для сотрудника' : 'Код подтверждения почты'
+  const subject = `${label} · ${platformName}`
+  const expiry = 'Он действует 10 минут.'
+  const help = 'Если вы не запрашивали код, просто проигнорируйте письмо.'
   return {
     from: { name: platformName, address: from },
     to: [{ address: email, name: '' }],
-    subject: `${label} · ${platformName}`,
+    subject,
     text: `${label}: ${code}
 
-Он действует 10 минут. Если вы не запрашивали код, просто проигнорируйте письмо.
+${expiry} ${help}
 
 ${platformName}`,
+    html: emailLayout(subject, `
+      ${emailHeading(label)}
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr><td bgcolor="#fff5c5" style="padding:12px 20px;border-radius:12px;color:#28303f;font-family:${emailFont};font-size:32px;line-height:40px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:4px;">
+          ${escapeMailText(code)}
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 8px;">${expiry}</p>
+      <p style="margin:0;color:#555d6d;">${help}</p>
+    `),
+    attachments: [emailLogo],
   }
 }
 

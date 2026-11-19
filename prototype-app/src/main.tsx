@@ -1,7 +1,8 @@
 import { Component, StrictMode, Suspense, lazy, useEffect, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { MotionConfig } from 'motion/react'
+import { migratePrototypeUrl } from './legacy-routes'
 import { platformName } from '../shared/brand'
 import { analytics, pages, type AnalyticsPage } from './analytics'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -17,10 +18,14 @@ const CampaignPage = lazy(() => import('./screens/CampaignPage'))
 const V4Staff = lazy(() => import('./screens/V4Staff'))
 const LandingV3 = lazy(() => import('./screens/LandingV3'))
 const Build = lazy(() => import('./screens/Build'))
-const Near = lazy(() => import('./screens/Near'))
+const Market = lazy(() => import('./screens/Market'))
 const mvp = () => import('./screens/Mvp')
-const MvpLogin = lazy(() => mvp().then(m => ({ default: m.MvpLogin }))), MvpNew = lazy(() => mvp().then(m => ({ default: m.MvpNew })))
+const mvpSession = () => import('./screens/MvpSession')
+const MvpShell = lazy(() => mvpSession().then(m => ({ default: m.MvpShell })))
+const MvpLogin = lazy(() => mvpSession().then(m => ({ default: m.MvpLogin }))), MvpNew = lazy(() => mvp().then(m => ({ default: m.MvpNew })))
 const MvpPromo = lazy(() => mvp().then(m => ({ default: m.MvpPromo }))), MvpDone = lazy(() => mvp().then(m => ({ default: m.MvpDone })))
+const PartnerCampaigns = lazy(() => mvp().then(m => ({ default: m.PartnerCampaigns })))
+const PartnerCompany = lazy(() => mvp().then(m => ({ default: m.PartnerCompany })))
 const entry = () => import('./screens/Entry'), flow = () => import('./screens/Flow'), cab = () => import('./screens/Cabinet')
 const Inn = lazy(() => entry().then(m => ({ default: m.Inn }))), Login = lazy(() => entry().then(m => ({ default: m.Login })))
 const Approve = lazy(() => flow().then(m => ({ default: m.Approve }))), Checkout = lazy(() => flow().then(m => ({ default: m.Checkout })))
@@ -64,17 +69,17 @@ function LatestStats() {
 function OnRoute() {
   const { pathname, search } = useLocation()
   useEffect(() => {
-    if (pathname.startsWith('/v4/staff')) { analytics.view(null); return }
-    if (pathname.startsWith('/v4/create')) return // Wizard sends only validated, visible steps.
-    const page = pathname === '/' ? '/v4' : pathname
+    if (pathname === '/app' || pathname.startsWith('/app/')) return // Guarded screens track only after authorization.
+    if (pathname.startsWith('/v4/create')) return
+    const page = pathname === '/market' ? '/market/' : pathname
     const tracked = Object.hasOwn(pages, page) && (pathname !== '/login' || new URLSearchParams(search).get('from') === 'v4')
     analytics.view(tracked ? page as AnalyticsPage : null)
   }, [pathname, search])
   useEffect(() => {
     scrollTo(0, 0)
-    if (pathname.startsWith('/v4/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
+    if (pathname.startsWith('/app/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
-    document.title = pathname === '/' || pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname === '/near' ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
+    document.title = pathname === '/' ? platformName : pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname.startsWith('/market') ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
   }, [pathname])
   return null
 }
@@ -88,18 +93,35 @@ class Failsafe extends Component<{ children: ReactNode }, { error: string | null
     return (
       <div className="bl-page wrap"><section className="bl-section pad bl-stack" style={{ marginTop: 48, maxWidth: 640, ['--bl-gap' as string]: '16px' }}>
         <h1 className="bl-h2">не получилось открыть экран</h1>
-        <p className="bl-body bl-secondary">{this.state.error}</p>
-        <div><Link className="bl-btn bl-btn--primary" to="/cab/campaigns" onClick={() => this.setState({ error: null })}>к кампаниям</Link></div>
+        <p className="bl-body bl-secondary">Обновите страницу, чтобы попробовать ещё раз.</p>
+        <div><button className="bl-btn bl-btn--primary" onClick={() => location.reload()}>Обновить страницу</button></div>
       </section></div>
     )
   }
 }
 
+migratePrototypeUrl()
+window.addEventListener('vite:preloadError', event => {
+  // An old tab can request a retired chunk after a release. Retry this URL once per minute.
+  try {
+    const key = 'last-module-reload'
+    if (Date.now() - Number(sessionStorage.getItem(key)) < 60_000) return
+    sessionStorage.setItem(key, String(Date.now()))
+  } catch { return }
+  event.preventDefault()
+  location.reload()
+})
+window.addEventListener('hashchange', () => {
+  if (location.hash.startsWith('#/')) {
+    migratePrototypeUrl()
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+})
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
-        <HashRouter>
+        <BrowserRouter>
           <OnRoute />
           <Failsafe>
             <Suspense fallback={<div className="bl-page wrap" aria-busy="true" />}>
@@ -110,14 +132,18 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
                 <Route path="/v4/create/:stage?" element={<CampaignPage />} />
-                <Route path="/v4/staff/:id?" element={<V4Staff />} />
                 <Route path="/v4/offer" element={<PublicDocument />} />
                 <Route path="/v4/privacy" element={<PublicDocument privacy />} />
                 <Route path="/mvp" element={<LandingV2 />} />
-                <Route path="/mvp/login" element={<MvpLogin />} />
-                <Route path="/mvp/new" element={<MvpNew />} />
-                <Route path="/mvp/new/promo" element={<MvpPromo />} />
-                <Route path="/mvp/done" element={<MvpDone />} />
+                <Route element={<MvpShell/>}>
+                <Route path="/app/staff/:id?" element={<V4Staff/>}/>
+                <Route path="/app/" element={<MvpLogin />} />
+                <Route path="/app/company" element={<PartnerCompany />} />
+                <Route path="/app/campaigns" element={<PartnerCampaigns />} />
+                <Route path="/app/campaigns/formats" element={<MvpNew />} />
+                <Route path="/app/campaigns/new" element={<MvpPromo />} />
+                <Route path="/app/campaigns/:id" element={<MvpDone />} />
+                </Route>
                 <Route path="/login" element={<Login />} />
                 <Route path="/inn" element={<Inn />} />
                 <Route path="/consent" element={<Consent />} />
@@ -135,14 +161,14 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/cab/company" element={<Company />} />
                 <Route path="/cab/help" element={<Help />} />
                 <Route path="/offer" element={<Offer />} />
-                <Route path="/near" element={<Near />} />
+                <Route path="/market/" element={<Market />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <DemoMenu />
             </Suspense>
           </Failsafe>
           <Toaster />
-        </HashRouter>
+        </BrowserRouter>
       </MotionConfig>
     </QueryClientProvider>
   </StrictMode>,

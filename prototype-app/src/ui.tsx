@@ -233,14 +233,14 @@ export const SCREENS: [string, string, string][] = [
   ['кампания и рост', '/c/:id/launch', '5 · ИИ-модерация и запуск'], ['кампания и рост', '/cab/stats', '6 · статистика'],
   ['кампания и рост', '/cab/campaigns', 'кабинет · кампании'], ['кампания и рост', '/cab/connections', 'кабинет · подключения'], ['кампания и рост', '/cab/balance', 'кабинет · баланс'],
   ['кампания и рост', '/cab/docs', 'кабинет · документы и ЭДО'], ['кампания и рост', '/cab/company', 'кабинет · компания'], ['кампания и рост', '/cab/help', 'кабинет · помощь'],
-  ['что видит абонент', '/near', '7 · витрина «лучшее рядом»'],
+  ['что видит абонент', '/market/', '7 · витрина «лучшее рядом»'],
 ]
 export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathname.replace(/^\/c\/\d+/, '/c/:id').replace(/^\/approve\/.+/, '/approve/:token'))?.[2]
 
 export function DemoMenu() {
   const [open, setOpen] = useState(false)
   const { pathname, search } = useLocation()
-  if (pathname === '/' || pathname === '/v4' || pathname.startsWith('/v4/') || (pathname === '/login' && new URLSearchParams(search).get('from') === 'v4') || pathname === '/v3' || pathname.startsWith('/mvp')) return null
+  if (pathname === '/' || pathname.startsWith('/market') || pathname.startsWith('/app') || pathname === '/near' || pathname === '/v4' || pathname.startsWith('/v4/') || (pathname === '/login' && new URLSearchParams(search).get('from') === 'v4') || pathname === '/v3' || pathname.startsWith('/mvp')) return null
   return (
     <>
       <button className="bl-pill-dark demo-fab" onClick={() => setOpen(true)} aria-haspopup="dialog">экраны прототипа</button>

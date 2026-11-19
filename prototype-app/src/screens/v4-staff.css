@@ -18,6 +18,7 @@
 .staff-row-link { color: var(--color-text-primary); font-weight: 600; }
 .staff-row-link:hover { text-decoration: underline; }
 .staff-subline { display: block; margin-top: 4px; }
+.staff-compact-offer { display: none; }
 .staff-empty { margin: 20px 0 8px; }
 .staff-pagination { justify-content: space-between; gap: 8px; margin-top: 16px; }
 .staff-retry { flex-wrap: wrap; justify-content: space-between; }
@@ -40,6 +41,8 @@
 .staff-member-feedback { margin: 14px 0 0; overflow-wrap: anywhere; }
 .staff-members-table td:first-child { overflow-wrap: anywhere; }
 .staff-members-table td:nth-child(2) { white-space: normal; }
+.partner-campaigns td:first-child { overflow-wrap: anywhere; }
+.partner-campaigns .bl-tag, .staff-table .bl-tag { white-space: nowrap; }
 .staff-login { width: min(1440px, 100%); margin-inline: auto; padding: 28px clamp(16px, 4vw, 48px) 48px; }
 .staff-login-card { width: min(100%, 500px); margin: clamp(40px, 10vh, 104px) auto 0; }
 .staff-login-card .bl-h1 { margin-block: 12px 6px; }
@@ -59,6 +62,7 @@
   .staff-case { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
+  .partner-campaigns :is(th,td):nth-child(2), .staff-table :is(th,td):nth-child(4) { display: none; }
   .staff-page-title { align-items: start; }
   .staff-table :is(th, td):nth-child(3) { display: none; }
   .staff-table :is(th, td):nth-child(4) { white-space: normal; }
@@ -66,5 +70,6 @@
   .staff-members-table :is(th, td):last-child { display: none; }
 }
 @media (max-width: 400px) {
+  .staff-compact-offer { display: block; margin-top: 4px; }
   .staff-table :is(th, td):nth-child(2) { display: none; }
 }

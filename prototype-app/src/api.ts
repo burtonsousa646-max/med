@@ -14,8 +14,8 @@ export type Campaign = S['Campaign']
 
 export const client = createFetchClient<paths>({ baseUrl: import.meta.env.VITE_API_URL ?? '/api', credentials: 'include' })
 export async function autocompleteInn(inn: string, signal: AbortSignal) {
-  const { data, error } = await client.POST('/autocomplete/inn', { body: { inn }, signal })
-  if (!data || data.profile.inn !== inn) throw new Error(error?.message || 'Не удалось найти бизнес. Попробуйте ещё раз')
+  const { data, error, response } = await client.POST('/autocomplete/inn', { body: { inn }, signal })
+  if (!data || data.profile.inn !== inn) throw Object.assign(new Error(error?.message || 'Не удалось найти бизнес. Попробуйте ещё раз'), {status:response.status})
   return data.profile
 }
 

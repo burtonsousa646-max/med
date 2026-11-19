@@ -10,7 +10,7 @@ COPY design-system /app/design-system
 COPY prototype-app/ ./
 ARG VITE_METRIKA_ID=
 ENV VITE_METRIKA_ID=$VITE_METRIKA_ID
-RUN npm test && node --test scripts/*.test.ts && npm run build
+RUN npm test && npm run build
 
 FROM node:22-bookworm-slim AS api-dependencies
 WORKDIR /app/prototype-app

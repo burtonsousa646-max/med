@@ -4,6 +4,207 @@
  */
 
 export interface paths {
+    "/mvp/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Отправить одноразовый код для общего входа */
+        post: operations["requestMvpLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Проверить код и создать восьмичасовую сессию кабинета */
+        post: operations["verifyMvpLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMvpSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/company": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmMvpCompany"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["endMvpSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMvpCampaigns"];
+        put?: never;
+        post: operations["submitMvpCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/campaigns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMvpCampaign"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMarketOffers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/offers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getMarketOffer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/offers/{id}/{asset}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset: "image" | "logo";
+            };
+            cookie?: never;
+        };
+        get: operations["getMarketImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["searchMarketOffers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/submissions/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["updateSubmissionReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -675,6 +876,58 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        MvpProfile: {
+            inn: string;
+            company: string;
+            addr: string;
+            category?: string;
+            website?: string;
+        };
+        MvpSession: {
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role?: "staff" | "admin";
+            profile: components["schemas"]["MvpProfile"] | null;
+        };
+        MvpPromo: {
+            code: string;
+            /** @description Скидка от 1 до 90 процентов */
+            off: string;
+            cond: string;
+            site: string;
+            /** Format: date */
+            till: string;
+            /** @description Комиссия от 3 до 50 процентов */
+            fee: string;
+            /** @description Средний чек от 1 до 9999999 рублей */
+            check: string;
+            /** @enum {string} */
+            via: "файл раз в неделю" | "постбэк" | "коннектор 1С";
+            /** @enum {string} */
+            design: "coffee-ivory.png" | "coffee-teal.png" | "coffee-takeaway.png";
+            addresses: string[];
+            online: boolean;
+            /** @enum {string} */
+            mode: "auto" | "manual";
+            /** @enum {string} */
+            area: "рядом с точкой" | "весь город" | "вся Россия";
+            city?: string;
+            /** @enum {string} */
+            gender?: "любой" | "женщины" | "мужчины";
+            /** @enum {string} */
+            age?: "любой" | "18–34" | "35 и старше";
+            /** @enum {string} */
+            income?: "любой" | "средний" | "выше среднего";
+            /** @enum {string} */
+            moment?: "любые" | "недавно переехали" | "день зарплаты";
+            wishes?: string;
+            photo?: {
+                name: string;
+                /** @description Сжатое изображение PNG или WebP в формате data URL */
+                src: string;
+            };
+        };
         OfferAiPatch: {
             title?: string;
             promo?: string;
@@ -685,7 +938,48 @@ export interface components {
             gift?: boolean;
             zoom?: boolean;
             /** @enum {string} */
-            layout?: "split" | "photo" | "text";
+            layout?: "split" | "photo" | "text" | "artwork";
+        };
+        /** @enum {string} */
+        ReviewStatus: "review" | "awaiting_payment" | "published" | "expired";
+        /** @enum {string} */
+        PartnerCampaignStatus: "review" | "awaiting_payment" | "published" | "expired" | "stopped";
+        ReviewInput: {
+            reviewed: boolean;
+            paid: boolean;
+            erid: string;
+            version: number;
+        };
+        SubmissionReview: components["schemas"]["ReviewInput"] & {
+            status: components["schemas"]["ReviewStatus"];
+            /** Format: uuid */
+            publicId: string | null;
+        };
+        MarketOffer: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            offer: {
+                title: string;
+                promo: string;
+                discount: string;
+                until: string;
+                /** @enum {string} */
+                tone: "red" | "green" | "blue" | "violet" | "magenta" | "teal" | "dark" | "light";
+                gift: boolean;
+                zoom: boolean;
+                /** @enum {string} */
+                layout?: "split" | "photo" | "text" | "artwork";
+                background?: string;
+            };
+            erid: string;
+            category: string;
+            group: string;
+            online: boolean;
+            addresses: string[];
+            website: string;
+            image: string;
+            logo: string;
         };
         OfferAiInput: {
             /** @enum {string} */
@@ -702,7 +996,7 @@ export interface components {
                 gift: boolean;
                 zoom: boolean;
                 /** @enum {string} */
-                layout?: "split" | "photo" | "text";
+                layout?: "split" | "photo" | "text" | "artwork";
             };
             request: string;
             hasImage: boolean;
@@ -1245,6 +1539,19 @@ export interface components {
         };
     };
     responses: {
+        /** @description Новая или ранее принятая заявка */
+        MvpAccepted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    created: boolean;
+                };
+            };
+        };
         /** @description Заявка записана в SQLite и поставлена в очередь на отправку */
         V4Accepted: {
             headers: {
@@ -1362,6 +1669,373 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    requestMvpLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Код отправлен */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        challenge: string;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    verifyMvpLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    /** Format: uuid */
+                    challenge: string;
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Установлена HttpOnly cookie platform_session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getMvpSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Подтверждённая почта и профиль */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MvpSession"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    confirmMvpCompany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MvpProfile"];
+            };
+        };
+        responses: {
+            /** @description Профиль сохранён */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MvpSession"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    endMvpSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Сессия отозвана */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listMvpCampaigns: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description До 25 заявок владельца в порядке отправки от новых к старым */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        more: boolean;
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            status: components["schemas"]["PartnerCampaignStatus"];
+                            code: string;
+                            company: string;
+                            /** @description Unix time в миллисекундах */
+                            submittedAt: number;
+                        }[];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    submitMvpCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    inn: string;
+                    /** Format: uuid */
+                    key: string;
+                    /** @constant */
+                    accepted: true;
+                    promo: components["schemas"]["MvpPromo"];
+                };
+            };
+        };
+        responses: {
+            200: components["responses"]["MvpAccepted"];
+            201: components["responses"]["MvpAccepted"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getMvpCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Принятая заявка владельца */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        publicId: string | null;
+                        status: components["schemas"]["PartnerCampaignStatus"];
+                        profile: components["schemas"]["MvpProfile"];
+                        promo: components["schemas"]["MvpPromo"];
+                        submittedAt: number;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listMarketOffers: {
+        parameters: {
+            query?: {
+                offset?: number;
+                category?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description До 48 действующих опубликованных предложений */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["MarketOffer"][];
+                        more: boolean;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getMarketOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Опубликованное предложение по публичному идентификатору */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketOffer"];
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    getMarketImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset: "image" | "logo";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Изображение действующего предложения */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description Изображение недоступно */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    searchMarketOffers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    query: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Ответ и подходящие действующие предложения */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reply: string;
+                        items: components["schemas"]["MarketOffer"][];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateSubmissionReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Результат проверки и публикации */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        changed: boolean;
+                        review: components["schemas"]["SubmissionReview"];
+                    };
+                };
+            };
+            /** @description Версия проверки изменилась */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;

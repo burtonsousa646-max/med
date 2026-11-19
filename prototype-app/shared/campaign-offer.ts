@@ -1,9 +1,9 @@
 import { localDate, textError } from './campaign-business.ts'
 
 export type Tone = 'red' | 'green' | 'blue' | 'violet' | 'magenta' | 'teal' | 'dark' | 'light'
-export const offerLayouts = { split: 'Фото сбоку', photo: 'Фото сверху', text: 'Типографика' } as const
+export const offerLayouts = { split: 'Фото сбоку', photo: 'Фото сверху', text: 'Типографика', artwork: 'Готовый макет' } as const
 export type OfferLayout = keyof typeof offerLayouts
-export type OfferDraft = { title: string; promo: string; discount: string; until: string; tone: Tone; gift: boolean; zoom: boolean; layout?: OfferLayout }
+export type OfferDraft = { title: string; promo: string; discount: string; until: string; tone: Tone; background?: string; gift: boolean; zoom: boolean; layout?: OfferLayout }
 export const emptyOffer: OfferDraft = { title: '', promo: '', discount: '', until: '', tone: 'violet', gift: false, zoom: false }
 
 export function resolveOfferLayout(layout: OfferLayout | undefined, hasImage: boolean): OfferLayout {
@@ -17,6 +17,14 @@ export function nextOfferDesign(offer: OfferDraft, hasImage: boolean): OfferDraf
     tone: tones[(tones.indexOf(offer.tone) + 1) % tones.length],
     layout: !hasImage || offer.layout === 'text' ? 'text' : offer.layout === 'photo' ? 'split' : 'photo',
   }
+}
+
+export function offerTextColor(background: string) {
+  const [r, g, b] = [1, 3, 5].map(offset => {
+    const channel = parseInt(background.slice(offset, offset + 2), 16) / 255
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? '#000000' : '#ffffff'
 }
 
 const leadingDiscount = /^((?:скидка\s+)?[−-]?)(\d{1,3})(\s*%)(?=\s|$)/i

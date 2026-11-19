@@ -1,123 +1,33 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router'
-import { motion } from 'motion/react'
-import { ArrowLeft, Building2, ClipboardList, Clock, Loader2, Mail, MousePointerClick, Repeat, Sparkles, Ticket, TicketPercent, type LucideIcon } from 'lucide-react'
-import { Brand, Check, Chip, DemoNote, Done, toast } from '../ui'
-import { Creative } from '../creative'
-import { LoginAside } from './Entry'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Building2, Megaphone, Plus, ClipboardList, MousePointerClick, Repeat, Ticket, TicketPercent, type LucideIcon } from 'lucide-react'
+import { Check, Chip, toast } from '../ui'
+import { OfferSurfaces } from './OfferSurfaces'
+import { CampaignCreative } from './CampaignCreative'
+import { emptyOffer } from '../../shared/campaign-offer'
+import { MvpAudience } from './MvpAudience'
+import { audienceText, submittedTargeting, designs, promoDay, promoErrors, VIA, type MvpSession, type Profile, type Promo, type Receipt, type ReceiptSummary } from '../../shared/mvp-promo'
+import { CompanyInnForm, Head, LogoutButton, useMvpSession, mvpRequest, errorMessage, draftKey } from './MvpSession'
+import { partnerDemo } from './mvp-demo'
+import { AccountCabinet, CampaignStatus } from './AccountCabinet'
+import { queryClient } from '../api'
+import { analytics } from '../analytics'
+import { MvpPhoto } from './MvpPhoto'
+import './offer-editor.css'
+import './mvp-campaign.css'
 import { rub } from '../data'
 
-/* MVP: только фронт, без API. Лендинг v2 (/mvp) → вход по почте и ИНН → запуск кампании с промокодом.
-   Что ввёл партнёр, живёт в sessionStorage вкладки: закрыл вкладку — начал заново. */
-
-type Me = { email: string; inn: string; company: string; addr: string }
-type Promo = { code: string; off: string; cond: string; site: string; till: string; fee: string; check: string; via: string }
-
-const read = <T,>(k: string): T | null => { try { return JSON.parse(sessionStorage.getItem(`mvp-${k}`) ?? 'null') } catch { return null } }
-const write = (k: string, v: unknown) => { try { v == null ? sessionStorage.removeItem(`mvp-${k}`) : sessionStorage.setItem(`mvp-${k}`, JSON.stringify(v)) } catch { /* приватное окно: живём без сохранения */ } }
-
-/* ───────── вход: почта → код → ИНН ───────── */
-const PERKS = ['без пароля: код придёт на почту', 'компанию найдём по ИНН сами', 'договор не нужен: оферта галочкой при запуске']
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-
-export function MvpLogin() {
-  const nav = useNavigate()
-  const [step, setStep] = useState<'email' | 'code' | 'inn'>('email')
-  const [email, setEmail] = useState('')
-  const [code, setCode] = useState('')
-  const [inn, setInn] = useState('')
-  const [found, setFound] = useState<Omit<Me, 'email' | 'inn'> | null>(null)
-  const innOk = inn.length === 10 || inn.length === 12
-  // ponytail: поиск по ИНН — заглушка; в бою DaData/ФНС по ИНН, проверка контрольной суммы там же
-  useEffect(() => {
-    setFound(null)
-    if (!innOk) return
-    const t = setTimeout(() => setFound(inn.length === 10
-      ? { company: 'ООО «Зерно»', addr: 'Москва, ул. Покровка, 12 · КПП 770101001' }
-      : { company: 'ИП, кофейня «Зерно»', addr: 'Москва · ОГРНИП 324770000012345' }), 700)
-    return () => clearTimeout(t)
-  }, [inn, innOk])
-  const confirm = () => { write('me', { email, inn, ...found }); nav('/mvp/new') }
-
-  const head: Record<typeof step, [string, ReactNode]> = {
-    email: ['вход в кабинет', 'Пароль не нужен — пришлём код на почту. Новых партнёров зарегистрируем сами.'],
-    code: ['проверьте почту', <>Отправили код на <b className="bl-medium">{email}</b>. Письмо идёт до минуты.</>],
-    inn: ['ваша компания', 'ИНН нужен для оферты и маркировки рекламы. Реквизиты подтянем из ЕГРЮЛ.'],
-  }
-  return (
-    <div className="login">
-      <div className="login__form">
-        <header className="login__head"><Brand to="/mvp" /><Link className="bl-btn bl-btn--ghost" to="/mvp"><ArrowLeft size={18} />на главную</Link></header>
-        <motion.main key={step} className="login__body bl-stack" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <ol className="mvp-dots" aria-label={`шаг ${['email', 'code', 'inn'].indexOf(step) + 1} из 3`}>
-            {(['email', 'code', 'inn'] as const).map((s, i) => <li key={s} className={i <= ['email', 'code', 'inn'].indexOf(step) ? 'is-on' : ''} />)}
-          </ol>
-          <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
-            <h1 className="bl-h1">{head[step][0]}</h1>
-            <p className="bl-body bl-secondary">{head[step][1]}</p>
-          </div>
-
-          {step === 'email' && (
-            <form className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }} onSubmit={e => { e.preventDefault(); if (EMAIL.test(email)) setStep('code') }}>
-              <label className="bl-field">
-                <span className="bl-field__label">рабочая почта</span>
-                <input className="bl-input" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value.trim())} placeholder="hello@mycoffee.ru" autoFocus />
-              </label>
-              <button className="bl-btn bl-btn--primary bl-btn--l bl-btn--block" disabled={!EMAIL.test(email)}>получить код</button>
-            </form>
-          )}
-
-          {step === 'code' && (
-            <form className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }} onSubmit={e => { e.preventDefault(); if (code.length === 6) setStep('inn') }}>
-              <label className="bl-field">
-                <span className="bl-field__label">код из письма</span>
-                <input className="bl-input mvp-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} placeholder="000000" autoFocus
-                  onChange={e => { const v = e.target.value.replace(/\D/g, ''); setCode(v); if (v.length === 6) setStep('inn') }} />
-              </label>
-              <DemoNote>подойдут любые 6 цифр</DemoNote>
-              <button className="bl-btn bl-btn--primary bl-btn--l bl-btn--block" disabled={code.length < 6}>подтвердить</button>
-              <button type="button" className="bl-btn bl-btn--ghost bl-caption" style={{ alignSelf: 'flex-start' }} onClick={() => { setCode(''); setStep('email') }}>изменить почту</button>
-            </form>
-          )}
-
-          {step === 'inn' && (
-            <div className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }}>
-              <label className={`bl-field${inn.length > 10 && !innOk ? ' is-error' : ''}`}>
-                <span className="bl-field__label">ИНН компании или ИП</span>
-                <input className="bl-input" inputMode="numeric" maxLength={12} value={inn} onChange={e => setInn(e.target.value.replace(/\D/g, ''))} placeholder="10 цифр у компании, 12 у ИП" autoFocus />
-                {inn.length > 10 && !innOk && <span className="bl-field__caption">у ИП в ИНН 12 цифр</span>}
-              </label>
-              {innOk && !found && <p className="bl-caption mvp-wait" role="status"><Loader2 size={16} className="spin" />ищем в ЕГРЮЛ</p>}
-              {found && (
-                <motion.div className="mvp-found" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
-                  <Building2 size={22} aria-hidden="true" />
-                  <span><b className="bl-medium">{found.company}</b><span className="bl-caption" style={{ display: 'block' }}>ИНН {inn} · {found.addr}</span></span>
-                </motion.div>
-              )}
-              <button className="bl-btn bl-btn--primary bl-btn--l bl-btn--block" disabled={!found} onClick={confirm}>это моя компания</button>
-            </div>
-          )}
-        </motion.main>
-      </div>
-      <LoginAside perks={PERKS} />
-    </div>
-  )
-}
-
-/* ───────── шапка кабинета MVP ───────── */
-function useMe() { return read<Me>('me') }
-
-function Head() {
-  const me = useMe()!, nav = useNavigate()
-  return (
-    <header className="bl-header">
-      <div className="bl-header__side"><Brand to="/mvp" /></div>
-      <div className="bl-row mvp-me">
-        <span className="bl-caption"><b className="bl-medium" style={{ color: 'var(--color-text-primary)' }}>{me.company}</b><br />{me.email}</span>
-        <button className="bl-btn bl-btn--s" onClick={() => { write('me', null); write('promo', null); nav('/mvp') }}>выйти</button>
-      </div>
-    </header>
-  )
+function readDraft(session: MvpSession) {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(draftKey(session)) ?? 'null')
+    const legacy = JSON.parse(sessionStorage.getItem('mvp-me') ?? 'null')
+    const sameCompany = legacy?.email?.toLowerCase() === session.email && legacy.inn === session.profile!.inn
+    const promo = stored?.promo ?? (sameCompany && JSON.parse(sessionStorage.getItem('mvp-promo-draft') ?? 'null'))
+    if (!promo || !['code','off','cond','site','till','fee','check','via'].every(key => typeof promo[key] === 'string')) return null
+    if (promo.addresses && (!Array.isArray(promo.addresses) || !promo.addresses.every((a: unknown) => typeof a === 'string'))) return null
+    return { key: stored?.key ?? crypto.randomUUID(), attempted: stored?.attempted === true, promo: { ...promo, addresses: promo.addresses ?? [''] } as Promo }
+  } catch { return null }
 }
 
 /* ───────── шаг 1: тип кампании, как «новая кампания» в Директе ───────── */
@@ -129,15 +39,66 @@ const TYPES: { id: string; t: string; d: string; icon: LucideIcon; on?: boolean 
   { id: 'sub', t: 'подписка на сервис', d: 'Оплата со счёта телефона каждый месяц, вам — доля платежа.', icon: Repeat },
 ]
 
-function Guard({ children }: { children: ReactNode }) {
-  return useMe() ? <>{children}</> : <Navigate to="/mvp/login" replace />
+function PartnerCabinet({children}:{children:ReactNode}) {
+  const session = useMvpSession()
+  const navClass = ({isActive}:{isActive:boolean}) => isActive ? 'is-active' : ''
+  return <AccountCabinet home="/app/campaigns" label="Кабинет партнёра"
+    navigation={<>
+      <NavLink to="/app/campaigns" className={navClass}><Megaphone size={20}/>Мои кампании</NavLink>
+      <NavLink to="/app/company" className={navClass}><Building2 size={20}/>Компания</NavLink>
+    </>}
+    account={<><strong>{session.profile!.company}</strong><span className="bl-caption">{session.email}</span></>}
+    logout={<LogoutButton/>}>{children}</AccountCabinet>
+}
+
+export function PartnerCompany() {
+  const session = useMvpSession(), profile = session.profile!
+  const [editing,setEditing] = useState(false)
+  useEffect(() => { analytics.view('/app/company') }, [])
+  return <PartnerCabinet>
+    <div className="page-title staff-page-title"><h1 className="bl-display-l">Компания</h1></div>
+    <section className="bl-section pad staff-panel bl-stack">
+      <h2 className="bl-h3">{profile.company}</h2>
+      <dl className="staff-fields"><div><dt>ИНН</dt><dd>{profile.inn}</dd></div>
+        {profile.addr && <div><dt>Адрес</dt><dd>{profile.addr}</dd></div>}
+      </dl>
+      {editing ? <CompanyInnForm session={session} onClose={()=>setEditing(false)}/>
+        : <div><button className="bl-btn" onClick={()=>setEditing(true)}>Сменить компанию</button></div>}
+    </section>
+  </PartnerCabinet>
+}
+
+export function PartnerCampaigns() {
+  const session = useMvpSession()
+  const [offset, setOffset] = useState(0)
+  const list = useQuery({queryKey:['mvp-campaigns', session.email, offset], queryFn: () => mvpRequest<{items: ReceiptSummary[]; more: boolean}>('/campaigns?offset=' + offset, undefined, session.email), refetchInterval:15_000, gcTime:0, retry:false })
+  useEffect(() => { analytics.view('/app/campaigns') }, [])
+  return <PartnerCabinet>
+    <div className="page-title staff-page-title"><h1 className="bl-display-l">Рекламные кампании</h1>
+      <Link className="bl-btn bl-btn--primary" to="/app/campaigns/formats"><Plus size={18}/>Новая кампания</Link></div>
+    <section className="bl-section pad staff-panel" aria-label="Список кампаний">
+      {list.isPending && <p role="status">Загружаем кампании…</p>}
+      {list.error && <p role="alert">{errorMessage(list.error)} <button className="bl-btn" onClick={() => void list.refetch()}>Повторить</button></p>}
+      {list.data && <>
+        {list.data.items.length ? <table className="bl-table partner-campaigns"><thead><tr>
+          <th scope="col">Промокод</th><th scope="col">Отправлена</th><th scope="col">Статус</th>
+        </tr></thead><tbody>{list.data.items.map(item => <tr key={item.id}>
+          <td><Link className="staff-row-link" to={'/app/campaigns/'+item.id}>{item.code}</Link><span className="bl-caption staff-subline">{item.company}</span></td>
+          <td>{new Date(item.submittedAt).toLocaleDateString('ru-RU')}</td><td><CampaignStatus status={item.status}/></td>
+        </tr>)}</tbody></table> : <p className="bl-body bl-secondary">Здесь появятся ваши кампании после отправки на модерацию.</p>}
+        {(offset > 0 || list.data.more) && <div className="staff-pagination bl-row">
+          <button className="bl-btn" disabled={!offset} onClick={() => setOffset(offset-25)}>Назад</button>
+          <button className="bl-btn" disabled={!list.data.more} onClick={() => setOffset(offset+25)}>Далее</button></div>}
+      </>}
+    </section>
+    {partnerDemo && <div><a className="bl-btn" href="/app/?preview=staff" target="_blank" rel="noopener noreferrer">Открыть демо сотрудника</a></div>}
+  </PartnerCabinet>
 }
 
 export function MvpNew() {
   const nav = useNavigate()
-  return (
-    <Guard>
-      <div className="bl-page wrap">
+  useEffect(() => { analytics.view('/app/campaigns/formats') }, [])
+  return <div className="bl-page wrap ym-hide-content">
         <Head />
         <section className="bl-section bl-section--wide mvp-sheet">
           <span className="bl-tag bl-tag--soft-violet">можно без опыта</span>
@@ -146,7 +107,7 @@ export function MvpNew() {
           <div className="mvp-types">
             {TYPES.map(({ id, t, d, icon: Icon, on }) => (
               <button key={id} className={`mvp-type${on ? ' is-on' : ''}`} aria-disabled={!on}
-                onClick={() => on ? nav(`/mvp/new/${id}`) : toast(`«${t}» ещё в разработке. Пока доступен промокод`)}>
+                onClick={() => on ? nav('/app/campaigns/new') : toast(`«${t}» ещё в разработке. Пока доступен промокод`)}>
                 <span className="mvp-type__top"><span className="bl-h4">{t}</span>{!on && <span className="bl-tag">в разработке</span>}</span>
                 <span className="bl-caption">{d}</span>
                 <span className="mvp-type__icon"><Icon size={on ? 40 : 32} strokeWidth={1.6} aria-hidden="true" /></span>
@@ -155,24 +116,10 @@ export function MvpNew() {
           </div>
         </section>
       </div>
-    </Guard>
-  )
 }
 
 /* ───────── шаг 2: оффер промокода, оферта и запуск ───────── */
-const VIA = ['файл раз в неделю', 'постбэк', 'коннектор 1С']
-const inDays = (d: number) => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10)
-// «ИИ» подставляет условия по сфере компании; в бою — модель по ОКВЭД и среднему чеку отрасли
-const SUGGEST: Promo = { code: 'ZERNO15', off: '15', cond: 'на первый заказ от 800 ₽', site: 'zerno-coffee.ru', till: inDays(30), fee: '8', check: '1200', via: VIA[0] }
-
-const errors = (p: Promo) => ({
-  code: /^[A-ZА-ЯЁ0-9]{4,20}$/.test(p.code) ? '' : 'от 4 до 20 букв и цифр, без пробелов',
-  off: +p.off >= 1 && +p.off <= 90 ? '' : 'от 1 до 90 %',
-  site: /\S+\.\S{2,}/.test(p.site) ? '' : 'сайт, где сработает код',
-  till: p.till > inDays(0) ? '' : 'дата в будущем',
-  fee: +p.fee >= 3 && +p.fee <= 50 ? '' : 'от 3 до 50 %',
-  check: +p.check > 0 ? '' : 'сумма в рублях',
-})
+const SUGGEST: Promo = { code: 'START15', off: '15', cond: 'на первый заказ от 800 ₽', site: '', till: promoDay(30), fee: '8', check: '1200', via: VIA[0] }
 
 function Field({ label, err, wide, children }: { label: string; err?: string; wide?: boolean; children: ReactNode }) {
   return (
@@ -184,98 +131,174 @@ function Field({ label, err, wide, children }: { label: string; err?: string; wi
   )
 }
 
-const creative = (me: Me, p: Promo) => ({ mark: me.company.replace(/^.*«(.+)»$/, '$1'), big: `−${+p.off || 0}%`, small: p.cond || 'по промокоду на сайте', tone: 'violet' as const, img: 'own-2', cat: 'food' as const })
+const imageUrl = (file: string) => import.meta.env.BASE_URL + 'img/offer-variants/' + file
+function previewProps(me: Profile, p: Promo) {
+  const design = designs.find(d => d.file === p.design) ?? designs[0]
+  return {
+    name: me.company, image: p.photo && p.usePhoto !== false ? p.photo.src : imageUrl(design.file), logo: '', illustration: '',
+    offer: { ...emptyOffer, title: p.cond.trim() || 'Скидка по промокоду', promo: p.code, until: p.till, discount: p.off, tone: design.tone },
+  }
+}
 
 export function MvpPromo() {
-  const me = useMe(), nav = useNavigate()
-  const [p, setP] = useState<Promo>(() => read<Promo>('promo') ?? SUGGEST)
-  const [agree, setAgree] = useState(false)
-  if (!me) return <Navigate to="/mvp/login" replace />
+  const session = useMvpSession(), me = session.profile!, nav = useNavigate()
+  const storageKey = draftKey(session)
+  const [draft] = useState(() => {
+    const saved = readDraft(session)
+    return saved ?? { key: crypto.randomUUID(), attempted:false, promo: { ...SUGGEST, site: me.website ?? '', addresses: [''] } }
+  })
+  const [p, setP] = useState<Promo>(draft.promo)
+  const [agree, setAgree] = useState(false), [uploading, setUploading] = useState(false)
+  const [storageError, setStorageError] = useState(''), [sendError, setSendError] = useState('')
+  const [sending, setSending] = useState(false), pending = useRef(false)
+  const attempted = useRef(draft.attempted)
+  useEffect(() => { analytics.view('/app/campaigns/new') }, [])
+  useEffect(() => {
+    try { sessionStorage.setItem(storageKey, JSON.stringify({key:draft.key, attempted:attempted.current, promo:p}))
+      const old = JSON.parse(sessionStorage.getItem('mvp-me') ?? 'null')
+      if (old?.email?.toLowerCase() === session.email && old.inn === me.inn) {
+        for (const key of ['mvp-promo-draft','mvp-promo','mvp-me']) sessionStorage.removeItem(key)
+      }
+      setStorageError('') }
+    catch { setStorageError('Черновик не сохранился в этой вкладке. Вы можете отправить его на проверку.') }
+  }, [p, storageKey, draft, me.inn, session.email])
   const set = (k: keyof Promo, num?: boolean) => (e: { target: { value: string } }) =>
     setP({ ...p, [k]: num ? e.target.value.replace(/\D/g, '') : k === 'code' ? e.target.value.toUpperCase().replace(/\s/g, '') : e.target.value })
-  const err = errors(p), ok = Object.values(err).every(x => !x)
+  const err = promoErrors(p), ok = Object.values(err).every(x => !x)
   const save = +p.check * +p.off / 100, pay = +p.check * +p.fee / 100
-  const launch = () => { write('promo', p); nav('/mvp/done') }
+  async function launch() {
+    if (pending.current) return
+    pending.current = true; setSending(true); setSendError('')
+    const retrying = attempted.current
+    attempted.current = true
+    try { sessionStorage.setItem(storageKey, JSON.stringify({key:draft.key, attempted:true, promo:p})) } catch { /* In-memory retries still work. */ }
+    analytics.event('mvp_submit_attempt')
+    try {
+      const promo = { ...p, design: p.design ?? designs[0].file, ...submittedTargeting(p), photo: p.usePhoto === false ? undefined : p.photo }
+      const result = await mvpRequest<{id: string; created: boolean}>('/campaigns', { key: draft.key, inn: me.inn, promo, accepted: agree }, session.email)
+      if (result.created || retrying) analytics.event('mvp_campaign_submitted', { online: !!p.online, has_image: !!promo.photo, address_count: promo.addresses?.length ?? 0 })
+      try { sessionStorage.removeItem(storageKey) } catch { /* The receipt is already on the server. */ }
+      void queryClient.invalidateQueries({queryKey:['mvp-campaigns',session.email]})
+      toast('Кампания '+p.code+' отправлена на модерацию')
+      nav('/app/campaigns', {replace:true})
+    } catch (e) { setSendError(errorMessage(e)); analytics.event('mvp_submit_error') }
+    finally { pending.current = false; setSending(false) }
+  }
   return (
     <div className="bl-page wrap">
       <Head />
       <div className="mvp-title">
-        <Link className="bl-btn bl-btn--ghost bl-caption" to="/mvp/new"><ArrowLeft size={16} />все форматы</Link>
+        <Link className="bl-btn bl-btn--ghost bl-caption" to="/app/campaigns/formats"><ArrowLeft size={16} />все форматы</Link>
         <h1 className="bl-h2">промокод на покупку</h1>
       </div>
-      <div className="two mvp-promo">
-        <section className="bl-section mvp-sheet">
-          <p className="bl-caption mvp-ai"><Sparkles size={16} aria-hidden="true" />Заполнили по вашей сфере и среднему чеку — поправьте, если нужно.</p>
-          <div className="terms mvp-terms">
-            <Field label="промокод" err={err.code}><input className="bl-input" value={p.code} onChange={set('code')} maxLength={20} /></Field>
-            <Field label="скидка, %" err={err.off}><input className="bl-input" inputMode="numeric" value={p.off} onChange={set('off', true)} maxLength={2} /></Field>
-            <Field label="условие для клиента" wide><input className="bl-input" value={p.cond} onChange={set('cond')} placeholder="например, на первый заказ от 800 ₽" maxLength={60} /></Field>
-            <Field label="сайт, где применить код" err={err.site} wide><input className="bl-input" value={p.site} onChange={set('site')} placeholder="mycoffee.ru" /></Field>
-            <Field label="действует до" err={err.till}><input className="bl-input" type="date" value={p.till} min={inDays(1)} onChange={set('till')} /></Field>
-            <Field label="средний чек, ₽" err={err.check}><input className="bl-input" inputMode="numeric" value={p.check} onChange={set('check', true)} maxLength={7} /></Field>
-            <Field label="комиссия билайну, %" err={err.fee}><input className="bl-input" inputMode="numeric" value={p.fee} onChange={set('fee', true)} maxLength={2} /></Field>
-          </div>
-          <div className="bl-field">
-            <span className="bl-field__label">как передадите заказы — нужны сумма и возвраты, без данных клиентов</span>
-            <div className="bl-row">{VIA.map(v => <Chip key={v} on={p.via === v} onClick={() => setP({ ...p, via: v })}>{v}</Chip>)}</div>
-          </div>
-          <hr className="bl-divider" />
-          <div className="mvp-go">
-            <Check checked={agree} onChange={setAgree} label={<>Принимаю <Link to="/offer" target="_blank">оферту на размещение рекламы</Link></>} sub="маркировку и erid оформим сами" />
-            <button className="bl-btn bl-btn--primary bl-btn--l" disabled={!ok || !agree} onClick={launch}>запустить</button>
-          </div>
-          {!ok && <p className="bl-caption bl-error" role="status">Проверьте поля, отмеченные красным</p>}
-        </section>
+      <form className="two mvp-promo mvp-combined ym-hide-content ym-disable-keys" inert={sending} aria-busy={sending} onSubmit={e => { e.preventDefault(); if (ok && agree && !uploading) void launch() }}>
+        <div className="mvp-card-stack">
+          <section className="bl-section mvp-sheet">
+            <fieldset className="mvp-group">
+              <legend className="bl-h4">предложение для клиента</legend>
+              <div className="mvp-terms">
+                <Field label="промокод" err={err.code}><input className="bl-input" value={p.code} onChange={set('code')} maxLength={20} /></Field>
+                <Field label="скидка, %" err={err.off}><input className="bl-input" inputMode="numeric" value={p.off} onChange={set('off', true)} maxLength={2} /></Field>
+                <Field label="условие для клиента" wide><input className="bl-input" value={p.cond} onChange={set('cond')} placeholder="например, на первый заказ от 800 ₽" maxLength={60} /></Field>
+                <Field label="сайт, где применить код" err={err.site}><input className="bl-input" value={p.site} maxLength={250} onChange={set('site')} placeholder="mycoffee.ru" /></Field>
+                <Field label="действует до" err={err.till}><input className="bl-input" type="date" value={p.till} min={promoDay(1)} onChange={set('till')} /></Field>
+              </div>
+            </fieldset>
+          </section>
+          <section className="bl-section mvp-sheet">
+            <fieldset className="mvp-group">
+              <legend className="bl-h4">оформление карточки</legend>
+              <div className="mvp-designs">{designs.map(d =>
+                <button key={d.file} type="button" disabled={uploading} aria-pressed={(!p.photo || p.usePhoto === false) && (p.design ?? designs[0].file) === d.file}
+                  onClick={() => setP({ ...p, design: d.file, usePhoto: false })}>
+                  <img src={imageUrl(d.file)} alt=""/><span>{d.label}</span>
+                </button>
+              )}{p.photo && <button type="button" aria-pressed={p.usePhoto !== false} disabled={uploading} onClick={() => setP({ ...p, usePhoto: true })}>
+                <img src={p.photo.src} alt=""/><span>Своё фото</span>
+              </button>}</div>
+              <MvpPhoto photo={p.photo} busy={uploading} onBusy={setUploading} onChange={photo => setP(current => ({ ...current, photo, usePhoto: Boolean(photo) }))}/>
+            </fieldset>
+          </section>
+        </div>
 
-        <aside className="bl-section mvp-sheet mvp-preview">
-          <span className="bl-field__label">так увидит абонент в «лучшее рядом»</span>
-          <Creative o={creative(me, p)} erid="реклама · erid после проверки" />
+        <aside className="bl-section mvp-sheet mvp-live-preview">
+          <OfferSurfaces compact inlinePlaces {...previewProps(me, p)} />
           <dl className="kv kv--narrow mvp-kv">
             <dt>клиент</dt><dd>экономит {rub(save)} с чека {rub(+p.check)}</dd>
             <dt>вы платите</dt><dd><b className="bl-medium">{rub(pay)}</b> с оплаченной покупки</dd>
             <dt>возвраты</dt><dd>не оплачиваете</dd>
           </dl>
         </aside>
-      </div>
+
+        <div className="mvp-card-stack">
+          <MvpAudience value={p} onChange={patch => {
+            if (patch.mode) analytics.event('mvp_audience_mode', {method: patch.mode === 'auto' ? 'automatic' : 'manual'})
+            setP(current => ({ ...current, ...patch }))
+          }}/>
+          <section className="bl-section mvp-sheet">
+            <fieldset className="mvp-group">
+              <legend className="bl-h4">расчёты с платформой</legend>
+              <div className="mvp-terms">
+                <Field label="средний чек, ₽" err={err.check}><input className="bl-input" inputMode="numeric" value={p.check} onChange={set('check', true)} maxLength={7} /></Field>
+                <Field label="комиссия билайну, %" err={err.fee}><input className="bl-input" inputMode="numeric" value={p.fee} onChange={set('fee', true)} maxLength={2} /></Field>
+              </div>
+              <div className="bl-field mvp-orders">
+                <span className="bl-field__label">как будете передавать заказы</span>
+                <div className="bl-row">{VIA.map(v => <Chip key={v} on={p.via === v} onClick={() => setP({ ...p, via: v })}>{v}</Chip>)}</div>
+                <span className="bl-field__caption">Нужны суммы покупок и возвратов, без данных клиентов.</span>
+              </div>
+            </fieldset>
+          </section>
+          <section className="bl-section mvp-sheet">
+            <div className="mvp-go">
+              <Check checked={agree} onChange={value => { setAgree(value); if (value) analytics.event('mvp_terms_accepted') }} label={<>Принимаю <Link to="/v4/offer" target="_blank" rel="noopener noreferrer">оферту на размещение рекламы</Link></>} sub="маркировку и erid оформим сами" />
+              <button type="submit" className="bl-btn bl-btn--primary bl-btn--l" disabled={!ok || !agree || uploading || sending}>{sending ? 'Отправляем…' : 'отправить на проверку'}</button>
+            </div>
+            {sendError && <p role="alert" className="bl-caption bl-error">{sendError}</p>}
+            {storageError && <p className="bl-caption bl-error" role="alert">{storageError}</p>}
+            {!ok && <p className="bl-caption bl-error" role="status">Проверьте поля, отмеченные красным</p>}
+            <p className="bl-caption">{partnerDemo ? 'Это демо. Кампания сохранится в этом браузере.' : 'После проверки пришлём счёт на почту. Показы начнутся после оплаты.'}</p>
+          </section>
+        </div>
+      </form>
     </div>
   )
 }
 
 /* ───────── шаг 3: отправлено. Дальше — бэкофис: проверка, счёт на предоплату, запуск ───────── */
 export function MvpDone() {
-  const me = useMe(), p = read<Promo>('promo')
-  if (!me) return <Navigate to="/mvp/login" replace />
-  if (!p) return <Navigate to="/mvp/new" replace />
-  const steps: [string, string, 'done' | 'now' | 'next'][] = [
-    ['кампания отправлена', `промокод ${p.code}, −${p.off} % до ${new Date(p.till).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`, 'done'],
-    ['проверка и маркировка', 'менеджер проверит условия и получит erid — обычно в течение рабочего дня', 'now'],
-    ['счёт на предоплату', `пришлём на ${me.email}, из него списываем комиссию за покупки`, 'next'],
-    ['показ абонентам', 'запустим сами после оплаты и напишем на почту', 'next'],
-  ]
+  const session = useMvpSession(), {id} = useParams()
+  const receipt = useQuery({queryKey:['mvp-receipt', session.email, id], queryFn: () => mvpRequest<Receipt>('/campaigns/' + encodeURIComponent(id!), undefined, session.email), enabled:!!id, refetchInterval:15_000, retry:false, gcTime:0})
+  useEffect(() => { if (receipt.data) analytics.view('/app/campaigns/detail') }, [receipt.data])
+  if (!id) return <Navigate to="/app/campaigns" replace/>
+  if (receipt.isPending) return <p className="bl-page wrap" role="status">Открываем кампанию…</p>
+  if (receipt.error) return <div className="bl-page wrap"><Head/><p role="alert">{errorMessage(receipt.error)}</p><button className="bl-btn" onClick={() => void receipt.refetch()}>Повторить</button></div>
+  const {promo:p, profile:me} = receipt.data
+  const {status,publicId} = receipt.data
+  const note = {review:'Сотрудник проверит условия предложения и маркировку.', awaiting_payment:'Предложение проверено. После подтверждения оплаты оно появится на витрине.', published:'Предложение опубликовано на витрине «Лучшее рядом».', expired:'Срок действия предложения закончился.', stopped:'Показы остановлены. Предложение снято с витрины.'}[status]
   return (
     <div className="bl-page wrap">
       <Head />
-      <div className="two mvp-done">
+      <div className="two mvp-done ym-hide-content">
         <section className="bl-section mvp-sheet">
-          <span className="mvp-ok"><Done size={28} /></span>
-          <h1 className="bl-h1">кампания на проверке</h1>
-          <p className="bl-lead">Статус пришлём на {me.email}. Дальше ничего делать не нужно — только оплатить счёт.</p>
-          <ol className="mvp-steps">
-            {steps.map(([t, d, s]) => (
-              <li key={t} className={`is-${s}`}>
-                <span className="mvp-steps__dot">{s === 'done' ? <Done size={14} /> : s === 'now' ? <Clock size={14} /> : <Mail size={14} />}</span>
-                <span><b className="bl-medium">{t}</b><span className="bl-caption" style={{ display: 'block' }}>{d}</span></span>
-              </li>
-            ))}
-          </ol>
+          <CampaignStatus status={status}/>
+          <h1 className="bl-h1">Кампания {p.code}</h1>
+          <p className="bl-lead">{note}</p>
+          {publicId && <Link className="bl-btn bl-btn--primary" to={'/market/?offer='+publicId}>Открыть на витрине</Link>}
           <div className="bl-row">
-            <Link className="bl-btn bl-btn--dark" to="/mvp/new">создать ещё кампанию</Link>
-            <Link className="bl-btn" to="/mvp/new/promo">изменить условия</Link>
+            <Link className="bl-btn bl-btn--dark" to="/app/campaigns/formats">Создать ещё кампанию</Link>
+            <Link className="bl-btn" to="/app/campaigns/new" onClick={e => {
+              try { sessionStorage.setItem(draftKey(session), JSON.stringify({ key: crypto.randomUUID(), promo: p })) }
+              catch { e.preventDefault(); toast('Не удалось скопировать условия в черновик') }
+            }}>Создать на основе этой кампании</Link>
           </div>
         </section>
         <aside className="bl-section mvp-sheet mvp-preview">
-          <span className="bl-field__label">креатив</span>
-          <Creative o={creative(me, p)} erid="erid появится после проверки" />
+          <h2 className="bl-h4">ваше предложение</h2>
+          <div className="mvp-submitted-creative"><CampaignCreative {...previewProps(me, p)} disabled={false}/></div>
+          <dl className="kv kv--narrow mvp-kv"><dt>сайт</dt><dd>{p.site}</dd><dt>средний чек</dt><dd>{rub(+p.check)}</dd><dt>комиссия</dt><dd>{p.fee} %</dd><dt>передача заказов</dt><dd>{p.via}</dd><dt>аудитория</dt><dd>{audienceText(p)}</dd>
+            {p.online ? <><dt>точки продаж</dt><dd>только онлайн</dd></> : !!p.addresses?.length && <><dt>точки продаж</dt><dd><ul className="mvp-submitted-points">{p.addresses.map(a => <li key={a}>{a}</li>)}</ul></dd></>}
+          </dl>
         </aside>
       </div>
     </div>

@@ -15,6 +15,16 @@ assert.match(index.headers.get('x-robots-tag'), /noindex/)
 const html = await index.text()
 const script = html.match(/<script[^>]*src="([^"]+)"/)?.[1]
 assert.ok(script, 'Production HTML must reference its built entrypoint')
+assert.ok(script.startsWith('/assets/'), 'Deep links need an origin-relative built entrypoint')
+for (const path of ['/market/', '/app/', '/app/campaigns/new']) {
+  const entry = await request(path)
+  assert.equal(entry.status,200,path)
+  assert.ok((await entry.text()).includes(script),path)
+}
+const market = await request('/api/market/offers')
+assert.equal(market.status,200)
+assert.ok(Array.isArray((await market.json()).items))
+assert.equal((await request('/api/mvp/session')).status,401)
 const asset = await request(script)
 assert.equal(asset.status, 200)
 assert.match(asset.headers.get('cache-control'), /immutable/)

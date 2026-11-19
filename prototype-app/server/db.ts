@@ -26,6 +26,14 @@ db.exec(`
   );
   create index if not exists v4_submissions_recent on v4_submissions (submitted_at);
   create index if not exists v4_submissions_pending on v4_submissions (mail_next_at) where mail_sent_at is null;
+  create table if not exists mvp_accounts (email text primary key, profile text);
+  create table if not exists mvp_sessions (
+    token_hash text primary key, email text not null references mvp_accounts, expires_at integer not null
+  );
+  create table if not exists mvp_receipts (
+    id text primary key references v4_submissions on delete cascade, email text not null references mvp_accounts
+  );
+  create index if not exists mvp_receipts_owner on mvp_receipts(email);
   create table if not exists v4_email_codes (
     id integer primary key, draft_id text not null, email text not null, code_hash text not null,
     sent_at integer not null, attempts integer not null default 0, accepted_digest text

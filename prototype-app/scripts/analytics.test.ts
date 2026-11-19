@@ -33,7 +33,7 @@ test('SPA views deduplicate StrictMode and rerenders but count genuine returns',
   assert.equal(calls.length, 0, 'Events wait for a first valid page hit')
   assert.equal(tracker.view('/v4/create/business'), true)
   assert.equal(tracker.view('/v4/create/business'), false)
-  assert.deepEqual(calls.map(c => c[1]), ['/#/v4/create/business', 'v4_business_view', 'v4_draft_restore'])
+  assert.deepEqual(calls.map(c => c[1]), ['/v4/create/business', 'v4_business_view', 'v4_draft_restore'])
   clock = 12500
   tracker.view('/v4/create/details')
   const leave = calls.find(c => c[1] === 'v4_step_leave')!
@@ -63,4 +63,28 @@ test('blocked or unavailable analytics cannot break the product', () => {
     tracker.view('/v4/create/business')
     analytics.view('/v4') // No configured counter in Node: no browser globals required.
   })
+})
+
+test('MVP conversion requires an action, receipt views are canonical and never contain the application ID', () => {
+  const calls: unknown[][] = []
+  const tracker = createFunnelTracker((...args) => calls.push(args))
+  tracker.view('/')
+  tracker.event('mvp_start_click')
+  tracker.view('/app/')
+  tracker.event('mvp_code_sent')
+  tracker.event('mvp_email_verified')
+  tracker.event('mvp_company_confirmed')
+  tracker.view('/app/campaigns')
+  tracker.view('/app/campaigns/new')
+  tracker.event('mvp_submit_attempt')
+  tracker.event('mvp_submit_error')
+  assert.equal(calls.some(c => c[1] === 'mvp_campaign_submitted'), false)
+  tracker.event('mvp_campaign_submitted', { online:true, address_count:0 })
+  tracker.view('/app/campaigns/detail')
+  tracker.view('/app/campaigns/detail')
+  tracker.view(null)
+  tracker.view('/app/campaigns/detail')
+  assert.equal(calls.filter(c => c[1] === 'mvp_campaign_submitted').length, 1)
+  assert.equal(calls.filter(c => c[1] === '/app/campaigns/detail').length, 2)
+  assert.ok(calls.filter(c=>c[0]==='reachGoal').every(c => (c[2] as {product:string}).product==='campaign_mvp'))
 })

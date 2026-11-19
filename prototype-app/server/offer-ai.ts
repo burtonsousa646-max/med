@@ -6,8 +6,8 @@ import type { OfferAiAnswer, OfferAiInput, OfferAiResponse } from '../shared/off
 
 const modes = ['auto', 'manual'] as const
 const tones = ['red', 'green', 'blue', 'violet', 'magenta', 'teal', 'dark', 'light'] as const
-const layouts = Object.keys(offerLayouts)
-const fields = [...Object.keys(emptyOffer), 'layout'] as (keyof OfferDraft)[]
+const layouts = Object.keys(offerLayouts).filter(layout => layout !== 'artwork')
+const fields = [...Object.keys(emptyOffer), 'layout'] as Exclude<keyof OfferDraft, 'background'>[]
 const statuses = ['draft', 'ideas', 'needs_input'] as const
 const actions = ['keep', 'suggest_asset', 'generate', 'remove_background', 'text_only'] as const
 
@@ -25,7 +25,7 @@ function choice<T extends string>(value: unknown, values: readonly T[]): value i
 
 function patchOf(value: unknown): Partial<OfferDraft> | null {
   const patch = object(value)
-  if (!patch || Object.keys(patch).some(key => !fields.includes(key as keyof OfferDraft))) return null
+  if (!patch || Object.keys(patch).some(key => !choice(key, fields))) return null
   for (const [key, item] of Object.entries(patch)) {
     if (item === null) continue
     const valid = key === 'tone' ? choice(item, tones) : key === 'layout' ? choice(item, layouts)
@@ -76,7 +76,7 @@ export function offerAnswer(value: unknown, input: OfferAiInput): OfferAiAnswer 
   }
 
   if (answer.status === 'ideas' && !options.length) return null
-  const changes = Object.fromEntries(Object.entries(patch).filter(([key, item]) => item !== input.offer[key as keyof OfferDraft])) as Partial<OfferDraft>
+  const changes = Object.fromEntries(Object.entries(patch).filter(([key, item]) => item !== input.offer[key as keyof OfferAiInput['offer']])) as Partial<OfferDraft>
   const locked = input.mode === 'auto' ? input.lockedFields ?? fields.filter(key => key !== 'title') : []
   if ((answer.status !== 'draft' && Object.keys(changes).length) || locked.some(key => key in changes)) return null
   if (input.mode === 'auto' && changes.title && /\d|бесплат|в подарок|скидк|₽/i.test(changes.title)) return null

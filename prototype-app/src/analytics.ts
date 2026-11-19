@@ -23,6 +23,11 @@ export type EventParams = Choice & {
 }
 
 export const goals = [
+  'market_link_click', 'market_view', 'market_offer_open', 'market_search', 'market_filter', 'market_more',
+  'market_code_reveal', 'market_code_copy', 'market_partner_visit', 'market_signup_click',
+  'staff_queue_view', 'staff_submission_view', 'staff_team_view', 'staff_review_saved', 'staff_offer_published', 'staff_offer_withdrawn',
+  'mvp_landing_view', 'mvp_start_click', 'mvp_login_view', 'mvp_code_sent', 'mvp_email_verified', 'mvp_company_confirmed', 'mvp_cabinet_view',
+  'mvp_company_view', 'mvp_company_changed', 'mvp_formats_view', 'mvp_promo_view', 'mvp_audience_mode', 'mvp_upload_result', 'mvp_terms_accepted', 'mvp_submit_attempt', 'mvp_submit_error', 'mvp_campaign_submitted', 'mvp_receipt_view',
   'v4_landing_view', 'v4_business_view', 'v4_details_view', 'v4_offer_view', 'v4_audience_view', 'v4_email_view', 'v4_success_view',
   'v4_login_view', 'v4_document_view', 'v4_section_view', 'v4_cta_click', 'v4_navigation_click', 'v4_placement_select',
   'v4_flow_start', 'v4_field_error', 'v4_lookup_start', 'v4_lookup_result', 'v4_lookup_cancel', 'v4_identify_complete',
@@ -35,6 +40,22 @@ export const goals = [
 export type Goal = typeof goals[number]
 
 export const pages = {
+  '/': ['mvp_landing_view', platformName],
+  '/app/': ['mvp_login_view', 'Вход'],
+  '/app/company': ['mvp_company_view', 'Компания партнёра'],
+  '/app/campaigns': ['mvp_cabinet_view', 'Кампании партнёра'],
+  '/app/campaigns/formats': ['mvp_formats_view', 'Выбор формата'],
+  '/app/campaigns/new': ['mvp_promo_view', 'Оформление кампании'],
+  '/app/campaigns/detail': ['mvp_receipt_view', 'Моя кампания'],
+  '/app/staff': ['staff_queue_view', 'Заявки'],
+  '/app/staff/detail': ['staff_submission_view', 'Проверка заявки'],
+  '/app/staff/team': ['staff_team_view', 'Сотрудники'],
+  '/market/': ['market_view', 'Лучшее рядом'],
+  '/mvp': ['mvp_landing_view', 'Оформление кампании'],
+  '/mvp/login': ['mvp_login_view', 'Вход партнёра'],
+  '/mvp/new': ['mvp_cabinet_view', 'Кабинет партнёра'],
+  '/mvp/new/promo': ['mvp_promo_view', 'Оформление промокампании'],
+  '/mvp/done': ['mvp_receipt_view', 'Кампания на проверке'],
   '/v4': ['v4_landing_view', platformName],
   '/v4/create/business': ['v4_business_view', 'Информация о компании'],
   '/v4/create/details': ['v4_details_view', 'Данные компании'],
@@ -71,18 +92,18 @@ export function createFunnelTracker(deliver: Delivery, now = Date.now) {
     if (!goals.includes(goal)) return
     if (!previous) { pending.push([goal, params]); return }
     const step = previous.startsWith('/v4/create/') ? previous.split('/').at(-1) as EventParams['step'] : undefined
-    try { deliver('reachGoal', goal, safeParams({ step, ...params })) } catch { /* Analytics must never block setup. */ }
+    try { deliver('reachGoal', goal, { ...safeParams({ step, ...params }), product: goal.startsWith('market_') ? 'market' : goal.startsWith('staff_') ? 'staff' : goal.startsWith('mvp_') ? 'campaign_mvp' : 'campaign_v4' }) } catch { /* Analytics must never block setup. */ }
   }
   return {
     event,
     view(page: AnalyticsPage | null, params: EventParams = {}) {
       if (page === previous) return false
       if (previous?.startsWith('/v4/create/')) event('v4_step_leave', { step: previous.split('/').at(-1) as EventParams['step'], duration_ms: now() - enteredAt })
-      const referer = previous ? `/#${previous}` : ''
+      const referer = previous ?? ''
       previous = page
       enteredAt = now()
       if (!page) return false
-      try { deliver('hit', `/#${page}`, { title: pages[page][1], referer }) } catch { /* No dependency on the tracker. */ }
+      try { deliver('hit', page, { title: pages[page][1], referer }) } catch { /* No dependency on the tracker. */ }
       event(pages[page][0], params)
       for (const [goal, detail] of pending.splice(0)) event(goal, detail)
       return true
@@ -124,7 +145,7 @@ export const analytics = createFunnelTracker((method, target, params) => {
   let referrer = ''
   try { if (document.referrer) referrer = new URL(document.referrer).origin + '/' } catch { /* No usable referrer. */ }
   // Keep only campaign tags; never forward form or router query parameters.
-  const url = window.location.origin + '/' + acquisitionTags(window.location.search) + target.slice(1)
+  const url = window.location.origin + target + acquisitionTags(window.location.search)
   browser.ym(counter, method, method === 'hit' ? url : target,
     method === 'hit' ? { ...params, referer: params.referer ? window.location.origin + params.referer : referrer } : params)
 })

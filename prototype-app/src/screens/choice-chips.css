@@ -1,0 +1,6 @@
+.choice-chips { min-width: 0; margin: 0; border: 0; padding: 0; }
+.choice-chips legend { margin-bottom: var(--space-xs); padding: 0; }
+.choice-chips .bl-row { gap: var(--space-xs); }
+.choice-chips label { position: relative; min-height: 44px; }
+.choice-chips input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.choice-chips label:has(:focus-visible) { outline: 2px solid var(--color-border-primary); outline-offset: 2px; }

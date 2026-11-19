@@ -3,6 +3,7 @@ services:
   api:
     environment:
       COOKIE_SECURE: 'true'
+      PARTNERS_ONLY: 'true'
   web:
     environment:
       SITE_ADDRESS: ${DOMAIN:?Set DOMAIN to the public hostname in .env}

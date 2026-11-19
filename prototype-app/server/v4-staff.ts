@@ -5,6 +5,9 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { normalizeCampaignEmail } from '../shared/campaign-draft.ts'
 import { v4StaffPageSize, type V4StaffMember, type V4StaffSession, type V4Submission, type V4SubmissionSummary } from '../shared/v4-staff.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
+import { readPartnerCampaign, readReview, updateReview } from './market.ts'
+import { accountCookie, accountSession } from './mvp.ts'
+import { configuredRoles, roleForEmail } from './staff-role.ts'
 import { db } from './db.ts'
 
 const minute = 60_000
@@ -31,7 +34,6 @@ const insertSession = db.prepare('insert into v4_staff_sessions (token_hash, ema
 const deleteSession = db.prepare('delete from v4_staff_sessions where token_hash = ?')
 const deleteExpired = db.prepare('delete from v4_staff_sessions where expires_at <= ?')
 const readSession = db.prepare('select email from v4_staff_sessions where token_hash = ? and expires_at > ?')
-const readMember = db.prepare('select email from v4_staff_members where email = ?')
 const listMembers = db.prepare('select email, added_at as addedAt, added_by as addedBy from v4_staff_members order by email')
 const addMember = db.prepare('insert or ignore into v4_staff_members (email, added_at, added_by) values (?, ?, ?)')
 
@@ -41,7 +43,8 @@ const search = `where ? = '' or instr(v4_staff_fold(json_extract(data, '$.busine
 const list = db.prepare(`
   select id, submitted_at as submittedAt, json_extract(data, '$.business.name') as name,
     json_extract(data, '$.business.inn') as inn, json_extract(data, '$.business.city') as city,
-    json_extract(data, '$.email') as email, json_extract(data, '$.offer.title') as title
+    json_extract(data, '$.contactName') as contactName, json_extract(data, '$.business.phone') as phone,
+    json_extract(data, '$.email') as email, json_extract(data, '$.offer.title') as title, json_extract(data, '$.offer.until') as until
   from v4_submissions ${search} order by submitted_at desc, id desc limit ? offset ?
 `)
 const count = db.prepare('select count(*) as total from v4_submissions ' + search)
@@ -52,16 +55,8 @@ export function createV4Staff(
   sendCode: (email: string, code: string) => Promise<void>,
   now = Date.now,
 ) {
-  const configured = new Map<string, V4StaffSession['role']>()
-  for (const [role, emails] of [['staff', addresses], ['admin', administrators]] as const) {
-    for (const value of emails) {
-      const email = normalizeStaffEmail(value)
-      if (email) configured.set(email, role)
-    }
-  }
-  function roleFor(email: string): V4StaffSession['role'] | undefined {
-    return configured.get(email) ?? (readMember.get(email) ? 'staff' : undefined)
-  }
+  const configured = configuredRoles(addresses, administrators)
+  const roleFor = (email: string) => roleForEmail(email, configured)
   const routes = new Hono()
   const smallBody = bodyLimit({ maxSize: 1024, onError: c => c.json({ message: 'Слишком большой запрос' }, 413) })
   const jsonBody = (request: Request) => request.headers.get('Content-Type')?.split(';')[0].trim() === 'application/json'
@@ -130,8 +125,9 @@ export function createV4Staff(
 
   const protectedRoutes = new Hono<{ Variables: { staff: V4StaffSession; token: string } }>()
   protectedRoutes.use('*', async (c, next) => {
-    const token = getCookie(c, cookie)
-    const session = token && /^[\w-]{43}$/.test(token) ? readSession.get(tokenHash(token), now()) as { email: string } | undefined : undefined
+    const unified = getCookie(c, accountCookie)
+    const token = unified ?? getCookie(c, cookie)
+    const session = unified ? accountSession(unified, now()) : token && /^[\w-]{43}$/.test(token) ? readSession.get(tokenHash(token), now()) as { email: string } | undefined : undefined
     const role = session && roleFor(session.email)
     if (!token || !session || !role) return c.json({ message: 'Войдите по рабочей почте' }, 401)
     c.set('staff', { email: session.email, role })
@@ -163,6 +159,10 @@ export function createV4Staff(
     return c.json({ member }, 201)
   })
   protectedRoutes.post('/logout', c => {
+    if (getCookie(c, accountCookie)) {
+      db.prepare('delete from mvp_sessions where token_hash=?').run(tokenHash(c.var.token))
+      deleteCookie(c, accountCookie, {path:'/api'})
+    }
     deleteSession.run(tokenHash(c.var.token))
     deleteCookie(c, cookie, { path, sameSite: 'Strict' })
     return c.json({ status: 'signed-out' })
@@ -175,17 +175,21 @@ export function createV4Staff(
     const page = typeof body?.page === 'number' && Number.isSafeInteger(body.page) ? body.page : 1
     const last = Math.max(1, Math.ceil(total / v4StaffPageSize))
     const offset = (Math.max(1, Math.min(last, Math.floor(page))) - 1) * v4StaffPageSize
-    const items = list.all(...args, v4StaffPageSize, offset) as V4SubmissionSummary[]
-    return c.json({ items, total })
+    const rows = list.all(...args, v4StaffPageSize, offset) as (Omit<V4SubmissionSummary,'status'> & {until:string})[]
+    return c.json({ items:rows.map(({until,...row})=>({...row,status:readPartnerCampaign(row.id,until).status})), total })
   })
   protectedRoutes.get('/submissions/:id', c => {
     const id = c.req.param('id')
     const row = details.get(id) as { submittedAt: number; data: string } | undefined
     if (!row) return c.json({ message: 'Заявка не найдена' }, 404)
-    const { business, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers, offerAccepted, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
-    const result: V4Submission = { id, submittedAt: row.submittedAt, business, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers,
+    const { mvp, mvpProfile, business, contactName, setupMode, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers, offerAccepted, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
+    const result: V4Submission = { id, status:readPartnerCampaign(id,offer.until).status, review:readReview(id), mvp, mvpProfile, submittedAt: row.submittedAt, business, contactName, setupMode, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers,
       offerAccepted, offerImage: offerImage?.name ?? null, logoImage: logoImage?.name ?? null }
     return c.json(result)
+  })
+  protectedRoutes.post('/submissions/:id/review', smallBody, async c => {
+    const result = updateReview(c.req.param('id'), c.var.staff.email, await jsonBody(c.req.raw))
+    return result.error ? c.json({message:result.error},result.status) : c.json(result)
   })
   protectedRoutes.get('/submissions/:id/:asset', c => {
     const asset = c.req.param('asset')

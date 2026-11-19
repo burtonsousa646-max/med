@@ -8,7 +8,7 @@ import { parsePartnerDetails, type RegistryDetails } from '../shared/partner-det
 import { readPartnerRegistry } from './partner-registry.ts'
 
 type ImageData = { name: string; type: string; base64: string }
-export type IntakeData = Omit<CampaignDraft, 'offerImage' | 'logoImage'> & { offerImage: ImageData | null; logoImage: ImageData | null; registryDetails?: RegistryDetails | null }
+export type IntakeData = Omit<CampaignDraft, 'offerImage' | 'logoImage'> & { offerImage: ImageData | null; logoImage: ImageData | null; registryDetails?: RegistryDetails | null; mvp?: import('../shared/mvp-promo.ts').Promo; mvpProfile?: import('../shared/mvp-promo.ts').Profile }
 
 const limit = bodyLimit({
   maxSize: 11 * 1024 * 1024,
@@ -18,7 +18,7 @@ const limit = bodyLimit({
 const extensions = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif' }
 export function imageExtension(type: string) { return extensions[type as keyof typeof extensions] }
 
-async function packImage(file: File | null): Promise<ImageData | null> {
+export async function packImage(file: File | null): Promise<ImageData | null> {
   if (!file) return null
   const bytes = Buffer.from(await file.arrayBuffer())
   const prefix = bytes.subarray(0, 12)

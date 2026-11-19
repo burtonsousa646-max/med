@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { components } from '../src/api.gen.ts'
 
 type S = components['schemas']
-type Ask = S['AskRequest']
+export type Ask = S['AskRequest']
 
 const MODEL = process.env.NEAR_AI_MODEL ?? 'claude-opus-5-5'
 const client = process.env.ANTHROPIC_API_KEY ? new Anthropic({ maxRetries: 1 }) : null
@@ -21,7 +21,7 @@ const RULES = `Ты — помощник витрины «лучшее рядо�
 reply — 1–2 коротких предложения на «ты», со строчной буквы, без списков и эмодзи: что подобрал и почему.`
 
 const offerLine = (o: S['AskOffer']) =>
-  `${o.id} | ${o.partner} | ${o.title} | ${o.small} | ${o.cat} | ${o.type} | ${o.dist} м${o.price ? ` | ${o.price} ₽` : ''} | ${o.till}${o.bee ? ' | только для клиентов билайна' : ''}`
+  `${o.id} | ${o.partner} | ${o.title} | ${o.small} | ${o.cat} | ${o.type} | ${o.dist > 0 ? o.dist + ' м' : 'расстояние неизвестно'}${o.price ? ` | ${o.price} ₽` : ''} | ${o.till}${o.bee ? ' | только для клиентов билайна' : ''}`
 
 const schema = (ids: string[]) => ({
   type: 'object',

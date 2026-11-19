@@ -125,6 +125,23 @@
   inset: 0;
   content: "";
 }
+.campaign-creative[data-editable=true] .campaign-creative__open:enabled::after { display: none; }
+.campaign-creative__edit-brand, .campaign-creative__edit-benefit {
+  display: block; min-width: 44px; min-height: 44px; max-width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font-family: inherit; text-align: left; cursor: pointer;
+}
+.campaign-creative__edit-title {
+  display: block; width: 100%; min-width: 0; min-height: 3em; margin: 0; padding: 4px; border: 1px dashed transparent;
+  border-radius: 4px; background: transparent; color: inherit; font-family: inherit; resize: vertical; field-sizing: content; caret-color: currentColor;
+}
+.campaign-creative__edit-title:hover { border-color: currentColor; }
+.campaign-creative__edit-title:focus-visible, .campaign-creative__edit-brand:focus-visible, .campaign-creative__edit-benefit:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.campaign-creative__edit-brand:hover, .campaign-creative__edit-benefit:hover { outline: 1px dashed currentColor; outline-offset: 4px; }
+.campaign-creative__edit-media { position: absolute; inset: 8px 8px auto auto; min-height: 44px; padding: 8px; border: 0; border-radius: 8px; background: var(--color-static-white); color: var(--color-static-grey-800); font: inherit; font-size: 12px; line-height: 16px; cursor: pointer; }
+.campaign-creative__edit-media:hover { text-decoration: underline; }
+.campaign-creative__edit-media:focus-visible { outline: 2px solid var(--color-static-grey-800); outline-offset: 2px; }
+.campaign-creative__layout[data-layout=artwork] { grid-template-areas: "media" "terms"; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; min-height: 0; background: var(--color-static-grey-800); color: var(--color-static-white); }
+[data-layout=artwork] .campaign-creative__media { aspect-ratio: 2; }
+[data-layout=artwork] .campaign-creative__media img { object-fit: contain; transform: none; }
 .campaign-creative__open:focus-visible::after {
   outline: 2px solid currentColor;
   outline-offset: -4px;

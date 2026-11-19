@@ -16,6 +16,8 @@
 !prototype-app/server/**
 !prototype-app/public/
 !prototype-app/public/**
+!prototype-app/docs/
+!prototype-app/docs/campaign-offer-rules.md
 !prototype-app/scripts/
 !prototype-app/scripts/**
 !prototype-app/deploy/

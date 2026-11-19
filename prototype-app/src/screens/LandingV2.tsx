@@ -1,3 +1,4 @@
+import { analytics } from '../analytics'
 import { platformName } from '../../shared/brand'
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -21,8 +22,8 @@ function useLiveReducedMotion() {
 }
 
 // Лендинг открыт и как MVP (/mvp): тогда все кнопки ведут на вход MVP
-const mvp = () => location.hash.startsWith('#/mvp')
-const login = () => (mvp() ? '/mvp/login' : '/login')
+const mvp = () => location.pathname === '/mvp'
+const login = () => (mvp() ? '/app/' : '/login')
 
 export const LaunchContext = createContext<(() => void) | undefined>(undefined)
 
@@ -30,7 +31,7 @@ export function CampaignAction({ to = login(), className, children, describedBy 
   const launch = useContext(LaunchContext)
   return launch
     ? <button type="button" data-campaign-start className={className} onClick={launch} aria-haspopup="dialog" aria-describedby={describedBy}>{children === 'узнать охват' ? 'запустить сейчас' : children}</button>
-    : <Link to={to} className={className} aria-describedby={describedBy}>{children}</Link>
+    : <Link to={to} onClick={() => { if (to === '/app/') analytics.event('mvp_start_click') }} className={className} aria-describedby={describedBy}>{children}</Link>
 }
 
 const DEMO_CREATIVE = creativeOf(DEMO_AD.brand, DEMO_AD.offer, DEMO_AD.img)
@@ -692,7 +693,7 @@ export default function LandingV2({ onStart }: { onStart?: () => void } = {}) {
           <AnimatePresence initial={false}>
             {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><CampaignAction className="bl-btn bl-btn--primary">узнать охват</CampaignAction></motion.span>}
           </AnimatePresence>
-          <Link className="bl-btn bl-btn--dark" to={login()}>войти</Link>
+          <Link className="bl-btn bl-btn--dark" to={login()} onClick={() => { if (mvp()) analytics.event('mvp_start_click') }}>войти</Link>
         </nav>
       </header>
       <main id="v2-content" tabIndex={-1} className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>

@@ -4,6 +4,7 @@ import type { PartnerDetails } from './partner-details.ts'
 
 export const campaignStages = ['business', 'details', 'offer', 'audience', 'email', 'success'] as const
 export type CampaignDraft = {
+  setupMode?: 'quick' | 'manual'; contactName?: string;
   partnerDetails?: PartnerDetails;
   business: Business; addresses: string[]; online: boolean; offer: OfferDraft;
   offerImage: File | null; logoImage: File | null; audience: number[]; audienceCity?: string; email?: string; triggers: string;

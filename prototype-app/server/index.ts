@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 import type { components } from '../src/api.gen.ts'
 import * as db from './db.ts'
 import { allow, ask, checkAsk } from './ask.ts'
+import { market } from './market.ts'
+import { createMvp } from './mvp.ts'
 import { campaignIntake } from './campaign-intake.ts'
 import { campaignSite } from './campaign-site.ts'
 import { offerAi } from './offer-ai.ts'
@@ -28,12 +30,20 @@ app.get('/health', c => {
   db.db.prepare('select 1').get()
   return c.json({ status: 'ok' })
 })
+app.route('/market', market)
+app.route('/mvp', createMvp(sendCampaignCode))
+// The public deployment only serves the email-authenticated cabinet and the published catalogue.
+app.use('/v4/staff/*', async (c,next) => {
+  if (process.env.PARTNERS_ONLY === 'true' && ['/api/v4/staff/code','/api/v4/staff/verify'].includes(c.req.path)) return c.notFound()
+  return next()
+})
+app.route('/v4/staff', createV4Staff({ addresses: v4StaffAddresses, administrators: v4StaffAdministrators }, sendV4StaffCode))
+app.use('*', async (c,next) => process.env.PARTNERS_ONLY === 'true' ? c.notFound() : next())
 app.route('/v4', campaignIntake)
 app.route('/v4', createCampaignEmail(sendCampaignCode))
 app.route('/v4', campaignSite)
 app.route('/v4', offerAi)
 app.route('/v4', offerCutout)
-app.route('/v4/staff', createV4Staff({ addresses: v4StaffAddresses, administrators: v4StaffAdministrators }, sendV4StaffCode))
 
 /* ───────── демо-копия компании по cookie. Справочники и подтверждение по ссылке её не требуют ───────── */
 const COOKIE = 'demo'

@@ -13,6 +13,7 @@ services:
       API_PORT: '8787'
       DB_PATH: /data/demo.sqlite
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PARTNERS_ONLY: ${PARTNERS_ONLY:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CAMPAIGN_MAIL_FROM: ${CAMPAIGN_MAIL_FROM:-}
       CAMPAIGN_SMTP_HOST: ${CAMPAIGN_SMTP_HOST:-postbox.cloud.yandex.net}
@@ -46,10 +47,13 @@ services:
     pull_policy: never
     command: ["node", "server/autocomplete.ts"]
     environment:
+      DB_PATH: /data/demo.sqlite
       AUTOCOMPLETE_HOST: 0.0.0.0
       AUTOCOMPLETE_PORT: '8787'
       DADATA_API_KEY: ${DADATA_API_KEY:-}
       DADATA_SECRET_KEY: ${DADATA_SECRET_KEY:-}
+    volumes:
+      - api-data:/data
     restart: unless-stopped
     init: true
     read_only: true

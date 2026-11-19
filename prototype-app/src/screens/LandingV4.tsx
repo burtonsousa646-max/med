@@ -1,7 +1,7 @@
 import { platformName } from '../../shared/brand'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { analytics, type EventParams } from '../analytics'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react'
 import { ArrowRight, Check } from 'lucide-react'
 import { Brand } from '../ui'
@@ -27,10 +27,11 @@ const STEPS = [
   { kind: 'audience', title: 'выберите клиентов', text: 'Выберите клиентов, город и подходящий момент для показа' },
   { kind: 'guests', title: 'встречайте новых гостей', text: 'После запуска кампании гости смогут воспользоваться вашей акцией' },
 ] as const
-const CAMPAIGN_START = '/v4/create'
+
 
 function StartCampaignLink({ className, arrow }: { className: string; arrow?: number }) {
-  return <Link data-campaign-start className={className} to={CAMPAIGN_START}>запустить сейчас{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
+  const home = useLocation().pathname === '/'
+  return <Link data-campaign-start className={className} to={home ? '/app/' : '/v4/create'}>запустить сейчас{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
 }
 
 const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
@@ -105,6 +106,7 @@ function Final() {
 }
 
 export default function LandingV4() {
+  const home = useLocation().pathname === '/'
   const showCta = useHeaderCta()
   const reduce = useReducedMotion()
   const seen = useRef(new Set<string>())
@@ -134,7 +136,7 @@ export default function LandingV4() {
     if (!target?.closest('[data-campaign-start]')) return
     const section = target.closest('section')?.id
     const source = target.closest('header') ? 'header' : section === 'v2-hero' ? 'hero' : section === 'how' ? 'how' : section === 'where' ? 'where' : section === 'v2-final' ? 'final' : 'direct'
-    analytics.event('v4_cta_click', { source })
+    analytics.event(home ? 'mvp_start_click' : 'v4_cta_click', { source })
   }}>
     <div className="bl-page wrap v2 v4">
       <a className="v2-skip-link" href="#v4-content" onClick={event => { event.preventDefault(); navigate('v4-content') }}>к содержимому</a>
@@ -143,6 +145,8 @@ export default function LandingV4() {
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
           <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
+           {home && <Link to="/market/" className="bl-btn" onClick={() => analytics.event('market_link_click')}>Витрина</Link>}
+          {home && <Link to="/app/" className="bl-btn" data-campaign-start>Войти</Link>}
           <StartCampaignLink className={`bl-btn ${showCta ? 'bl-btn--primary' : 'bl-btn--dark'}`}/>
         </nav>
       </header>

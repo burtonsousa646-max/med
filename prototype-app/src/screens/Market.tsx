@@ -71,13 +71,13 @@ export default function Market() {
           {search && results.data && <p aria-live="polite">{results.data.reply}</p>}
           {!items.length && !search && <p className="near-empty" role="status">{category ? 'В этой категории пока нет предложений.' : 'Пока нет действующих предложений.'}</p>}
           <div className="bl-grid near-found" style={{'--bl-cols':3} as React.CSSProperties}>{items.map(o=><article className="bl-card bl-card--white near-card" key={o.id}>
-            <CampaignCreative name={o.name} offer={o.offer} image={o.image} logo={o.logo} illustration="" disabled={false} erid={o.erid} onTerms={()=>show(o)}/>
+            <CampaignCreative legalNameBelow name={o.name} offer={o.offer} image={o.image} logo={o.logo} illustration="" disabled={false} erid={o.erid} onTerms={()=>show(o)}/>
             <div className="near-card__body"><span className="bl-caption">{o.online ? 'Онлайн' : o.addresses[0]}</span>
               <button className="bl-btn bl-btn--s" onClick={()=>show(o)}>Подробнее</button></div></article>)}</div>
           {!search && feed.hasNextPage && <button className="bl-btn" disabled={feed.isFetchingNextPage} onClick={()=>{analytics.event('market_more');void feed.fetchNextPage()}}>Показать ещё</button>}
         </>}
     </main>
-    <footer className="near-foot bl-caption"><span>Реклама. Условия предложений предоставляют партнёры.</span><Link to="/app/" onClick={()=>analytics.event('market_signup_click')}>Разместить предложение</Link></footer>
+    <footer className="near-foot bl-caption"><span>Реклама. Условия предложений предоставляют партнёры.</span><Link to="/app/?start=campaign" onClick={()=>analytics.event('market_signup_click')}>Разместить предложение</Link></footer>
     <Modal open={!!id} onClose={()=>setParams({},{replace:true})} label="Условия предложения">
       {detail.error ? <p role="alert">{detail.error.message}</p> : detail.data ? <OfferDetails key={detail.data.id} offer={detail.data}/> : <p>Загружаем предложение…</p>}
     </Modal>

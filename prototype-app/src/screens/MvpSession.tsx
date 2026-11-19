@@ -14,10 +14,10 @@ import { LoginAside } from './Entry'
 
 const base = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '') + '/mvp'
 export const sessionKey = ['mvp-partner-session']
-export async function mvpRequest<T>(path: string, body?: object, owner?: string): Promise<T> {
+export async function mvpRequest<T>(path: string, body?: object, owner?: string, offerSession?: string): Promise<T> {
   if (partnerDemo) return mockPartnerRequest(path,body) as T
   const response = await fetch(base + path, { credentials: 'include', cache: 'no-store',
-    headers: { ...(body && { 'Content-Type': 'application/json' }), ...(owner && { 'X-Mvp-Account': owner }) },
+    headers: { ...(body && { 'Content-Type': 'application/json' }), ...(owner && { 'X-Mvp-Account': owner }), ...(offerSession && { 'X-Offer-Session': offerSession }) },
     ...(body && { method: 'POST', body: JSON.stringify(body) }) })
   if (response.status === 401 && path === '/session') return null as T
   if (!response.ok) {
@@ -43,8 +43,11 @@ export function MvpShell() {
   }
   if (session.data?.role && !staff) return <Navigate to="/app/staff" replace/>
   if (!session.data?.role && staff) return <Navigate to={partnerDemo && !session.data ? '/app/?preview=staff' : '/app/'} replace/>
-  if (!session.data?.role && !session.data?.profile && !entry) return <Navigate to="/app/" replace/>
-  if (session.data?.profile && entry) return <Navigate to="/app/campaigns" replace/>
+  if (!session.data?.role && !session.data?.profile && !entry) {
+    const launching = pathname === '/app/campaigns/formats' || pathname === '/app/campaigns/new'
+    return <Navigate to={launching ? '/app/?start=campaign' : '/app/'} replace/>
+  }
+  if (session.data?.profile && entry) return <Navigate to={new URLSearchParams(search).get('start') === 'campaign' ? '/app/campaigns/formats' : '/app/campaigns'} replace/>
   return <Outlet key={JSON.stringify([session.data?.email, session.data?.profile?.inn])} context={session.data}/>
 }
 
@@ -118,7 +121,7 @@ export function MvpLogin() {
   async function submit(resend = false) {
     if (pending.current) return
     if (step === 'email' && openTestLogin) {
-      location.assign(previewOrigin + '/app/?preview=' + testRole)
+      location.assign(previewOrigin + '/app/?preview=' + testRole + (new URLSearchParams(location.search).get('start') === 'campaign' ? '&start=campaign' : ''))
       return
     }
     pending.current = true; setBusy(true); setError('')

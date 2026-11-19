@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
+import { offerAi } from './offer-ai.ts'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
@@ -105,6 +106,8 @@ export function createMvp(send: (email: string, code: string) => Promise<void>, 
     db.prepare('update mvp_accounts set profile=? where email=?').run(JSON.stringify(profile), c.var.session.email)
     return c.json({ ...c.var.session, profile })
   })
+  app.use('/offer-ai', async (c,next) => c.var.session.profile ? next() : c.json({message:'Сначала подтвердите компанию'},403))
+  app.route('/',offerAi)
   app.get('/campaigns', c => {
     const offset = Number(c.req.query('offset') ?? 0)
     if (!Number.isSafeInteger(offset) || offset < 0) return c.json({ message: 'Некорректная страница' }, 400)

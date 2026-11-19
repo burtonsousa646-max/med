@@ -31,7 +31,7 @@ const STEPS = [
 
 function StartCampaignLink({ className, arrow }: { className: string; arrow?: number }) {
   const home = useLocation().pathname === '/'
-  return <Link data-campaign-start className={className} to={home ? '/app/' : '/v4/create'}>запустить сейчас{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
+  return <Link data-campaign-start className={className} to={home ? '/app/?start=campaign' : '/v4/create'}>запустить сейчас{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
 }
 
 const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
@@ -146,7 +146,7 @@ export default function LandingV4() {
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
           <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
            {home && <Link to="/market/" className="bl-btn" onClick={() => analytics.event('market_link_click')}>Витрина</Link>}
-          {home && <Link to="/app/" className="bl-btn" data-campaign-start>Войти</Link>}
+          {home && <Link to="/app/" className="bl-btn">Войти</Link>}
           <StartCampaignLink className={`bl-btn ${showCta ? 'bl-btn--primary' : 'bl-btn--dark'}`}/>
         </nav>
       </header>

@@ -1,11 +1,12 @@
 // Isolated loopback preview. Run after npm run build. No external email is sent.
-import { cpSync, mkdtempSync } from 'node:fs'
+import { cpSync, existsSync, mkdtempSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 
+if (existsSync('.env')) process.loadEnvFile('.env')
 const directory = process.env.LOCAL_PREVIEW_DIRECTORY || mkdtempSync(join(tmpdir(),'beepartners-preview-'))
 // Keep loaded tabs independent of subsequent Vite builds and retain their hashed assets on restart.
 const webRoot = join(directory,'web')

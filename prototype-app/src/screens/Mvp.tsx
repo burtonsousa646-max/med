@@ -2,12 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Building2, Megaphone, Plus, ClipboardList, MousePointerClick, Repeat, Ticket, TicketPercent, type LucideIcon } from 'lucide-react'
-import { Check, Chip, toast } from '../ui'
+import { Check, toast } from '../ui'
 import { OfferSurfaces } from './OfferSurfaces'
 import { CampaignCreative } from './CampaignCreative'
+import type { OfferAiInput, OfferAiResponse } from '../../shared/offer-ai'
 import { emptyOffer } from '../../shared/campaign-offer'
 import { MvpAudience } from './MvpAudience'
-import { audienceText, submittedTargeting, designs, promoDay, promoErrors, VIA, type MvpSession, type Profile, type Promo, type Receipt, type ReceiptSummary } from '../../shared/mvp-promo'
+import { audienceText, submittedTargeting, designs, promoDay, promoErrors, type MvpSession, type Profile, type Promo, type Receipt, type ReceiptSummary } from '../../shared/mvp-promo'
 import { CompanyInnForm, Head, LogoutButton, useMvpSession, mvpRequest, errorMessage, draftKey } from './MvpSession'
 import { partnerDemo } from './mvp-demo'
 import { AccountCabinet, CampaignStatus } from './AccountCabinet'
@@ -24,8 +25,13 @@ function readDraft(session: MvpSession) {
     const legacy = JSON.parse(sessionStorage.getItem('mvp-me') ?? 'null')
     const sameCompany = legacy?.email?.toLowerCase() === session.email && legacy.inn === session.profile!.inn
     const promo = stored?.promo ?? (sameCompany && JSON.parse(sessionStorage.getItem('mvp-promo-draft') ?? 'null'))
-    if (!promo || !['code','off','cond','site','till','fee','check','via'].every(key => typeof promo[key] === 'string')) return null
+    if (!promo || !['code','off','cond','site','till'].every(key => typeof promo[key] === 'string')) return null
     if (promo.addresses && (!Array.isArray(promo.addresses) || !promo.addresses.every((a: unknown) => typeof a === 'string'))) return null
+    if (!stored?.attempted) {
+      delete promo.fee
+      delete promo.check
+      delete promo.via
+    }
     return { key: stored?.key ?? crypto.randomUUID(), attempted: stored?.attempted === true, promo: { ...promo, addresses: promo.addresses ?? [''] } as Promo }
   } catch { return null }
 }
@@ -119,7 +125,7 @@ export function MvpNew() {
 }
 
 /* ───────── шаг 2: оффер промокода, оферта и запуск ───────── */
-const SUGGEST: Promo = { code: 'START15', off: '15', cond: 'на первый заказ от 800 ₽', site: '', till: promoDay(30), fee: '8', check: '1200', via: VIA[0] }
+const SUGGEST: Promo = { code: 'START15', off: '15', cond: 'на первый заказ от 800 ₽', site: '', till: promoDay(30) }
 
 function Field({ label, err, wide, children }: { label: string; err?: string; wide?: boolean; children: ReactNode }) {
   return (
@@ -135,9 +141,33 @@ const imageUrl = (file: string) => import.meta.env.BASE_URL + 'img/offer-variant
 function previewProps(me: Profile, p: Promo) {
   const design = designs.find(d => d.file === p.design) ?? designs[0]
   return {
-    name: me.company, image: p.photo && p.usePhoto !== false ? p.photo.src : imageUrl(design.file), logo: '', illustration: '',
+    name: me.company, image: p.photo && p.usePhoto !== false ? p.photo.src : imageUrl(design.file), logo: '', legalNameBelow: true, illustration: '',
     offer: { ...emptyOffer, title: p.cond.trim() || 'Скидка по промокоду', promo: p.code, until: p.till, discount: p.off, tone: design.tone },
   }
+}
+
+function OfferSuggestion({session, promo, draftId, onApply}:{session:MvpSession; promo:Promo; draftId:string; onApply:(text:string)=>void}) {
+  const [busy,setBusy] = useState(false), [suggestion,setSuggestion] = useState(''), [message,setMessage] = useState('')
+  async function generate() {
+    setBusy(true); setSuggestion(''); setMessage('')
+    try {
+      const profile = session.profile!
+      const input: OfferAiInput = { mode:'manual', name:'', category:profile.category ?? '',
+        offer:{ ...emptyOffer, title:promo.cond, discount:promo.off, until:promo.till },
+        request:'Предложи одну короткую формулировку для карточки на русском, до шестидесяти символов. Сохрани указанные условия и суммы. Верни текст в patch.title. Не придумывай ограничений.',
+        hasImage:false, hasLogo:false }
+      const result = await mvpRequest<OfferAiResponse>('/offer-ai',input,session.email,draftId)
+      const answer = result.source === 'disabled' ? undefined : result.answer
+      const text = answer?.patch.title?.trim()
+      if (text && text.length <= 60) setSuggestion(text)
+      else setMessage(answer?.question || (result.source === 'disabled' ? 'Генерация пока не настроена. Введите условие вручную.' : 'Новой короткой формулировки пока нет. Уточните условие и попробуйте ещё раз.'))
+    } catch (e) { setMessage(errorMessage(e)) }
+    finally { setBusy(false) }
+  }
+  return <div className="bl-stack">
+    <div><button type="button" className="bl-btn bl-btn--s" disabled={busy} onClick={generate}>{busy ? 'Готовим вариант…' : 'Предложить текст оффера'}</button></div>
+    <div aria-live="polite">{suggestion && <><p>{suggestion}</p><button type="button" className="bl-btn bl-btn--s" onClick={()=>{onApply(suggestion);setSuggestion('')}}>Использовать текст</button></>}{message && <p className="bl-caption">{message}</p>}</div>
+  </div>
 }
 
 export function MvpPromo() {
@@ -165,7 +195,6 @@ export function MvpPromo() {
   const set = (k: keyof Promo, num?: boolean) => (e: { target: { value: string } }) =>
     setP({ ...p, [k]: num ? e.target.value.replace(/\D/g, '') : k === 'code' ? e.target.value.toUpperCase().replace(/\s/g, '') : e.target.value })
   const err = promoErrors(p), ok = Object.values(err).every(x => !x)
-  const save = +p.check * +p.off / 100, pay = +p.check * +p.fee / 100
   async function launch() {
     if (pending.current) return
     pending.current = true; setSending(true); setSendError('')
@@ -203,6 +232,8 @@ export function MvpPromo() {
                 <Field label="сайт, где применить код" err={err.site}><input className="bl-input" value={p.site} maxLength={250} onChange={set('site')} placeholder="mycoffee.ru" /></Field>
                 <Field label="действует до" err={err.till}><input className="bl-input" type="date" value={p.till} min={promoDay(1)} onChange={set('till')} /></Field>
               </div>
+              <OfferSuggestion key={JSON.stringify([p.cond,p.off,p.till])} session={session} promo={p} draftId={draft.key}
+                onApply={cond=>setP(current=>({...current,cond}))}/>
             </fieldset>
           </section>
           <section className="bl-section mvp-sheet">
@@ -223,11 +254,6 @@ export function MvpPromo() {
 
         <aside className="bl-section mvp-sheet mvp-live-preview">
           <OfferSurfaces compact inlinePlaces {...previewProps(me, p)} />
-          <dl className="kv kv--narrow mvp-kv">
-            <dt>клиент</dt><dd>экономит {rub(save)} с чека {rub(+p.check)}</dd>
-            <dt>вы платите</dt><dd><b className="bl-medium">{rub(pay)}</b> с оплаченной покупки</dd>
-            <dt>возвраты</dt><dd>не оплачиваете</dd>
-          </dl>
         </aside>
 
         <div className="mvp-card-stack">
@@ -235,20 +261,6 @@ export function MvpPromo() {
             if (patch.mode) analytics.event('mvp_audience_mode', {method: patch.mode === 'auto' ? 'automatic' : 'manual'})
             setP(current => ({ ...current, ...patch }))
           }}/>
-          <section className="bl-section mvp-sheet">
-            <fieldset className="mvp-group">
-              <legend className="bl-h4">расчёты с платформой</legend>
-              <div className="mvp-terms">
-                <Field label="средний чек, ₽" err={err.check}><input className="bl-input" inputMode="numeric" value={p.check} onChange={set('check', true)} maxLength={7} /></Field>
-                <Field label="комиссия билайну, %" err={err.fee}><input className="bl-input" inputMode="numeric" value={p.fee} onChange={set('fee', true)} maxLength={2} /></Field>
-              </div>
-              <div className="bl-field mvp-orders">
-                <span className="bl-field__label">как будете передавать заказы</span>
-                <div className="bl-row">{VIA.map(v => <Chip key={v} on={p.via === v} onClick={() => setP({ ...p, via: v })}>{v}</Chip>)}</div>
-                <span className="bl-field__caption">Нужны суммы покупок и возвратов, без данных клиентов.</span>
-              </div>
-            </fieldset>
-          </section>
           <section className="bl-section mvp-sheet">
             <div className="mvp-go">
               <Check checked={agree} onChange={value => { setAgree(value); if (value) analytics.event('mvp_terms_accepted') }} label={<>Принимаю <Link to="/v4/offer" target="_blank" rel="noopener noreferrer">оферту на размещение рекламы</Link></>} sub="маркировку и erid оформим сами" />
@@ -296,7 +308,7 @@ export function MvpDone() {
         <aside className="bl-section mvp-sheet mvp-preview">
           <h2 className="bl-h4">ваше предложение</h2>
           <div className="mvp-submitted-creative"><CampaignCreative {...previewProps(me, p)} disabled={false}/></div>
-          <dl className="kv kv--narrow mvp-kv"><dt>сайт</dt><dd>{p.site}</dd><dt>средний чек</dt><dd>{rub(+p.check)}</dd><dt>комиссия</dt><dd>{p.fee} %</dd><dt>передача заказов</dt><dd>{p.via}</dd><dt>аудитория</dt><dd>{audienceText(p)}</dd>
+          <dl className="kv kv--narrow mvp-kv"><dt>сайт</dt><dd>{p.site}</dd>{p.check && <><dt>средний чек</dt><dd>{rub(+p.check)}</dd></>}{p.fee && <><dt>комиссия</dt><dd>{p.fee} %</dd></>}{p.via && <><dt>передача заказов</dt><dd>{p.via}</dd></>}<dt>аудитория</dt><dd>{audienceText(p)}</dd>
             {p.online ? <><dt>точки продаж</dt><dd>только онлайн</dd></> : !!p.addresses?.length && <><dt>точки продаж</dt><dd><ul className="mvp-submitted-points">{p.addresses.map(a => <li key={a}>{a}</li>)}</ul></dd></>}
           </dl>
         </aside>

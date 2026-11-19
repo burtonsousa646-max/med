@@ -24,9 +24,9 @@ const staff = createV4Staff({ addresses:['employee@example.test'] }, async (emai
 const post = (body: object, cookie = '') => ({ method:'POST', headers:{ 'Content-Type':'application/json', Cookie:cookie }, body:JSON.stringify(body) })
 const cookieOf = (res: Response) => res.headers.get('Set-Cookie')!.split(';')[0]
 const profile = { inn:'7707083893', company:'Магазин', addr:'Москва, ул. Первая, 12' }
-const promo: Promo = { code:'TEST20', off:'20', cond:'на первую покупку', site:'shop.example.test', till:'2099-07-01', fee:'9', check:'2500', via:'постбэк', design:'coffee-teal.png',
+const promo = { code:'TEST20', off:'20', cond:'на первую покупку', site:'shop.example.test', till:'2099-07-01', fee:'9', check:'2500', via:'постбэк', design:'coffee-teal.png',
   addresses:[profile.addr, 'Москва, ул. Вторая, 33'], online:false, mode:'manual', area:'весь город', city:'Самара',
-  gender:'женщины', age:'35 и старше', income:'выше среднего', moment:'день зарплаты', wishes:'По выходным' }
+  gender:'женщины', age:'35 и старше', income:'выше среднего', moment:'день зарплаты', wishes:'По выходным' } satisfies Promo
 async function login(email: string) {
   const response = await api.request('/code', post({email}))
   assert.equal(response.status, 200)
@@ -42,8 +42,10 @@ async function login(email: string) {
 test('partner access requires a verified session, including reads after logout', async () => {
   assert.equal((await app.request('/api/mvp/campaigns')).status,401)
   assert.equal((await app.request('/api/mvp/session')).status,401)
+  assert.equal((await api.request('/offer-ai',post({}))).status,401)
   const email = 'access@example.test'
   const cookie = await login(email)
+  assert.equal((await api.request('/offer-ai',post({},cookie))).status,403)
   const session = await api.request('/session',{headers:{cookie}})
   assert.deepEqual(await session.json(),{email,profile:null})
   assert.match(session.headers.get('Cache-Control')!, /no-store/)

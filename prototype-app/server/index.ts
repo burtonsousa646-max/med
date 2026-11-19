@@ -42,7 +42,8 @@ app.use('*', async (c,next) => process.env.PARTNERS_ONLY === 'true' ? c.notFound
 app.route('/v4', campaignIntake)
 app.route('/v4', createCampaignEmail(sendCampaignCode))
 app.route('/v4', campaignSite)
-app.route('/v4', offerAi)
+if (process.env.OFFER_AI_PROVIDER === 'opencode-go') app.post('/v4/offer-ai', c => c.redirect('/api/mvp/offer-ai',307))
+else app.route('/v4', offerAi)
 app.route('/v4', offerCutout)
 
 /* ───────── демо-копия компании по cookie. Справочники и подтверждение по ссылке её не требуют ───────── */

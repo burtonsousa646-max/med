@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch --disable-warning=ExperimentalWarning server/index.ts & node --watch --env-file-if-exists=.env.autocomplete server/autocomplete.ts & vite",
+    "dev": "node --watch --env-file-if-exists=.env --disable-warning=ExperimentalWarning server/index.ts & node --watch --env-file-if-exists=.env.autocomplete server/autocomplete.ts & vite",
     "autocomplete": "node --env-file-if-exists=.env.autocomplete server/autocomplete.ts",
-    "server": "node --disable-warning=ExperimentalWarning server/index.ts",
+    "server": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server/index.ts",
     "test:mvp-browser": "node --disable-warning=ExperimentalWarning --test scripts/mvp-browser.e2e.mjs",
     "test:partner-demo": "node --test scripts/partner-demo.e2e.mjs",
     "test": "node --disable-warning=ExperimentalWarning --test server/*.test.ts scripts/*.test.ts",

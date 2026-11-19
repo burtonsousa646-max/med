@@ -37,7 +37,7 @@ function campaignMessage(row: MailRow, from: string) {
       `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, `Макет: ${offer.layout ? offerLayouts[offer.layout] : 'Автоматически'}`,
     ] },
     ...(mvp ? [{ title: 'Настройки промокампании', lines: [
-      'Средний чек: ' + mvp.check + ' ₽', 'Комиссия: ' + mvp.fee + ' %', 'Передача заказов: ' + mvp.via,
+      ...(mvp.check ? ['Средний чек: ' + mvp.check + ' ₽'] : []), ...(mvp.fee ? ['Комиссия: ' + mvp.fee + ' %'] : []), ...(mvp.via ? ['Передача заказов: ' + mvp.via] : []),
       'Настройка аудитории: ' + (mvp.mode === 'manual' ? 'вручную' : 'автоматически'), 'Оформление: ' + (offerImage?.name ?? mvp.design),
     ] }] : []),
     { title: 'Аудитория', lines: [

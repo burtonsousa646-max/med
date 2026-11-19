@@ -81,3 +81,21 @@ test('no configuration stays local and production cannot enable replay', async (
   assert.equal((await call(createOfferAi({ provider: 'codex-replay', replayFile, production: true }), base)).status, 503)
   assert.equal((await call(createOfferAi({ provider: 'openai' }), base)).status, 503)
 })
+
+test('Go uses its subscription endpoint and accepts a headline with the existing discount', async t => {
+  const conversation = crypto.randomUUID()
+  const suggested = { ...answer, patch:{title:'Скидка 20% на замену резины'} }
+  t.mock.method(globalThis,'fetch',async (url:string, init:RequestInit) => {
+    assert.equal(url,'https://opencode.ai/inference/go/openai/v1/responses')
+    const headers = new Headers(init.headers)
+    assert.equal(headers.get('x-opencode-session'),conversation)
+    assert.equal(headers.get('authorization'),'Bearer test-credential')
+    assert.equal(init.redirect,'error')
+    return Response.json({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(suggested)}]}]})
+  })
+  const app = createOfferAi({provider:'opencode-go',key:'test-credential',model:'glm-5.3-flash'})
+  const input = {...base,offer:{...base.offer,title:'Замена резины'},request:'Сократи заголовок'}
+  const response = await app.request('/offer-ai',{method:'POST',headers:{'Content-Type':'application/json','X-Offer-Session':conversation},body:JSON.stringify(input)})
+  assert.equal(response.status,200)
+  assert.equal((await response.json()).answer.patch.title,suggested.patch.title)
+})

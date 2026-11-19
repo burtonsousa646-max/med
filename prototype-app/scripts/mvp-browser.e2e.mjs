@@ -18,7 +18,7 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   const {createAutocomplete} = await import('../server/autocomplete.ts')
   const {app} = await import('../server/index.ts')
   const {db} = await import('../server/db.ts')
-  const email = 'outlet@example.test', employee = 'staff@example.test', company = 'Тестовая кофейня', inn = '7707083893'
+  const email = 'outlet@example.test', employee = 'staff@example.test', company = 'ИП Петрова Александра Владимировна «Тестовая кофейня на Садовой»', inn = '7707083893'
   db.prepare('insert into v4_staff_members (email,added_at,added_by) values (?,?,?)').run(employee,Date.now(),'fixture')
   const inbox = new Map()
   const send = async (address, code) => { inbox.set(address, code) }
@@ -51,8 +51,8 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   page.on('pageerror',error=>errors.push(error.message))
   page.setDefaultTimeout(9000)
   await page.goto(base+'/')
-  await page.getByRole('link',{name:'Войти',exact:true}).click()
-  await page.waitForURL(base+'/app/')
+  await page.getByRole('link',{name:'запустить сейчас',exact:true}).first().click()
+  await page.waitForURL(base+'/app/?start=campaign')
   async function signIn() {
     await page.getByLabel('рабочая почта').fill(email)
     await page.getByRole('button',{name:'получить код',exact:true}).click()
@@ -70,7 +70,8 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await page.getByLabel('ИНН компании или ИП').fill(inn)
   await page.getByText(company,{exact:true}).waitFor()
   await page.getByRole('button',{name:'это моя компания'}).click()
-  await page.getByRole('link',{name:'Новая кампания',exact:true}).click()
+  await page.waitForURL(base+'/app/campaigns/formats')
+  await page.getByRole('heading',{name:'новая кампания',exact:true}).waitFor()
   await page.getByRole('button',{name:/промокод на покупку/}).click()
   const submit = page.getByRole('button',{name:'отправить на проверку'})
   assert.ok(await submit.isDisabled())
@@ -91,6 +92,10 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await page.getByLabel('Город показа').fill('Самара')
   await page.getByLabel('Что ещё учесть').fill('По выходным')
   await page.getByRole('button',{name:'Бирюзовый'}).click()
+  const preview = page.locator('.mvp-live-preview')
+  await preview.locator('.campaign-creative__advertiser').getByText(company,{exact:true}).waitFor()
+  assert.equal(await preview.locator('article .campaign-creative__brand').count(),0)
+  assert.equal(await page.getByLabel(/Загрузить логотип/).count(),0)
   const photo = page.locator('input[type=file]')
   await photo.setInputFiles({name:'sample.txt',mimeType:'text/plain',buffer:Buffer.from('text')})
   await page.getByText('Выберите PNG, JPG, WebP или AVIF').waitFor()
@@ -99,14 +104,16 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await page.getByRole('button',{name:'Своё фото',exact:true}).waitFor({state:'detached'})
   await photo.setInputFiles('public/img/offer-variants/coffee-ivory.png')
   await page.getByRole('button',{name:'Своё фото',exact:true}).waitFor()
-  await page.getByLabel('средний чек, ₽').fill('1999')
-  await page.getByLabel('комиссия билайну, %').fill('7')
-  await page.getByRole('button',{name:'коннектор 1С'}).click()
+  assert.equal(await page.getByText('расчёты с платформой',{exact:true}).count(),0)
+  assert.equal(await page.locator('.mvp-live-preview dl').count(),0)
+  await page.getByRole('radio',{name:'После оплаты'}).check()
+  assert.ok(await page.getByRole('radio',{name:'После оплаты'}).isChecked())
   await page.reload()
   await page.getByRole('radio',{name:'Вручную'}).waitFor()
   await page.evaluate(assertMvpPromo,'TEST2026')
   await page.setViewportSize({width:390,height:844})
   await page.evaluate(assertMvpPromo,'TEST2026')
+  assert.ok(await preview.locator('.campaign-creative__advertiser').evaluate(el=>el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().top >= el.previousElementSibling.getBoundingClientRect().bottom))
   const offerTab = page.waitForEvent('popup')
   await page.getByRole('link',{name:'оферту на размещение рекламы'}).click()
   const offerPage = await offerTab
@@ -165,7 +172,8 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await page.goto(base+'/app/?company=change')
   await page.getByRole('heading',{name:'Рекламные кампании'}).waitFor()
   await page.getByRole('link',{name:/TEST2026/}).click()
-  await page.getByText('коннектор 1С',{exact:true}).waitFor()
+  await page.getByRole('heading',{name:'Кампания TEST2026'}).waitFor()
+  assert.equal(await page.getByText('передача заказов',{exact:true}).count(),0)
 
   await page.getByRole('link',{name:'Создать на основе этой кампании'}).click()
   assert.equal(await page.getByLabel('промокод',{exact:true}).inputValue(),'TEST2026')
@@ -186,7 +194,8 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await page.getByRole('heading',{name:'Новый профиль',exact:true}).waitFor()
   await page.getByRole('link',{name:'Мои кампании'}).click()
   await page.getByRole('link',{name:/TEST2026/}).click()
-  await page.getByText('коннектор 1С',{exact:true}).waitFor()
+  await page.getByRole('heading',{name:'Кампания TEST2026'}).waitFor()
+  assert.equal(await page.getByText('передача заказов',{exact:true}).count(),0)
 
   const staff = await browser.newPage()
   const staffEvents = [], marketEvents = []
@@ -212,7 +221,8 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   const search = staff.getByRole('searchbox')
   await search.fill(email); await search.press('Enter')
   await staff.getByRole('row').filter({hasText:'На завтрак по выходным'}).getByRole('link').click()
-  for(const value of [email,'TEST2026','коннектор 1С','По выходным','Самара, улица Лесная, 5','1999 ₽','7 %','Вручную']) await staff.getByText(value,{exact:true}).first().waitFor()
+  for(const value of [email,'TEST2026','По выходным','Самара, улица Лесная, 5','Вручную']) await staff.getByText(value,{exact:true}).first().waitFor()
+  await staff.locator('.campaign-creative__advertiser').getByText(company,{exact:true}).waitFor()
   const download = await staff.getByRole('link',{name:'Скачать фото'}).getAttribute('href')
   const asset = await staff.request.get(new URL(download,base).href)
   assert.equal(asset.status(),200)
@@ -234,6 +244,7 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await visitor.reload()
   await visitor.getByRole('button',{name:'Подробнее'}).waitFor()
   assert.equal(await visitor.locator('.near-card').count(),1)
+  await visitor.locator('.near-card .campaign-creative__advertiser').getByText(company,{exact:true}).waitFor()
   const photoUrl = base+'/api/market/offers/'+publicId+'/image'
   assert.equal((await visitor.request.get(photoUrl)).headers()['content-type'],'image/webp')
   await visitor.getByLabel('Спроси, что ищешь').fill('завтрак')
@@ -264,7 +275,7 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   const goals = events.filter(e=>e.method==='reachGoal').map(e=>e.target)
   assert.equal(goals.filter(g=>g==='mvp_company_confirmed').length,1)
   assert.equal(goals.filter(g=>g==='mvp_company_changed').length,1)
-  const expected = ['mvp_landing_view','mvp_start_click','mvp_login_view','mvp_code_sent','mvp_email_verified','mvp_company_confirmed','mvp_cabinet_view','mvp_promo_view','mvp_submit_attempt','mvp_submit_error','mvp_campaign_submitted','mvp_receipt_view']
+  const expected = ['mvp_landing_view','mvp_start_click','mvp_login_view','mvp_code_sent','mvp_email_verified','mvp_company_confirmed','mvp_formats_view','mvp_promo_view','mvp_submit_attempt','mvp_submit_error','mvp_campaign_submitted','mvp_receipt_view']
   let index = -1
   for(const goal of expected) { const next = goals.indexOf(goal,index+1); assert.ok(next>index,goal); index=next }
   assert.equal(goals.filter(g=>g==='mvp_campaign_submitted').length,2)

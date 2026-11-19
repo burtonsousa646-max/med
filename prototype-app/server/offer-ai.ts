@@ -85,7 +85,7 @@ export function offerAnswer(value: unknown, input: OfferAiInput): OfferAiAnswer 
   if (changes.promo === '' && !/промокод|промо.код/i.test(userText)) return null
   if (changes.gift === true && !/1\s*\+\s*1|втор(?:ой|ая|ое).*подар|подар.*втор/i.test(userText)) return null
   if (changes.discount && !userText.match(/\d+/g)?.includes(changes.discount)) return null
-  const knownNumbers: string[] = (input.offer.title + ' ' + userText).match(/\d+/g) ?? []
+  const knownNumbers: string[] = [input.offer.title, input.offer.discount, userText].join(' ').match(/\d+/g) ?? []
   if (changes.title?.match(/\d+/g)?.some(number => !knownNumbers.includes(number))) return null
   const merged = { ...input.offer, ...changes }
   const cappedDiscount = /(?:^|\s)до\s*(\d{1,2})\s*%/i.exec(userText)
@@ -135,9 +135,11 @@ function promptText() {
     'У тебя нет доступа к изображениям, сайту или файловым инструментам. Возвращай задания на обработку в visual.'
 }
 
-async function openAi(input: OfferAiInput, model: string, key: string, signal: AbortSignal): Promise<unknown> {
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+async function generateOffer(input: OfferAiInput, model: string, key: string, signal: AbortSignal, goSession?: string): Promise<unknown> {
+  const endpoint = goSession ? 'https://opencode.ai/inference/go/openai/v1/responses' : 'https://api.openai.com/v1/responses'
+  const response = await fetch(endpoint, {
+    method: 'POST', signal, redirect: 'error', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key,
+      ...(goSession && { 'User-Agent': 'PartnerPlatform-OfferEditor/1.0', 'x-opencode-session': goSession }) },
     body: JSON.stringify({
       model, store: false, instructions: promptText(), max_output_tokens: 2400,
       input: JSON.stringify({
@@ -182,7 +184,7 @@ export function createOfferAi(config: Config) {
       } catch { /* Rejected replay data. */ }
       return c.json({ message: 'Тестовый ответ не прошёл проверку' }, 502)
     }
-    if (config.provider !== 'openai' || !config.model || !config.key) return c.json({ message: 'Помощник пока не настроен' }, 503)
+    if (!['openai','opencode-go'].includes(config.provider) || !config.model || !config.key) return c.json({ message: 'Помощник пока не настроен' }, 503)
     const today = new Date().toISOString().slice(0, 10)
     if (day !== today) { day = today; requests = 0 }
     if (active >= 3 || requests >= 300) return c.json({ message: 'Помощник занят. Попробуйте позже' }, 429)
@@ -190,7 +192,9 @@ export function createOfferAi(config: Config) {
     active++
     try {
       const signal = AbortSignal.any([c.req.raw.signal, AbortSignal.timeout(25_000)])
-      const answer = offerAnswer(await openAi(input, config.model, config.key, signal), input)
+      const id = c.req.header('X-Offer-Session') ?? ''
+      const goSession = config.provider === 'opencode-go' ? (/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id) ? id : crypto.randomUUID()) : undefined
+      const answer = offerAnswer(await generateOffer(input, config.model, config.key, signal, goSession), input)
       if (answer) return c.json<OfferAiResponse>({ source: 'api', answer })
     } catch { /* Provider errors may contain request data. */ }
     finally { active-- }
@@ -199,6 +203,8 @@ export function createOfferAi(config: Config) {
 }
 
 export const offerAi = createOfferAi({
-  provider: process.env.OFFER_AI_PROVIDER, key: process.env.OPENAI_API_KEY, model: process.env.OFFER_AI_MODEL,
+  provider: process.env.OFFER_AI_PROVIDER,
+  key: process.env.OFFER_AI_PROVIDER === 'opencode-go' ? process.env.OPENCODE_API_KEY : process.env.OPENAI_API_KEY,
+  model: process.env.OFFER_AI_MODEL || (process.env.OFFER_AI_PROVIDER === 'opencode-go' ? 'glm-5.3-flash' : undefined),
   replayFile: process.env.OFFER_AI_REPLAY_FILE, production: process.env.NODE_ENV === 'production',
 })

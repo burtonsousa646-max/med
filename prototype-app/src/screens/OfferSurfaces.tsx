@@ -11,7 +11,7 @@ const surfaces = [
   { id: 'rest', title: 'Витрины партнёров', heading: 'Предложения партнёров', note: 'Широкий блок на сайте партнёра.' },
 ] as const
 
-export function OfferSurfaces({ compact, inlinePlaces, ...props }: { compact?: boolean; inlinePlaces?: boolean; name: string; offer: OfferDraft; image: string; illustration: string; logo: string }) {
+export function OfferSurfaces({ compact, inlinePlaces, ...props }: { compact?: boolean; inlinePlaces?: boolean; legalNameBelow?: boolean; name: string; offer: OfferDraft; image: string; illustration: string; logo: string }) {
   const [selected, setSelected] = useState<typeof surfaces[number]['id']>('main')
   const surface = surfaces.find(item => item.id === selected)!
   if (compact) return <aside className="campaign-draft-preview">

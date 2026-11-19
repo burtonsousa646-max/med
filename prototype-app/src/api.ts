@@ -35,8 +35,10 @@ export async function requestOfferCutout(image: Blob, signal: AbortSignal) {
   return response.blob()
 }
 
+let offerConversation: string | undefined
 export async function requestOfferAi(input: OfferAiInput, signal: AbortSignal): Promise<OfferAiResponse> {
   const { data } = await client.POST('/v4/offer-ai', {
+    headers: { 'X-Offer-Session': offerConversation ??= crypto.randomUUID?.() },
     body: input, signal: AbortSignal.any([signal, AbortSignal.timeout(28_000)]),
   })
   if (!data) throw new Error('Offer assistant unavailable')

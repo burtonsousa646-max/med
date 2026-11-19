@@ -27,11 +27,11 @@ const login = () => (mvp() ? '/app/' : '/login')
 
 export const LaunchContext = createContext<(() => void) | undefined>(undefined)
 
-export function CampaignAction({ to = login(), className, children, describedBy }: { to?: string; className?: string; children: ReactNode; describedBy?: string }) {
+export function CampaignAction({ to = mvp() ? '/app/?start=campaign' : login(), className, children, describedBy }: { to?: string; className?: string; children: ReactNode; describedBy?: string }) {
   const launch = useContext(LaunchContext)
   return launch
     ? <button type="button" data-campaign-start className={className} onClick={launch} aria-haspopup="dialog" aria-describedby={describedBy}>{children === 'узнать охват' ? 'запустить сейчас' : children}</button>
-    : <Link to={to} onClick={() => { if (to === '/app/') analytics.event('mvp_start_click') }} className={className} aria-describedby={describedBy}>{children}</Link>
+    : <Link to={to} onClick={() => { if (to === '/app/?start=campaign') analytics.event('mvp_start_click') }} className={className} aria-describedby={describedBy}>{children}</Link>
 }
 
 const DEMO_CREATIVE = creativeOf(DEMO_AD.brand, DEMO_AD.offer, DEMO_AD.img)
@@ -693,7 +693,7 @@ export default function LandingV2({ onStart }: { onStart?: () => void } = {}) {
           <AnimatePresence initial={false}>
             {cta && <motion.span key="cta" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><CampaignAction className="bl-btn bl-btn--primary">узнать охват</CampaignAction></motion.span>}
           </AnimatePresence>
-          <Link className="bl-btn bl-btn--dark" to={login()} onClick={() => { if (mvp()) analytics.event('mvp_start_click') }}>войти</Link>
+          <Link className="bl-btn bl-btn--dark" to={login()}>войти</Link>
         </nav>
       </header>
       <main id="v2-content" tabIndex={-1} className="bl-stack" style={{ ['--bl-gap' as string]: '16px' }}>

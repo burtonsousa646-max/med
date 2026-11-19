@@ -86,6 +86,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mvp/offer-ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Предложить формулировку оффера для подтверждённого партнёра */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Offer-Session"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OfferAiInput"];
+                };
+            };
+            responses: {
+                /** @description Результат генерации */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OfferAiResponse"];
+                    };
+                };
+                default: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mvp/campaigns": {
         parameters: {
             query?: never;
@@ -899,11 +942,11 @@ export interface components {
             /** Format: date */
             till: string;
             /** @description Комиссия от 3 до 50 процентов */
-            fee: string;
+            fee?: string;
             /** @description Средний чек от 1 до 9999999 рублей */
-            check: string;
+            check?: string;
             /** @enum {string} */
-            via: "файл раз в неделю" | "постбэк" | "коннектор 1С";
+            via?: "файл раз в неделю" | "постбэк" | "коннектор 1С";
             /** @enum {string} */
             design: "coffee-ivory.png" | "coffee-teal.png" | "coffee-takeaway.png";
             addresses: string[];

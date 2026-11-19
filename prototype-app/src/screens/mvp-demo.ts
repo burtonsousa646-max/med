@@ -95,6 +95,12 @@ export function mockPartnerRequest(path:string, body?:object):unknown {
     localStorage.setItem(prefix+'company',JSON.stringify(company))
     return {...session,profile:company}
   }
+  if (path === '/offer-ai' && profile) {
+    const condition = (input.offer as {title:string}).title.trim()
+    const text = 'Скидка '+(input.offer as {discount:string}).discount+'% '+(condition || 'по промокоду')
+    const title = text.length <= 60 ? text : condition
+    return {source:'demo',answer:{status:'draft',patch:{title},options:[],question:null,visual:{action:'keep',assetId:null,prompt:null},logoAssetId:null}}
+  }
   if (path === '/campaigns' && body) {
     if (!profile || input.inn !== profile.inn || input.accepted !== true || typeof input.key !== 'string' || !validPromo(input.promo))
       throw new Error('Проверьте условия кампании')

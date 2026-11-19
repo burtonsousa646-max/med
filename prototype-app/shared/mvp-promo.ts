@@ -5,7 +5,7 @@ import type { Tone } from './campaign-offer.ts'
 export type Profile = { inn: string; company: string; addr: string; category?:string; website?: string }
 export type MvpSession = { role?: 'staff' | 'admin'; email: string; profile: Profile | null }
 export type PromoPhoto = { name: string; src: string }
-export type Promo = MvpTargeting & { code: string; off: string; cond: string; site: string; till: string; fee: string; check: string; via: string; design?: string; photo?: PromoPhoto; usePhoto?: boolean }
+export type Promo = MvpTargeting & { code: string; off: string; cond: string; site: string; till: string; fee?: string; check?: string; via?: string; design?: string; photo?: PromoPhoto; usePhoto?: boolean }
 export type PartnerCampaignStatus = import('../src/api.gen.ts').components['schemas']['PartnerCampaignStatus']
 export type Receipt = { status: PartnerCampaignStatus; publicId: string | null; id: string; profile: Profile; promo: Promo; submittedAt: number }
 export type ReceiptSummary = { status: PartnerCampaignStatus; id: string; code: string; company: string; submittedAt: number }
@@ -74,16 +74,16 @@ export const promoErrors = (p: Promo) => ({
   cond: p.cond.length <= 60 ? '' : 'до 60 символов',
   site: normalizeBusinessWebsite(p.site) ? '' : 'укажите сайт, где сработает код',
   till: /^\d{4}-\d{2}-\d{2}$/.test(p.till) && p.till > promoDay() && new Date(p.till).toJSON()?.slice(0, 10) === p.till ? '' : 'дата в будущем',
-  fee: /^\d{1,2}$/.test(p.fee) && +p.fee >= 3 && +p.fee <= 50 ? '' : 'от 3 до 50 %',
-  check: /^\d{1,7}$/.test(p.check) && +p.check > 0 ? '' : 'сумма в рублях',
+  fee: p.fee === undefined || typeof p.fee === 'string' && /^\d{1,2}$/.test(p.fee) && +p.fee >= 3 && +p.fee <= 50 ? '' : 'от 3 до 50 %',
+  check: p.check === undefined || typeof p.check === 'string' && /^\d{1,7}$/.test(p.check) && +p.check > 0 ? '' : 'сумма в рублях',
   ...targetingErrors(p),
 })
 
 export function validPromo(value: unknown): value is Promo {
   if (!value || typeof value !== 'object') return false
   const p = value as Promo
-  return [p.code, p.off, p.cond, p.site, p.till, p.fee, p.check, p.via].every(v => typeof v === 'string')
-    && VIA.includes(p.via) && designs.some(d => d.file === p.design)
+  return [p.code, p.off, p.cond, p.site, p.till].every(v => typeof v === 'string')
+    && (p.via === undefined || VIA.includes(p.via)) && designs.some(d => d.file === p.design)
     && typeof p.online === 'boolean' && ['auto', 'manual'].includes(p.mode ?? '')
     && Array.isArray(p.addresses) && p.addresses.length <= 10 && p.addresses.every(a => typeof a === 'string' && a.length <= 200)
     && geo.choices.includes(p.area ?? '') && (!p.online || p.area !== geo.choices[0])

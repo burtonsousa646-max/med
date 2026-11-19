@@ -216,9 +216,11 @@ function SubmissionCard({ value, assetBase }: { value: V4Submission; assetBase: 
       </div>
       <section className="bl-section pad staff-panel staff-offer">
         <h2 className="bl-h3">Оффер</h2>
-        <CampaignCreative name={business.name} offer={offer} image={image} illustration={illustration} logo={logo} disabled={false}/>
+        <CampaignCreative legalNameBelow={!!value.mvp} name={business.name} offer={offer} image={image} illustration={illustration} logo={logo} disabled={false}/>
         <Fields rows={[
-          ...(value.mvp ? [['Средний чек', value.mvp.check + ' ₽'], ['Комиссия', value.mvp.fee + ' %'], ['Передача заказов', value.mvp.via]] as [string,string][] : []),
+          ...(value.mvp?.check ? [['Средний чек', value.mvp.check + ' ₽'] as [string,string]] : []),
+          ...(value.mvp?.fee ? [['Комиссия', value.mvp.fee + ' %'] as [string,string]] : []),
+          ...(value.mvp?.via ? [['Передача заказов', value.mvp.via] as [string,string]] : []),
           ['Текст', offer.title], ['Скидка', offer.discount && offer.discount + '%'], ['Промокод', offer.promo],
           ['Действует до', offer.until && offer.until.split('-').reverse().join('.')], ['Акция 1 + 1', offer.gift ? 'Да' : 'Нет'],
           ['Макет', offer.layout ? offerLayouts[offer.layout] : 'Автоматически'], ['Цвет', offer.background ?? tones[offer.tone]],

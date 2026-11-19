@@ -98,6 +98,18 @@ paths:
       responses:
         '200': { description: Сессия отозвана }
         default: { $ref: '#/components/responses/Error' }
+  /mvp/offer-ai:
+    post:
+      summary: Предложить формулировку оффера для подтверждённого партнёра
+      security: [{ mvpSession: [] }]
+      parameters:
+        - { in: header, name: X-Offer-Session, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OfferAiInput' } } }
+      responses:
+        '200': { description: Результат генерации, content: { application/json: { schema: { $ref: '#/components/schemas/OfferAiResponse' } } } }
+        default: { $ref: '#/components/responses/Error' }
   /mvp/campaigns:
     get:
       security: [{ mvpSession: [] }]
@@ -873,7 +885,7 @@ components:
         profile: { anyOf: [{ $ref: '#/components/schemas/MvpProfile' }, { type: 'null' }] }
     MvpPromo:
       type: object
-      required: [code, off, cond, site, till, fee, check, via, design, addresses, online, mode, area]
+      required: [code, off, cond, site, till, design, addresses, online, mode, area]
       properties:
         code: { type: string, pattern: '^[A-ZА-ЯЁ0-9]{4,20}$' }
         off: { type: string, description: Скидка от 1 до 90 процентов }

@@ -948,7 +948,7 @@ export interface components {
             /** @enum {string} */
             via?: "файл раз в неделю" | "постбэк" | "коннектор 1С";
             /** @enum {string} */
-            design: "coffee-ivory.png" | "coffee-teal.png" | "coffee-takeaway.png";
+            design: "plain" | "coffee-ivory.png" | "coffee-teal.png" | "coffee-takeaway.png";
             addresses: string[];
             online: boolean;
             /** @enum {string} */

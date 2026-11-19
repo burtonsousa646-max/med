@@ -28,10 +28,16 @@ function readDraft(session: MvpSession) {
     if (!promo || !['code','off','cond','site','till'].every(key => typeof promo[key] === 'string')) return null
     if (promo.addresses && (!Array.isArray(promo.addresses) || !promo.addresses.every((a: unknown) => typeof a === 'string'))) return null
     if (!stored?.attempted) {
+      promo.design = 'plain'
       delete promo.fee
       delete promo.check
       delete promo.via
+    } else {
+      // A retry from an older tab must match the originally submitted design.
+      promo.design ??= designs[0].file
     }
+    if (promo.usePhoto === false) delete promo.photo
+    delete promo.usePhoto
     return { key: stored?.key ?? crypto.randomUUID(), attempted: stored?.attempted === true, promo: { ...promo, addresses: promo.addresses ?? [''] } as Promo }
   } catch { return null }
 }
@@ -125,7 +131,7 @@ export function MvpNew() {
 }
 
 /* ───────── шаг 2: оффер промокода, оферта и запуск ───────── */
-const SUGGEST: Promo = { code: 'START15', off: '15', cond: 'на первый заказ от 800 ₽', site: '', till: promoDay(30) }
+const SUGGEST: Promo = { design: 'plain', code: 'START15', off: '15', cond: 'на первый заказ от 800 ₽', site: '', till: promoDay(30) }
 
 function Field({ label, err, wide, children }: { label: string; err?: string; wide?: boolean; children: ReactNode }) {
   return (
@@ -137,12 +143,11 @@ function Field({ label, err, wide, children }: { label: string; err?: string; wi
   )
 }
 
-const imageUrl = (file: string) => import.meta.env.BASE_URL + 'img/offer-variants/' + file
-function previewProps(me: Profile, p: Promo) {
-  const design = designs.find(d => d.file === p.design) ?? designs[0]
+function previewProps(me: Profile, p: Promo, submitted = false) {
+  const design = submitted ? designs.find(d => d.file === p.design) : undefined
   return {
-    name: me.company, image: p.photo && p.usePhoto !== false ? p.photo.src : imageUrl(design.file), logo: '', legalNameBelow: true, illustration: '',
-    offer: { ...emptyOffer, title: p.cond.trim() || 'Скидка по промокоду', promo: p.code, until: p.till, discount: p.off, tone: design.tone },
+    name: me.company, image: p.photo && p.usePhoto !== false ? p.photo.src : design ? import.meta.env.BASE_URL + 'img/offer-variants/' + design.file : '', logo: '', legalNameBelow: true, illustration: '',
+    offer: { ...emptyOffer, title: p.cond.trim() || 'Скидка по промокоду', promo: p.code, until: p.till, discount: p.off, tone: design?.tone ?? emptyOffer.tone },
   }
 }
 
@@ -203,7 +208,7 @@ export function MvpPromo() {
     try { sessionStorage.setItem(storageKey, JSON.stringify({key:draft.key, attempted:true, promo:p})) } catch { /* In-memory retries still work. */ }
     analytics.event('mvp_submit_attempt')
     try {
-      const promo = { ...p, design: p.design ?? designs[0].file, ...submittedTargeting(p), photo: p.usePhoto === false ? undefined : p.photo }
+      const promo = { ...p, ...submittedTargeting(p) }
       const result = await mvpRequest<{id: string; created: boolean}>('/campaigns', { key: draft.key, inn: me.inn, promo, accepted: agree }, session.email)
       if (result.created || retrying) analytics.event('mvp_campaign_submitted', { online: !!p.online, has_image: !!promo.photo, address_count: promo.addresses?.length ?? 0 })
       try { sessionStorage.removeItem(storageKey) } catch { /* The receipt is already on the server. */ }
@@ -238,16 +243,8 @@ export function MvpPromo() {
           </section>
           <section className="bl-section mvp-sheet">
             <fieldset className="mvp-group">
-              <legend className="bl-h4">оформление карточки</legend>
-              <div className="mvp-designs">{designs.map(d =>
-                <button key={d.file} type="button" disabled={uploading} aria-pressed={(!p.photo || p.usePhoto === false) && (p.design ?? designs[0].file) === d.file}
-                  onClick={() => setP({ ...p, design: d.file, usePhoto: false })}>
-                  <img src={imageUrl(d.file)} alt=""/><span>{d.label}</span>
-                </button>
-              )}{p.photo && <button type="button" aria-pressed={p.usePhoto !== false} disabled={uploading} onClick={() => setP({ ...p, usePhoto: true })}>
-                <img src={p.photo.src} alt=""/><span>Своё фото</span>
-              </button>}</div>
-              <MvpPhoto photo={p.photo} busy={uploading} onBusy={setUploading} onChange={photo => setP(current => ({ ...current, photo, usePhoto: Boolean(photo) }))}/>
+              <legend className="bl-h4">Фото для карточки</legend>
+              <MvpPhoto photo={p.photo} busy={uploading} onBusy={setUploading} onChange={photo => setP(current => ({ ...current, photo, design: 'plain' }))}/>
             </fieldset>
           </section>
         </div>
@@ -307,7 +304,7 @@ export function MvpDone() {
         </section>
         <aside className="bl-section mvp-sheet mvp-preview">
           <h2 className="bl-h4">ваше предложение</h2>
-          <div className="mvp-submitted-creative"><CampaignCreative {...previewProps(me, p)} disabled={false}/></div>
+          <div className="mvp-submitted-creative"><CampaignCreative {...previewProps(me, p, true)} disabled={false}/></div>
           <dl className="kv kv--narrow mvp-kv"><dt>сайт</dt><dd>{p.site}</dd>{p.check && <><dt>средний чек</dt><dd>{rub(+p.check)}</dd></>}{p.fee && <><dt>комиссия</dt><dd>{p.fee} %</dd></>}{p.via && <><dt>передача заказов</dt><dd>{p.via}</dd></>}<dt>аудитория</dt><dd>{audienceText(p)}</dd>
             {p.online ? <><dt>точки продаж</dt><dd>только онлайн</dd></> : !!p.addresses?.length && <><dt>точки продаж</dt><dd><ul className="mvp-submitted-points">{p.addresses.map(a => <li key={a}>{a}</li>)}</ul></dd></>}
           </dl>

@@ -139,7 +139,7 @@ export function createMvp(send: (email: string, code: string) => Promise<void>, 
     const data: IntakeData = { ...draft, email, business: { ...draft.business, inn: profile.inn, name: profile.company, category:profile.category ?? '', website: promo.site },
       addresses: target.addresses ?? [], online: !!target.online, audience, audienceCity: target.city, triggers: target.wishes ?? '',
       confirmedInn: profile.inn, filled: true, stage: 5, reached: 5, offerAccepted: true, offerImage, logoImage: null, mvp: promo, mvpProfile: profile,
-      offer: { ...draft.offer, title: promo.cond || 'Скидка по промокоду', promo: promo.code, discount: promo.off, until: promo.till, tone: designs.find(d => d.file === promo.design)!.tone } }
+      offer: { ...draft.offer, title: promo.cond || 'Скидка по промокоду', promo: promo.code, discount: promo.off, until: promo.till, tone: designs.find(d => d.file === promo.design)?.tone ?? draft.offer.tone } }
     const key = 'mvp:' + hash(email) + ':' + body.key
     const digest = hash(JSON.stringify(data))
     const now = Date.now()

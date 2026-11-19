@@ -164,7 +164,7 @@ test('publication requires all staff confirmations, persists after restart and e
   assert.equal((await staff.request('/team',{headers:{cookie:moderator}})).status,403)
   const partner = {...profile,category:'Кофейня',addr:'Юридический адрес партнёра'}
   await api.request('/company',post(partner,owner))
-  const submission = await api.request('/campaigns',post({inn:profile.inn,key:randomUUID(),accepted:true,promo},owner))
+  const submission = await api.request('/campaigns',post({inn:profile.inn,key:randomUUID(),accepted:true,promo:{...promo,design:'plain'}},owner))
   assert.equal(submission.status,201)
   const {id} = await submission.json()
   const reviewPath = '/submissions/'+id+'/review'
@@ -188,6 +188,8 @@ test('publication requires all staff confirmations, persists after restart and e
   const live = await feed()
   assert.equal(live.length,1)
   assert.equal(live[0].id,key)
+  assert.equal(live[0].image,'')
+  assert.equal((await publicApi('/'+key+'/image')).status,404)
   assert.deepEqual(live[0].addresses,promo.addresses)
   assert.equal(live[0].group,'food')
   for (const privateValue of [id,partner.inn,partner.addr,member,'market-owner@example.test',promo.via,promo.wishes,promo.check]) {

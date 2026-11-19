@@ -83,7 +83,7 @@ export function validPromo(value: unknown): value is Promo {
   if (!value || typeof value !== 'object') return false
   const p = value as Promo
   return [p.code, p.off, p.cond, p.site, p.till].every(v => typeof v === 'string')
-    && (p.via === undefined || VIA.includes(p.via)) && designs.some(d => d.file === p.design)
+    && (p.via === undefined || VIA.includes(p.via)) && (p.design === 'plain' || designs.some(d => d.file === p.design))
     && typeof p.online === 'boolean' && ['auto', 'manual'].includes(p.mode ?? '')
     && Array.isArray(p.addresses) && p.addresses.length <= 10 && p.addresses.every(a => typeof a === 'string' && a.length <= 200)
     && geo.choices.includes(p.area ?? '') && (!p.online || p.area !== geo.choices[0])

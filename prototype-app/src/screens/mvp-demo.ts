@@ -38,7 +38,7 @@ function prepareDemoCampaigns() {
     const publicId=status==='published' ? marketId! : null
     const r:DemoReceipt={id,marketId,status,publicId,submittedAt:Date.now()-(i+1)*86_400_000,
       profile:{inn:demoCompany.inn,company:demoCompany.name,addr:demoCompany.registeredAddress,category:demoCompany.category},
-      promo:{code,cond,off:code.slice(-2),site:demoCompany.website,till:promoDay(30),design:designs[i].file,
+      promo:{code,cond,off:code.slice(-2),site:demoCompany.website,till:promoDay(30),design:'plain',
         online:false,addresses:[demoCompany.registeredAddress],mode:'auto',check:'850',fee:'8',via:'постбэк'},
       review:status==='review' ? emptyReview : {reviewed:true,paid:!!publicId,erid:'DemoCoffee'+i,version:1,
         status:publicId ? 'published' : 'awaiting_payment',publicId}}
@@ -164,9 +164,10 @@ export function mockMarketRequest(path:string,body?:object) {
   const url=new URL(path,location.origin)
   const offers:MarketOffer[]=allReceipts().filter(r=>r.status==='published' && r.publicId).map(r=>{
     const category=r.profile.category ?? '', theme=offerTheme(category), p=r.promo
+    const design = designs.find(d => d.file === p.design)
     return {id:r.publicId!,name:r.profile.company,offer:demoOffer(r),erid:r.review!.erid,category,group:theme.title ? theme.cat : 'other',
       online:!!p.online,addresses:p.addresses ?? [],website:normalizeBusinessWebsite(p.site),logo:'',
-      image:p.photo && p.usePhoto!==false ? p.photo.src : '/img/offer-variants/'+(p.design ?? designs[0].file)}
+      image:p.photo && p.usePhoto!==false ? p.photo.src : design ? '/img/offer-variants/'+design.file : ''}
   })
   if (url.pathname==='/offers') {
     const category=url.searchParams.get('category'), offset=Number(url.searchParams.get('offset') ?? 0)

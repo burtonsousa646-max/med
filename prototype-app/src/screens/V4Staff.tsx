@@ -175,7 +175,7 @@ function SubmissionCard({ value, assetBase }: { value: V4Submission; assetBase: 
   const theme = offerTheme(business.category)
   const site = normalizeBusinessWebsite(business.website)
   const design = designs.find(d => d.file === value.mvp?.design)
-  const illustration = design ? import.meta.env.BASE_URL + 'img/offer-variants/' + design.file : 'illustration' in theme ? import.meta.env.BASE_URL + 'img/near/' + theme.illustration + '.avif' : ''
+  const illustration = design ? import.meta.env.BASE_URL + 'img/offer-variants/' + design.file : !value.mvp && 'illustration' in theme ? import.meta.env.BASE_URL + 'img/near/' + theme.illustration + '.avif' : ''
   return <>
     <div className="staff-case-title">
       <h1 className="bl-display-l">{business.name}</h1>

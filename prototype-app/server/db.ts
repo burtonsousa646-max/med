@@ -10,10 +10,14 @@ type CompanyData = Omit<S['Company'], 'points' | 'members'>
 
 export const db = new DatabaseSync(process.env.DB_PATH ?? new URL('demo.sqlite', import.meta.url).pathname)
 db.exec(`
+  pragma busy_timeout = 3000;
   pragma journal_mode = wal;
   pragma foreign_keys = on;
   create table if not exists v4_drafts (
     id text primary key, revision integer not null, data text not null, updated_at integer not null
+  );
+  create table if not exists v4_partner_registry (
+    inn text primary key, checked_at integer not null, data text not null
   );
   create table if not exists v4_submissions (
     id text primary key, draft_id text not null, digest text not null, data text not null, submitted_at integer not null,

@@ -51,12 +51,12 @@ export async function sendCampaignEmailCode(key: string, email: string) {
 }
 
 export async function sendCampaignDraft(method: 'put' | 'post', key: string, revision: number, value: CampaignDraft, options: { signal?: AbortSignal; emailCode?: string } = {}) {
-  const { offerImage, logoImage, ...fields } = value
+  const { offerImage, logoImage, partnerDetails, ...fields } = value
   const timeout = AbortSignal.timeout(60_000)
   const { signal, emailCode } = options
   const { data, error, response } = await client.request(method, '/v4/draft', {
     params: { header: { 'X-Draft-Key': key, 'X-Draft-Revision': revision } },
-    body: { draft: JSON.stringify(fields), emailCode },
+    body: { draft: JSON.stringify({ ...fields, partnerDetails: method === 'post' ? partnerDetails : undefined }), emailCode },
     bodySerializer: ({ draft, emailCode }) => {
       const form = new FormData()
       form.append('draft', draft)

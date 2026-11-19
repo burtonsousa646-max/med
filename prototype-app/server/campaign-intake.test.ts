@@ -3,10 +3,13 @@ import { randomUUID } from 'node:crypto'
 import { test } from 'node:test'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
 import { emptyCampaignDraft, type CampaignDraft } from '../shared/campaign-draft.ts'
+import { createAutocomplete } from './autocomplete.ts'
 
 process.env.DB_PATH = ':memory:'
 const { app } = await import('./index.ts')
 const { db } = await import('./db.ts')
+const { savePartnerRegistry } = await import('./partner-registry.ts')
+const { createV4Staff } = await import('./v4-staff.ts')
 const { createCampaignEmail } = await import('./campaign-email.ts')
 const { campaignCodeMessage, deliverCampaignMail, sendCampaignMail } = await import('./campaign-mail.ts')
 
@@ -74,17 +77,57 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   draft.audienceCity = 'Казань'
   assert.equal((await send('POST', 4, draft)).status, 422, 'Completed application needs a confirmed email')
   const code = await confirmable(draft, key, 'partner@example.test')
+  const provider = createAutocomplete({ token: () => 'fake', saveRegistry: savePartnerRegistry, request: async () => Response.json({
+    suggestions: [{ data: {
+      inn: draft.business.inn, name: { short_with_opf: 'ООО Пример', full_with_opf: 'Общество <Пример>' },
+      state: { status: 'ACTIVE' }, kpp: '770101001', ogrn: '1234567890123', okved: '56.10',
+      address: { value: 'Москва', data: { source: 'Юридическая улица, 1' } },
+      management: { name: 'Иванов Иван Иванович', post: 'Директор' }, founders: [{ name: 'Лишнее поле' }],
+    } }],
+  }) })
+  const lookup = await provider.request('/api/business/lookup', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inn: draft.business.inn }),
+  })
+  assert.equal(lookup.status, 200)
+  assert.equal((await lookup.json()).registryDetails, undefined)
+  assert.equal((await send('POST', 4, { ...draft, partnerDetails: { bik: '123' } }, key, code)).status, 400)
+  draft.partnerDetails = { bik: '044525225', account: '40702810000000000001', signer: 'Петров Пётр', signerAuthority: 'Доверенность' }
+  const forged = { ...draft, registryDetails: { legalName: 'Подмена' } }
   const wrong = code === '000000' ? '000001' : '000000'
   assert.equal((await send('POST', 4, { ...draft, email: 'other@example.test' }, key, code)).status, 422)
   assert.equal((await send('POST', 4, draft, randomUUID(), code)).status, 422)
   assert.equal((await send('POST', 4, draft, key, wrong)).status, 422)
-  const results = await Promise.all([send('POST', 4, draft, key, code), send('POST', 5, draft, key, code)])
+  const results = await Promise.all([send('POST', 4, forged, key, code), send('POST', 5, draft, key, code)])
   assert.equal((await send('POST', 6, { ...draft, triggers: 'Другие пожелания' }, key, code)).status, 422)
   assert.deepEqual(results.map(res => res.status).sort(), [200, 201])
   const [first, second] = await Promise.all(results.map(res => res.json() as Promise<{ id: string; status: string }>))
   assert.deepEqual(first, second)
   assert.equal(first.status, 'accepted')
   assert.equal(db.prepare('select count(*) as n from v4_submissions').get()?.n, 1)
+
+  const record = JSON.parse(String(db.prepare('select data from v4_submissions where id = ?').get(first.id)?.data))
+  assert.equal(record.registryDetails.legalName, 'Общество <Пример>')
+  assert.equal(record.registryDetails.legalAddress, 'Юридическая улица, 1')
+  assert.equal(record.registryDetails.founders, undefined)
+  assert.deepEqual(record.partnerDetails, draft.partnerDetails)
+  savePartnerRegistry(draft.business.inn, null)
+
+  const employee = 'staff@example.test'
+  let staffCode = ''
+  const staff = createV4Staff({ addresses: [employee], administrators: [] }, async (_, value) => { staffCode = value })
+  const staffPost = (path: string, body: object) => staff.request(path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+  const detailUrl = '/submissions/' + first.id
+  assert.equal((await staff.request(detailUrl)).status, 401)
+  assert.equal((await staffPost('/code', { email: employee })).status, 200)
+  const login = await staffPost('/verify', { email: employee, code: staffCode })
+  assert.equal(login.status, 200)
+  const result = await staff.request(detailUrl, { headers: { Cookie: login.headers.get('set-cookie')!.split(';')[0] } })
+  assert.equal(result.status, 200)
+  const detail = await result.json()
+  assert.deepEqual(detail.registryDetails, record.registryDetails)
+  assert.deepEqual(detail.partnerDetails, draft.partnerDetails)
 
   const now = Date.now()
   const transport = nodemailer.createTransport({ streamTransport: true, buffer: true })
@@ -103,6 +146,10 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   assert.equal(message.subject, 'Новая заявка на рекламную кампанию · партнерская платформа билайн')
   assert.match(String(message.text), /партнерская платформа билайн$/)
   assert.match(String(message.text), /ИНН: 1234567894/)
+  assert.match(String(message.text), /КПП: 770101001/)
+  assert.match(String(message.text), /Руководитель по реестру: Иванов Иван Иванович/)
+  assert.match(String(message.text), /Расчётный счёт: 40702810000000000001/)
+  assert.match(String(message.text), /Корреспондентский счёт: Не указано/)
   assert.match(String(message.text), /Подтверждённый email: partner@example.test/)
   assert.match(String(message.text), /Показывать утром/)
   assert.match(String(message.text), /Город бизнеса: Москва/)
@@ -140,7 +187,7 @@ test('V4 sends two large attachments together and completes older partially sent
   const { id } = await response.json() as { id: string }
   const prior = db.prepare('select data, submitted_at from v4_submissions where id = ?').get(id) as { data: string; submitted_at: number }
   const older = { id: randomUUID() }
-  const legacy = { ...JSON.parse(prior.data), email: undefined, stage: 4, reached: 4 }
+  const legacy = { ...JSON.parse(prior.data), registryDetails: undefined, email: undefined, stage: 4, reached: 4 }
   db.prepare('insert into v4_submissions (id, draft_id, digest, data, submitted_at, mail_next_at) values (?, ?, ?, ?, ?, ?)')
     .run(older.id, randomUUID(), 'legacy', JSON.stringify(legacy), prior.submitted_at, prior.submitted_at)
   db.prepare('insert into v4_mail_parts (submission_id, part) values (?, 1)').run(older.id)
@@ -155,6 +202,7 @@ test('V4 sends two large attachments together and completes older partially sent
   const remaining = messages.find(message => message.messageId === `<v4-campaign-${older.id}-2@example.test>`)
   assert.deepEqual(complete?.attachments?.map(file => file.filename), ['offer.png', 'logo.png'])
   assert.deepEqual(remaining?.attachments?.map(file => file.filename), ['logo.png'])
+  assert.match(remaining?.text?.toString() ?? '', /Нет снимка реестра/)
   assert.match(remaining?.subject ?? '', /\(2\/2\)$/)
   assert.ok(complete?.attachments?.every(file => Buffer.isBuffer(file.content) && file.content.equals(largeImage)))
   assert.equal(db.prepare('select count(*) as n from v4_submissions where id in (?, ?) and mail_sent_at is not null').get(id, older.id)?.n, 2)

@@ -1,4 +1,5 @@
 import type { Business } from './campaign-business.ts'
+import type { PartnerDetails, RegistryDetails } from './partner-details.ts'
 import type { OfferDraft } from './campaign-offer.ts'
 
 export type V4StaffSession = { email: string; role: 'admin' | 'staff' }
@@ -15,6 +16,7 @@ export type V4SubmissionList = {
 }
 
 export type V4Submission = {
+  partnerDetails?: PartnerDetails; registryDetails?: RegistryDetails | null
   id: string; submittedAt: number; business: Business; email?: string; addresses: string[]; online: boolean
   offer: OfferDraft; audience: number[]; audienceCity?: string; triggers: string; offerAccepted?: boolean
   offerImage: string | null; logoImage: string | null

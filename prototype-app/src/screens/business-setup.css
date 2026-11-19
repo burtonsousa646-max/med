@@ -41,6 +41,9 @@
 .v3-source-note { display: grid; gap: 8px; margin-bottom: 4px; }
 .v3-source-note > span { display: flex; gap: 7px; align-items: center; color: #38734b; font-size: 13px; }
 .v3-source-note small { font-size: 11px; color: var(--v3-muted); overflow-wrap: anywhere; }
+.v3-partner-details { grid-column: 1 / -1; }
+.v3-partner-details summary { cursor: pointer; font-weight: 600; }
+.v3-partner-details .v3-fields { margin-top: 16px; }
 .v3-business-locations { background: #efeee7; border-radius: 16px; padding: 24px; min-width: 0; }
 .v3-location-title { display: flex; gap: 12px; align-items: start; }
 .v3-location-title svg { flex: none; margin-top: 2px; }

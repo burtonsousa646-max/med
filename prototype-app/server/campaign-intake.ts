@@ -4,9 +4,11 @@ import { bodyLimit } from 'hono/body-limit'
 import { campaignAllowedStage, emptyCampaignDraft, isCampaignDraft, normalizeCampaignEmail, type CampaignDraft } from '../shared/campaign-draft.ts'
 import { db } from './db.ts'
 import { consumeCampaignCode, draftKeyPattern } from './campaign-email.ts'
+import { parsePartnerDetails, type RegistryDetails } from '../shared/partner-details.ts'
+import { readPartnerRegistry } from './partner-registry.ts'
 
 type ImageData = { name: string; type: string; base64: string }
-export type IntakeData = Omit<CampaignDraft, 'offerImage' | 'logoImage'> & { offerImage: ImageData | null; logoImage: ImageData | null }
+export type IntakeData = Omit<CampaignDraft, 'offerImage' | 'logoImage'> & { offerImage: ImageData | null; logoImage: ImageData | null; registryDetails?: RegistryDetails | null }
 
 const limit = bodyLimit({
   maxSize: 11 * 1024 * 1024,
@@ -44,6 +46,7 @@ async function parseDraft(form: FormData, submit: boolean): Promise<IntakeData> 
   const stage = submit ? 5 : Math.min(value.stage, campaignAllowedStage(value))
   return {
     ...pick(value, sample), email: submit && value.email ? normalizeCampaignEmail(value.email) : undefined, business: pick(value.business, sample.business),
+    partnerDetails: submit ? parsePartnerDetails(value.partnerDetails, value.business.inn) : undefined,
     offer: { ...pick(value.offer, sample.offer), ...(value.offer.layout && { layout: value.offer.layout }) },
     stage, reached: submit ? 5 : Math.min(4, value.reached),
     offerImage: await packImage(value.offerImage), logoImage: await packImage(value.logoImage),
@@ -106,8 +109,9 @@ for (const method of ['PUT', 'POST'] as const) {
         return c.json({ id: existing.id, status: 'accepted' })
       }
       const id = randomUUID()
-      saveDraft.run(key, revision, data, now)
-      insertSubmission.run(id, key, digest, data, now, now)
+      saveDraft.run(key, revision, JSON.stringify({ ...draft, partnerDetails: undefined }), now)
+      const registryDetails = readPartnerRegistry(draft.business.inn, now)
+      insertSubmission.run(id, key, digest, JSON.stringify({ ...draft, registryDetails }), now, now)
       db.exec('commit')
       return c.json({ id, status: 'accepted' }, 201)
     } catch (error) {

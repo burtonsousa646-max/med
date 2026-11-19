@@ -3,6 +3,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { serve } from '@hono/node-server'
 import { fileURLToPath } from 'node:url'
 import { innError, normalizeBusinessWebsite, type BusinessProfile } from '../shared/campaign-business.ts'
+import type { RegistryDetails } from '../shared/partner-details.ts'
 
 // shortcut: common sectors when DaData omits the name; use a full classifier if coverage needs to grow.
 const categories: Record<string, string> = {
@@ -15,7 +16,7 @@ const categories: Record<string, string> = {
   '96.02': 'парикмахерские и салоны красоты',
 }
 
-export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, request = fetch }: { token?: () => string | undefined; request?: typeof fetch } = {}) {
+export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, request = fetch, saveRegistry }: { token?: () => string | undefined; request?: typeof fetch; saveRegistry?: (inn: string, details: RegistryDetails | null) => void } = {}) {
   const router = new Hono().basePath('/api')
   router.get('/health', c => c.json({ status: 'ok' }))
   let recent: number[] = []
@@ -42,11 +43,17 @@ export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, r
       if (!Array.isArray(result.suggestions)) throw new Error('Invalid provider response')
       const suggestion = result.suggestions[0]
       const item = suggestion?.data
-      if (!item) return c.json({ message: 'Бизнес с таким ИНН не найден. Проверьте номер или заполните данные вручную.' }, 404)
+      if (!item) {
+        saveRegistry?.(inn, null)
+        return c.json({ message: 'Бизнес с таким ИНН не найден. Проверьте номер или заполните данные вручную.' }, 404)
+      }
       const text = (value: unknown) => typeof value === 'string' ? value.trim() : ''
       const name = text(item.name?.short_with_opf) || text(suggestion.value) || text(item.name?.full_with_opf)
       if (item.inn !== inn || !name) throw new Error('Mismatched company')
-      if (item.state?.status !== 'ACTIVE') return c.json({ message: 'Статус бизнеса требует проверки. Укажите действующий ИНН.' }, 409)
+      if (item.state?.status !== 'ACTIVE') {
+        saveRegistry?.(inn, null)
+        return c.json({ message: 'Статус бизнеса требует проверки. Укажите действующий ИНН.' }, 409)
+      }
       const addr = item.address?.data
       const okved = text(item.okved)
       const mainActivity = Array.isArray(item.okveds) ? item.okveds.find((activity: { main?: unknown; code?: unknown; name?: unknown } | null) => activity?.main === true && (!okved || activity.code === okved)) : undefined
@@ -60,6 +67,17 @@ export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, r
         city: (text(addr?.city) || text(addr?.settlement) || text(addr?.region)).slice(0,80),
         registeredAddress: text(item.address?.value).slice(0,200), source: 'dadata',
       }
+      saveRegistry?.(inn, {
+        legalName: (text(item.name?.full_with_opf) || (inn.length === 12 ? name : '')).slice(0, 500),
+        kpp: inn.length === 10 && /^\d{9}$/.test(text(item.kpp)) ? text(item.kpp) : '',
+        ogrn: (inn.length === 10 ? /^\d{13}$/ : /^\d{15}$/).test(text(item.ogrn)) ? text(item.ogrn) : '',
+        legalAddress: (text(addr?.source) || text(item.address?.unrestricted_value) || text(item.address?.value)).slice(0, 500),
+        manager: text(item.management?.name).slice(0, 150),
+        managerRole: text(item.management?.post).slice(0, 150),
+        okved: code.slice(0, 20),
+        checkedAt: Date.now(),
+        requiresReview: Boolean(item.invalid || item.address?.invalidity || addr?.qc === 1 || addr?.qc === 3),
+      })
       return c.json({ profile })
     } catch {
       return c.json({ message: 'Поиск не ответил вовремя. Повторите попытку или заполните данные вручную.' }, 502)
@@ -74,5 +92,6 @@ export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, r
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.AUTOCOMPLETE_PORT ?? 8788)
   const hostname = process.env.AUTOCOMPLETE_HOST ?? '127.0.0.1'
-  serve({ fetch: createAutocomplete().fetch, port, hostname }, () => console.log(`Autocomplete: http://${hostname}:${port}/api`))
+  const { savePartnerRegistry } = await import('./partner-registry.ts')
+  serve({ fetch: createAutocomplete({ saveRegistry: savePartnerRegistry }).fetch, port, hostname }, () => console.log(`Autocomplete: http://${hostname}:${port}/api`))
 }

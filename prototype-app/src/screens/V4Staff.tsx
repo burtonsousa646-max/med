@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Download, FileText, LogOut, Mail,
 import { Link, useParams } from 'react-router'
 import { offerTheme, normalizeBusinessWebsite } from '../../shared/campaign-business.ts'
 import { audienceGroups } from '../../shared/campaign-draft.ts'
+import { partnerDetailsRows } from '../../shared/partner-details.ts'
 import { offerLayouts } from '../../shared/campaign-offer.ts'
 import { v4StaffPageSize, type V4StaffMember, type V4StaffSession, type V4Submission, type V4SubmissionList } from '../../shared/v4-staff.ts'
 import { queryClient } from '../api'
@@ -215,6 +216,10 @@ function SubmissionCard({ value, assetBase }: { value: V4Submission; assetBase: 
             ['Адреса точек', value.addresses.some(Boolean) && <ul>{value.addresses.filter(Boolean).map((address, index) => <li key={index}>{address}</li>)}</ul>],
             ['Оферта на размещение', value.offerAccepted ? 'Принята' : 'Нет отметки'],
           ]}/>
+        </section>
+        <section className="bl-section pad staff-panel">
+          <h2 className="bl-h3">Реквизиты для партнёрского договора</h2>
+          <Fields rows={partnerDetailsRows(business.inn, value.registryDetails, value.partnerDetails)}/>
         </section>
         <section className="bl-section pad staff-panel">
           <h2 className="bl-h3">Аудитория</h2>

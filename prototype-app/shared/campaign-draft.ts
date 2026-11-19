@@ -1,8 +1,10 @@
 import { innError, phoneError, textError, websiteError, type Business } from './campaign-business.ts'
 import { emptyOffer, offerErrors, offerLayouts, type OfferDraft } from './campaign-offer.ts'
+import type { PartnerDetails } from './partner-details.ts'
 
 export const campaignStages = ['business', 'details', 'offer', 'audience', 'email', 'success'] as const
 export type CampaignDraft = {
+  partnerDetails?: PartnerDetails;
   business: Business; addresses: string[]; online: boolean; offer: OfferDraft;
   offerImage: File | null; logoImage: File | null; audience: number[]; audienceCity?: string; email?: string; triggers: string;
   confirmedInn: string; generatedTitle: string; filled: boolean; hasProfile: boolean;

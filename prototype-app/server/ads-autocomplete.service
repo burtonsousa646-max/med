@@ -5,6 +5,8 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/ads-proto
 ExecStart=/opt/node22/bin/node server/autocomplete.ts
+Environment=DB_PATH=/var/lib/ads-proto/demo.sqlite
+StateDirectory=ads-proto
 EnvironmentFile=-/etc/ads-autocomplete.env
 User=www-data
 Restart=on-failure

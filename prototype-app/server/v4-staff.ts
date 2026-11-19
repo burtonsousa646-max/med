@@ -182,8 +182,8 @@ export function createV4Staff(
     const id = c.req.param('id')
     const row = details.get(id) as { submittedAt: number; data: string } | undefined
     if (!row) return c.json({ message: 'Заявка не найдена' }, 404)
-    const { business, email, addresses, online, offer, audience, audienceCity, triggers, offerAccepted, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
-    const result: V4Submission = { id, submittedAt: row.submittedAt, business, email, addresses, online, offer, audience, audienceCity, triggers,
+    const { business, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers, offerAccepted, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
+    const result: V4Submission = { id, submittedAt: row.submittedAt, business, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers,
       offerAccepted, offerImage: offerImage?.name ?? null, logoImage: logoImage?.name ?? null }
     return c.json(result)
   })

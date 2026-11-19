@@ -4,17 +4,19 @@ import { ArrowRight, Building2, Check, MapPin, Plus, X } from 'lucide-react'
 import { Field } from './CampaignField'
 import { formatPhone, innError, normalizeBusinessWebsite, phoneError, textError, websiteError, type Business } from '../../shared/campaign-business'
 
+import { partnerFieldKeys, partnerFields, type PartnerDetails } from '../../shared/partner-details.ts'
 import { Creative, creativeOf } from '../creative'
 import { DEMO_AD } from '../mock'
 
 export type BusinessPhase = 'identify' | 'review'
 type Props = {
   phase: BusinessPhase; business: Business; onChange: (value: Business) => void;
+  partnerDetails?: PartnerDetails; onPartnerDetails: (value: PartnerDetails) => void;
   hasProfile: boolean; registeredAddress: string; suggestionName?: string; lookupError: string; searching: boolean; onCancel: () => void; onManual: () => void;
   addresses: string[]; onAddresses: (value: string[]) => void; online: boolean; onOnline: (value: boolean) => void;
   offerAccepted: boolean; onOfferAccepted?: (value: boolean) => void;
 }
-export function BusinessSetup({phase,business,onChange,hasProfile,registeredAddress,suggestionName,lookupError,searching,onCancel,onManual,addresses,onAddresses,online,onOnline,offerAccepted,onOfferAccepted}: Props) {
+export function BusinessSetup({phase,business,onChange,partnerDetails,onPartnerDetails,hasProfile,registeredAddress,suggestionName,lookupError,searching,onCancel,onManual,addresses,onAddresses,online,onOnline,offerAccepted,onOfferAccepted}: Props) {
   const reduce = useReducedMotion()
   const consentId = useId()
   const [consentError, setConsentError] = useState(false)
@@ -69,5 +71,21 @@ export function BusinessSetup({phase,business,onChange,hasProfile,registeredAddr
       </>}
       {online&&<motion.p className="v3-online-note" initial={reduce ? false : {opacity:0}} animate={{opacity:1}}>Город или всю Россию можно выбрать на шаге «Выбор клиентов»</motion.p>}
     </section>
+    <details className="v3-business-locations v3-partner-details">
+      <summary>Реквизиты для партнёрского договора</summary>
+      <div className="v3-fields">
+        <p className="bl-caption">Заполните, если реквизиты под рукой. Сотрудник билайна свяжется с вами, чтобы уточнить недостающие данные.</p>
+        {partnerFieldKeys.filter(key => key !== 'kpp' || business.inn.length === 10).map(key => {
+          const field = partnerFields[key]
+          const digits = 'digits' in field
+          const length = key === 'ogrn' && business.inn.length === 10 ? 13 : field.length
+          const value = partnerDetails?.[key] ?? ''
+          return <Field key={key} label={field.label} value={value} maxLength={length}
+            inputMode={digits ? 'numeric' : undefined}
+            error={digits && value && value.length !== length ? `Введите ${length} цифр` : ''}
+            onChange={event => onPartnerDetails({ ...partnerDetails, [key]: digits ? event.target.value.replace(/\D/g, '') : event.target.value })}/>
+        })}
+      </div>
+    </details>
   </div>
 }

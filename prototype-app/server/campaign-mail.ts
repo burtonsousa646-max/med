@@ -6,6 +6,7 @@ import { audienceGroups } from '../shared/campaign-draft.ts'
 import { offerLayouts } from '../shared/campaign-offer.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
 import { db } from './db.ts'
+import { partnerDetailsRows } from '../shared/partner-details.ts'
 
 type MailRow = { id: string; data: string; submitted_at: number; mail_attempts: number }
 const recipient = 'beepartners@beeline.ru'
@@ -15,7 +16,7 @@ const acceptedPart = db.prepare('select 1 from v4_mail_parts where submission_id
 const markPartAccepted = db.prepare('insert into v4_mail_parts (submission_id, part) values (?, ?)')
 
 function campaignMessage(row: MailRow, from: string) {
-  const { business, addresses, online, offer, audience, audienceCity, email, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
+  const { business, partnerDetails, registryDetails, addresses, online, offer, audience, audienceCity, email, triggers, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
   return {
     from: { name: platformName, address: from },
     to: recipient,
@@ -28,6 +29,8 @@ function campaignMessage(row: MailRow, from: string) {
       ...(email ? [`Подтверждённый email: ${email}`] : []),
       `Сайт: ${business.website || '—'}`, `Город бизнеса: ${business.city || '—'}`,
       `Работает онлайн: ${online ? 'да' : 'нет'}`, `Адреса: ${addresses.filter(Boolean).join('; ') || '—'}`, '',
+      'Реквизиты для партнёрского договора',
+      ...partnerDetailsRows(business.inn, registryDetails, partnerDetails).map(([label, value]) => `${label}: ${value}`), '',
       `Оффер: ${offer.title}`, `Промокод: ${offer.promo || '—'}`, `Скидка: ${offer.discount ? offer.discount + '%' : '—'}`,
       `Срок действия: ${offer.until || '—'}`, `Цвет: ${offer.tone}`, `Акция 1 + 1: ${offer.gift ? 'да' : 'нет'}`,
       `Увеличенный креатив: ${offer.zoom ? 'да' : 'нет'}`, `Макет: ${offer.layout ? offerLayouts[offer.layout] : 'Автоматически'}`, '',

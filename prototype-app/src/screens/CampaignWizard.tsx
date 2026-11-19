@@ -138,6 +138,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const [step, setStep] = useState(Math.max(0, Math.min(steps.length - 1, initialStage - 1)))
   const [complete, setComplete] = useState(initialStage === successStage)
   const [business, setBusiness] = useState(initial.business)
+  const [partnerDetails, setPartnerDetails] = useState(initial.partnerDetails)
   const [offerAccepted, setOfferAccepted] = useState(initial.offerAccepted === true)
   const [addresses, setAddresses] = useState(initial.addresses)
   const [businessPhase, updateBusinessPhase] = useState<BusinessPhase>(initialStage === 0 ? 'identify' : 'review')
@@ -210,7 +211,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
   const offerVisible = useOfferVisibility()
   const currentStage = complete ? successStage : step === 0 ? businessPhase === 'identify' ? 0 : 1 : step + 1
   const verifiedEmail = page && complete ? email || undefined : undefined
-  const currentDraft: StoredCampaignDraft = { business, addresses, online, offer, offerImage, logoImage, audience, audienceCity, triggers, email: verifiedEmail, emailCheck,
+  const currentDraft: StoredCampaignDraft = { business, partnerDetails, addresses, online, offer, offerImage, logoImage, audience, audienceCity, triggers, email: verifiedEmail, emailCheck,
     offerCutout: cutout.cutout, keepOriginalImage: cutout.keepOriginal, logoWebsite: logoImage ? brandLogo.website : undefined,
     skippedLogoWebsite: brandLogo.skipped,
     confirmedInn: confirmedInn.current, generatedTitle: generatedTitle.current, filled, hasProfile, registeredAddress,
@@ -228,7 +229,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
 
   useEffect(() => {
     onDraftChange?.(currentDraft)
-  }, [business, addresses, online, offer, offerImage, logoImage, brandLogo, cutout.cutout, cutout.keepOriginal, audience, audienceCity, triggers, verifiedEmail, emailCheck, filled, hasProfile, registeredAddress, currentStage, reached, offerAccepted, onDraftChange])
+  }, [business, partnerDetails, addresses, online, offer, offerImage, logoImage, brandLogo, cutout.cutout, cutout.keepOriginal, audience, audienceCity, triggers, verifiedEmail, emailCheck, filled, hasProfile, registeredAddress, currentStage, reached, offerAccepted, onDraftChange])
 
   useEffect(() => {
     const inn = business.inn
@@ -433,6 +434,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
     confirmedInn.current = business.inn
     setHasProfile(false)
     setRegisteredAddress('')
+    setPartnerDetails(undefined)
     setBusiness(current => ({ ...current, name: '', category: '', city: '', website: '' }))
     setAddresses([''])
     setOffer({ ...emptyOffer }); setDiscountEnabled(false)
@@ -686,7 +688,7 @@ export default function CampaignWizard({ open, onClose, presentation = 'dialog',
         <div className="v3-dialog__body" ref={scroller}>
           <motion.div className="v3-dialog__scene" initial={false} animate={sceneMotion} inert={busy}>
           {!complete && <div className="v3-step-intro"><div><h3 ref={stepHeading} tabIndex={-1}>{step === 0 ? businessPhase === 'identify' ? 'начнём с вашего бизнеса' : 'проверьте бизнес и добавьте точки' : step === 1 && generating ? 'Собираем ваш оффер' : introductions[step][0]}</h3><p>{step === 0 ? 'Сформируем оффер на основе информации о компании' : step === 1 && generating ? 'Готовим черновик на основе данных о бизнесе' : introductions[step][1]}</p></div><span>0{step + 1} / 0{steps.length}</span></div>}
-          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} hasProfile={hasProfile} registeredAddress={registeredAddress} suggestionName={matchingSuggestion?.name} lookupError={lookupError} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} offerAccepted={offerAccepted} onOfferAccepted={page ? setOfferAccepted : undefined} />}
+          {!complete && step === 0 && <BusinessSetup phase={businessPhase} business={business} onChange={setBusiness} partnerDetails={partnerDetails} onPartnerDetails={setPartnerDetails} hasProfile={hasProfile} registeredAddress={registeredAddress} suggestionName={matchingSuggestion?.name} lookupError={lookupError} searching={searching} onCancel={() => cancelLookup(true)} onManual={manualEntry} addresses={addresses} onAddresses={value => { if (value.length !== addresses.length) track('v4_address_change', { action: value.length > addresses.length ? 'add' : 'remove', address_count: value.length }); setAddresses(value) }} online={online} onOnline={value => { track('v4_business_mode', { online: value }); setOnline(value) }} offerAccepted={offerAccepted} onOfferAccepted={page ? setOfferAccepted : undefined} />}
           {!complete && step === 1 && !generating && <div className="v3-campaign-context"><span><Check size={14}/> {name}</span><span>{online ? 'онлайн' : business.city + ' · точек: ' + addresses.filter(a=>a.trim()).length}</span></div>}
 
           {!complete && step === 1 && <div className="v3-dialog__split campaign-offer-editor" data-generating={generating}>

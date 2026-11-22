@@ -19,6 +19,7 @@ const V4Staff = lazy(() => import('./screens/V4Staff'))
 const LandingV3 = lazy(() => import('./screens/LandingV3'))
 const Build = lazy(() => import('./screens/Build'))
 const Market = lazy(() => import('./screens/Market'))
+const MarketOfferPage = lazy(() => import('./screens/MarketOfferPage'))
 const mvp = () => import('./screens/Mvp')
 const mvpSession = () => import('./screens/MvpSession')
 const MvpShell = lazy(() => mvpSession().then(m => ({ default: m.MvpShell })))
@@ -71,12 +72,12 @@ function OnRoute() {
   useEffect(() => {
     if (pathname === '/app' || pathname.startsWith('/app/')) return // Guarded screens track only after authorization.
     if (pathname.startsWith('/v4/create')) return
-    const page = pathname === '/market' ? '/market/' : pathname
+    const page = pathname === '/market' || pathname.startsWith('/market/offer/') ? '/market/' : pathname
     const tracked = Object.hasOwn(pages, page) && (pathname !== '/login' || new URLSearchParams(search).get('from') === 'v4')
     analytics.view(tracked ? page as AnalyticsPage : null)
   }, [pathname, search])
   useEffect(() => {
-    scrollTo(0, 0)
+    if (!/^\/market(?:\/|$)/.test(pathname)) scrollTo(0, 0)
     if (pathname.startsWith('/app/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
     const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/' ? platformName : pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname.startsWith('/market') ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
@@ -136,6 +137,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v4/privacy" element={<PublicDocument privacy />} />
                 <Route path="/mvp" element={<LandingV2 />} />
                 <Route element={<MvpShell/>}>
+                <Route path="/app/staff/offers/:offerKey?" element={<V4Staff/>}/>
                 <Route path="/app/staff/:id?" element={<V4Staff/>}/>
                 <Route path="/app/" element={<MvpLogin />} />
                 <Route path="/app/company" element={<PartnerCompany />} />
@@ -161,7 +163,9 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/cab/company" element={<Company />} />
                 <Route path="/cab/help" element={<Help />} />
                 <Route path="/offer" element={<Offer />} />
-                <Route path="/market/" element={<Market />} />
+                <Route path="/market" element={<Market />}>
+                  <Route path="offer/:id" element={<MarketOfferPage />}/>
+                </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <DemoMenu />

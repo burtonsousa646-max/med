@@ -170,7 +170,7 @@ test('publication requires all staff confirmations, persists after restart and e
   const reviewPath = '/submissions/'+id+'/review'
   const save = (reviewed:boolean,paid:boolean,erid:string,version:number,cookie=moderator) => staff.request(reviewPath,post({reviewed,paid,erid,version},cookie))
   const publicApi = (path:string) => app.request('/api/market/offers'+path)
-  const feed = async () => (await (await publicApi('')).json()).items
+  const feed = async () => (await (await publicApi('')).json()).items.filter((o: {source?:unknown})=>!o.source)
   assert.equal((await save(true,true,'ExampleErid',0,owner)).status,401)
   assert.equal((await save(true,true,'ExampleErid',0,'')).status,401)
   assert.equal((await save(true,true,'bad erid',0)).status,400)
@@ -213,7 +213,7 @@ test('publication requires all staff confirmations, persists after restart and e
   assert.deepEqual(await feed(),[])
   assert.equal((await publicApi('/'+key)).status,404)
   const search = await app.request('/api/market/search',post({query:'Кофейня'}))
-  assert.deepEqual((await search.json()).items,[])
+  assert.deepEqual((await search.json()).items.filter((o:{source?:unknown})=>!o.source),[])
   const receipt = await api.request('/campaigns/'+id,{headers:{cookie:owner}})
   assert.equal((await receipt.json()).status,'expired')
   db.prepare('delete from v4_staff_members where email=?').run(member)
@@ -237,4 +237,33 @@ test('public deployment serves platform API without exposing prototype actions o
     if (mode === undefined) delete process.env.PARTNERS_ONLY
     else process.env.PARTNERS_ONLY=mode
   }
+})
+
+test('staff edits persist, reindex immediately, reject stale writes and preserve the publication gate',async()=>{
+  const worker='registry-staff@example.test'
+  db.prepare('insert into v4_staff_members values(?,?,?)').run(worker,Date.now(),'fixture')
+  const staffCookie=await login(worker), partnerCookie=await login('registry-partner@example.test')
+  const id='beef0000-0000-5000-8000-000000004263', url='/offers/'+id
+  assert.equal((await staff.request('/offers')).status,401)
+  assert.equal((await staff.request(url,{headers:{cookie:partnerCookie}})).status,401)
+  const read=async()=>await (await staff.request(url,{headers:{cookie:staffCookie}})).json()
+  const before=await read()
+  const changes={version:before.version,fields:{...before.fields,brand:'Студия ирисов',description:'Бесплатная каллиграфия',group:'fun'}}
+  assert.equal((await staff.request(url,post(changes,partnerCookie))).status,401)
+  assert.equal((await staff.request(url,post({...changes,fields:{...changes.fields,group:'missing'}},staffCookie))).status,400)
+  assert.equal((await staff.request(url,post(changes,staffCookie))).status,200)
+  assert.equal((await staff.request(url,post(changes,staffCookie))).status,409)
+  const find=async(q:string)=>await (await app.request('/api/market/search',post({query:q}))).json()
+  assert.equal((await find('каллиграфия')).items[0].catalog.brand,'Студия ирисов')
+  const restarted=execFileSync(process.execPath,['--disable-warning=ExperimentalWarning','--input-type=module','-e',
+    "await import('./server/market.ts');const {searchMarket}=await import('./server/market-catalog.ts');console.log(searchMarket('каллиграфия',0).items[0].catalog.brand)"],{encoding:'utf8'})
+  assert.equal(restarted.trim(),'Студия ирисов')
+  const previous=await read()
+  await staff.request(url,post({version:previous.version,fields:before.fields},staffCookie))
+  assert.equal((await find('каллиграфия')).total,0)
+  const hidden=(await (await staff.request('/offers?status=unpublished',{headers:{cookie:staffCookie}})).json()).items
+  assert.ok(hidden.some((r:{origin:string})=>r.origin==='partner'))
+  const draft=hidden[0]
+  assert.equal((await staff.request('/offers/'+draft.key,post({version:draft.version,fields:{...draft.fields,brand:'Телемастерская'}},staffCookie))).status,200)
+  assert.equal((await find('Телемастерская')).total,0)
 })

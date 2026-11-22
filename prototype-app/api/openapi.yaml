@@ -192,10 +192,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [items, more]
+                required: [items, more, categories]
                 properties:
                   items: { type: array, items: { $ref: '#/components/schemas/MarketOffer' } }
                   more: { type: boolean }
+                  categories:
+                    description: Число действующих предложений в каждом разделе всего каталога
+                    type: object
+                    additionalProperties: { type: integer, minimum: 1 }
         default: { $ref: '#/components/responses/Error' }
   /market/offers/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -222,7 +226,7 @@ paths:
       operationId: searchMarketOffers
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [query], properties: { query: { type: string, maxLength: 500 } } } } }
+        content: { application/json: { schema: { type: object, required: [query], properties: { query: { type: string, maxLength: 500 }, offset: { type: integer, minimum: 0 } } } } }
       responses:
         '200':
           description: Ответ и подходящие действующие предложения
@@ -230,10 +234,60 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [reply, items]
+                required: [reply, items, total, more]
                 properties:
+                  total: { type: integer }
+                  more: { type: boolean }
                   reply: { type: string }
                   items: { type: array, items: { $ref: '#/components/schemas/MarketOffer' } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/offers:
+    get:
+      operationId: listStaffOffers
+      security: [{ mvpSession: [] }]
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: status, in: query, schema: { type: string, enum: [published, unpublished, expired] } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0 } }
+      responses:
+        '200':
+          description: Реестр предложений
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [total, items]
+                properties:
+                  total: { type: integer }
+                  items: { type: array, items: { $ref: '#/components/schemas/CatalogRecord' } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/offers/{key}:
+    parameters: [{ name: key, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      operationId: getStaffOffer
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Карточка для редактирования
+          content: { application/json: { schema: { $ref: '#/components/schemas/CatalogRecord' } } }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: editStaffOffer
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, fields]
+              properties:
+                version: { type: integer, minimum: 0 }
+                fields: { $ref: '#/components/schemas/CatalogFields' }
+      responses:
+        '200':
+          description: Сохранённая версия
+          content: { application/json: { schema: { $ref: '#/components/schemas/CatalogRecord' } } }
         default: { $ref: '#/components/responses/Error' }
   /v4/staff/submissions/{id}/review:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
@@ -942,6 +996,25 @@ components:
           properties:
             status: { $ref: '#/components/schemas/ReviewStatus' }
             publicId: { type: [string, 'null'], format: uuid }
+    CatalogFields:
+      type: object
+      required: [brand, benefit, condition, description, group]
+      properties:
+        brand: { type: string, minLength: 1, maxLength: 180 }
+        benefit: { type: string, minLength: 1, maxLength: 300 }
+        condition: { type: string, maxLength: 700 }
+        description: { type: string, maxLength: 12000 }
+        group: { type: string }
+    CatalogRecord:
+      type: object
+      required: [key, origin, status, version, fields, publicId]
+      properties:
+        key: { type: string, format: uuid }
+        origin: { enum: [beeline, partner] }
+        status: { enum: [published, expired, unpublished] }
+        version: { type: integer, minimum: 0 }
+        publicId: { type: [string, 'null'], format: uuid }
+        fields: { $ref: '#/components/schemas/CatalogFields' }
     MarketOffer:
       type: object
       required: [id, name, offer, erid, category, group, online, addresses, website, image, logo]
@@ -962,6 +1035,38 @@ components:
         website: { type: string }
         image: { type: string }
         logo: { type: string }
+        catalog:
+          type: object
+          properties:
+            brand: { type: string }
+            benefit: { type: string }
+            condition: { type: string }
+        description: { type: string }
+        source:
+          type: object
+          required: [name, url, fetchedAt, description, validity, sections]
+          properties:
+            name: { type: string }
+            url: { type: string, format: uri }
+            fetchedAt: { type: string, format: date-time }
+            description: { type: string }
+            validity: { type: string }
+            sections:
+              type: array
+              items:
+                type: object
+                required: [title, text, links]
+                properties:
+                  title: { type: string }
+                  text: { type: string }
+                  links:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, url]
+                      properties:
+                        name: { type: string }
+                        url: { type: string, format: uri }
     OfferAiInput:
       type: object
       required: [mode, name, category, offer, request, hasImage, hasLogo]

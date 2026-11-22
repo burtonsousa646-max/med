@@ -5,7 +5,7 @@ import { ArrowUp, CircleCheck, LayoutGrid, Map as MapIcon, MapPin, Sparkles, X }
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
 import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
-import { Check, Chip, Modal, Qr, Segmented, copy, toast } from '../ui'
+import { Check, Chip, Modal, Qr, Segmented, SubscriberBadge, copy, toast } from '../ui'
 
 /* Витрина «лучшее рядом»: предложения партнёров вокруг абонента, по мотивам раздела «Город» в Т-Банке.
    Демо: рядом с выдуманными партнёрами показываются запущенные кампании демо-компании из кабинета,
@@ -105,7 +105,7 @@ const addrOf = (o: Offer) => {
 }
 const erid = (o: Offer) => (o.campaign ? '2SDnjc7Xy3M' : `2VSb5${o.id.replace('-', '').slice(0, 6)}`) // у кампании — erid со шага маркировки
 // плашка «для клиентов» с логотипом билайна: логотип читается скринридером как «билайн»
-const Bee = ({ o }: { o: Offer }) => o.bee ? <span className="near-bee"><img src={logoUrl} alt="билайн" width={16} height={16} />для клиентов</span> : null
+const Bee = ({ o }: { o: Offer }) => o.bee ? <SubscriberBadge/> : null
 const Tag = ({ o }: { o: Offer }) => <span className={`bl-tag ${TYPES[o.type].tag}`}>{TYPES[o.type].t}</span>
 
 function fromCampaign(c: Campaign, i: number, brand: string, addr?: string): Offer {

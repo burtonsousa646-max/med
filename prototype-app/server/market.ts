@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { bodyLimit } from 'hono/body-limit'
-import { ask, type Ask } from './ask.ts'
+import { initializeMarketCatalog, searchMarket } from './market-catalog.ts'
 import { Hono } from 'hono'
 import { db } from './db.ts'
 import { designs, promoDay, type Receipt } from '../shared/mvp-promo.ts'
@@ -17,6 +17,8 @@ create index if not exists market_live on market_publications(published_at desc,
 create table if not exists market_withdrawals (
   submission_id text primary key references market_publications(submission_id) on delete cascade
 )`)
+
+initializeMarketCatalog()
 
 type Row = {public_id:string; reviewed:number; paid:number; erid:string; version:number; until_day:string; published_at:number|null}
 const select = db.prepare('select public_id,reviewed,paid,erid,version,until_day,published_at from market_publications where submission_id=?')
@@ -92,11 +94,14 @@ market.get('/offers', c => {
   if (!Number.isSafeInteger(offset) || offset < 0) return c.json({message:'Некорректная страница'},400)
   const category = c.req.query('category') || ''
   if (category.length > 32) return c.json({message:'Некорректная категория'},400)
-  const rows = db.prepare(`select card from market_publications where ${live} and (?='' or json_extract(card,'$.group')=?) order by published_at desc,public_id limit 49 offset ?`).all(promoDay(),category,category,offset)
-  return c.json({items:rows.slice(0,48).map(r=>JSON.parse(String(r.card)) as MarketOffer),more:rows.length>48})
+  const day = promoDay()
+  const rows = db.prepare(`select card from market_catalogue where ${live} and (?='' or json_extract(card,'$.group')=?) order by published_at desc,public_id limit 49 offset ?`).all(day,category,category,offset)
+  const totals = db.prepare(`select json_extract(card,'$.group') category, count(*) total from market_catalogue where ${live} group by 1`).all(day)
+  const categories = Object.fromEntries(totals.map(row=>[String(row.category),Number(row.total)]))
+  return c.json({items:rows.slice(0,48).map(r=>JSON.parse(String(r.card)) as MarketOffer),more:rows.length>48,categories})
 })
 market.get('/offers/:id', c => {
-  const row = db.prepare(`select card from market_publications where public_id=? and ${live}`).get(c.req.param('id'),promoDay())
+  const row = db.prepare(`select card from market_catalogue where public_id=? and ${live}`).get(c.req.param('id'),promoDay())
   return row ? c.json(JSON.parse(String(row.card)) as MarketOffer) : c.json({message:'Предложение недоступно'},404)
 })
 market.get('/offers/:id/:asset', c => {
@@ -110,31 +115,11 @@ market.get('/offers/:id/:asset', c => {
   return c.body(Buffer.from(file.base64,'base64'),200,{'Content-Type':file.type,'Content-Security-Policy':"default-src 'none'; sandbox"})
 })
 
-db.function('market_fold', {deterministic:true}, value => String(value ?? '').toLowerCase())
-let recentSearches: number[] = []
 market.post('/search', bodyLimit({maxSize:4096,onError:c=>c.json({message:'Слишком длинный запрос'},413)}), async c => {
   if (c.req.header('Content-Type')?.split(';')[0] !== 'application/json') return c.json({message:'Ожидается JSON'},415)
   const body = await c.req.json().catch(()=>null)
   if (typeof body?.query !== 'string' || !body.query.trim() || body.query.length > 500) return c.json({message:'Введите вопрос до 500 символов'},400)
-  const query: string = body.query.trim()
-  const now = Date.now()
-  recentSearches = recentSearches.filter(t => t > now - 60_000)
-  if (recentSearches.length >= 60) return c.json({message:'Слишком много запросов. Попробуйте через минуту'},429)
-  recentSearches.push(now)
-  const words = [...new Set(query.toLowerCase().match(/[а-яёa-z0-9]{3,}/g))].slice(0,8).map(w=>w.slice(0,5))
-  const score = words.map(() => "(instr(market_fold(json_extract(card,'$.name')||' '||json_extract(card,'$.offer.title')||' '||json_extract(card,'$.category')||' '||json_extract(card,'$.addresses')),?)>0)").join('+') || '0.0'
-  const rows = db.prepare(`select card from market_publications where ${live} order by (${score}) desc,published_at desc limit 60`).all(promoDay(),...words)
-  const items = rows.map(r=>JSON.parse(String(r.card)) as MarketOffer)
-  if (!items.length) return c.json({reply:'На витрине пока нет действующих предложений.',items:[]})
-  const request: Ask = {turns:[{role:'user',text:query}],context:{district:'не указан',signals:[],viewed:[]},offers:items.map(o=>({
-    id:o.id,partner:o.name,title:o.offer.title,small:[o.category,...o.addresses].join(' · '),cat:o.group,type:o.offer.promo ? 'promo' : 'click',dist:0,till:o.offer.until,bee:false,
-  }))}
-  const selected = await ask(request)
-  // Recheck visibility after the asynchronous provider call.
-  const current = db.prepare(`select card from market_publications where public_id=? and ${live}`)
-  const hits = selected.offerIds.flatMap(id => {
-    const row = current.get(id,promoDay())
-    return row ? [JSON.parse(String(row.card)) as MarketOffer] : []
-  })
-  return c.json({reply:selected.source === 'ai' ? selected.reply : hits.length ? 'Предложения из каталога' : 'Подходящих предложений пока нет.',items:hits})
+  const offset=body.offset ?? 0
+  if (!Number.isSafeInteger(offset) || offset<0) return c.json({message:'Некорректная страница'},400)
+  return c.json(searchMarket(body.query,offset))
 })

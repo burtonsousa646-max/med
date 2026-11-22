@@ -73,3 +73,6 @@
   .staff-compact-offer { display: block; margin-top: 4px; }
   .staff-table :is(th, td):nth-child(2) { display: none; }
 }
+
+.staff-offer-fields { display: grid; gap: var(--space-m); min-width: 0; border: 0; margin: 0; padding: 0; }
+.staff-offer-fields textarea { resize: vertical; }

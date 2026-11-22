@@ -230,6 +230,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v4/staff/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStaffOffers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/offers/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getStaffOffer"];
+        put?: never;
+        post: operations["editStaffOffer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v4/staff/submissions/{id}/review": {
         parameters: {
             query?: never;
@@ -998,6 +1032,25 @@ export interface components {
             /** Format: uuid */
             publicId: string | null;
         };
+        CatalogFields: {
+            brand: string;
+            benefit: string;
+            condition: string;
+            description: string;
+            group: string;
+        };
+        CatalogRecord: {
+            /** Format: uuid */
+            key: string;
+            /** @enum {unknown} */
+            origin: "beeline" | "partner";
+            /** @enum {unknown} */
+            status: "published" | "expired" | "unpublished";
+            version: number;
+            /** Format: uuid */
+            publicId: string | null;
+            fields: components["schemas"]["CatalogFields"];
+        };
         MarketOffer: {
             /** Format: uuid */
             id: string;
@@ -1023,6 +1076,30 @@ export interface components {
             website: string;
             image: string;
             logo: string;
+            catalog?: {
+                brand?: string;
+                benefit?: string;
+                condition?: string;
+            };
+            description?: string;
+            source?: {
+                name: string;
+                /** Format: uri */
+                url: string;
+                /** Format: date-time */
+                fetchedAt: string;
+                description: string;
+                validity: string;
+                sections: {
+                    title: string;
+                    text: string;
+                    links: {
+                        name: string;
+                        /** Format: uri */
+                        url: string;
+                    }[];
+                }[];
+            };
         };
         OfferAiInput: {
             /** @enum {string} */
@@ -1953,6 +2030,10 @@ export interface operations {
                     "application/json": {
                         items: components["schemas"]["MarketOffer"][];
                         more: boolean;
+                        /** @description Число действующих предложений в каждом разделе всего каталога */
+                        categories: {
+                            [key: string]: number;
+                        };
                     };
                 };
             };
@@ -2023,6 +2104,7 @@ export interface operations {
             content: {
                 "application/json": {
                     query: string;
+                    offset?: number;
                 };
             };
         };
@@ -2034,9 +2116,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        total: number;
+                        more: boolean;
                         reply: string;
                         items: components["schemas"]["MarketOffer"][];
                     };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listStaffOffers: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "published" | "unpublished" | "expired";
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Реестр предложений */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        total: number;
+                        items: components["schemas"]["CatalogRecord"][];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getStaffOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Карточка для редактирования */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogRecord"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    editStaffOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    version: number;
+                    fields: components["schemas"]["CatalogFields"];
+                };
+            };
+        };
+        responses: {
+            /** @description Сохранённая версия */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogRecord"];
                 };
             };
             default: components["responses"]["Error"];

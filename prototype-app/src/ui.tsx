@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type MouseEventHandler, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { animate, motion, useInView, useReducedMotion, AnimatePresence } from 'motion/react'
 import { Check as CheckIcon, X } from 'lucide-react'
@@ -7,13 +7,17 @@ import logoUrl from '../../design-system/assets/beeline-logo.svg'
 import { $api, act, queryClient, useCampaigns, useCatalog, useCompany, type S } from './api'
 
 /* ───────── бренд и шапка сценария ───────── */
-export function Brand({ to = '/' }: { to?: string }) {
+export function Brand({ to = '/', onClick }: { to?: string; onClick?: MouseEventHandler<HTMLAnchorElement> }) {
   return (
-    <Link className="brand" to={to} aria-label={`${platformName}, на главную`}>
+    <Link className="brand" to={to} onClick={onClick} aria-label={`${platformName}, на главную`}>
       <img className="bl-logo" src={logoUrl} alt="" width={44} height={44} />
       <span className="brand__name">партнерская<br />платформа</span>
     </Link>
   )
+}
+
+export function SubscriberBadge({id}:{id?:string}) {
+  return <span className="near-bee" id={id}><img src={logoUrl} alt="билайн" width={18} height={18}/>Для абонентов</span>
 }
 
 const STEPS = [['охват', 'reach'], ['кампания', 'build'], ['оплата', 'checkout'], ['запуск', 'launch']] as const

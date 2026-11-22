@@ -8,6 +8,7 @@ import { imageExtension, type IntakeData } from './campaign-intake.ts'
 import { readPartnerCampaign, readReview, updateReview } from './market.ts'
 import { accountCookie, accountSession } from './mvp.ts'
 import { configuredRoles, roleForEmail } from './staff-role.ts'
+import { staffCatalog, staffCatalogRecord, editMarket } from './market-catalog.ts'
 import { db } from './db.ts'
 
 const minute = 60_000
@@ -133,6 +134,19 @@ export function createV4Staff(
     c.set('staff', { email: session.email, role })
     c.set('token', token)
     await next()
+  })
+  protectedRoutes.get('/offers', c=>{
+    const query=(c.req.query('q') ?? '').trim(), offset=Number(c.req.query('offset') ?? 0)
+    if (query.length>200 || !Number.isSafeInteger(offset) || offset<0) return c.json({message:'Проверьте параметры поиска'},400)
+    return c.json(staffCatalog(query,offset,c.req.query('status') ?? ''))
+  })
+  protectedRoutes.get('/offers/:key', c=>{
+    const item=staffCatalogRecord(c.req.param('key'))
+    return item ? c.json(item) : c.json({message:'Предложение не найдено'},404)
+  })
+  protectedRoutes.post('/offers/:key',bodyLimit({maxSize:64*1024}),async c=>{
+    const result=editMarket(c.req.param('key'),c.var.staff.email,await jsonBody(c.req.raw))
+    return result.saved ? c.json(result.saved) : c.json({message:result.error},result.status)
   })
   protectedRoutes.get('/session', c => c.json(c.var.staff))
   protectedRoutes.use('/team', async (c, next) => {

@@ -1,3 +1,4 @@
+import { marketOfferPath } from '../../shared/market'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
@@ -293,7 +294,7 @@ export function MvpDone() {
           <CampaignStatus status={status}/>
           <h1 className="bl-h1">Кампания {p.code}</h1>
           <p className="bl-lead">{note}</p>
-          {publicId && <Link className="bl-btn bl-btn--primary" to={'/market/?offer='+publicId}>Открыть на витрине</Link>}
+          {publicId && <Link className="bl-btn bl-btn--primary" to={marketOfferPath(publicId)}>Открыть на витрине</Link>}
           <div className="bl-row">
             <Link className="bl-btn bl-btn--dark" to="/app/campaigns/formats">Создать ещё кампанию</Link>
             <Link className="bl-btn" to="/app/campaigns/new" onClick={e => {

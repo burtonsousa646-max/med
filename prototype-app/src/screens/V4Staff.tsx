@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronLeft, ChevronRight, Download, FileText, LogOut, Plus, RefreshCw, Search, Users } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useMatch, useNavigate, useParams } from 'react-router'
 import { offerTheme, normalizeBusinessWebsite } from '../../shared/campaign-business.ts'
 import { designs } from '../../shared/mvp-promo'
 import { audienceGroups } from '../../shared/campaign-draft.ts'
@@ -9,11 +9,12 @@ import { partnerDetailsRows } from '../../shared/partner-details.ts'
 import { offerLayouts } from '../../shared/campaign-offer.ts'
 import { v4StaffPageSize, type V4StaffMember, type V4Submission, type V4SubmissionList } from '../../shared/v4-staff.ts'
 import { analytics } from '../analytics'
-import { reviewLabels, type Review } from '../../shared/market'
+import { marketOfferPath, reviewLabels, type Review } from '../../shared/market'
 import { mvpRequest, useMvpSession, sessionKey } from './MvpSession'
 import { queryClient } from '../api'
 import { AccountCabinet, CampaignStatus } from './AccountCabinet'
 import { partnerDemo, mockStaffRequest } from './mvp-demo'
+import { StaffOffers } from './StaffOffers'
 import { CampaignCreative } from './CampaignCreative'
 
 const home = '/app/staff'
@@ -164,7 +165,7 @@ function ReviewForm({review,path,refresh,onExpired}:{review:Review;path:string;r
       <p className="bl-caption">После сохранения всех трёх подтверждений предложение появится на витрине. Снимите отметку и сохраните, чтобы убрать его.</p>
       {error && <p role="alert">{error} <button type="button" className="bl-btn" onClick={()=>void refresh()}>Обновить заявку</button></p>}
       <div className="bl-row"><button className="bl-btn bl-btn--primary" disabled={busy || !changed}>Сохранить проверку</button>
-        {review.publicId && <Link className="bl-btn" to={'/market/?offer='+review.publicId}>Открыть на витрине</Link>}</div>
+        {review.publicId && <Link className="bl-btn" to={marketOfferPath(review.publicId)}>Открыть на витрине</Link>}</div>
     </form></section>
 }
 
@@ -293,7 +294,8 @@ function StaffTeam({ adminEmail, onExpired }: { adminEmail: string; onExpired: (
 }
 
 export default function V4Staff() {
-  const { id } = useParams()
+  const { id, offerKey } = useParams()
+  const offersPage=!!useMatch('/app/staff/offers/:offerKey?')
   const session = useMvpSession(), nav = useNavigate()
   const teamPage = id === 'team'
   const [error, setError] = useState<unknown>(null), [signingOut,setSigningOut] = useState(false)
@@ -315,12 +317,13 @@ export default function V4Staff() {
   }
   const { email, role } = session
   return <AccountCabinet home={home} label="Кабинет сотрудника" navigation={<>
-          <Link to={home} className={teamPage ? '' : 'is-active'} aria-current={teamPage ? undefined : id ? 'location' : 'page'}><FileText size={20} aria-hidden="true"/>Заявки</Link>
+          <Link to={home} className={teamPage || offersPage ? '' : 'is-active'} aria-current={teamPage || offersPage ? undefined : id ? 'location' : 'page'}><FileText size={20} aria-hidden="true"/>Заявки</Link>
+          <Link to={home+'/offers'} className={offersPage ? 'is-active' : ''} aria-current={offersPage ? 'page' : undefined}><FileText size={20} aria-hidden="true"/>Офферы</Link>
           {role === 'admin' && <Link to={team} className={teamPage ? 'is-active' : ''} aria-current={teamPage ? 'page' : undefined}><Users size={20} aria-hidden="true"/>Сотрудники</Link>}
         </>} account={<><strong>{role === 'admin' ? 'Администратор' : 'Сотрудник'}</strong><span className="bl-caption">{email}</span></>}
         logout={<button type="button" className="bl-btn bl-btn--s" disabled={signingOut} onClick={() => void logout()}><LogOut size={16} aria-hidden="true"/>Выйти</button>}>
         {error != null && <Retry error={error} retry={() => void logout()}/>}
-        {teamPage ? role === 'admin'
+        {offersPage ? <StaffOffers offerKey={offerKey} email={email} request={staffRequest}/> : teamPage ? role === 'admin'
           ? <StaffTeam adminEmail={email} onExpired={expired}/>
           : <p className="bl-notice" role="status">Управлять доступом могут администраторы. <Link to={home}>К заявкам</Link></p>
           : id ? <SubmissionDetails email={email} id={id} onExpired={expired}/>

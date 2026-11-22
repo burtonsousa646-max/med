@@ -1,0 +1,1401 @@
+{
+  "source": "https://moskva.beeline.ru/customers/products/services/benefits/",
+  "fetchedAt": "2026-11-22T08:11:34.267Z",
+  "items": [
+    {
+      "id": 4311,
+      "type": "offer",
+      "priorityId": 2,
+      "name": "7% кешбэка в «Пятёрочке» и «Перекрёстке»",
+      "techName": "LGC-3337",
+      "description": "получайте с картой Апельсин и тратьте на продукты и связь",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/695a2923e394e73cd430fa32e8947809",
+      "erid": "2VSb5z1FLxH",
+      "partner": {
+        "name": "АО «Альфа-Банк»",
+        "id": 140
+      },
+      "category": [
+        {
+          "name": "банковские продукты",
+          "priorityId": 17,
+          "id": 1
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 4311,
+        "partnerId": 140,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/5bea0bf4c82677ff5efc82c2a63ee5ca",
+        "name": "7% кешбэка в «Пятёрочке» и «Перекрёстке»",
+        "description": "получайте с картой Апельсин и тратьте на продукты и связь",
+        "erid": "2VSb5z1FLxH",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 30 ноября"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>каждый поход за продуктами с картой Апельсин теперь работает на вас: возвращайте кешбэком 7% от покупок в «Пятёрочке» и «Перекрёстке» плюс 1% за остальные покупки.\nкешбэк приходит баллами «Х5 Клуба» и их можно тратить снова на продукты, оплачивая до 100% чека, или пополнять баланс в билайне</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как получить?",
+            "description": "<ol>\n<li>оформите карту\nоткройте приложение «Апельсин», «Пятёрочка» или «Перекрёсток» и оформите карту по номеру телефона через X5 ID. можно выбрать виртуальную или пластиковую с доставкой</li>\n<li>получайте баллы\nоплачивайте покупки картой Апельсин в магазинах и показывайте QR-код из любого приложения до оплаты — так баллы «Х5 Клуба» будут начисляться автоматически. баланс виден в любом из приложений или на сайте «Апельсин»</li>\n<li>оплачивайте баллами\nпокупки в «Пятёрочке» и «Перекрёстке», связь и сервисы в билайне</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>кешбэк начисляется баллами «Х5 Клуба»: 10 баллов = 1 ₽</li>\n<li>за товары по акции кешбэк не начисляется</li>\n<li>по виртуальной карте повышенный кешбэк действует первые 2 месяца</li>\n</ul>\n",
+            "logoType": "doc",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>АО «АЛЬФА-БАНК»,\nОГРН 1027700067328\nИНН 7728168971\nЛицензия ЦБ РФ №1326\nerid: 2VSb5z1FLxH</p>\n",
+            "logoType": "info",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/4311.jpg",
+      "catalog": {
+        "brand": "Апельсин",
+        "benefit": "7% кешбэка",
+        "condition": "Баллами за покупки с картой Апельсин в «Пятёрочке» и «Перекрёстке»"
+      }
+    },
+    {
+      "id": 4339,
+      "type": "offer",
+      "priorityId": 9,
+      "name": "скидка 15% на страховку для путешествий",
+      "techName": "lgc-3342",
+      "description": "оформите полис от АльфаСтрахование со скидкой — просто нажмите «перейти» ",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/cb8d1d925c20c89c191b1d11f45cee60",
+      "erid": "2VSb5wAa2VG",
+      "partner": {
+        "name": "АО «АльфаСтрахование»",
+        "id": 4229
+      },
+      "category": [
+        {
+          "name": "страхование",
+          "priorityId": 243,
+          "id": 25
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 4339,
+        "partnerId": 4229,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/36cc9f203e29e486e509e9494bbf6bb6",
+        "name": "скидка 15% на страховку для путешествий",
+        "description": "оформите полис от АльфаСтрахование со скидкой — просто нажмите «перейти» ",
+        "erid": "2VSb5wAa2VG",
+        "promoCode": {
+          "code": null,
+          "description": null
+        },
+        "additionalInformation": [
+          {
+            "name": "описание",
+            "description": "<p>полис «АльфаСтрахование» для путешествий защищает от расходов при проблемах со здоровьем и в непредвиденных ситуациях в поездке. в зависимости от программы он включает медицинскую помощь, экстренную стоматологию и транспортировку, а также компенсации при отмене поездки, потере документов или задержке багажа</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как получить",
+            "description": "<ol>\n<li>нажмите «перейти» — вы окажетесь в разделе страхования путешественников на сайте АльфаСтрахование</li>\n<li>выберите параметры поездки, введите данные участников и нажмите «Рассчитать стоимость»</li>\n<li>скидка 15% применится автоматически при расчёте стоимости полиса</li>\n</ol>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>• скидка 15% действует на покупку полиса страхования путешественников, включая дополнительные опции и риски\n• промокод применяется автоматически при переходе по ссылке из приложения билайн\n• использовать скидку можно неограниченное количество раз до 31.12.2026 года\n• предложение только для клиентов билайна</p>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>ООО «АльфаСтрахование», 115280, г. Москва, вн. тер. г. муниципальный округ Даниловский, пр-кт Лихачёва, д. 15, помещ. 2/15. ОГРН: 1027739431730, ИНН: 7713056834 erid:2VSb5wAa2VG</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/4339.jpg",
+      "catalog": {
+        "brand": "АльфаСтрахование",
+        "benefit": "−15%",
+        "condition": "На страховку для путешествий"
+      }
+    },
+    {
+      "id": 4197,
+      "type": "offer",
+      "priorityId": 13,
+      "name": "скидка на зарубежную карту «Плати по всему миру» ",
+      "techName": "lgc-3310",
+      "description": "оформите карту со скидкой 210 ₽ по промокоду — нужна только почта, а пополнение через СБП",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/34154f151950829b5bf03791ab09b61b",
+      "erid": "2VSb5ybJ8FL",
+      "partner": {
+        "name": "ПАО «ВымпелКом»",
+        "id": 559
+      },
+      "category": [
+        {
+          "name": "банковские продукты",
+          "priorityId": 17,
+          "id": 1
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 4197,
+        "partnerId": 559,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/6895d4ffa8bd21324deb5e19edb16a9d",
+        "name": "скидка на зарубежную карту «Плати по всему миру» ",
+        "description": "оформите карту со скидкой 210 ₽ по промокоду — нужна только почта, а пополнение через СБП",
+        "erid": "2VSb5ybJ8FL",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание",
+            "description": "<p>«Плати по всему миру» — сервис для оформления зарубежных карт. оплачивайте Miro, Amazon, Zoom, путешествия и подписки. карта выпускается от 2 минут, пополняется через СБП без комиссии, работает с Apple Pay и Google Pay</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как получить скидку",
+            "description": "<ol>\n<li>скопируйте промокод BEELINE26 на этом экране</li>\n<li>перейдите на сайт platipomiru.com и выбери карту</li>\n<li>введите промокод на этапе оформления — скидка 210 ₽ применится сразу</li>\n<li>укажите почту и оплатите через СБП</li>\n<li>пользуйтесь — карта доступна в Telegram, MAX или браузере</li>\n</ol>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>• промокод BEELINE26 даёт скидку 210 ₽ на любую карту\n• для оформления нужен только почта — паспорт и селфи не требуются\n• выпуск карты занимает от 2 минуты после оплаты\n• пополнение через СБП — без комиссии\n• карта работает с Apple Pay, Google Pay и 3D Secure\n• один аккаунт доступен в Telegram, MAX и браузере одновременно</p>\n",
+            "logoType": "doc",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>ООО &quot;Капибара&quot;\nЮридический адрес: 123112, г. Москва, муниципальный округ Пресненский, Пресненская набережная, д. 12, помещ. 19/64.\nИНН: 9703231520;\nОГРН: 1257700507965;\nКПП: 770301001;\nОКПО: 55788021.\nerid 2VSb5ybJ8FL</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/4197.jpg",
+      "catalog": {
+        "brand": "Плати по всему миру",
+        "benefit": "−210 ₽",
+        "condition": "На выпуск зарубежной карты по промокоду"
+      }
+    },
+    {
+      "id": 4263,
+      "type": "offer",
+      "priorityId": 31,
+      "name": "скидка 10% на цветы и подарки на Флаувау",
+      "techName": "lgc-3322",
+      "description": "дарим промокод на заказ от 2 500 ₽ на Флаувау — букеты, торты и подарки с доставкой или самовывозом",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/9e6b296ebd1839e6426f2d5c72ed6044",
+      "erid": "2VSb5wxafUv",
+      "partner": {
+        "name": "ПАО «ВымпелКом»",
+        "id": 559
+      },
+      "category": [
+        {
+          "name": "цветы и подарки",
+          "priorityId": 153,
+          "id": 15
+        },
+        {
+          "name": "популярное",
+          "priorityId": 2,
+          "id": 94
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 4263,
+        "partnerId": 559,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/5b5454666844cae2561c08438c7edf4d",
+        "name": "скидка 10% на цветы и подарки на Флаувау",
+        "description": "дарим промокод на заказ от 2 500 ₽ на Флаувау — букеты, торты и подарки с доставкой или самовывозом",
+        "erid": "2VSb5wxafUv",
+        "promoCode": {
+          "code": null,
+          "description": null
+        },
+        "additionalInformation": [
+          {
+            "name": "описание",
+            "description": "<p>«Флаувау» — маркетплейс цветов и подарков. более 20 000 локальных брендов из 1 300+ городов России и других стран размещают здесь свои товары, чтобы вы могли в любой момент радовать близких подарками из 25 категорий</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как получить",
+            "description": "<ol>\n<li>скопируйте промокод на этом экране</li>\n<li>нажмите «перейти» на этом экране</li>\n<li>соберите свою корзину  на сайте flowwow.com или приложении Флаувау</li>\n<li>введите промокод при оплате — скидка 10% применится сразу</li>\n<li>оформите заказ — доставим в удобное для вас время или выберите самовывоз</li>\n</ol>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>скидка 10% действует на заказ от 2 500 ₽</li>\n<li>срок действия до 31.12.2026 года включительно</li>\n<li>промокод применяется один раз на один аккаунт</li>\n<li>промокод не суммируется с другими акциями Флаувау</li>\n<li>промокод не распространяется на категорию «Подарочные сертификаты»</li>\n</ul>\n",
+            "logoType": "doc",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре ",
+            "description": "<p>ООО «Флаувау»\n115035, город Москва, Садовническая наб., д. 9, помещ. 2/3\nОГРН 1207700263198\nerid: 2VSb5wxafUv</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/4263.jpg",
+      "catalog": {
+        "brand": "Флаувау",
+        "benefit": "−10%",
+        "condition": "На цветы и подарки при заказе от 2 500 ₽"
+      }
+    },
+    {
+      "id": 2725,
+      "type": "offer",
+      "priorityId": 57,
+      "name": "500 ₽ за установку приложения и выбор Яндекса",
+      "techName": "yandex_poisk_400rub_v3= LGC-2736; erid = 2VSb5xDRs1T",
+      "description": "400 ₽ за выбор Яндекса основным поиском и совершение не менее 2 поисковых запросов. 100 ₽ за установку приложения Яндекс с Алисой и совершение не менее 7 поисковых запросов.",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/dedca5c6f5aeda22550c3fe02febe99f",
+      "erid": "2VSb5xDRs1T",
+      "partner": {
+        "name": "Яндекс",
+        "id": 3274
+      },
+      "category": [
+        {
+          "name": "популярное",
+          "priorityId": 2,
+          "id": 94
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 38,
+          "name": "зарабатывай с билайн",
+          "priorityId": 10
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": "yandex",
+      "detail": {
+        "id": 2725,
+        "partnerId": 3274,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/df147475d1cc3943ec9acd80082e9ec9",
+        "name": "500 ₽ за установку приложения и выбор Яндекса",
+        "description": "400 ₽ за выбор Яндекса основным поиском и совершение не менее 2 поисковых запросов. 100 ₽ за установку приложения Яндекс с Алисой и совершение не менее 7 поисковых запросов.",
+        "erid": "2VSb5xDRs1T",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>сделайте Яндекс основной поисковой системой и совершите не менее 2 двух поисковых запросов  в течение 14 дней — начислим 400 ₽ на баланс в течение 45 дней.<br />\nа если у вас уже установлен поиск, то мы начислим 100 ₽ — за установку поискового приложения Яндекс с Алисой и выполнение не менее 7 поисковых запросов в нем в течение 5 дней</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться Яндекс Поиском",
+            "description": "<p>выберите поиск Яндекса основным, если он ещё не выбран</p>\n<ul>\n<li>нажмите «перейти» на этом экране — откроется браузер</li>\n<li>в настройках браузера выберите Яндекс как основную поисковую систему</li>\n<li>введите любое слово в поисковую строку и выполните поиск</li>\n<li>теперь подтвердите номер телефона в билайне — код придёт в смс</li>\n<li>сделайте от 2 любых поисков в Яндексе за 14 дней</li>\n<li>готово! 400 ₽ придут на баланс в течение 45 дней, если вы выполнили все условия акции</li>\n</ul>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться Яндекс с Алисой",
+            "description": "<p>если Яндекс установлен основным поиском, то вы можете установить поисковое приложение Яндекс с Алисой</p>\n<ul>\n<li>нажмите «перейти» на этом экране</li>\n<li>откроется страница в браузере — нажмите «скачать»</li>\n<li>скачайте приложение из AppStore или Google Store</li>\n<li>вернитесь в браузер и нажмите «зарегистрироваться»</li>\n<li>войдите в свой аккаунт Яндекса через YandexID</li>\n<li>совершите не менее 7 поисковых запросов в приложении Яндекс с Алисой в течение 5 дней</li>\n<li>готово! 100 ₽ придут на баланс в течение 45 дней</li>\n</ul>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>акция действует до 31.12.2026 г.</li>\n<li>фонд акции ограничен, а значит, акция может закончиться раньше срока действия</li>\n<li>акция для тех, кто 30 дней не использовал Яндекс как основную поисковую систему в Safari Mobile или Chrome (iOS, Android)</li>\n<li>участвовать в акции можно один раз за всё время акции</li>\n<li>деньги придут на баланс в течение 45 дней</li>\n</ul>\n<p>реклама\nрекламодатели: ООО Яндекс, ОГРН: 1027700229193, ПАО «ВымпелКом», ОГРН 1027700166636 Erid 2VSb5xDRs1T</p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "правила",
+            "description": "",
+            "logoType": "doc",
+            "attachments": [
+              {
+                "name": "правила акции",
+                "link": "https://static.beeline.ru/upload/images/Documents/pravila-akcii-08-kb-yapoisk-ios-android-brauzer-s-alisoy-iyun.pdf",
+                "logoType": "doc"
+              }
+            ]
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/2725.png",
+      "catalog": {
+        "brand": "Яндекс",
+        "benefit": "До 500 ₽",
+        "condition": "За выбор поиска, установку приложения и поисковые запросы"
+      }
+    },
+    {
+      "id": 3833,
+      "type": "offer",
+      "priorityId": 58,
+      "name": "скидка 500 ₽ и блюдо в подарок в Чиббис",
+      "techName": "LGC-3019 chibbis_01/07-31/12/26",
+      "description": "сделайте заказ любимой еды на 1 500 ₽ и получите два бонуса сразу",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/3602e3eeb43e3e7bdd9593dd5961d6d2",
+      "erid": "2VSb5wNWNx1",
+      "partner": {
+        "name": "Чиббис",
+        "id": 5038
+      },
+      "category": [
+        {
+          "name": "популярное",
+          "priorityId": 2,
+          "id": 94
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3833,
+        "partnerId": 5038,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/22129426ef76fc55dafc3e87fbb78a0d",
+        "name": "скидка 500 ₽ и блюдо в подарок в Чиббис",
+        "description": "сделайте заказ любимой еды на 1 500 ₽ и получите два бонуса сразу",
+        "erid": "2VSb5wNWNx1",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>получите скидку 500 ₽ на первый заказ от 1 500 ₽ и блюдо в подарок за регистрацию в сервисе доставки еды из ресторанов Чиббис. заказывайте пиццу, суши, роллы, шашлыки и другие блюда в ресторанах вашего города</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как получить",
+            "description": "<ol>\n<li>скопируйте промокод и перейдите в приложение Чиббис</li>\n<li>сделайте заказ на сумму от 1 500 ₽ и примените промокод</li>\n<li>получите скидку 500 ₽</li>\n<li>для получения блюда в подарок выбирайте ресторан с оранжевой отметкой и категорией меню «За баллы»</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>акция действует только для новых пользователей Чиббис на первый заказ</li>\n<li>минимальная сумма заказа 1 500 ₽</li>\n<li>промокод можно использовать один раз</li>\n<li>бесплатное блюдо можно получить обменяв 900 баллов за регистрацию на блюдо из меню «За баллы»</li>\n<li>промокод на скидку применяется только при заказе из ресторанов и не распространяется на заказы из цветочных магазинов и других категорий заведений</li>\n</ul>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>реклама. рекламодатель: ООО «Чиббис», ИНН: 2901254484, ОГРН: 1152901000284, юридический адрес: 163000, Архангельская область, г.о. город Архангельск, г. Архангельск, пр-кт Троицкий, д. 3</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "применить скидку",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3833.png",
+      "catalog": {
+        "brand": "Чиббис",
+        "benefit": "−500 ₽",
+        "condition": "На первый заказ от 1 500 ₽. Ещё одно блюдо — за приветственные баллы"
+      }
+    },
+    {
+      "id": 3565,
+      "type": "offer",
+      "priorityId": 62,
+      "name": "вернём до 5 000 ₽ за выпуск зарубежной карты",
+      "techName": "LGC-3181 Глобалбанка",
+      "description": "оформите банковскую карту для международных оплат под ключ в ГлобалБанке и получите кешбэк на баланс",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/fbd63c583a1144c747aa9bbf9cfb1af9",
+      "erid": "2VSb5z9i4EW",
+      "partner": {
+        "name": "Глобалбанка",
+        "id": 5039
+      },
+      "category": [
+        {
+          "name": "банковские продукты",
+          "priorityId": 17,
+          "id": 1
+        },
+        {
+          "name": "популярное",
+          "priorityId": 2,
+          "id": 94
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 2,
+          "name": "кешбэк",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3565,
+        "partnerId": 5039,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/bad66e02248ce1ad819fd5ad6cd27be7",
+        "name": "вернём до 5 000 ₽ за выпуск зарубежной карты",
+        "description": "оформите банковскую карту для международных оплат под ключ в ГлобалБанке и получите кешбэк на баланс",
+        "erid": "2VSb5z9i4EW",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>с ГлобалБанка вы оформляете не просто иностранную карту, но возможность жить, работать и путешествовать, как раньше</p>\n<p>Вместе с картой вы получаете:\n- иностранные платежи и покупки без ограничений<br />\n- доступ к международным сервисам<br />\n- возможность пополнения аккаунта Apple ID для владельцев устройств на платформе iOS при условии смены региона Apple ID (РФ). Как поменять регион — подскажут при оформлении зарубежной банковской карты<br />\n- работающее решение вместо временных обходов<br />\n- полностью удалённое оформление<br />\n- услугу под ключ и сопровождение на всех этапах: от подбора банка до получения карты<br />\n- поддержку 24/7</p>\n<p>ГлобалБанка зарегистрирован в Роскомнадзоре и работает только с официальными банками-партнёрами</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>кешбэк 15% от базовой цены карты</li>\n<li>максимальный кешбэк 5 000 ₽ за оформление одной карты</li>\n<li>срок оформления от 4 дней в зависимости от банка-партнёра</li>\n<li>доставка по России или в другие страны</li>\n<li>кешбэк могут получить только клиенты билайна</li>\n<li>в рамках акции можно оформить не более 5 карт</li>\n</ul>\n<p><a href=\"https://static.beeline.ru/upload/images/aktsii/38259-Pravila-aktsii.pdf\">правила акции</a></p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "как получить?",
+            "description": "<ol>\n<li>нажмите «перейти» на этом экране</li>\n<li>заполните заявку на сайте ГлобалБанка — если сайт недоступен, оформите заявку через ботов в мессенджерах <a href=\"https://t.me/gba_beeline_bot?start\">Telegram</a> или <a href=\"https://max.ru/id502726146720_1_bot?start\">MAX</a></li>\n<li>используйте номер в билайне, чтобы получить кешбэк</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>ООО «ГБА СЕРВИС ГРУПП»\nИНН 9728172523\nЮридический адрес: 117246, г. Москва, вн.тер.г. муниципальный округ Черемушки, Научный проезд, дом 19, помещение 5Т\nРеклама. erid: 2vsb5z9i4ew</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "получить кешбэк",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3565.png",
+      "catalog": {
+        "brand": "Глобалбанка",
+        "benefit": "До 5 000 ₽",
+        "condition": "Кешбэк на баланс за выпуск зарубежной карты"
+      }
+    },
+    {
+      "id": 3562,
+      "type": "offer",
+      "priorityId": 76,
+      "name": "скидка 25% на всё в USmall",
+      "techName": "LGC-2961 USmall 25%_april",
+      "description": "встречаем весну по-модному: вы заказываете любимые заокеанские бренды, а USmall доставляет по ценам ниже, чем в обычных магазинах",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/8afc675f258a933481a3389c4ed70d64",
+      "erid": "2VSb5woREbU",
+      "partner": {
+        "name": "ООО «Фейшн Кьют»",
+        "id": 4810
+      },
+      "category": [
+        {
+          "name": "популярное",
+          "priorityId": 2,
+          "id": 94
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3562,
+        "partnerId": 4810,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/no-partner-logo.png",
+        "name": "скидка 25% на всё в USmall",
+        "description": "встречаем весну по-модному: вы заказываете любимые заокеанские бренды, а USmall доставляет по ценам ниже, чем в обычных магазинах",
+        "erid": "2VSb5woREbU",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>USmall — это маркетплейс, который выкупает оригинальную брендовую одежду, обувь и товары для здоровья в фирменных магазинах Америки — iHerb, Tommy Hilfiger, New Balance, Michael Kors и другие бренды. Причём по ценам на 30-40% ниже, чем в российских магазинах. USmall гарантирует 100% оригинальность всех товаров</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>скопируйте промокод на этом экране</li>\n<li>соберите корзину на сайте или в приложении USmall на сумму от 3 000 ₽</li>\n<li>введите промокод и оплатите заказ любой российской картой</li>\n<li>ваш заказ придёт в Россию в среднем за 2-3 недели</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>промокод действует на все категории товаров от 3 000 ₽</li>\n<li>промокод суммируется с предложениями на сайте и в приложении USmall, но не с другими промокодами</li>\n<li>доставка может быть увеличена до 4х недель в дни распродаж</li>\n</ul>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>реклама. рекламодатель ООО «ФЕЙШН КЬЮТ». ОГРН 1127747094595. erid 2VSb5woREbU</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти к покупкам",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3562.png",
+      "catalog": {
+        "brand": "USmall",
+        "benefit": "−25%",
+        "condition": "На заказ от 3 000 ₽ по промокоду"
+      }
+    },
+    {
+      "id": 3550,
+      "type": "offer",
+      "priorityId": 80,
+      "name": "скидка 20% на анализы в СберЗдоровье",
+      "techName": "sberzdorovie_20%_april",
+      "description": "берегите себя — дарим скидку на анализы и бесплатную расшифровку врачом",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/665b7567e7a645d246ee42954ebb4d8b",
+      "erid": "2VSb5x97RNH",
+      "partner": {
+        "name": "СберЗдоровье",
+        "id": 3612
+      },
+      "category": [
+        {
+          "name": "красота и здоровье",
+          "priorityId": 8,
+          "id": 133
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3550,
+        "partnerId": 3612,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/bf5297e6e067b9f9858076c9c457de63",
+        "name": "скидка 20% на анализы в СберЗдоровье",
+        "description": "берегите себя — дарим скидку на анализы и бесплатную расшифровку врачом",
+        "erid": "2VSb5x97RNH",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>скопируйте промокод на этой странице</li>\n<li>нажмите перейти</li>\n<li>запишитесь на анализы в СберЗдоровье</li>\n<li>вставьте промокод при оплате</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>— скидка по Промокоду не суммируется с другими скидками<br />\n— акция действует до 31.12.26<br />\n— после активации скидка действует в течение 15 дней</p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "правила",
+            "description": "",
+            "logoType": "doc",
+            "attachments": [
+              {
+                "name": "правила акции",
+                "link": "https://tm.sberhealth.ru/promo20_beeline",
+                "logoType": "doc"
+              }
+            ]
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>реклама<br />\nрекламодатель ООО «Инновационная медицина», ОГРН 1197746310618<br />\nerid 2VSb5x97RNH</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3550.png",
+      "catalog": {
+        "brand": "СберЗдоровье",
+        "benefit": "−20%",
+        "condition": "На анализы с расшифровкой результатов врачом"
+      }
+    },
+    {
+      "id": 1512,
+      "type": "offer",
+      "priorityId": 105,
+      "name": "подвеска в подарок от SUNLIGHT",
+      "techName": "ngsunlight3  offer_id = LGC-1243; erid = 2VSb5wKGVg6",
+      "description": "порадуйте себя и близких",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/a87ee87fb731a33fdd2903e70ddf7bd8",
+      "erid": "2VSb5wKGVg6",
+      "partner": {
+        "name": "ООО СОЛНЕЧНЫЙ СВЕТ",
+        "id": 3434
+      },
+      "category": [
+        {
+          "name": "украшения",
+          "priorityId": 13,
+          "id": 20
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 1512,
+        "partnerId": 3434,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/4edec313d3218fc0046f8bb6dc610b5b",
+        "name": "подвеска в подарок от SUNLIGHT",
+        "description": "порадуйте себя и близких",
+        "erid": "2VSb5wKGVg6",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>роскошная подвеска от SUNLIGHT в ПОДАРОК</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>нажмите «получить подарок»</li>\n<li>приходите в любой розничный магазин SUNLIGHT, <a href=\"https://sunlight.net/shops/\">список магазинов </a></li>\n<li>назовите свой номер телефона сотруднику магазина и покажите промокод</li>\n<li>выберите одну из подарочных подвесок</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>предложение действует до 31 декабря 2026 года только 1 раз. Для лиц, старше 18 лет. один человек может получить только один подарок по данной акции и не более одного подарка в день в случае одновременного участия в других акциях, проводимых в SUNLIGHT.</p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>реклама. рекламодатель ООО &quot;Солнечный свет&quot;<br />\nИНН 7731316845<br />\nюр. адрес: 121108, г. Москва, ул. Герасима Курина, д. 10, корп. 1, пом. I, каб. 308<br />\nerid 2VSb5zKEdhU</p>\n",
+            "logoType": "doc",
+            "attachments": [
+              {
+                "name": "подробнее об акции",
+                "link": "https://sunlight.net/actions/beelinegift/",
+                "logoType": "doc"
+              }
+            ]
+          }
+        ],
+        "button": {
+          "name": "получить подарок",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/1512.jpg",
+      "catalog": {
+        "brand": "SUNLIGHT",
+        "benefit": "Подвеска в подарок",
+        "condition": "По промокоду в магазине SUNLIGHT"
+      }
+    },
+    {
+      "id": 2781,
+      "type": "offer",
+      "priorityId": 117,
+      "name": "1 000 000 баллов «Х5 Клуба» в новом Движе",
+      "techName": "orangedvizh offer_id = LGC-2781; erid = 2VSb5xhgQkG",
+      "description": "бросайте кубик, призы на каждом шагу",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/bd0d65dd540f0331f84e676d3cee854c",
+      "erid": "",
+      "partner": {
+        "name": "ПАО «ВымпелКом»",
+        "id": 559
+      },
+      "category": [
+        {
+          "name": "развлечения",
+          "priorityId": 16,
+          "id": 9
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 2781,
+        "partnerId": 559,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/no-partner-logo.png",
+        "name": "1 000 000 баллов «Х5 Клуба» в новом Движе",
+        "description": "бросайте кубик, призы на каждом шагу",
+        "erid": "",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>выиграйте 1 000 000 баллов «Х5 Клуба» , мерч билайна, промокоды и другие призы с каждым броском в новой игре</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>нажмите на кнопку «перейти»</li>\n<li>зайдите в игру «Апельсиновый движ»</li>\n<li>бросайте кубик в игре</li>\n<li>собирайте баллы «Х5 Клуба» , мерч, скидки и другие призы каждый день</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>акция действует с 31.03.2025 по 31.12.2025 года для абонентов билайн. количество призов ограничено. с полными правилами акции, сроками и условиями получения призов можно ознакомиться <a href=\"https://static.beeline.ru/upload/images/gaming/%D0%9F%D0%90_%D0%90%D0%94%D0%B2%D0%B8%D0%B6_31.03.2025.pdf\">здесь</a></p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "правила",
+            "description": "<p>реклама. организатор и рекламодатель — ПАО «ВымпелКом». erid: 2VSb5xhgQkG</p>\n",
+            "logoType": "doc",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/2781.png"
+    },
+    {
+      "id": 2613,
+      "type": "offer",
+      "priorityId": 118,
+      "name": "красивый гудок — 1 день за 0 ₽",
+      "techName": "zamenygudok offer_id = LGC-2685; erid = 2VSb5yhcHWx",
+      "description": "выберите любимый трек",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/3096da9739fffe14a9090f787aa1a7aa",
+      "erid": "",
+      "partner": {
+        "name": "ПАО «ВымпелКом»",
+        "id": 559
+      },
+      "category": [
+        {
+          "name": "развлечения",
+          "priorityId": 16,
+          "id": 9
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 2613,
+        "partnerId": 559,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/no-partner-logo.png",
+        "name": "красивый гудок — 1 день за 0 ₽",
+        "description": "выберите любимый трек",
+        "erid": "",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>порадуйте близких — замените обычные гудки на любимую мелодию! вы точно найдете ту самую в большом каталоге.</p>\n<p>1 день бесплатно, потом — 4 ₽/сут. стоимость трека оплачивается отдельно</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>нажмите на кнопку «перейти» и скачайте приложение</li>\n<li>подключите услугу «привет»</li>\n<li>выберите любимый трек</li>\n<li>готово! пользуйтесь сервисом в браузере по <a href=\"https://privet.beeline.ru\">ссылке</a> или в <a href=\"https://privet.beeline.ru/mobile-apps\">приложение</a> — так может быть удобнее</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>правила проигрывания мелодий можно устанавливать на разные контакты и временные интервалы.</p>\n<p>бесплатный пробный период можно активировать один раз, после его окончания сервис будет стоить 4 рубля в день.</p>\n<p>стоимость трека оплачивается отдельно. цена мелодии в сервисе «Привет» — 95 ₽ за 30 дней использования с автоматическим продлением.</p>\n<p>предложение доступно для всех пользователей билайн предоплатной и постоплатной формы.</p>\n<p>в роуминге услуга не работает.</p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "правила",
+            "description": "<p>рекламодатель ПАО «ВымпелКом», ОГРН 1027700166636, Erid 2VSb5yhcHWx</p>\n",
+            "logoType": "doc",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "перейти",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/2613.png",
+      "catalog": {
+        "brand": "билайн",
+        "benefit": "Первый день за 0 ₽",
+        "condition": "Мелодия вместо гудка. Далее 4 ₽ в день, трек оплачивается отдельно"
+      }
+    },
+    {
+      "id": 3027,
+      "type": "offer",
+      "priorityId": 122,
+      "name": "100 бонусов «Столото» в подарок",
+      "techName": "LGC-2838; erid=2VSb5wowTnR 2.0 / 2VSb5yEqQ34",
+      "description": "за регистрацию и первый билет\r\nновичкам везёт — получите подарок за промокод и участие. 1 бонус = 1 ₽",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/05768ade1cb25ee779a1e32281edde12",
+      "erid": "2VSb5yEqQ34",
+      "partner": {
+        "name": "Столото",
+        "id": 4064
+      },
+      "category": [
+        {
+          "name": "развлечения",
+          "priorityId": 16,
+          "id": 9
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3027,
+        "partnerId": 4064,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/ee9be037befcc02ef4df863e003435eb",
+        "name": "100 бонусов «Столото» в подарок",
+        "description": "за регистрацию и первый билет\r\nновичкам везёт — получите подарок за промокод и участие. 1 бонус = 1 ₽",
+        "erid": "2VSb5yEqQ34",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>перейдите на сайт «Столото» по ссылке на этом экране</li>\n<li>зарегистрируйтесь с промокодом StolotBeel</li>\n<li>купите лотерейный билет «Русское лото» на сайте или в приложении «Столото»</li>\n<li>дождитесь, пока 100 бонусов придут в личный кабинет «Столото» — обычно это занимает до 3 дней</li>\n<li>не забудьте воспользоваться подарком — будет 30 дней, чтобы купить что-то за бонусы в «Столото»</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>бонусы начисляются только при покупке лотерейного билета «Русское лото»</li>\n<li>в акции не участвуют билеты, купленные за промокоды и бонусы. А также билеты, купленные до или после срока проведения акции</li>\n<li>участниками акции являются физические лица, достигшие возраста 18 лет, впервые перешедшие по ссылке и выполнившие условия в период проведения акции</li>\n<li>срок проведения акции - с 01.06.2026 года по 31.12.2026 года</li>\n</ul>\n",
+            "logoType": "file",
+            "attachments": [
+              {
+                "name": "правила акции",
+                "link": "https://static.beeline.ru/upload/images/aktsii/39194-pravila-akcii-bonusy-novichkam-s-iyunya-2026.pdf",
+                "logoType": "info"
+              }
+            ]
+          },
+          {
+            "name": "о партнере",
+            "description": "<p>«ВГЛ 4 Спорт», алгоритм определения выигрышей № 3 (коммерческое наименование «Русское лото»), срок проведения - до 31.12.2044. Лотерея проводится на основании Распоряжения Правительства РФ от 02.05.2012 г. No 687-р.\nСведения об организаторе лотерей, правилах их проведения, призовом фонде лотерей, количестве призов или выигрышей по результатам розыгрышей, сроках, месте и порядке их получения доступны на <a href=\"https://www.stoloto.ru\">www.stoloto.ru</a> или по телефону 8-900-555-00-55</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "получить подарок",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3027.png",
+      "catalog": {
+        "brand": "Столото",
+        "benefit": "100 бонусов",
+        "condition": "За регистрацию и первый билет «Русского лото», 18+"
+      }
+    },
+    {
+      "id": 2160,
+      "type": "offer",
+      "priorityId": 174,
+      "name": "до 50% на баланс за покупки",
+      "techName": "BrandLink_1_offer_id = LGC-2178; erid =2VSb5yD1cnc",
+      "description": "сделайте покупку и отсканируйте чек — начислим кешбэк до 50% на баланс",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/d609b6bc7d3cf33c4acb7d4a30b9eb3d",
+      "erid": "2VSb5yD1cnc",
+      "partner": {
+        "name": "ООО «БРЕНДЛИНК»",
+        "id": 4255
+      },
+      "category": [
+        {
+          "name": "еда и продукты",
+          "priorityId": 5,
+          "id": 4
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 38,
+          "name": "зарабатывай с билайн",
+          "priorityId": 10
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 2160,
+        "partnerId": 4255,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/no-partner-logo.png",
+        "name": "до 50% на баланс за покупки",
+        "description": "сделайте покупку и отсканируйте чек — начислим кешбэк до 50% на баланс",
+        "erid": "2VSb5yD1cnc",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>сделайте покупку и отсканируйте чек — начислим кешбэк до 50% на баланс</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>нажмите «Перейти к покупкам» и перейдите на страницу акции</li>\n<li>ознакомьтесь с товарами и условиями участия в акции</li>\n<li>купите товары, участвующие в акции</li>\n<li>отсканируйте чек</li>\n<li>кешбэк придёт в течение 5 рабочих дней</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "правила",
+            "description": "<p>реклама. рекламодатель ООО «БРЕНДЛИНК», ОГРН 1187746963689; ПАО «ВымпелКом», ОГРН 1027700166636. Erid 2VSb5yD1cnc</p>\n",
+            "logoType": "doc",
+            "attachments": [
+              {
+                "name": "подробнее об акции",
+                "link": "https://static.beeline.ru/upload/images/offers/26820_pravila_akcii_brendlink.pdf",
+                "logoType": "info"
+              }
+            ]
+          }
+        ],
+        "button": {
+          "name": "перейти к покупкам",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/2160.jpg",
+      "catalog": {
+        "brand": "Брендлинк",
+        "benefit": "До 50%",
+        "condition": "На баланс за товары по акции. Отсканируйте чек"
+      }
+    },
+    {
+      "id": 3552,
+      "type": "offer",
+      "priorityId": 218,
+      "name": "украшение в подарок от 585GOLD",
+      "techName": "585podveska_april_offer_id = LGC-2207; ",
+      "description": "для вас и ваших близких",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/5b2649a8e66d6b7dad51fc3ccb71396b",
+      "erid": "2VSb5w6Mwhj",
+      "partner": {
+        "name": "ООО \"ОРО\"",
+        "id": 3360
+      },
+      "category": [
+        {
+          "name": "украшения",
+          "priorityId": 13,
+          "id": 20
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 3,
+          "name": "подарки и скидки",
+          "priorityId": null
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3552,
+        "partnerId": 3360,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/18d8649f1c034c195e3d7c6ad3b787af",
+        "name": "украшение в подарок от 585GOLD",
+        "description": "для вас и ваших близких",
+        "erid": "2VSb5w6Mwhj",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>стильное украшение в подарок от 585GOLD, чтобы каждый день сиял ярче!</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>нажмите «получить подарок»</li>\n<li>приходите в ювелирный магазин 585GOLD: <a href=\"https://zoloto585.ru/action/ukrashenie-v-podarok?erid=2VSb5w6Mwhj\">адреса магазинов</a></li>\n<li>покажите промокод на кассе</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<p>подарок можно получить 1 раз с 1 декабря 2024 по 31 декабря 2026г.<br />\nподарок может отличаться от изображённого на рекламных материалах<br />\nкаждый участник может получить только один гарантированный подарок<br />\n<a href=\"https://zoloto585.ru/action/podarok-beeline-loyalty/?utm_source=partner_beeline&amp;utm_medium=cpa&amp;utm_campaign=loyalty&amp;erid=2VSb5w6Mwhj\">подробнее об акции</a></p>\n",
+            "logoType": "file",
+            "attachments": []
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>реклама. рекламодатель и организатор: ООО «ОРО»<br />\nОГРН 1207800160501<br />\nРФ, г. Санкт-Петербург, ул.Мебельная, дом 12, корп.1, литер Б, пом. 5<br />\nerid 2VSb5w6Mwhj</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "получить подарок",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3552.png",
+      "catalog": {
+        "brand": "585GOLD",
+        "benefit": "Украшение в подарок",
+        "condition": "По промокоду на кассе в магазине 585GOLD"
+      }
+    },
+    {
+      "id": 3183,
+      "type": "offer",
+      "priorityId": 1011,
+      "name": "Афиша",
+      "techName": "afishanekino",
+      "description": "посетить выставку или концерт и заработать — легко! заказывайте на Афише билеты на культурные события, и до 1 000 ₽ вернётся на баланс",
+      "deeplinkName": "",
+      "bannerPictureApp": "https://api.partnerka.beeline.ru/static/prpl-import/af7635cac6300939d3674dcad2a688f5",
+      "erid": "2VSb5xG98eM",
+      "partner": {
+        "name": "Афиша",
+        "id": 4742
+      },
+      "category": [
+        {
+          "name": "зарабатывай с билайном",
+          "priorityId": 12,
+          "id": 131
+        }
+      ],
+      "typeOfPromotion": [
+        {
+          "id": 38,
+          "name": "зарабатывай с билайн",
+          "priorityId": 10
+        }
+      ],
+      "subscriptionStatus": null,
+      "icon": null,
+      "isEnabled": null,
+      "yandexAssign": null,
+      "yandexPlusActive": true,
+      "isOption": false,
+      "isExternalConnect": null,
+      "custom": null,
+      "detail": {
+        "id": 3183,
+        "partnerId": 4742,
+        "bannerUrl": "https://api.partnerka.beeline.ru/static/prpl-import/2e4cde0699653192f2dc73a86f1de5b7",
+        "name": "Афиша",
+        "description": "посетить выставку или концерт и заработать — легко! заказывайте на Афише билеты на культурные события, и до 1 000 ₽ вернётся на баланс",
+        "erid": "2VSb5xG98eM",
+        "promoCode": {
+          "code": null,
+          "description": "действует до 31 декабря"
+        },
+        "additionalInformation": [
+          {
+            "name": "описание предложения",
+            "description": "<p>Афиша — гид по развлечениям в вашем городе. билеты по приятным ценам на культурные события — от кино до балета, для взрослых и детей. а ещё — путеводители и подборки самых интересных мест</p>\n",
+            "logoType": "info",
+            "attachments": []
+          },
+          {
+            "name": "как воспользоваться",
+            "description": "<ol>\n<li>нажмите «получить кешбэк» на этом экране</li>\n<li>на сайте Афиши выберите любое событие и добавьте билет в корзину</li>\n<li>передите к оформлению билета — укажите свой номер телефона в билайне</li>\n<li>оплатите билет</li>\n<li>готово! деньги придут на баланс в течение 45 дней</li>\n</ol>\n",
+            "logoType": "user",
+            "attachments": []
+          },
+          {
+            "name": "условия",
+            "description": "<ul>\n<li>акция действует до 31.12.2026 г.</li>\n<li>фонд акции ограничен, а значит, акция может закончиться раньше срока действия</li>\n<li>участвовать в акции можно один раз за всё время акции</li>\n<li>деньги придут на баланс в течение 45 дней</li>\n</ul>\n",
+            "logoType": "doc",
+            "attachments": [
+              {
+                "name": "правила акции",
+                "link": "https://static.beeline.ru/upload/images/aktsii/Pravila_aktsii_Keshbek_za_pokupku_biletov_na_Afishe.pdf",
+                "logoType": "doc"
+              }
+            ]
+          },
+          {
+            "name": "о партнёре",
+            "description": "<p>реклама\nрекламодатели: ООО 'КОМПАНИЯ АФИША', ОГРН: 1107746038410, ПАО «ВымпелКом», ОГРН 1027700166636 Erid 2VSb5xG98eM</p>\n",
+            "logoType": "folder",
+            "attachments": []
+          }
+        ],
+        "button": {
+          "name": "сходить на мероприятие",
+          "link": null
+        }
+      },
+      "image": "/img/beeline-benefits/3183.png",
+      "catalog": {
+        "brand": "Афиша",
+        "benefit": "До 1 000 ₽",
+        "condition": "На баланс за билеты на концерты и выставки"
+      }
+    }
+  ]
+}

@@ -5,6 +5,9 @@ import { designs, promoDay, validPromo, type MvpSession, type Profile, type Rece
 import type { Review, MarketOffer } from '../../shared/market'
 import { v4StaffPageSize, type V4Submission } from '../../shared/v4-staff'
 import { queryClient } from '../api'
+import { applyCatalogPatch, catalogFields, catalogPatch, validCatalogFields, type CatalogRecord } from '../../shared/market-catalog'
+import { demoRank, keyboardWords, searchColumns, searchReply, searchWords, spellingWord } from '../../shared/market-search'
+import { beelineOffers } from '../../shared/beeline-benefits'
 
 // This test host keeps both roles and the showcase in this browser.
 export const partnerDemo = typeof location !== 'undefined' && location.hostname === 'ad.napovtor.ru'
@@ -18,7 +21,7 @@ export const demoCompany = {
 const prefix = 'beepartners-partner-demo-v1/'
 const receiptPrefix = prefix+'receipt/'
 if (partnerDemo) window.addEventListener('storage',event=>{
-  if (event.key?.startsWith(receiptPrefix)) {
+  if (event.key?.startsWith(receiptPrefix) || event.key?.startsWith(prefix+'offer-edit/')) {
     for (const key of ['mvp-campaigns','mvp-receipt','v4-staff','market','market-detail','market-search'])
       void queryClient.invalidateQueries({queryKey:[key]})
   }
@@ -128,6 +131,26 @@ function demoOffer({promo:p}:Receipt) {
 
 export async function mockStaffRequest(path:string,body?:object) {
   if (sessionStorage.getItem(prefix+'signed-in') !== 'staff') throw new Error('Войдите как тестовый сотрудник')
+  const url=new URL(path,location.origin)
+  if (url.pathname==='/offers') {
+    const q=(url.searchParams.get('q') ?? '').trim().toLowerCase(), offset=Number(url.searchParams.get('offset') ?? 0)
+    const status=url.searchParams.get('status')
+    const list=demoCatalog().map(row=>row.record).filter(r=>(!status || r.status===status) &&
+      [r.fields.brand,r.fields.benefit,r.key].some(v=>v.toLowerCase().includes(q)))
+    return {total:list.length,items:list.slice(offset,offset+40)}
+  }
+  if (url.pathname.startsWith('/offers/')) {
+    const key=url.pathname.slice(8)
+    const locate=()=>{const row=demoCatalog().find(r=>r.record.key===key);if(!row)throw new Error('Предложение не найдено');return row}
+    if (!body) return locate().record
+    return navigator.locks.request(prefix+'offer-edit/'+key,()=>{
+      const row=locate(), draft=body as {version:number;fields:unknown}
+      if (draft.version!==row.record.version) throw new Error('Предложение изменилось. Обновите форму перед сохранением.')
+      if (!validCatalogFields(draft.fields)) throw new Error('Проверьте поля предложения')
+      localStorage.setItem(prefix+'offer-edit/'+key,JSON.stringify({version:draft.version+1,patch:catalogPatch(row.base,draft.fields)}))
+      return locate().record
+    })
+  }
   if (path === '/submissions/search') {
     const {query='',page=1} = (body ?? {}) as {query?:string;page?:number}
     const rows = allReceipts().filter(r=>[r.profile.company,r.profile.inn,demoEmail].some(s=>s.toLowerCase().includes(query.toLowerCase())))
@@ -160,24 +183,52 @@ export async function mockStaffRequest(path:string,body?:object) {
     audienceCity:p.city,triggers:p.wishes ?? ''} satisfies V4Submission
 }
 
+function demoCatalog() {
+  function entry(base:MarketOffer,key:string,origin:CatalogRecord['origin'],status:CatalogRecord['status']) {
+    const edit=JSON.parse(localStorage.getItem(prefix+'offer-edit/'+key) ?? '{}')
+    const card=applyCatalogPatch(base,edit.patch ?? {})
+    const record:CatalogRecord={key,origin,status,publicId:status==='published' ? card.id : null,fields:catalogFields(card),version:edit.version ?? 0}
+    return {base,card,record}
+  }
+  const partners=allReceipts().map(r=>{
+    const category=r.profile.category ?? '', theme=offerTheme(category), p=r.promo
+    const design=designs.find(d=>d.file===p.design)
+    const base:MarketOffer={id:r.marketId ?? r.publicId ?? r.id,name:r.profile.company,offer:demoOffer(r),erid:r.review?.erid ?? '',category,
+      group:theme.title ? theme.cat : 'other',online:!!p.online,addresses:p.addresses ?? [],website:normalizeBusinessWebsite(p.site),logo:'',
+      image:p.photo && p.usePhoto!==false ? p.photo.src : design ? '/img/offer-variants/'+design.file : ''}
+    return entry(base,r.id,'partner',r.status==='expired' ? 'expired' : r.status==='published' && !!r.publicId ? 'published' : 'unpublished')
+  })
+  return partners.concat(beelineOffers.map(card=>entry(card,card.id,'beeline',card.offer.until && card.offer.until<promoDay() ? 'expired' : 'published')))
+}
+
 export function mockMarketRequest(path:string,body?:object) {
   const url=new URL(path,location.origin)
-  const offers:MarketOffer[]=allReceipts().filter(r=>r.status==='published' && r.publicId).map(r=>{
-    const category=r.profile.category ?? '', theme=offerTheme(category), p=r.promo
-    const design = designs.find(d => d.file === p.design)
-    return {id:r.publicId!,name:r.profile.company,offer:demoOffer(r),erid:r.review!.erid,category,group:theme.title ? theme.cat : 'other',
-      online:!!p.online,addresses:p.addresses ?? [],website:normalizeBusinessWebsite(p.site),logo:'',
-      image:p.photo && p.usePhoto!==false ? p.photo.src : design ? '/img/offer-variants/'+design.file : ''}
-  })
+  const offers=demoCatalog().filter(row=>row.record.status==='published').map(row=>row.card)
   if (url.pathname==='/offers') {
     const category=url.searchParams.get('category'), offset=Number(url.searchParams.get('offset') ?? 0)
     const items=offers.filter(o=>!category || o.group===category)
-    return {items:items.slice(offset,offset+48),more:items.length>offset+48}
+    const categories: Record<string,number> = {}
+    for (const offer of offers) categories[offer.group] = (categories[offer.group] ?? 0) + 1
+    return {items:items.slice(offset,offset+48),more:items.length>offset+48,categories}
   }
   if (url.pathname==='/search') {
-    const term=String((body as {query:string}).query).trim().toLowerCase()
-    const items=offers.filter(o=>[o.name,o.category,o.offer.title,...o.addresses].some(s=>s.toLowerCase().includes(term)))
-    return {items,reply:items.length ? 'Предложения из каталога' : 'Подходящих предложений пока нет.'}
+    const {query,offset=0}=body as {query:string;offset?:number}
+    const words=searchWords(query)
+    const rank=(tokens:string[])=>offers.map(card=>({card,score:demoRank(card,tokens)})).filter(hit=>hit.score>0).sort((a,b)=>b.score-a.score || a.card.id.localeCompare(b.card.id))
+    let hits=rank(words)
+    const exact=hits.length>0
+    if (!exact && words.length) {
+      hits=rank(keyboardWords(query))
+      if (!hits.length) {
+        const columns=offers.map(searchColumns)
+        const vocabulary=new Set(columns.flatMap(c=>c.slice(0,3).join(' ').split(' ')))
+        const all=new Set(columns.flatMap(c=>c.join(' ').split(' ')))
+        const corrected=words.map(w=>Array.from(all).some(t=>t.startsWith(w)) ? w : spellingWord(w,vocabulary))
+        hits=rank(corrected)
+      }
+    }
+    return {items:hits.slice(offset,offset+48).map(hit=>hit.card),total:hits.length,more:hits.length>offset+48,
+      reply:(!exact && hits.length ? 'По близкому написанию. ' : '')+searchReply(hits.length)}
   }
   const offer=offers.find(o=>url.pathname==='/offers/'+o.id)
   if (!offer) throw new Error('Предложение больше недоступно')

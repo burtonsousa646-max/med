@@ -1,7 +1,7 @@
 ---
 feature: 006-partners
 title: Пользователи, организации и приглашения коллег
-status: review
+status: approved
 author: architect
 requirements: requirements.md
 adr: ["0005", "0006", "0007"]

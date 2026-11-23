@@ -12,3 +12,6 @@ export type GatewaySuggestionConfig = NonNullable<GatewayConfig['suggestions']>
 
 /** Настройки собственной базы и шифрования кодов входа. */
 export type AuthConfig = ReturnType<typeof import('./config.ts').readAuthConfig>
+
+/** Проверенные параметры сервиса партнёров. */
+export type PartnersConfig = ReturnType<typeof import('./config.ts').readPartnersConfig>

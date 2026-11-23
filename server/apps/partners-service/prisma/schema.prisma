@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/infrastructure/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserProfile {
+  id                String  @id @db.Uuid
+  registrationId    String  @unique @map("registration_id") @db.Uuid
+  registrationEmail String  @map("registration_email")
+  contactEmail      String? @map("contact_email")
+  phone             String?
+
+  @@map("user_profiles")
+}

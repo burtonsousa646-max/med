@@ -250,3 +250,18 @@ export function readAuthConfig(env: Env) {
   r.check()
   return Object.freeze({ ...base, codeKey, databaseUrl, databaseTimeoutMs, http, grpc })
 }
+
+/** Проверяет параметры подключений сервиса партнёров до начала приёма запросов. */
+export function readPartnersConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const databaseUrl = r.url('PARTNERS_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const databaseTimeoutMs = r.int('PARTNERS_DATABASE_TIMEOUT_MS', 3000)
+  const http = { host: r.ip('HTTP_HOST', '0.0.0.0'), port: r.int('HTTP_PORT', 3004, 65535) }
+  const grpc = {
+    host: r.ip('PARTNERS_GRPC_HOST', '127.0.0.1'),
+    port: r.int('PARTNERS_GRPC_PORT', 50054, 65535),
+  }
+  r.check()
+  return Object.freeze({ ...base, databaseUrl, databaseTimeoutMs, http, grpc })
+}

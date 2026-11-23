@@ -1,0 +1,93 @@
+import 'reflect-metadata'
+import { NestFactory } from '@nestjs/core'
+import { Transport, type MicroserviceOptions } from '@nestjs/microservices'
+import { ExpressAdapter } from '@nestjs/platform-express'
+import type { PartnersConfig } from '@platform/config'
+import { protoPath, PROTO_LOADER_OPTIONS } from '@platform/contracts'
+import { HealthState } from '@platform/health'
+import { createPlatformLogger } from '@platform/logger'
+import { PartnersModule, SERVICE_NAME } from './partners.module.ts'
+import { PARTNERS_DATABASE, probeDatabase, type PartnersDatabase } from './infrastructure/prisma'
+
+/** Создаёт приложение и стандартные HTTP и gRPC проверки готовности. */
+export async function createPartnersApp(config: PartnersConfig) {
+  const logger = createPlatformLogger({
+    service: SERVICE_NAME,
+    version: config.version,
+    env: config.env,
+    level: config.logLevel,
+  })
+  const app = await NestFactory.create(PartnersModule.forRoot(config), new ExpressAdapter(), {
+    logger,
+    abortOnError: false,
+  })
+  const grpcHost = config.grpc.host.includes(':') ? `[${config.grpc.host}]` : config.grpc.host
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      url: `${grpcHost}:${config.grpc.port}`,
+      package: ['grpc.health.v1', 'platform.partners.v1'],
+      protoPath: [
+        protoPath('grpc/health/v1/health.proto'),
+        protoPath('partners/v1/partners.proto'),
+      ],
+      loader: { ...PROTO_LOADER_OPTIONS, includeDirs: [...PROTO_LOADER_OPTIONS.includeDirs] },
+    },
+  })
+
+  const database = app.get<PartnersDatabase>(PARTNERS_DATABASE)
+  const health = app.get(HealthState)
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let probe: Promise<void> | undefined
+  let closing: Promise<void> | undefined
+
+  /** Один активный запрос на проверку, включая периоды недоступности PostgreSQL. */
+  function checkReadiness(): void {
+    if (closing) return
+    probe = probeDatabase(database)
+      .then(
+        () => {
+          health.markReady()
+        },
+        () => {
+          if (health.isReady()) logger.event('failure', {}, 'warn')
+          health.markNotReady()
+        },
+      )
+      .finally(() => {
+        if (!closing) {
+          timer = setTimeout(checkReadiness, 1000)
+          timer.unref()
+        }
+      })
+  }
+
+  /** Снимает готовность перед остановкой и освобождает пул PostgreSQL. */
+  function close(): Promise<void> {
+    closing ??= Promise.resolve().then(async () => {
+      health.beginShutdown()
+      clearTimeout(timer)
+      try {
+        await app.close()
+      } finally {
+        await probe
+        await database.$disconnect()
+      }
+    })
+    return closing
+  }
+
+  /** Открывает транспорты, после чего проверяет доступность базы. */
+  async function listen(): Promise<void> {
+    try {
+      await app.startAllMicroservices()
+      await app.listen(config.http.port, config.http.host)
+      checkReadiness()
+    } catch (error) {
+      await close()
+      throw error
+    }
+  }
+
+  return { app, listen, close }
+}

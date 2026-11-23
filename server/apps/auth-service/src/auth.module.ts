@@ -2,16 +2,17 @@ import { GrpcPartnerProfiles } from './infrastructure/grpc'
 import { Module, type DynamicModule } from '@nestjs/common'
 import { type AuthConfig } from '@platform/config'
 import { HealthModule } from '@platform/health'
-import { RegisterProfile, RequestEmailCode, VerifyEmailCode } from './application'
+import { RegisterProfile, RequestEmailCode, VerifyEmailCode, Sessions } from './application'
 import { EncryptedCodes } from './infrastructure'
 import {
   PrismaChallengeStore,
   PrismaRegistrationStore,
+  PrismaSessionStore,
   AUTH_DATABASE,
   createDatabase,
   type AuthDatabase,
 } from './infrastructure/prisma'
-import { EmailCodeController } from './presentation'
+import { EmailCodeController, SessionController } from './presentation'
 
 export const SERVICE_NAME = 'auth-service'
 
@@ -22,8 +23,13 @@ export class AuthModule {
     return {
       module: AuthModule,
       imports: [HealthModule.register({ serviceName: SERVICE_NAME })],
-      controllers: [EmailCodeController],
+      controllers: [EmailCodeController, SessionController],
       providers: [
+        {
+          provide: Sessions,
+          inject: [AUTH_DATABASE],
+          useFactory: (db: AuthDatabase) => new Sessions(new PrismaSessionStore(db)),
+        },
         { provide: AUTH_DATABASE, useFactory: () => createDatabase(config) },
         {
           provide: PrismaChallengeStore,

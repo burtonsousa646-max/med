@@ -41,3 +41,23 @@ model AuthIdentity {
   @@index([userId, retryAt])
   @@map("auth_identities")
 }
+
+model AuthSession {
+  id             String   @id @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  verifiedEmail  String   @map("verified_email")
+  refreshHash    String   @unique @map("refresh_hash") @db.Char(64)
+  lastActivityAt DateTime @map("last_activity_at") @db.Timestamptz(3)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(3)
+  accessTokens   AccessToken[]
+  @@map("auth_sessions")
+}
+
+model AccessToken {
+  hash      String   @id @db.Char(64)
+  sessionId String   @map("session_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  session   AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([sessionId])
+  @@map("access_tokens")
+}

@@ -7,6 +7,8 @@ import type { AuthServiceClient } from '@platform/contracts/auth/v1/auth'
 import { readAuthConfig } from '@platform/config'
 import { firstValueFrom } from 'rxjs'
 import { describe, it, expect, vi } from 'vitest'
+import { EncryptedCodes } from '../src/infrastructure'
+import { AUTH_DATABASE, type AuthDatabase, PrismaSessionStore } from '../src/infrastructure/prisma'
 import { createAuthApp } from '../src/app.ts'
 
 /** Выбирает свободный порт для настоящего клиента gRPC. */
@@ -26,8 +28,8 @@ async function availablePort() {
   return address.port
 }
 
-describe('Выпуск кода через gRPC', () => {
-  it('принимает задание доставки и возвращает типизированный отказ при раннем повторе', async () => {
+describe('Вход и сессия через gRPC', () => {
+  it('подтверждает адрес, проверяет и обновляет токены, отзывает сессию', async () => {
     const grpc = { host: '127.0.0.1', port: await availablePort() }
     const config = readAuthConfig({
       NODE_ENV: 'test',
@@ -56,6 +58,49 @@ describe('Выпуск кода через gRPC', () => {
       })
       await expect(firstValueFrom(auth.requestEmailCode({ email: '' }))).rejects.toMatchObject({
         code: status.INVALID_ARGUMENT,
+      })
+      const db = service.app.get<AuthDatabase>(AUTH_DATABASE)
+      const userId = randomUUID()
+      await db.authIdentity.create({
+        data: { provider: 'email', subject: request.email, userId, registrationId: randomUUID() },
+      })
+      const challenge = await db.emailChallenge.findUniqueOrThrow({ where: request })
+      const cipher = new EncryptedCodes(Buffer.from(config.codeKey, 'hex'))
+      const code = cipher.open(request.email, challenge.sealedCode).toString('ascii')
+      const verification = await firstValueFrom(auth.verifyEmailCode({ ...request, code }))
+      const pair = verification.tokens!
+      expect(pair.accessExpiresAt).toBeDefined()
+      const validate = (accessToken: string) =>
+        firstValueFrom(auth.validateSession({ accessToken, userActivity: true }))
+      expect(await validate(pair.accessToken)).toEqual({ userId, verifiedEmail: request.email })
+      await expect(
+        firstValueFrom(auth.verifyEmailCode({ ...request, code })),
+      ).rejects.toMatchObject({ code: status.UNAUTHENTICATED })
+      const refresh = { refreshToken: pair.refreshToken }
+      const fresh = await firstValueFrom(auth.refreshSession(refresh))
+      expect(fresh.accessToken).not.toBe(pair.accessToken)
+      await db.accessToken.updateMany({
+        where: { session: { userId } },
+        data: { expiresAt: new Date(0) },
+      })
+      await expect(validate(pair.accessToken)).rejects.toMatchObject({
+        code: status.UNAUTHENTICATED,
+        details: 'access_expired',
+      })
+      vi.spyOn(PrismaSessionStore.prototype, 'withAccess').mockRejectedValueOnce(
+        new Error('Ошибка подключения к БД'),
+      )
+      await expect(validate(pair.accessToken)).rejects.toMatchObject({
+        code: status.UNAVAILABLE,
+        details: 'Сервис временно недоступен',
+      })
+      await firstValueFrom(auth.revokeSession(refresh))
+      await expect(validate(fresh.accessToken)).rejects.toMatchObject({
+        code: status.UNAUTHENTICATED,
+        details: 'invalid_session',
+      })
+      await expect(firstValueFrom(auth.refreshSession(refresh))).rejects.toMatchObject({
+        code: status.UNAUTHENTICATED,
       })
     } finally {
       client.close()

@@ -5,7 +5,7 @@
 .app-shot-background { display: block; width: 100%; height: 100%; object-fit: fill; }
 .app-shot-offer { position: absolute; top: 14%; left: 5%; width: 90%; height: 40%; display: flex; flex-direction: column; padding: 5px 5px 10px; border: 1px solid #37404c; border-radius: 20px; background: #222936; box-shadow: 0 12px 24px #0003; }
 .app-shot-offer--showcase { top: 26%; }
-.app-shot-offer--paid, .app-shot-offer--rest { top: 40%; height: 44%; }
+.app-shot-offer--paid { top: 40%; height: 44%; }
 .app-shot-offer > .cr { width: 100%; flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 16px; }
 .app-shot-copy { display: grid; gap: 5px; padding: 12px 8px 10px; font-size: 11px; line-height: 1.4; color: #b9c0cc; }
 .app-shot-brand { color: #f4f5f7; font-size: 15px; line-height: 1.2; }
@@ -16,3 +16,46 @@
 .v4 .v2-hero__phone .app-shot-offer { animation: v4-offer-enter 800ms 400ms var(--v4-ease) both; }
 @media (prefers-reduced-motion: reduce) { .v4 .v2-hero__phone .app-shot-offer { animation: none; } }
 @media (max-width: 767px) { .app-shot-phone { max-width: 100%; } }
+
+.partner-account-preview { flex: none; filter: drop-shadow(0 12px 16px rgb(38 46 46 / .12)); }
+.partner-account {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px 24px 30px;
+  background: white;
+  color: #202927;
+  font: 400 18px/1.3 var(--font-primary);
+}
+.partner-account[data-animate="true"] { animation: v4-screen-enter 180ms var(--v4-ease); }
+.partner-account-head, .partner-account-action { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.partner-account-head { font-size: 34px; line-height: 1.15; letter-spacing: -.035em; }
+.partner-account-head svg { box-sizing: content-box; padding: 10px; border-radius: 50%; background: #f2f5f3; }
+.partner-account-balance {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin: 22px 0 32px;
+  padding: 20px 22px;
+  border-radius: 22px;
+  background: #eef3ee;
+}
+.partner-account-balance > span { font-size: 18px; color: #46564a; }
+.partner-account-balance strong { font-size: 36px; font-weight: 500; line-height: 1.15; }
+.partner-account-balance small { font-size: 19px; }
+.partner-account-balance svg { position: absolute; right: 22px; top: 50%; translate: 0 -50%; width: 42px; height: 42px; color: #455f4e; }
+.partner-account-title { margin-bottom: 12px; font-size: 26px; font-weight: 500; }
+.partner-account-offer { padding: 8px; border-radius: 24px; border: 1px solid #dce2df; }
+.partner-account-offer .cr { width: 100%; height: 198px; border-radius: 17px; }
+.partner-account-offer-name { margin: 14px 12px; font-size: 24px; }
+.partner-account-action { margin: 0 4px 4px; padding: 14px 16px; border-radius: 13px; color: white; background: #263b31; }
+.partner-account-tabs {
+  display: flex;
+  justify-content: space-around;
+  margin: auto -24px 0;
+  padding: 14px 12px 6px;
+  border-top: 1px solid #e3e8e5;
+  color: #66736b;
+}
+.partner-account-tabs span { display: grid; justify-items: center; gap: 5px; font-size: 14px; }
+.partner-account-tabs span:last-child { color: #1e392a; font-weight: 600; }

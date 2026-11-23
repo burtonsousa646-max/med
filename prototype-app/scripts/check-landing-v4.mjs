@@ -1,10 +1,14 @@
-// Run with a browser's page.evaluate(assertLandingV4Layout) after loading / or /#/v4.
+// Run with a browser's page.evaluate(assertLandingV4Layout) after loading / or /v4.
 export function assertLandingV4Layout() {
   const assert = (condition, message) => { if (!condition) throw new Error(message) }
-  assert(['', '#/', '#/v4'].includes(location.hash.split('?')[0]), 'Expected a V4 landing route')
-  assert(document.querySelectorAll('main > section').length === 5, 'Five content sections while the cases and client logos are hidden')
+  assert(['/', '/v4'].includes(location.pathname), 'Expected a V4 landing route')
+  assert(document.querySelectorAll('main > section').length === 6 && document.querySelector('#v2-hero + #promo'), 'The promotion follows the hero')
   assert(document.documentElement.scrollWidth <= innerWidth, 'Horizontal overflow')
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+  const promo = document.querySelector('#promo')
+  assert(promo.querySelectorAll('p:not([aria-hidden])').length === 1, 'Assistive technology reads the promotion once')
+  const track = getComputedStyle(promo.querySelector('.v4-promo-track'))
+  assert(track.animationName === (reduced ? 'none' : 'v4-promo-scroll'), 'Promo motion follows the motion preference')
   const video = document.querySelector('#v2-hero video')
   assert(video?.loop && video.muted && video.playsInline && video.poster.endsWith('/video/hero.jpg'), 'Hero video must loop with a poster and no audio')
   assert(video.autoplay === !reduced, 'Hero video must respect reduced motion')
@@ -14,9 +18,11 @@ export function assertLandingV4Layout() {
   const header = document.querySelector('.v4 header')
   assert(box('.v4 header a').right <= box('.v4 header nav').left, 'Header controls overlap the brand')
   const headerStart = header.querySelector('nav a[data-campaign-start]')
-  assert(headerStart?.getAttribute('href') === '#/v4/create' && headerStart.getClientRects().length > 0, 'The visible header CTA must open V4 campaign setup')
-  assert([...document.querySelectorAll('[data-campaign-start]')].every(link => link.matches('a[href="#/v4/create"]:not([aria-haspopup])') &&
-    link.textContent.trim() === 'запустить сейчас'), 'All V4 entry points must be links with the same campaign label')
+  const campaignHref = location.pathname === '/' ? '/app/?start=campaign' : '/v4/create'
+  assert(headerStart?.getClientRects().length > 0, 'The header CTA must remain visible')
+  assert([...document.querySelectorAll('[data-campaign-start]')].every(link =>
+    link.matches('a:not([aria-haspopup])') && link.getAttribute('href') === campaignHref &&
+    link.textContent.trim() === (link.closest('#promo') ? 'Создать кампанию' : 'запустить сейчас')), 'Each campaign link must use the correct route and label')
   assert(!header.querySelector('a[href*="/login"]'), 'V4 header must not link to the old login')
 
   const hero = box('#v2-hero')
@@ -77,10 +83,16 @@ export function assertLandingV4Layout() {
   if (innerWidth < 768) {
     assert(box('#v4-placement-phone').bottom <= box('.v4-placement-start').top, 'On mobile the CTA follows the placement preview')
   }
-  const phone = document.querySelector('#v4-placement-phone .app-shot-phone')
-  const background = phone.querySelector('.app-shot-background')
-  assert(background.complete && background.naturalWidth > 0 && background.getAttribute('src').includes('/app-clean/'), 'Sanitized app screenshot must load')
-  const offer = phone.querySelector('.app-shot-offer').getBoundingClientRect()
+  const preview = document.querySelector('#v4-placement-phone')
+  const partner = preview.dataset.placement === 'rest'
+  const phone = preview.querySelector(partner ? '.partner-account-preview' : '.app-shot-phone')
+  if (partner) {
+    assert(getComputedStyle(phone.querySelector('.partner-account')).backgroundColor === 'rgb(255, 255, 255)', 'The partner account uses a white screen')
+  } else {
+    const background = phone.querySelector('.app-shot-background')
+    assert(background.complete && background.naturalWidth > 0 && background.getAttribute('src').includes('/app-clean/'), 'Sanitized app screenshot must load')
+  }
+  const offer = phone.querySelector(partner ? '.partner-account-offer' : '.app-shot-offer').getBoundingClientRect()
   const frame = phone.getBoundingClientRect()
   assert(offer.left >= frame.left && offer.right <= frame.right && offer.bottom < frame.bottom, 'Offer must stay inside the phone')
   assert(phone.querySelector('.cr').getBoundingClientRect().height >= frame.height * .1, 'Creative must remain visible in a compact phone')

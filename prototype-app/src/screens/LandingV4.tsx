@@ -19,7 +19,7 @@ const SURFACES = BASE_SURFACES.map(surface => ({ ...surface, ...{
   main: { short: 'Главная', d: 'Когда абонент открывает приложение и проверяет баланс' },
   showcase: { short: 'Подарки и акции', t: 'в разделе «подарки и акции»', d: 'Среди акций магазинов и кафе рядом' },
   paid: { short: 'После оплаты', d: 'После оплаты услуг билайна' },
-  rest: { short: 'Витрины партнёров', t: 'на витринах партнёров', d: 'На сайтах и в приложениях партнёров' },
+  rest: { short: 'Витрины партнёров', t: 'на витринах партнёров', d: 'В личном кабинете клиента, среди привилегий партнёра' },
 }[surface.k] }))
 const STEPS = [
   { kind: 'business', title: 'Информация о компании', text: 'Введите ИНН и телефон, затем добавьте адреса ваших точек' },
@@ -29,9 +29,22 @@ const STEPS = [
 ] as const
 
 
-function StartCampaignLink({ className, arrow }: { className: string; arrow?: number }) {
+function StartCampaignLink({ className, arrow, label = 'запустить сейчас' }: { className: string; arrow?: number; label?: string }) {
   const home = useLocation().pathname === '/'
-  return <Link data-campaign-start className={className} to={home ? '/app/?start=campaign' : '/v4/create'}>запустить сейчас{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
+  return <Link data-campaign-start className={className} to={home ? '/app/?start=campaign' : '/v4/create'}>{label}{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
+}
+
+function PromoMarquee() {
+  return <section id="promo" className="v4-promo" aria-label="Акция на размещение">
+    <div className="v4-promo-window">
+      <div className="v4-promo-track">
+        {[0, 1, 2, 3].map(copy => <p key={copy} aria-hidden={copy > 0 || undefined}>
+          <strong>1 000 ₽</strong> за размещение в приложении билайна и на площадках партнёров до <time dateTime="2027-03-01">1 марта 2027 года</time>
+        </p>)}
+      </div>
+    </div>
+    <StartCampaignLink className="bl-btn bl-btn--dark v4-promo-start" label="Создать кампанию" arrow={18}/>
+  </section>
 }
 
 const NAV = [['how', 'как это работает'], ['where', 'где покажем']] as const
@@ -81,7 +94,7 @@ function Placements() {
           <span className="v4-placement-number">0{index + 1}</span><span><span className="bl-h3">{surface.t}</span><span className="v4-placement-label">{surface.short}</span><span className="bl-body bl-secondary">{surface.d}</span></span><ArrowRight size={20}/>
         </button>)}
       </div>
-      <div className="v4-placement-stage" id="v4-placement-phone">
+      <div className="v4-placement-stage" id="v4-placement-phone" data-placement={SURFACES[selected].k}>
         <span className="v4-placement-orbit" aria-hidden="true"/>
         <AppScreenshotPhone kind={SURFACES[selected].k} animate={animate}/>
         <div className="v4-placement-caption" aria-live="polite"><span><i className="v4-status-dot"/>{SURFACES[selected].t}</span><p>{SURFACES[selected].d}</p></div>
@@ -93,7 +106,7 @@ function Placements() {
 
 function Final() {
   return <section id="v2-final" className="bl-section bl-section--wide v4-final" data-theme="invert">
-    <div className="v4-final-copy"><h2 className="bl-display-l">привлекайте клиентов с билайном</h2>
+    <div className="v4-final-copy"><h2 className="bl-display-l">привлекайте клиентов с билайн</h2>
       <StartCampaignLink className="bl-btn bl-btn--primary bl-btn--xl" arrow={22}/>
       <p className="bl-caption bl-secondary">начните с данных компании</p>
     </div>
@@ -111,7 +124,7 @@ export default function LandingV4() {
   const reduce = useReducedMotion()
   const seen = useRef(new Set<string>())
   useEffect(() => {
-    const names: Record<string, EventParams['section']> = { 'v2-hero': 'hero', how: 'how', where: 'where', 'v2-final': 'final' }
+    const names: Record<string, EventParams['section']> = { 'v2-hero': 'hero', promo: 'promo', how: 'how', where: 'where', 'v2-final': 'final' }
     const observer = new IntersectionObserver(entries => {
       for (const entry of entries) {
         const section = names[entry.target.id] ?? 'metrics'
@@ -135,7 +148,7 @@ export default function LandingV4() {
     const target = event.target instanceof Element ? event.target : null
     if (!target?.closest('[data-campaign-start]')) return
     const section = target.closest('section')?.id
-    const source = target.closest('header') ? 'header' : section === 'v2-hero' ? 'hero' : section === 'how' ? 'how' : section === 'where' ? 'where' : section === 'v2-final' ? 'final' : 'direct'
+    const source = target.closest('header') ? 'header' : section === 'v2-hero' ? 'hero' : section === 'how' || section === 'where' || section === 'promo' ? section : section === 'v2-final' ? 'final' : 'direct'
     analytics.event(home ? 'mvp_start_click' : 'v4_cta_click', { source })
   }}>
     <div className="bl-page wrap v2 v4">
@@ -151,7 +164,9 @@ export default function LandingV4() {
         </nav>
       </header>
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
-        <Hero phone={<AppScreenshotPhone kind="main"/>} motionPaused={false} actions={<StartCampaignLink className="bl-btn bl-btn--primary bl-btn--xl"/>}/><SketchMetrics calm pulse/><HowItWorks/>
+        <Hero phone={<AppScreenshotPhone kind="main"/>} motionPaused={false} actions={<StartCampaignLink className="bl-btn bl-btn--primary bl-btn--xl"/>}/>
+        <PromoMarquee/>
+        <SketchMetrics calm pulse/><HowItWorks/>
         {/* Временно скрыто: <Clients calm/> */}
         <Placements/>
         {/* Временно скрыто: <ForEveryone calm/> */}

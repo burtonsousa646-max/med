@@ -3,8 +3,8 @@ import { platformName } from '../shared/brand.ts'
 const values = {
   step: ['business', 'details', 'offer', 'audience', 'email', 'success'],
   target_step: ['business', 'details', 'offer', 'audience', 'email', 'success'],
-  source: ['hero', 'header', 'how', 'where', 'final', 'direct', 'back', 'progress', 'success', 'footer'],
-  section: ['hero', 'metrics', 'how', 'where', 'final'],
+  source: ['hero', 'header', 'how', 'where', 'promo', 'final', 'direct', 'back', 'progress', 'success', 'footer'],
+  section: ['hero', 'metrics', 'how', 'where', 'promo', 'final'],
   target: ['how', 'where', 'login', 'offer_document', 'privacy_document', 'landing'],
   method: ['lookup', 'manual', 'first', 'rebuild', 'automatic', 'skip', 'text', 'example', 'voice'],
   field: ['inn', 'phone', 'name', 'category', 'city', 'website', 'address', 'title', 'promo', 'discount', 'until', 'image', 'logo', 'wishes', 'unknown'],

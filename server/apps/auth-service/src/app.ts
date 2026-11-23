@@ -6,6 +6,7 @@ import type { AuthConfig } from '@platform/config'
 import { protoPath, PROTO_LOADER_OPTIONS } from '@platform/contracts'
 import { HealthState } from '@platform/health'
 import { createPlatformLogger } from '@platform/logger'
+import { RegisterProfile } from './application'
 import { AuthModule, SERVICE_NAME } from './auth.module.ts'
 import { AUTH_DATABASE, probeDatabase, type AuthDatabase } from './infrastructure/prisma'
 
@@ -38,6 +39,25 @@ export async function createAuthApp(config: AuthConfig) {
   let probe: Promise<void> | undefined
   let closing: Promise<void> | undefined
 
+  const registrations = app.get(RegisterProfile)
+  let recoveryTimer: ReturnType<typeof setTimeout> | undefined
+  let recovery: Promise<void> | undefined
+
+  /** Обрабатывает незавершённые регистрации независимо от повторного запроса пользователя. */
+  function recover(): void {
+    recovery = registrations
+      .recoverOne()
+      .catch(() => {
+        logger.event('failure', {}, 'warn')
+      })
+      .finally(() => {
+        if (!closing) {
+          recoveryTimer = setTimeout(recover, 1000)
+          recoveryTimer.unref()
+        }
+      })
+  }
+
   /** Один активный запрос на проверку, включая периоды недоступности PostgreSQL. */
   function checkReadiness(): void {
     if (closing) return
@@ -64,6 +84,8 @@ export async function createAuthApp(config: AuthConfig) {
     closing ??= Promise.resolve().then(async () => {
       health.beginShutdown()
       clearTimeout(timer)
+      clearTimeout(recoveryTimer)
+      await recovery
       try {
         await app.close()
       } finally {
@@ -80,6 +102,7 @@ export async function createAuthApp(config: AuthConfig) {
       await app.startAllMicroservices()
       await app.listen(config.http.port, config.http.host)
       checkReadiness()
+      recover()
     } catch (error) {
       await close()
       throw error

@@ -17,7 +17,7 @@ function fixture() {
   const store = new PrismaChallengeStore(database)
   const clock = () => new Date(timestamp)
   const request = new RequestEmailCode(store, protection, clock)
-  const verify = new VerifyEmailCode(store, protection, clock)
+  const verifier = new VerifyEmailCode(store, protection, clock)
 
   async function readChallenge() {
     const row = await database.emailChallenge.findUniqueOrThrow({
@@ -29,7 +29,12 @@ function fixture() {
   return {
     email,
     request,
-    verify,
+    verify: {
+      async execute(address: string, code: string) {
+        const result = await verifier.execute(address, code)
+        return typeof result === 'string' ? result : 'ok'
+      },
+    },
     readChallenge,
     advance: (ms: number) => {
       timestamp += ms

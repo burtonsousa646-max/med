@@ -1,3 +1,4 @@
+import type { EmailIdentity } from './registration.ts'
 import type { EmailChallenge } from '../../domain'
 
 /** Задание доставки фиксируется в той же транзакции, что и выпуск кода. */
@@ -7,6 +8,7 @@ export interface DeliveryQueue {
 
 /** Операции внутри блокировки одного адреса. */
 export interface ChallengeTransaction extends DeliveryQueue {
+  reserveIdentity(registrationId: string): Promise<EmailIdentity>
   find(): Promise<EmailChallenge | null>
   replace(challenge: EmailChallenge): Promise<void>
   save(challenge: EmailChallenge): Promise<void>

@@ -247,8 +247,25 @@ export function readAuthConfig(env: Env) {
     host: r.ip('AUTH_GRPC_HOST', '127.0.0.1'),
     port: r.int('AUTH_GRPC_PORT', 50053, 65535),
   }
+  const partnersTarget = r.text('AUTH_PARTNERS_GRPC_TARGET', '127.0.0.1:50054')
+  if (
+    !/^(?:\[[0-9a-f:]+\]|[a-z0-9.-]+):[0-9]+$/i.test(partnersTarget) ||
+    !Number(partnersTarget.split(':').pop()) ||
+    Number(partnersTarget.split(':').pop()) > 65535
+  )
+    r.issues.push('AUTH_PARTNERS_GRPC_TARGET')
+  const partnersTimeoutMs = r.int('AUTH_PARTNERS_TIMEOUT_MS', 3000)
   r.check()
-  return Object.freeze({ ...base, codeKey, databaseUrl, databaseTimeoutMs, http, grpc })
+  return Object.freeze({
+    ...base,
+    codeKey,
+    partnersTarget,
+    partnersTimeoutMs,
+    databaseUrl,
+    databaseTimeoutMs,
+    http,
+    grpc,
+  })
 }
 
 /** Проверяет параметры подключений сервиса партнёров до начала приёма запросов. */

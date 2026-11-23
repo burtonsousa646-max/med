@@ -1,5 +1,6 @@
+import { randomUUIDv7 } from 'node:crypto'
 import { MAX_ATTEMPTS, normalizeEmail, type CodeResult } from '../domain'
-import type { ChallengeStore, CodeProtection } from './ports'
+import type { ChallengeStore, CodeProtection, EmailIdentity } from './ports'
 
 /** Погашает одноразовый код до этапа регистрации профиля. */
 export class VerifyEmailCode {
@@ -10,7 +11,7 @@ export class VerifyEmailCode {
   ) {}
 
   /** Результат отказа возвращается после фиксации попытки, чтобы исключение не откатило счётчик. */
-  async execute(input: string, code: string): Promise<CodeResult> {
+  async execute(input: string, code: string): Promise<Exclude<CodeResult, 'ok'> | EmailIdentity> {
     const email = normalizeEmail(input)
     if (!email || !/^\d{6}$/.test(code)) return 'invalid_input'
     return this.store.withAddress(email, async (tx) => {
@@ -19,7 +20,8 @@ export class VerifyEmailCode {
       if (current.attempts >= MAX_ATTEMPTS) return 'limited'
       const matched = this.protection.matches(email, current.sealedCode, code)
       await tx.save({ ...current, attempts: current.attempts + 1, consumed: matched })
-      return matched ? 'ok' : 'invalid_code'
+      if (!matched) return 'invalid_code'
+      return tx.reserveIdentity(randomUUIDv7())
     })
   }
 }

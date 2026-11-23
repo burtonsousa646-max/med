@@ -29,3 +29,15 @@ model EmailDelivery {
   @@index([challengeId])
   @@map("email_deliveries")
 }
+
+model AuthIdentity {
+  provider       String
+  subject        String
+  registrationId String   @unique @map("registration_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  retryAt        DateTime @default(now()) @map("retry_at") @db.Timestamptz(3)
+
+  @@id([provider, subject])
+  @@index([userId, retryAt])
+  @@map("auth_identities")
+}

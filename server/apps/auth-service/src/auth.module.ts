@@ -1,10 +1,12 @@
+import { GrpcPartnerProfiles } from './infrastructure/grpc'
 import { Module, type DynamicModule } from '@nestjs/common'
 import { type AuthConfig } from '@platform/config'
 import { HealthModule } from '@platform/health'
-import { RequestEmailCode } from './application'
+import { RegisterProfile, RequestEmailCode, VerifyEmailCode } from './application'
 import { EncryptedCodes } from './infrastructure'
 import {
   PrismaChallengeStore,
+  PrismaRegistrationStore,
   AUTH_DATABASE,
   createDatabase,
   type AuthDatabase,
@@ -24,13 +26,44 @@ export class AuthModule {
       providers: [
         { provide: AUTH_DATABASE, useFactory: () => createDatabase(config) },
         {
-          provide: RequestEmailCode,
+          provide: PrismaChallengeStore,
           inject: [AUTH_DATABASE],
-          useFactory: (db: AuthDatabase) =>
-            new RequestEmailCode(
-              new PrismaChallengeStore(db),
-              new EncryptedCodes(Buffer.from(config.codeKey, 'hex')),
-            ),
+          useFactory: (db: AuthDatabase) => new PrismaChallengeStore(db),
+        },
+        {
+          provide: PrismaRegistrationStore,
+          inject: [AUTH_DATABASE],
+          useFactory: (db: AuthDatabase) => new PrismaRegistrationStore(db),
+        },
+        {
+          provide: EncryptedCodes,
+          useFactory: () => new EncryptedCodes(Buffer.from(config.codeKey, 'hex')),
+        },
+        {
+          provide: GrpcPartnerProfiles,
+          useFactory: () =>
+            new GrpcPartnerProfiles(config.partnersTarget, config.partnersTimeoutMs),
+        },
+        {
+          provide: RequestEmailCode,
+          inject: [PrismaChallengeStore, EncryptedCodes],
+          useFactory: (store: PrismaChallengeStore, protection: EncryptedCodes) =>
+            new RequestEmailCode(store, protection),
+        },
+        {
+          provide: VerifyEmailCode,
+          inject: [PrismaChallengeStore, EncryptedCodes],
+          useFactory: (store: PrismaChallengeStore, protection: EncryptedCodes) =>
+            new VerifyEmailCode(store, protection),
+        },
+        {
+          provide: RegisterProfile,
+          inject: [VerifyEmailCode, GrpcPartnerProfiles, PrismaRegistrationStore],
+          useFactory: (
+            verify: VerifyEmailCode,
+            profiles: GrpcPartnerProfiles,
+            store: PrismaRegistrationStore,
+          ) => new RegisterProfile(verify, profiles, store),
         },
       ],
     }

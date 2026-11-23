@@ -10,6 +10,13 @@ export class PrismaChallengeStore implements ChallengeStore {
     return this.db.$transaction(async (database) => {
       await database.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${email}::text, 0))`
       return operation({
+        reserveIdentity: (registrationId) =>
+          database.authIdentity.upsert({
+            where: { provider_subject: { provider: 'email', subject: email } },
+            create: { provider: 'email', subject: email, registrationId },
+            update: {},
+            select: { subject: true, registrationId: true, userId: true },
+          }),
         find: () => database.emailChallenge.findUnique({ where: { email } }),
         replace: async (challenge) => {
           await database.emailChallenge.deleteMany({ where: { email } })

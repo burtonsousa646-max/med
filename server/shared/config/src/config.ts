@@ -233,3 +233,20 @@ export function readSuggestionConfig(env: Env) {
   r.check()
   return Object.freeze(config)
 }
+
+/** Проверяет ключ AES-256 и адреса транспортов до открытия сетевых портов. */
+export function readAuthConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const codeKey = r.text('AUTH_CODE_KEY')
+  if (!/^[a-f0-9]{64}$/i.test(codeKey)) r.issues.push('AUTH_CODE_KEY')
+  const databaseUrl = r.url('AUTH_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const databaseTimeoutMs = r.int('AUTH_DATABASE_TIMEOUT_MS', 3000)
+  const http = { host: r.ip('HTTP_HOST', '0.0.0.0'), port: r.int('HTTP_PORT', 3003, 65535) }
+  const grpc = {
+    host: r.ip('AUTH_GRPC_HOST', '127.0.0.1'),
+    port: r.int('AUTH_GRPC_PORT', 50053, 65535),
+  }
+  r.check()
+  return Object.freeze({ ...base, codeKey, databaseUrl, databaseTimeoutMs, http, grpc })
+}

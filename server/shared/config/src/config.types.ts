@@ -9,3 +9,6 @@ export type SuggestionConfig = ReturnType<typeof import('./config.ts').readSugge
 
 /** Проверенные настройки подсказок Gateway. */
 export type GatewaySuggestionConfig = NonNullable<GatewayConfig['suggestions']>
+
+/** Настройки собственной базы и шифрования кодов входа. */
+export type AuthConfig = ReturnType<typeof import('./config.ts').readAuthConfig>

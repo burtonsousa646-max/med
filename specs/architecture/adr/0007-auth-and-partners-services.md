@@ -1,7 +1,7 @@
 ---
 adr: "0007"
 title: Разделение аутентификации и учёта партнёров между auth-service и partners-service
-status: proposed
+status: accepted
 date: 2026-11-22
 author: architect
 supersedes: []

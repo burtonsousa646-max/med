@@ -1,7 +1,7 @@
 ---
 feature: 005-email-auth
 title: Регистрация и вход по email
-status: review
+status: approved
 author: architect
 requirements: requirements.md
 adr: ["0003", "0006", "0007"]

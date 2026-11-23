@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/infrastructure/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model EmailChallenge {
+  id         String          @id @db.Uuid
+  email      String          @unique
+  sealedCode String          @map("sealed_code")
+  expiresAt  DateTime        @map("expires_at") @db.Timestamptz(3)
+  lastSentAt DateTime        @map("last_sent_at") @db.Timestamptz(3)
+  attempts   Int             @default(0)
+  consumed   Boolean         @default(false)
+  deliveries EmailDelivery[]
+
+  @@map("email_challenges")
+}
+
+model EmailDelivery {
+  id          String         @id @db.Uuid
+  challengeId String         @map("challenge_id") @db.Uuid
+  challenge   EmailChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  sentAt      DateTime?      @map("sent_at") @db.Timestamptz(3)
+
+  @@index([challengeId])
+  @@map("email_deliveries")
+}

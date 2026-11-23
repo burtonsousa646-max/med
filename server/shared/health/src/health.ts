@@ -30,6 +30,11 @@ export class HealthState {
     if (this.phase !== 'shutdown') this.phase = 'ready'
   }
 
+  /** Снимает готовность при временной недоступности обязательной зависимости. */
+  markNotReady(): void {
+    if (this.phase !== 'shutdown') this.phase = 'initializing'
+  }
+
   /** Необратимо снимает готовность процесса. */
   beginShutdown(): void {
     this.phase = 'shutdown'

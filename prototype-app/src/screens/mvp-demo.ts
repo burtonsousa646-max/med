@@ -1,5 +1,6 @@
 import { innError, normalizeBusinessWebsite, offerTheme } from '../../shared/campaign-business'
 import { audienceGroups } from '../../shared/campaign-draft'
+import { posterSource } from '../../shared/partner-poster'
 import { emptyOffer } from '../../shared/campaign-offer'
 import { designs, promoDay, validPromo, type MvpSession, type Profile, type Receipt } from '../../shared/mvp-promo'
 import type { Review, MarketOffer } from '../../shared/market'
@@ -113,6 +114,20 @@ export function mockPartnerRequest(path:string, body?:object):unknown {
     try { localStorage.setItem(receiptPrefix+id,JSON.stringify(receipt)) }
     catch { throw new Error('Недостаточно места в браузере для тестовой кампании. Попробуйте фото меньшего размера.') }
     return {id,created:true}
+  }
+  if (path.split('?')[0] === '/poster-sources') {
+    const offset = Number(new URLSearchParams(path.split('?')[1]).get('offset') ?? 0)
+    const items = allReceipts().filter(r=>r.profile.inn===profile?.inn)
+      .map(r=>({id:r.id,title:demoOffer(r).title,code:r.promo.code}))
+    return {items:items.slice(offset,offset+25),more:offset+25<items.length}
+  }
+  if (path.startsWith('/poster-sources/')) {
+    const r = readReceipt(path.slice('/poster-sources/'.length))
+    if (r.profile.inn !== profile?.inn) throw new Error('Кампания не найдена в текущей компании')
+    const design = designs.find(d=>d.file===r.promo.design)
+    const edit = JSON.parse(localStorage.getItem(prefix+'offer-edit/'+r.id) ?? 'null')
+    return posterSource({name:r.profile.company,inn:r.profile.inn,website:r.promo.site},demoOffer(r),
+      r.promo.photo?.src || (design ? '/img/offer-variants/'+design.file : ''),'',edit?.patch?.catalog)
   }
   if (path.startsWith('/campaigns/')) {
     return readReceipt(path.slice('/campaigns/'.length))

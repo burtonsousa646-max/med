@@ -153,6 +153,48 @@ test('submission, retry, owner receipt, staff search/detail, image and queued ma
 })
 
 
+test('print sources use verified email and current INN for both intake paths, including original artwork', async () => {
+  const email = 'print@example.test', owner = await login(email)
+  const other = await login('another-print@example.test')
+  for (const cookie of [owner,other]) await api.request('/company',post(profile,cookie))
+  const {id} = await (await api.request('/campaigns',post({inn:profile.inn,key:randomUUID(),accepted:true,promo},owner))).json()
+  const list = async (cookie:string) => (await api.request('/poster-sources',{headers:{cookie}})).json()
+  const detail = (cookie:string,key:string) => api.request('/poster-sources/'+key,{headers:{cookie}})
+  assert.equal((await api.request('/poster-sources')).status,401)
+  const guarded = await api.request('/poster-sources',{headers:{cookie:owner,'X-Mvp-Account':'another-print@example.test'}})
+  assert.equal(guarded.status,409)
+  const asStaff = createMvp(async()=>{},()=>'staff')
+  for (const path of ['/poster-sources','/poster-sources/'+id]) {
+    assert.equal((await asStaff.request(path,{headers:{cookie:owner}})).status,403)
+  }
+  const ownResponse = await detail(owner,id)
+  assert.match(ownResponse.headers.get('Cache-Control') ?? '',/no-store/)
+  assert.equal(ownResponse.headers.get('X-Content-Type-Options'),'nosniff')
+  const poster = await ownResponse.json()
+  assert.equal(poster.image,'/img/offer-variants/coffee-teal.png')
+  assert.equal(poster.benefit,'−20%')
+  assert.match(poster.subline,/TEST20/)
+  assert.match(poster.terms,/01\.07\.2099/)
+  const v4id=randomUUID()
+  const submitted=JSON.parse(String(db.prepare('select data from v4_submissions where id=?').get(id)!.data))
+  const source={...submitted,email:email.toUpperCase(),mvp:undefined,mvpProfile:undefined,
+    logoImage:{name:'logo.png',type:'image/png',base64:'bG9nbw=='},offerImage:{name:'photo.webp',type:'image/webp',base64:'cGhvdG8='}}
+  db.prepare('insert into v4_submissions(id,draft_id,digest,data,submitted_at,mail_next_at) values(?,?,?,?,?,?)')
+    .run(v4id,v4id,'fixture',JSON.stringify(source),Date.now()+1,Date.now())
+  assert.deepEqual((await list(owner)).items.map((item:{id:string})=>item.id),[v4id,id])
+  const creative=await (await detail(owner,v4id)).json()
+  assert.equal(creative.image,'data:image/webp;base64,cGhvdG8=')
+  assert.equal(creative.logo,'data:image/png;base64,bG9nbw==')
+  assert.deepEqual((await list(other)).items,[])
+  assert.equal((await detail(other,v4id)).status,404)
+  assert.equal((await detail(other,id)).status,404)
+  assert.equal((await api.request('/poster-sources?offset=-1',{headers:{cookie:owner}})).status,400)
+  assert.equal((await detail('',id)).status,401)
+  assert.equal((await api.request('/company',post({...profile,inn:'7701000001'},owner))).status,200)
+  assert.deepEqual((await list(owner)).items,[])
+  assert.equal((await detail(owner,id)).status,404)
+})
+
 test('publication requires all staff confirmations, persists after restart and expires everywhere', async () => {
   const owner = await login('market-owner@example.test')
   const member = 'moderator@example.test'

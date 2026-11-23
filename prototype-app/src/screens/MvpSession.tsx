@@ -44,10 +44,22 @@ export function MvpShell() {
   if (session.data?.role && !staff) return <Navigate to="/app/staff" replace/>
   if (!session.data?.role && staff) return <Navigate to={partnerDemo && !session.data ? '/app/?preview=staff' : '/app/'} replace/>
   if (!session.data?.role && !session.data?.profile && !entry) {
+    if (pathname === '/app/materials') {
+      const next = new URLSearchParams(search)
+      next.set('start','materials')
+      return <Navigate to={'/app/?'+next} replace/>
+    }
     const launching = pathname === '/app/campaigns/formats' || pathname === '/app/campaigns/new'
     return <Navigate to={launching ? '/app/?start=campaign' : '/app/'} replace/>
   }
-  if (session.data?.profile && entry) return <Navigate to={new URLSearchParams(search).get('start') === 'campaign' ? '/app/campaigns/formats' : '/app/campaigns'} replace/>
+  if (session.data?.profile && entry) {
+    const params = new URLSearchParams(search)
+    if (params.get('start') === 'materials') {
+      const campaign = params.get('campaign')
+      return <Navigate to={'/app/materials'+(campaign ? '?campaign='+encodeURIComponent(campaign) : '')} replace/>
+    }
+    return <Navigate to={params.get('start') === 'campaign' ? '/app/campaigns/formats' : '/app/campaigns'} replace/>
+  }
   return <Outlet key={JSON.stringify([session.data?.email, session.data?.profile?.inn])} context={session.data}/>
 }
 
@@ -121,7 +133,13 @@ export function MvpLogin() {
   async function submit(resend = false) {
     if (pending.current) return
     if (step === 'email' && openTestLogin) {
-      location.assign(previewOrigin + '/app/?preview=' + testRole + (new URLSearchParams(location.search).get('start') === 'campaign' ? '&start=campaign' : ''))
+      const current = new URLSearchParams(location.search)
+      const next = new URLSearchParams({preview:testRole})
+      const start = current.get('start')
+      if (start === 'campaign' || start === 'materials') next.set('start',start)
+      const campaign = current.get('campaign')
+      if (start === 'materials' && campaign) next.set('campaign',campaign)
+      location.assign(previewOrigin + '/app/?' + next)
       return
     }
     pending.current = true; setBusy(true); setError('')

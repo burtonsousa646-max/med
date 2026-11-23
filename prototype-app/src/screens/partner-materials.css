@@ -1,0 +1,52 @@
+.poster-source { display: flex; align-items: center; gap: 16px; padding: 17px 22px; margin: 0; }
+.poster-source label { display: grid; gap: 5px; width: min(100%, 560px); min-width: 0; }
+.poster-source select { width: 100%; text-overflow: ellipsis; }
+.poster-workspace { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(285px, .85fr); align-items: start; gap: 16px; }
+.poster-proof { min-width: 0; padding: 0; overflow: hidden; position: sticky; top: 16px; }
+.poster-proof-head, .poster-download { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 16px 20px; }
+.poster-proof-head h2, .poster-controls h2 { margin: 0; }
+.poster-proof .bl-caption, .poster-controls .bl-caption { color: var(--color-text-secondary); }
+.poster-proof > p { margin: 0; padding: 0 20px 16px; }
+.poster-desk { display: grid; place-items: center; background: #e9e8e4; padding: clamp(18px, 2.5vw, 36px); }
+.poster-paper { display: block; width: min(100%, max(220px, calc((100dvh - 365px) * .7071)) ); aspect-ratio: 210 / 297; height: auto; background: white; box-shadow: 0 4px 14px #26231c21, 0 1px 2px #26231c16; }
+.poster-download { justify-content: flex-start; }
+.poster-controls { padding: clamp(18px,2vw,28px); display: grid; gap: 24px; min-width: 0; }
+.poster-templates { margin: 0; padding: 0; border: 0; min-width: 0; }
+.poster-templates legend { margin: 0 0 12px; padding: 0; }
+.poster-templates > div { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
+.poster-templates label { position: relative; display: grid; justify-items: center; align-content: start; text-align: center; gap: 7px; padding: 9px 2px; cursor: pointer; font-size: 12px; line-height: 1.25; border: 1px solid var(--color-border-secondary); border-radius: 10px; }
+.poster-templates label[data-chosen=true] { border-color: #251e08; box-shadow: inset 0 0 0 1px #251e08; background: #fff9e6; }
+.poster-templates label:focus-within, .poster-file:focus-visible { outline: 2px solid var(--color-text-link); outline-offset: 2px; }
+.poster-templates input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.poster-mini { width: 32px; height: 45px; background: #fff; border: 1px solid #0002; display: block; position: relative; color: #151515; overflow: hidden; }
+.poster-mini i, .poster-mini b, .poster-mini em { position: absolute; display: block; }
+.poster-mini i { top: 5px; left: 11px; width: 9px; border-top: 2px solid currentColor; }
+.poster-mini b { top: 11px; left: 5px; width: 20px; height: 4px; background: currentColor; }
+.poster-mini em { top: 20px; left: 5px; width: 20px; height: 16px; border-radius: 4px; background: #f7c300; transform: rotate(-9deg); }
+.poster-mini.top-grey { background: #e3e3e3; }
+.poster-mini.bottom-dark { background: #131514; color: white; }
+.poster-mini:is(.bottom-dark,.bottom-white) b { top: 34px; }
+.poster-mini:is(.bottom-dark,.bottom-white) em { top: 13px; transform: rotate(9deg); }
+.poster-images, .poster-copy { border-top: 1px solid var(--color-border-secondary); padding-top: 20px; display: grid; gap: 12px; }
+.poster-images > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.poster-images p { margin: 0; }
+.poster-upload { display: grid; align-content: start; gap: 7px; min-width: 0; }
+.poster-upload-title, .poster-copy label > span { font-size: 14px; font-weight: 600; }
+.poster-file { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; border: 1px dashed #a4a09a; border-radius: 9px; cursor: pointer; background: transparent; color: inherit; font: inherit; }
+.poster-file img { object-fit: contain; width: 26px; height: 26px; }
+.poster-upload-dialog { margin: auto; padding: 24px; width: min(400px, calc(100% - 32px)); border: 0; border-radius: 20px; color: var(--color-text-primary); background: var(--color-background-secondary); }
+.poster-upload-dialog::backdrop { background: #14141470; }
+.poster-upload-dialog[open] { display: grid; gap: 16px; }
+.poster-drop { display: grid; gap: 16px; padding: 16px; border: 1px dashed #a4a09a; border-radius: 10px; }
+.poster-drop input { width: 100%; }
+.poster-upload-dialog > button { justify-self: end; }
+.poster-remove { background: none; border: 0; color: var(--color-text-secondary); text-decoration: underline; cursor: pointer; justify-self: start; padding: 0; }
+.poster-copy label { display: grid; gap: 6px; }
+.poster-copy textarea { resize: vertical; }
+@media (max-width: 780px) {
+  .poster-workspace { grid-template-columns: minmax(0,1fr); }
+  .poster-proof { position: static; }
+  .poster-paper { width: min(100%, 330px); }
+  .poster-source { padding: 14px; flex-wrap: wrap; }
+  .poster-source > svg { display: none; }
+}

@@ -129,6 +129,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mvp/poster-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPartnerPosterSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/poster-sources/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPartnerPosterSource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mvp/campaigns": {
         parameters: {
             query?: never;
@@ -1019,6 +1051,15 @@ export interface components {
         };
         /** @enum {string} */
         ReviewStatus: "review" | "awaiting_payment" | "published" | "expired";
+        PartnerPosterSource: {
+            brand: string;
+            headline: string;
+            subline: string;
+            benefit: string;
+            terms: string;
+            image: string;
+            logo: string;
+        };
         /** @enum {string} */
         PartnerCampaignStatus: "review" | "awaiting_payment" | "published" | "expired" | "stopped";
         ReviewInput: {
@@ -1914,6 +1955,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listPartnerPosterSources: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Кампании подтверждённой почты и выбранной компании */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        more: boolean;
+                        items: {
+                            id: string;
+                            title: string;
+                            code: string;
+                        }[];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPartnerPosterSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Текст и изображения для печатного макета */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartnerPosterSource"];
+                };
             };
             default: components["responses"]["Error"];
         };

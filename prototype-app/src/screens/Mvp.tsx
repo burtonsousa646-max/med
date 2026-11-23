@@ -2,7 +2,7 @@ import { marketOfferPath } from '../../shared/market'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Building2, Megaphone, Plus, ClipboardList, MousePointerClick, Repeat, Ticket, TicketPercent, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Building2, Megaphone, Plus, PanelsTopLeft, ClipboardList, MousePointerClick, Repeat, Ticket, TicketPercent, type LucideIcon } from 'lucide-react'
 import { Check, toast } from '../ui'
 import { OfferSurfaces } from './OfferSurfaces'
 import { CampaignCreative } from './CampaignCreative'
@@ -52,12 +52,13 @@ const TYPES: { id: string; t: string; d: string; icon: LucideIcon; on?: boolean 
   { id: 'sub', t: 'подписка на сервис', d: 'Оплата со счёта телефона каждый месяц, вам — доля платежа.', icon: Repeat },
 ]
 
-function PartnerCabinet({children}:{children:ReactNode}) {
+export function PartnerCabinet({children}:{children:ReactNode}) {
   const session = useMvpSession()
   const navClass = ({isActive}:{isActive:boolean}) => isActive ? 'is-active' : ''
   return <AccountCabinet home="/app/campaigns" label="Кабинет партнёра"
     navigation={<>
       <NavLink to="/app/campaigns" className={navClass}><Megaphone size={20}/>Мои кампании</NavLink>
+      <NavLink to="/app/materials" className={navClass}><PanelsTopLeft size={20}/>Офлайн-материалы</NavLink>
       <NavLink to="/app/company" className={navClass}><Building2 size={20}/>Компания</NavLink>
     </>}
     account={<><strong>{session.profile!.company}</strong><span className="bl-caption">{session.email}</span></>}
@@ -296,6 +297,7 @@ export function MvpDone() {
           <p className="bl-lead">{note}</p>
           {publicId && <Link className="bl-btn bl-btn--primary" to={marketOfferPath(publicId)}>Открыть на витрине</Link>}
           <div className="bl-row">
+            {me.inn === session.profile?.inn && <Link className="bl-btn" to={'/app/materials?campaign='+encodeURIComponent(id)}>Создать постер A4</Link>}
             <Link className="bl-btn bl-btn--dark" to="/app/campaigns/formats">Создать ещё кампанию</Link>
             <Link className="bl-btn" to="/app/campaigns/new" onClick={e => {
               try { sessionStorage.setItem(draftKey(session), JSON.stringify({ key: crypto.randomUUID(), promo: p })) }

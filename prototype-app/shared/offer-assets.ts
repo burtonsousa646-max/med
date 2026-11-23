@@ -1,4 +1,16 @@
 export type OfferAssetKind = 'photo' | 'logo' | 'artwork'
+
+export function matchesRasterType(type: string, bytes: Uint8Array) {
+  const header = String.fromCharCode(...bytes.subarray(0,64))
+  switch (type) {
+    case 'image/png': return header.startsWith('\x89PNG\r\n\x1a\n')
+    case 'image/jpeg': return header.startsWith('\xff\xd8\xff')
+    case 'image/webp': return header.startsWith('RIFF') && header.slice(8,12) === 'WEBP'
+    case 'image/avif': return header.slice(4,8) === 'ftyp' && /avi[fs]/.test(header.slice(8))
+    default: return false
+  }
+}
+
 export const offerAssetRules = {
   photo: { label: 'Фото', width: 600, height: 400, hint: 'От 600 × 400 px. Предмет целиком, без текста и водяных знаков.' },
   logo: { label: 'Логотип', width: 128, height: 128, hint: 'От 128 × 128 px. Лучше PNG с прозрачным фоном.' },

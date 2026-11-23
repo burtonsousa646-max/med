@@ -25,6 +25,7 @@ db.exec(`
     unique (draft_id, digest)
   );
   create index if not exists v4_submissions_recent on v4_submissions (submitted_at);
+  create index if not exists v4_submissions_partner_print on v4_submissions (lower(json_extract(data, '$.email')), json_extract(data, '$.business.inn'), submitted_at desc, id desc);
   create index if not exists v4_submissions_pending on v4_submissions (mail_next_at) where mail_sent_at is null;
   create table if not exists mvp_accounts (email text primary key, profile text);
   create table if not exists mvp_sessions (

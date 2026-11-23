@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
+import { matchesRasterType } from '../shared/offer-assets.ts'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { campaignAllowedStage, emptyCampaignDraft, isCampaignDraft, normalizeCampaignEmail, type CampaignDraft } from '../shared/campaign-draft.ts'
@@ -21,13 +22,7 @@ export function imageExtension(type: string) { return extensions[type as keyof t
 export async function packImage(file: File | null): Promise<ImageData | null> {
   if (!file) return null
   const bytes = Buffer.from(await file.arrayBuffer())
-  const prefix = bytes.subarray(0, 12)
-  const ext = imageExtension(file.type)
-  const valid = ext === 'png' ? prefix.subarray(0, 8).toString('hex') === '89504e470d0a1a0a'
-    : ext === 'jpg' ? prefix.subarray(0, 3).toString('hex') === 'ffd8ff'
-    : ext === 'webp' ? prefix.toString('ascii', 0, 4) === 'RIFF' && prefix.toString('ascii', 8) === 'WEBP'
-    : ext === 'avif' && prefix.toString('ascii', 4, 8) === 'ftyp' && /avi[fs]/.test(bytes.toString('ascii', 8, 64))
-  if (!valid) throw new Error('Invalid image')
+  if (!matchesRasterType(file.type,bytes)) throw new Error('Invalid image')
   return { name: file.name.slice(0, 255), type: file.type, base64: bytes.toString('base64') }
 }
 

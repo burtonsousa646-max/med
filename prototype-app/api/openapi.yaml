@@ -110,6 +110,43 @@ paths:
       responses:
         '200': { description: Результат генерации, content: { application/json: { schema: { $ref: '#/components/schemas/OfferAiResponse' } } } }
         default: { $ref: '#/components/responses/Error' }
+  /mvp/poster-sources:
+    get:
+      operationId: listPartnerPosterSources
+      security: [{ mvpSession: [] }]
+      parameters:
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        '200':
+          description: Кампании подтверждённой почты и выбранной компании
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, more]
+                properties:
+                  more: { type: boolean }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title, code]
+                      properties:
+                        id: { type: string }
+                        title: { type: string }
+                        code: { type: string }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/poster-sources/{id}:
+    get:
+      operationId: getPartnerPosterSource
+      security: [{ mvpSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Текст и изображения для печатного макета
+          content: { application/json: { schema: { $ref: '#/components/schemas/PartnerPosterSource' } } }
+        default: { $ref: '#/components/responses/Error' }
   /mvp/campaigns:
     get:
       security: [{ mvpSession: [] }]
@@ -979,6 +1016,17 @@ components:
         zoom: { type: boolean }
         layout: { type: string, enum: [split, photo, text, artwork] }
     ReviewStatus: { type: string, enum: [review, awaiting_payment, published, expired] }
+    PartnerPosterSource:
+      type: object
+      required: [brand, headline, subline, benefit, terms, image, logo]
+      properties:
+        brand: { type: string }
+        headline: { type: string }
+        subline: { type: string }
+        benefit: { type: string }
+        terms: { type: string }
+        image: { type: string }
+        logo: { type: string }
     PartnerCampaignStatus: { type: string, enum: [review, awaiting_payment, published, expired, stopped] }
     ReviewInput:
       type: object

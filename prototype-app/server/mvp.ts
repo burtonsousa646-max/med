@@ -8,6 +8,7 @@ import { audienceGroups, emptyCampaignDraft, normalizeCampaignEmail } from '../s
 import { designs, submittedTargeting, validPromo, type MvpSession, type Profile, type Promo, type ReceiptSummary } from '../shared/mvp-promo.ts'
 import { consumeCampaignCode, draftKeyPattern, issueEmailCode } from './campaign-email.ts'
 import { packImage, type IntakeData } from './campaign-intake.ts'
+import { posterSource } from '../shared/partner-poster.ts'
 import { db } from './db.ts'
 import { readPartnerCampaign } from './market.ts'
 import type { PreviewInbox } from './preview-inbox.ts'
@@ -108,6 +109,29 @@ export function createMvp(send: (email: string, code: string) => Promise<void>, 
   })
   app.use('/offer-ai', async (c,next) => c.var.session.profile ? next() : c.json({message:'Сначала подтвердите компанию'},403))
   app.route('/',offerAi)
+  // Both intake paths verify the submitter's email. Limit print assets to the active company.
+  const posterOwner = "lower(json_extract(s.data,'$.email'))=? and json_extract(s.data,'$.business.inn')=?"
+  const posterList = db.prepare(`select s.id, json_extract(s.data,'$.offer.title') title, json_extract(s.data,'$.offer.promo') code
+    from v4_submissions s where ${posterOwner} order by s.submitted_at desc, s.id desc limit 26 offset ?`)
+  const posterDetail = db.prepare(`select s.data,e.patch from v4_submissions s left join market_edits e on e.entry_key=s.id
+    where s.id=? and ${posterOwner}`)
+  app.get('/poster-sources', c => {
+    const {email,profile} = c.var.session
+    const offset = Number(c.req.query('offset') ?? 0)
+    if (!Number.isSafeInteger(offset) || offset < 0) return c.json({message:'Некорректная страница'},400)
+    const rows = profile ? posterList.all(email,profile.inn,offset) : []
+    return c.json({items:rows.slice(0,25),more:rows.length>25})
+  })
+  app.get('/poster-sources/:id', c => {
+    const {email,profile} = c.var.session
+    const row = profile && posterDetail.get(c.req.param('id'), email, profile.inn)
+    if (!row) return c.json({message:'Кампания не найдена в текущей компании'},404)
+    const data: IntakeData = JSON.parse(String(row.data))
+    const imageUrl = (file:IntakeData['offerImage']) => file ? 'data:'+file.type+';base64,'+file.base64 : ''
+    const design = designs.find(d => d.file === data.mvp?.design)
+    return c.json(posterSource(data.business, data.offer, imageUrl(data.offerImage) || (design ? '/img/offer-variants/'+design.file : ''),
+      imageUrl(data.logoImage), row.patch ? JSON.parse(String(row.patch)).catalog : undefined))
+  })
   app.get('/campaigns', c => {
     const offset = Number(c.req.query('offset') ?? 0)
     if (!Number.isSafeInteger(offset) || offset < 0) return c.json({ message: 'Некорректная страница' }, 400)

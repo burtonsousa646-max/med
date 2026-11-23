@@ -26,6 +26,7 @@ const MvpShell = lazy(() => mvpSession().then(m => ({ default: m.MvpShell })))
 const MvpLogin = lazy(() => mvpSession().then(m => ({ default: m.MvpLogin }))), MvpNew = lazy(() => mvp().then(m => ({ default: m.MvpNew })))
 const MvpPromo = lazy(() => mvp().then(m => ({ default: m.MvpPromo }))), MvpDone = lazy(() => mvp().then(m => ({ default: m.MvpDone })))
 const PartnerCampaigns = lazy(() => mvp().then(m => ({ default: m.PartnerCampaigns })))
+const PartnerMaterials = lazy(() => import('./screens/PartnerMaterials'))
 const PartnerCompany = lazy(() => mvp().then(m => ({ default: m.PartnerCompany })))
 const entry = () => import('./screens/Entry'), flow = () => import('./screens/Flow'), cab = () => import('./screens/Cabinet')
 const Inn = lazy(() => entry().then(m => ({ default: m.Inn }))), Login = lazy(() => entry().then(m => ({ default: m.Login })))
@@ -79,7 +80,7 @@ function OnRoute() {
   useEffect(() => {
     if (!/^\/market(?:\/|$)/.test(pathname)) scrollTo(0, 0)
     if (pathname.startsWith('/app/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
-    const name = pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
+    const name = pathname === '/app/materials' ? 'Офлайн-материалы' : pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/' ? platformName : pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname.startsWith('/market') ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
   }, [pathname])
   return null
@@ -140,6 +141,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/app/staff/offers/:offerKey?" element={<V4Staff/>}/>
                 <Route path="/app/staff/:id?" element={<V4Staff/>}/>
                 <Route path="/app/" element={<MvpLogin />} />
+                <Route path="/app/materials" element={<PartnerMaterials />} />
                 <Route path="/app/company" element={<PartnerCompany />} />
                 <Route path="/app/campaigns" element={<PartnerCampaigns />} />
                 <Route path="/app/campaigns/formats" element={<MvpNew />} />

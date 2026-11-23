@@ -1,7 +1,8 @@
 // Run with npm run test:mvp-browser after npx playwright install chromium.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { PDFDocument, PDFName, PDFRawStream, PageSizes } from 'pdf-lib'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { once } from 'node:events'
@@ -10,6 +11,7 @@ import { serve } from '@hono/node-server'
 import { createServer } from 'vite'
 import { chromium } from 'playwright'
 import { assertMvpPromo } from './check-mvp-promo.mjs'
+import { registerPosterDownloads } from './preview-poster-downloads.mjs'
 
 test('MVP: login, manual and automatic campaigns, partner and staff cabinets, funnel', {timeout:120_000}, async t => {
   process.env.DB_PATH = ':memory:'
@@ -145,6 +147,68 @@ test('MVP: login, manual and automatic campaigns, partner and staff cabinets, fu
   await page.reload()
   await page.getByText('Самара, улица Лесная, 5',{exact:true}).waitFor()
   assert.equal(events.filter(e=>e.target==='mvp_campaign_submitted').length,1)
+  await page.getByRole('link',{name:'Создать постер A4'}).click()
+  assert.equal(await page.getByLabel('Подзаголовок',{exact:true}).inputValue(),'По промокоду TEST2026')
+  await page.getByRole('button',{name:'Убрать фото',exact:true}).click()
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button',{name:'Загрузить фото',exact:true}).click(),
+  ])
+  const uploadDialog = page.getByRole('dialog',{name:'Фото или креатив'})
+  await uploadDialog.waitFor()
+  const coffee = await readFile('public/img/case-coffee.jpg')
+  await chooser.setFiles({name:'photo.png',mimeType:'image/png',buffer:coffee})
+  await uploadDialog.getByText('Содержимое файла не соответствует формату изображения.').waitFor()
+  assert.ok(await page.getByRole('button',{name:'Скачать PDF'}).isDisabled())
+  await uploadDialog.getByLabel('Фото или креатив').setInputFiles('public/img/case-coffee.jpg')
+  await uploadDialog.waitFor({state:'hidden'})
+  await page.getByRole('button',{name:'Заменить фото',exact:true}).waitFor()
+  // Some embedded hosts suppress the OS picker. The open dialog must still accept a file.
+  await page.locator('dialog input[aria-label="Фото или креатив"]').evaluate(input=>{input.click=()=>{}})
+  await page.getByRole('button',{name:'Убрать фото',exact:true}).click()
+  await page.getByRole('button',{name:'Загрузить фото',exact:true}).click()
+  await uploadDialog.waitFor()
+  const droppedPhoto=await page.evaluateHandle(async ()=>{
+    const photo=await (await fetch('/img/case-coffee.jpg')).blob()
+    const transfer=new DataTransfer()
+    transfer.items.add(new File([photo],'cafe.jpg',{type:'image/jpeg'}))
+    return transfer
+  })
+  await uploadDialog.dispatchEvent('drop',{dataTransfer:droppedPhoto})
+  await droppedPhoto.dispose()
+  await uploadDialog.waitFor({state:'hidden'})
+  await page.getByRole('radio',{name:'Снизу · чёрный'}).check()
+  await page.getByLabel('Название партнёра',{exact:true}).fill('Кофейня'.normalize('NFD'))
+  const [posterDownload] = await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Скачать PDF'}).click()])
+  assert.equal(posterDownload.suggestedFilename().normalize('NFC'),'Кофейня — A4 — снизу чёрный.pdf')
+  const poster = await PDFDocument.load(await readFile(await posterDownload.path()))
+  assert.equal(poster.getPageCount(),1)
+  assert.deepEqual(poster.getPages()[0].getSize(),{width:PageSizes.A4[0],height:PageSizes.A4[1]})
+  assert.equal(await page.getByRole('button',{name:'Открыть папку'}).count(),0)
+  const images = poster.context.enumerateIndirectObjects().map(([,obj])=>obj)
+    .filter(obj=>obj instanceof PDFRawStream && obj.dict.get(PDFName.of('Subtype'))===PDFName.of('Image'))
+  assert.equal(images.length,1)
+  const [image] = images
+  assert.equal(image.dict.get(PDFName.of('Width')).asNumber(),2480)
+  assert.equal(image.dict.get(PDFName.of('Height')).asNumber(),3508)
+  const local = new Hono()
+  const destination = join(cacheDir,'poster-downloads')
+  registerPosterDownloads(local,async()=>({profile:{}}),destination)
+  async function saveLocalPoster() {
+    const form = new FormData()
+    form.set('name','Постер A4.pdf')
+    form.set('title',poster.getTitle())
+    form.set('image',new Blob([image.contents],{type:'image/jpeg'}),'poster.jpg')
+    const result = await local.request('/api/local-preview/posters',{method:'POST',body:form,
+      headers:{host:'127.0.0.1:5184',origin:'http://127.0.0.1:5184','X-Poster-Export':'1'}})
+    assert.equal(result.status,201)
+    const {name} = await result.json()
+    const saved = await PDFDocument.load(await readFile(join(destination,name)))
+    assert.equal(saved.getTitle(),poster.getTitle())
+    assert.deepEqual(saved.getPages()[0].getSize(),poster.getPages()[0].getSize())
+    return name
+  }
+  assert.deepEqual((await Promise.all([saveLocalPoster(),saveLocalPoster()])).sort(),['Постер A4 (2).pdf','Постер A4.pdf'])
   await page.getByRole('link',{name:'Мои кампании',exact:true}).click()
   await page.getByRole('link',{name:/TEST2026/}).waitFor()
   await page.getByRole('link',{name:'Новая кампания',exact:true}).click()

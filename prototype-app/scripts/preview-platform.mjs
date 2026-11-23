@@ -1,5 +1,5 @@
 // Isolated loopback preview. Run after npm run build. No external email is sent.
-import { cpSync, existsSync, mkdtempSync } from 'node:fs'
+import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { Hono } from 'hono'
@@ -32,7 +32,20 @@ app.use('*',async (c,next)=>{
 app.get('/local-inbox',c=>{
   return c.text('Тестовая почта · только на этом компьютере\n\n'+inbox.text(c.req.query('challenge') ?? null))
 })
-app.route('/api/mvp',createMvp(send,undefined,inbox))
+const mvp = createMvp(send,undefined,inbox)
+app.route('/api/mvp',mvp)
+if (process.platform === 'darwin') {
+  const {registerImagePicker} = await import('./preview-image-picker.mjs')
+  const {registerPosterDownloads} = await import('./preview-poster-downloads.mjs')
+  const partnerSession = async c => {
+    const response = await mvp.request('/session',{headers:{Cookie:c.req.header('Cookie') ?? ''}})
+    return response.ok ? response.json() : null
+  }
+  registerImagePicker(app,partnerSession)
+  registerPosterDownloads(app,partnerSession)
+  const html = join(webRoot,'index.html')
+  writeFileSync(html,readFileSync(html,'utf8').replace('</head>','<meta name="local-poster-picker" content="macos"><meta name="local-poster-downloads" content="macos"></head>'))
+}
 app.route('/api/v4/staff',createV4Staff({addresses:[]},send))
 app.route('/api/market',market)
 app.route('/',createAutocomplete({token:()=>'local',request:async (_url,settings)=>{

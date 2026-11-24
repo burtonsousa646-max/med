@@ -1,6 +1,5 @@
-import { status } from '@grpc/grpc-js'
 import { Controller, Inject } from '@nestjs/common'
-import { GrpcMethod, RpcException } from '@nestjs/microservices'
+import { GrpcMethod } from '@nestjs/microservices'
 import type {
   EnsureUserProfileRequest,
   GetUserProfileRequest,
@@ -9,27 +8,7 @@ import type {
   PartnersServiceController,
 } from '@platform/contracts/partners/v1/partners'
 import { EnsureUserProfile, GetUserProfile, ResolveCampaignOrganization } from '../application'
-import { ProfileError } from '../domain'
-
-/** Преобразует ошибки без передачи адресов и диагностики PostgreSQL вызывающему. */
-function rpcFailure(error: unknown): never {
-  if (error instanceof ProfileError) {
-    const errors = {
-      invalid_input: { code: status.INVALID_ARGUMENT, message: 'Некорректные параметры профиля' },
-      registration_conflict: {
-        code: status.ABORTED,
-        message: 'Ключ регистрации уже использован с другими данными',
-      },
-      invitation_required: { code: status.ALREADY_EXISTS, message: 'invitation_required' },
-      not_found: { code: status.NOT_FOUND, message: 'Профиль не найден' },
-    }
-    throw new RpcException(errors[error.reason])
-  }
-  throw new RpcException({
-    code: status.UNAVAILABLE,
-    message: 'Сервис профилей временно недоступен',
-  })
-}
+import { rpcFailure } from './rpc-failure.ts'
 
 /** Внутренние операции регистрации для Auth и чтения для Gateway. */
 @Controller()

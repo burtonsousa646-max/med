@@ -2,7 +2,12 @@
 export class ProfileError extends Error {
   constructor(
     readonly reason:
-      'invalid_input' | 'registration_conflict' | 'not_found' | 'invitation_required',
+      | 'invalid_input'
+      | 'registration_conflict'
+      | 'not_found'
+      | 'invitation_required'
+      | 'invitation_conflict'
+      | 'forbidden',
   ) {
     super(reason)
   }

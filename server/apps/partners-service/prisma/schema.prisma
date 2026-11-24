@@ -16,6 +16,8 @@ model UserProfile {
 
   organizationId       String?        @map("organization_id") @db.Uuid
   organization         Organization?  @relation("Membership", fields: [organizationId], references: [id], onDelete: Restrict)
+  invitationsCreated   Invitation[]   @relation("InvitationCreator")
+  invitationsAccepted  Invitation[]   @relation("InvitationRecipient")
   foundedOrganizations Organization[] @relation("Founder")
 
   @@index([organizationId])
@@ -28,7 +30,33 @@ model Organization {
   customerName          String?       @map("customer_name")
   firstRepresentativeId String        @map("first_representative_id") @db.Uuid
   firstRepresentative   UserProfile   @relation("Founder", fields: [firstRepresentativeId], references: [id], onDelete: Restrict)
+  invitations           Invitation[]
   members               UserProfile[] @relation("Membership")
 
   @@map("organizations")
+}
+
+enum InvitationState {
+  pending
+  replaced
+  accepted
+  revoked
+
+  @@map("invitation_state")
+}
+
+model Invitation {
+  id             String          @id @db.Uuid
+  organizationId String          @map("organization_id") @db.Uuid
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  creatorId      String          @map("creator_id") @db.Uuid
+  creator        UserProfile     @relation("InvitationCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  recipientEmail String          @map("recipient_email")
+  createdAt      DateTime        @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime        @map("expires_at") @db.Timestamptz(3)
+  state          InvitationState @default(pending)
+  acceptedById   String?         @map("accepted_by_id") @db.Uuid
+  acceptedBy     UserProfile?    @relation("InvitationRecipient", fields: [acceptedById], references: [id], onDelete: Restrict)
+
+  @@map("invitations")
 }

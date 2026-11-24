@@ -1,4 +1,11 @@
 {
   "$comment": "Флаги локального окружения. Добавляет архитектор вместе с design.md фичи; pnpm env:flags заводит их в Unleash. Поля: name, type (release | kill-switch | operational), description, spec.",
-  "flags": []
+  "flags": [
+    {
+      "name": "notifications.email.external-provider",
+      "type": "operational",
+      "description": "Новые попытки email через внешний адаптер вместо собственного почтового сервера.",
+      "spec": "007-notifications"
+    }
+  ]
 }

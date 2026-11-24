@@ -1,8 +1,16 @@
-/** Данные представителя до регистрации организации. */
+export interface Organization {
+  organizationId: string
+  inn: string
+  customerName?: string
+}
+
+/** Текущие контакты и членство подтверждённого пользователя. */
 export interface Profile {
   userId: string
   contactEmail?: string
   phone?: string
+  organization: Organization | undefined
+  canInvite: boolean
 }
 
 /** Возвращает исходные параметры регистрации даже при последующем изменении контактов. */
@@ -12,5 +20,6 @@ export interface ProfileRepository {
     email: string,
     newUserId: string,
   ): Promise<{ id: string; registrationEmail: string }>
-  find(userId: string): Promise<Profile | null>
+  resolveOrganization(userId: string, inn: string, customerName?: string): Promise<Organization>
+  find(userId: string, organizationId?: string): Promise<Profile | null>
 }

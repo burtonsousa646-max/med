@@ -1,7 +1,7 @@
 import { Module, type DynamicModule } from '@nestjs/common'
 import type { PartnersConfig } from '@platform/config'
 import { HealthModule } from '@platform/health'
-import { EnsureUserProfile, GetUserProfile } from './application'
+import { EnsureUserProfile, GetUserProfile, ResolveCampaignOrganization } from './application'
 import {
   createDatabase,
   PARTNERS_DATABASE,
@@ -31,6 +31,11 @@ export class PartnersModule {
           provide: EnsureUserProfile,
           inject: [PrismaProfileRepository],
           useFactory: (repo: PrismaProfileRepository) => new EnsureUserProfile(repo),
+        },
+        {
+          provide: ResolveCampaignOrganization,
+          inject: [PrismaProfileRepository],
+          useFactory: (repo: PrismaProfileRepository) => new ResolveCampaignOrganization(repo),
         },
         {
           provide: GetUserProfile,

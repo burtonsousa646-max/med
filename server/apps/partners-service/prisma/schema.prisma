@@ -14,5 +14,21 @@ model UserProfile {
   contactEmail      String? @map("contact_email")
   phone             String?
 
+  organizationId       String?        @map("organization_id") @db.Uuid
+  organization         Organization?  @relation("Membership", fields: [organizationId], references: [id], onDelete: Restrict)
+  foundedOrganizations Organization[] @relation("Founder")
+
+  @@index([organizationId])
   @@map("user_profiles")
+}
+
+model Organization {
+  id                    String        @id @db.Uuid
+  inn                   String        @unique
+  customerName          String?       @map("customer_name")
+  firstRepresentativeId String        @map("first_representative_id") @db.Uuid
+  firstRepresentative   UserProfile   @relation("Founder", fields: [firstRepresentativeId], references: [id], onDelete: Restrict)
+  members               UserProfile[] @relation("Membership")
+
+  @@map("organizations")
 }

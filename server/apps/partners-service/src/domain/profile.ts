@@ -1,6 +1,9 @@
 /** Причины отказа в операции над профилем, доступные прикладному слою. */
 export class ProfileError extends Error {
-  constructor(readonly reason: 'invalid_input' | 'registration_conflict' | 'not_found') {
+  constructor(
+    readonly reason:
+      'invalid_input' | 'registration_conflict' | 'not_found' | 'invitation_required',
+  ) {
     super(reason)
   }
 }

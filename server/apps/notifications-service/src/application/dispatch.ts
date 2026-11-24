@@ -42,3 +42,8 @@ export function fingerprint(payload: string, keys: FingerprintKeys, version: str
   if (!key || key.length < 32) throw new Error('fingerprint_key_unavailable')
   return createHmac('sha256', key).update(payload).digest('hex')
 }
+
+/** Proto-loader возвращает неизвестное числовое значение enum как число. */
+export function channelKey(value: string | number): string {
+  return String(value)
+}

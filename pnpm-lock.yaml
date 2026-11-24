@@ -313,12 +313,24 @@ importers:
 
   server/apps/notifications-service:
     dependencies:
+      '@grpc/grpc-js':
+        specifier: ^1.14.0
+        version: 1.14.7
+      '@grpc/proto-loader':
+        specifier: ^0.8.1
+        version: 0.8.1
       '@nestjs/common':
         specifier: ^12.4.0
         version: 12.4.0(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
       '@nestjs/core':
         specifier: ^12.4.0
         version: 12.4.0(@nestjs/common@12.4.0(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/microservices@12.4.0)(@nestjs/platform-express@12.5.0)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/microservices':
+        specifier: ^12.4.0
+        version: 12.4.0(@grpc/grpc-js@1.14.7)(@nestjs/common@12.4.0(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.4.0)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../shared/config
       '@platform/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts

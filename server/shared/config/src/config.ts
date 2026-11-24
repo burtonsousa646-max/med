@@ -233,3 +233,61 @@ export function readSuggestionConfig(env: Env) {
   r.check()
   return Object.freeze(config)
 }
+
+/** Читает настройки внутреннего gRPC Notifications; в ошибках указываются только имена переменных. */
+export function readNotificationsConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const host = r.ip('GRPC_HOST', '0.0.0.0')
+  const port = r.int('GRPC_PORT', 50057, 65535)
+  const timeoutMs = r.int('NOTIFICATIONS_CHANNEL_TIMEOUT_MS', 3000)
+  const resultReserveMs = r.int('NOTIFICATIONS_RESULT_RESERVE_MS', 150)
+  const databaseUrl = r.url('NOTIFICATIONS_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const current = r.text('NOTIFICATIONS_HMAC_CURRENT')
+  function entries(name: string) {
+    try {
+      const data: unknown = JSON.parse(r.text(name))
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error()
+      const pairs = Object.entries(data)
+      if (
+        !pairs.length ||
+        pairs.some(([key, v]) => !key.trim() || typeof v !== 'string' || !v.trim())
+      )
+        throw new Error()
+      return pairs as [string, string][]
+    } catch {
+      r.issues.push(name)
+      return []
+    }
+  }
+  const versions = new Map(
+    entries('NOTIFICATIONS_HMAC_KEYS').map(([key, hex]) => {
+      if (!/^(?:[a-f0-9]{2}){32,}$/i.test(hex)) r.issues.push('NOTIFICATIONS_HMAC_KEYS')
+      return [key, Buffer.from(hex, 'hex')] as const
+    }),
+  )
+  if (!versions.has(current)) r.issues.push('NOTIFICATIONS_HMAC_CURRENT')
+  const clients = new Map(
+    entries('NOTIFICATIONS_CLIENT_CERTIFICATES').map(([hash, identity]) => {
+      if (!/^[a-f0-9]{64}$/i.test(hash)) r.issues.push('NOTIFICATIONS_CLIENT_CERTIFICATES')
+      return [hash.toLowerCase(), identity] as const
+    }),
+  )
+  const tls = {
+    ca: r.text('NOTIFICATIONS_TLS_CA_FILE'),
+    cert: r.text('NOTIFICATIONS_TLS_CERT_FILE'),
+    key: r.text('NOTIFICATIONS_TLS_KEY_FILE'),
+  }
+  r.check()
+  return {
+    ...base,
+    host,
+    port,
+    timeoutMs,
+    resultReserveMs,
+    databaseUrl,
+    keys: { current, versions },
+    clients,
+    tls,
+  }
+}

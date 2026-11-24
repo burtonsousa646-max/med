@@ -8,7 +8,8 @@
     "test": "pnpm prisma:generate && vitest run",
     "build": "pnpm prisma:generate && tsc -p tsconfig.build.json && node ../../shared/tooling/scripts/resolve-directory-imports.mjs dist",
     "test:integration": "pnpm prisma:generate && vitest run --config vitest.integration.config.ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "start": "node dist/main.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.4.0",
@@ -17,7 +18,11 @@
     "rxjs": "^7.8.2",
     "@platform/contracts": "workspace:*",
     "@prisma/adapter-pg": "7.8.0",
-    "@prisma/client": "7.8.0"
+    "@prisma/client": "7.8.0",
+    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/proto-loader": "^0.8.1",
+    "@nestjs/microservices": "^12.4.0",
+    "@platform/config": "workspace:*"
   },
   "devDependencies": {
     "@platform/server-tooling": "workspace:*",

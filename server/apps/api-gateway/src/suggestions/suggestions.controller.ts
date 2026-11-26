@@ -60,7 +60,7 @@ function mapItems(kind: keyof typeof fields, items: unknown): Record<string, unk
 
 /** Создаёт HTTP-контроллер подсказок для приложения. */
 export function createSuggestionsController(appId: string) {
-  @Controller(`/api/${appId}`)
+  @Controller(appId === 'platform' ? '/api' : `/api/${appId}`)
   /** Предоставляет операции подсказок выбранного приложения через gRPC-клиент. */
   class SuggestionsController {
     /** Получает зависимости и настройки компонента. */

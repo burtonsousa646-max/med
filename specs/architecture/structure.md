@@ -109,7 +109,7 @@ api/
 
 - `api/operational/` содержит технические HTTP-контракты без клиента web-приложения. Они проверяются Redocly, но не входят в генерацию типов приложений. Стандартный gRPC healthcheck хранится в `api/proto/grpc/health/v1/health.proto`; его внешние имена не подчиняются соглашениям платформенных сервисов.
 - Контракты — источник правды. Код сервисов и клиенты frontend генерируются из них, а не наоборот.
-- `landing.yaml`, `cabinet.yaml`, `backoffice.yaml` описывают подсказки и выдачу флагов каждого приложения; префиксы Gateway — `/api/landing`, `/api/cabinet`, `/api/backoffice`. Общие определения подсказок подключаются локальными ссылками из `openapi-shared/`. Регистрация API не создаёт frontend-host/module в этой поставке.
+- `platform.yaml` описывает общий API приложений с префиксом `/api`; подсказки и выдача флагов доступны в `/api/v1`. Общие определения подсказок подключаются локальными ссылками из `openapi-shared/`. Регистрация API не создаёт frontend-host/module в этой поставке.
 - OpenAPI и `.proto` меняет архитектор, разработчики их только реализуют.
 - Контрактные тесты пишут разработчики:
   - `consumers/<app>/` — frontend-разработчик;
@@ -214,7 +214,7 @@ server/apps/api-gateway/
 
 Gateway работает на NestJS с явным `ExpressAdapter` из `@nestjs/platform-express`; запросы проверяет `express-openapi-validator`. Бизнес-логики, прямого доступа к базам сервисов, Prisma, очередей и собственного Redis у gateway нет.
 
-Для приложения `<app>` внешний адрес — `/api/<app>/v1/...`; в OpenAPI `servers.url` равен `/api/<app>`, путь операции — `/v1/...`. Поэтому одинаковые пути разных приложений не конфликтуют. Выбор приложения не даёт прав доступа. Неизвестная операция возвращает 404.
+Внешний адрес общего API — `/api/v1/...`; в OpenAPI `servers.url` равен `/api`, путь операции — `/v1/...`. Выбор приложения для флагов не даёт прав доступа. Неизвестная операция возвращает 404.
 
 В первой поставке реестр приложений пуст: доступны только `/health/live`, `/health/ready` и внутренний `grpc.health.v1.Health/Check`. Механизм операций и флагов проверяется на контрактах из `test/fixtures/`, которые не входят в рабочий образ. Реальные прикладные контракты добавляются спецификациями приложений. Исходные документы и локальные `$ref` упаковываются вместе с gateway; сеть для загрузки схем не используется.
 
@@ -275,7 +275,7 @@ if (this.flags.isEnabled(FLAGS.launchNewCheckout, { userId, companyId })) { /* �
 ```
 
 - Контекст — пользователь и компания, которые gateway передал в gRPC metadata.
-- Gateway: `GET /v1/feature-flags` берёт имена флагов из свойств схемы `FeatureFlags` в OpenAPI-документе приложения, вычисляет каждый с контекстом сессии и возвращает `{ "<флаг>": true | false }`. Отдельного списка флагов frontend в коде gateway нет. Сессия не обязательна.
+- Gateway: `GET /v1/feature-flags/{web-app}` берёт имена флагов из соответствующей схемы приложения в общем OpenAPI, вычисляет каждый с контекстом сессии и возвращает `{ "<флаг>": true | false }`. Отдельного списка флагов frontend в коде gateway нет. Сессия не обязательна.
 
 **`@platform/contracts`**
 - Импорт — по пути proto-файла: `@platform/contracts/campaigns/v1/campaigns`. Перед использованием пакет собирается: `pnpm --filter @platform/contracts build`, сборка копирует `api/proto/` в пакет.
@@ -297,7 +297,7 @@ web/
 ```
 
 Термины:
-- **web-приложение** — отдельный продукт для своих пользователей. У каждого свой файл OpenAPI `api/openapi/<app>.yaml` и один экземпляр клиента API; клиент ходит только в API Gateway.
+- **web-приложение** — отдельный продукт для своих пользователей. У каждого свой файл OpenAPI `api/openapi/platform.yaml` и один экземпляр клиента API; клиент ходит только в API Gateway.
 - **host** — оболочка web-приложения, по одному на приложение. Инициализирует общее для приложения: клиент API, `QueryClient`, общий store, провайдер feature toggles и другие провайдеры, — и загружает module.
 - **module** — функциональная часть web-приложения: кампании, баланс, документы. Получает клиент API, `QueryClient`, store и провайдеры от host и не создаёт своих.
 
@@ -343,7 +343,7 @@ web/apps/<app>/modules/<module>/
 ```ts
 // host: src/api.ts
 import { createApi } from '@platform/api-client'
-import type { paths } from '@platform/api-client/generated/cabinet'
+import type { paths } from '@platform/api-client/generated/platform'
 export const api = createApi<paths>()
 
 // module: где нужен клиент
@@ -410,25 +410,25 @@ tsconfig.json                 "include": ["src", ".storybook/*.ts", "playwright.
 | Пакет | Что в нём |
 |---|---|
 | `design-system` | токены и компоненты на Vanilla Extract — пока вне рамок |
-| `api-client` | клиент на openapi-fetch: `createApi<paths>()` для host, `ApiProvider` и `useApi<paths>()` для module, `unwrap`, `ApiRequestError`; типы — `@platform/api-client/generated/<app>` из `api/openapi/<app>.yaml` |
+| `api-client` | клиент на openapi-fetch: `createApi<paths>()` для host, `ApiProvider` и `useApi<paths>()` для module, `unwrap`, `ApiRequestError`; типы — `@platform/api-client/generated/platform` из `api/openapi/platform.yaml` |
 | `feature-flags` | `@platform/web-feature-flags` — флаги для React: `FeatureFlagsProvider` для host, `useFeatureFlag` для module, тестовый провайдер — см. ниже |
 | `observability` | Grafana Faro |
 | `config` | пресеты TypeScript (`app`, `lib`), Vite и Vitest с jsdom и Testing Library |
 
 **`@platform/web-feature-flags` — web**
 
-SDK Unleash в браузере нет: флаги приходят от gateway операцией `getFeatureFlags` из `api/openapi/<app>.yaml`. Тип флагов — схема `FeatureFlags` из сгенерированных типов приложения. Пакет входит в singletons пресета Vite, поэтому host и module ставят его у себя в `dependencies`. Пакет создаётся раньше первого web-приложения: без него сборка по пресету не находит singleton.
+SDK Unleash в браузере нет: флаги приходят от gateway операцией `getFeatureFlags` из `api/openapi/platform.yaml`. Тип флагов — схема `FeatureFlags` из сгенерированных типов приложения. Пакет входит в singletons пресета Vite, поэтому host и module ставят его у себя в `dependencies`. Пакет создаётся раньше первого web-приложения: без него сборка по пресету не находит singleton.
 
 ```tsx
 // host: src/providers/AppProviders.tsx — внутри QueryClientProvider
-<FeatureFlagsProvider load={async (signal) => unwrap(await api.GET('/v1/feature-flags', { signal }))} fallback={<AppSkeleton />}>
+<FeatureFlagsProvider load={async (signal) => unwrap(await api.GET('/v1/feature-flags/{web-app}', { params: { path: { 'web-app': 'app' } }, signal }))} fallback={<AppSkeleton />}>
   …
 </FeatureFlagsProvider>
 // host: после входа и выхода — перезапросить флаги
 queryClient.invalidateQueries({ queryKey: featureFlagsQueryKey })
 
 // module: src/model/featureFlags.ts — реестр флагов module
-import type { components } from '@platform/api-client/generated/cabinet'
+import type { components } from '@platform/api-client/generated/platform'
 export type FeatureFlags = components['schemas']['FeatureFlags']
 export const FLAGS = {
   /**

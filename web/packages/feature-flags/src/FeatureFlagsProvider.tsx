@@ -9,7 +9,7 @@ export const featureFlagsQueryKey = ['feature-flags'] as const
 const NO_FLAGS: FlagValues = {}
 
 export interface FeatureFlagsProviderProps<Flags extends object> {
-  /** Загрузка флагов от gateway: async (signal) => unwrap(await api.GET('/v1/feature-flags', { signal })) */
+  /** Загрузка флагов от gateway: async (signal) => unwrap(await api.GET('/v1/feature-flags/{web-app}', { params: { path: { 'web-app': 'app' } }, signal })) */
   load: (signal: AbortSignal) => Promise<Flags>
   /** Что показывать, пока флаги не пришли. По умолчанию — ничего. */
   fallback?: ReactNode

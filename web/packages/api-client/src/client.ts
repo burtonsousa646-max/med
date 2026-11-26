@@ -6,11 +6,11 @@ import { ApiRequestError, toApiError } from './errors'
 export const DEFAULT_BASE_URL = '/api'
 
 /**
- * Создаёт клиент для одного API по типам, сгенерированным из api/openapi/<name>.yaml.
+ * Создаёт клиент для одного API по типам, сгенерированным из api/openapi/platform.yaml.
  * Сессия передаётся cookie, поэтому запросы всегда идут с `credentials: 'include'`.
  *
  * @example
- * import type { paths } from './generated/cabinet'
+ * import type { paths } from './generated/platform'
  * export const cabinetApi = createApi<paths>()
  */
 export function createApi<Paths extends object>(options: ClientOptions = {}): Client<Paths> {

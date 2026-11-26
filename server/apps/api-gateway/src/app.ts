@@ -33,11 +33,21 @@ export async function createGateway(options: GatewayOptions) {
     throw new Error('Ограничитель обязателен для подсказок')
   const validators = new Map<string, Router>()
   for (const definition of definitions) {
+    // Имена параметров в express не допускают дефис; внешний URL при этом не меняется.
+    const document = structuredClone(registry.getDocument(definition.id))
+    const flagPath = document.paths['/v1/feature-flags/{web-app}']
+    if (flagPath) {
+      delete document.paths['/v1/feature-flags/{web-app}']
+      document.paths['/v1/feature-flags/{web_app}'] = flagPath
+      const operation = flagPath['get']
+      if (Array.isArray(operation?.['parameters'])) {
+        for (const parameter of operation['parameters'] as { name?: string }[]) {
+          if (parameter.name === 'web-app') parameter.name = 'web_app'
+        }
+      }
+    }
     const settings: OpenApiValidatorOpts = {
-      apiSpec: registry.getDocument(definition.id) as unknown as Exclude<
-        OpenApiValidatorOpts['apiSpec'],
-        string
-      >,
+      apiSpec: document as unknown as Exclude<OpenApiValidatorOpts['apiSpec'], string>,
       validateApiSpec: true,
       validateRequests: {
         allowUnknownQueryParameters: false,

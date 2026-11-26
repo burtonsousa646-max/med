@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/feature-flags": {
+    "/v1/feature-flags/{web-app}": {
         parameters: {
             query?: never;
             header?: never;
@@ -105,8 +105,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Белый список флагов приложения. В этой фиче новых флагов нет. */
-        FeatureFlags: Record<string, never>;
+        /** @description Набор флагов определяется значением web-app. */
+        FeatureFlags: components["schemas"]["LandingFeatureFlags"] | components["schemas"]["AppFeatureFlags"] | components["schemas"]["BackofficeFeatureFlags"];
+        /** @description Белый список флагов лендинга. */
+        LandingFeatureFlags: Record<string, never>;
+        /** @description Белый список флагов личного кабинета. */
+        AppFeatureFlags: Record<string, never>;
+        /** @description Белый список флагов бэкофиса. */
+        BackofficeFeatureFlags: Record<string, never>;
         SuggestionRequest: {
             /**
              * @description Строка ввода. Обрезаются пробельные символы по краям (ECMAScript trim); внутренние сохраняются. Длина после обрезки — не более 150 кодовых точек Unicode. Для длины 0–2 возвращается пустой список без источника. Сырой JSON ограничен 16384 байтами.
@@ -431,12 +437,15 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description Идентификатор веб-приложения. Поддерживаются landing, app и backoffice. */
+                "web-app": string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Флаги из схемы FeatureFlags; пока пустой объект. */
+            /** @description Флаги из белого списка запрошенного веб-приложения. */
             200: {
                 headers: {
                     /** @description Ответ не хранится в HTTP-кешах. */
@@ -450,6 +459,16 @@ export interface operations {
                 };
             };
             400: components["responses"]["InvalidRequest"];
+            /** @description Веб-приложение с указанным идентификатором не зарегистрировано. */
+            404: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             500: components["responses"]["InternalError"];
             503: components["responses"]["ServiceUnavailable"];
         };

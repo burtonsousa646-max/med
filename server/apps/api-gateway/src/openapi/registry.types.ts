@@ -14,7 +14,7 @@ export interface ApiDocument {
   info: { title: string; version: string }
   servers: { url: string }[]
   paths: Record<string, Record<string, Operation>>
-  components?: { schemas?: { FeatureFlags?: { properties?: Record<string, unknown> } } }
+  components?: { schemas?: Record<string, { properties?: Record<string, unknown> }> }
 }
 
 /** Связывает операцию контракта с обработчиком Gateway. */
@@ -31,6 +31,7 @@ export interface OperationBinding {
 export interface AppDefinition {
   id: string
   documentFile: string
+  prefix?: string
   operations: readonly OperationBinding[]
 }
 

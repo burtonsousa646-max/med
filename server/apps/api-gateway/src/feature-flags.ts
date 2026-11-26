@@ -1,4 +1,5 @@
-import { Controller, Get, Injectable } from '@nestjs/common'
+import { Controller, Get, Injectable, Param } from '@nestjs/common'
+import { GatewayError } from './errors.ts'
 import { FeatureFlagsClient } from '@platform/feature-flags'
 import { OpenApiRegistry } from './openapi'
 
@@ -10,6 +11,10 @@ export class FeatureFlagsService {
     private readonly registry: OpenApiRegistry,
     private readonly flags: FeatureFlagsClient,
   ) {}
+
+  evaluateNames(names: string[]): Record<string, boolean> {
+    return Object.fromEntries(names.map((name) => [name, this.flags.isEnabled(name, {})]))
+  }
 
   /** Возвращает значения флагов для указанного приложения. */
   evaluate(appId: string): Record<string, boolean> {
@@ -35,4 +40,20 @@ export function createFeatureFlagsController(appId: string) {
     }
   }
   return FeatureFlagsController
+}
+
+/** Общий маршрут выбирает белый список по идентификатору веб-приложения. */
+@Controller('/api')
+export class PlatformFeatureFlagsController {
+  constructor(
+    private readonly service: FeatureFlagsService,
+    private readonly registry: OpenApiRegistry,
+  ) {}
+
+  @Get('/v1/feature-flags/:web_app')
+  getFeatureFlags(@Param('web_app') webApp: string) {
+    const names = this.registry.getPlatformFeatureFlagNames(webApp)
+    if (!names) throw new GatewayError(404)
+    return this.service.evaluateNames(names)
+  }
 }

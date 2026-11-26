@@ -12,11 +12,11 @@ Contract-first: сначала контракт, потом код.
 
 ## OpenAPI — внешний API
 
-Версия — OpenAPI 3.1. Один файл на web-приложение: `api/openapi/<app>.yaml`, например `cabinet.yaml`, `backoffice.yaml`. Файл описывает всё, что это приложение запрашивает у API Gateway. API для внешних клиентов — отдельным файлом, например `public.yaml`.
+Версия — OpenAPI 3.1. Единый файл для web-приложений: `api/openapi/platform.yaml`. Он описывает операции, доступные через API Gateway. API для внешних клиентов — отдельным файлом, например `public.yaml`.
 
 ### Адреса приложений
 
-По [ADR 0003](../../specs/architecture/adr/0003-api-gateway.md) внешний префикс приложения — `/api/<app>`. Он записывается в единственном `servers.url` документа; пути остаются `/v1/...`. Например, `servers.url: /api/cabinet` и `/v1/feature-flags` дают `/api/cabinet/v1/feature-flags`. Префикс выбирает контракт, но не даёт прав доступа.
+По [ADR 0006](../../specs/architecture/adr/0006-unified-api.md) общий префикс — `/api`, записанный в `servers.url`; пути начинаются с `/v1/...`. Идентификатор веб-приложения в маршруте флагов не даёт прав доступа.
 
 Технические HTTP-контракты размещаются отдельно в `api/operational/`: они проверяются Redocly и не создают клиент web-приложения. Исходные документы и локальные `$ref` входят в образ gateway; сетевые ссылки и выход локальных ссылок за каталог контрактов запрещены.
 
@@ -85,10 +85,10 @@ Error:
 
 ### Feature toggles
 
-В каждом `api/openapi/<app>.yaml` есть операция флагов. Решение — `specs/architecture/adr/0001-feature-toggles.md`.
+В `api/openapi/platform.yaml` есть общая операция флагов. Решение — `specs/architecture/adr/0001-feature-toggles.md`.
 
 ```yaml
-/v1/feature-flags:
+/v1/feature-flags/{web-app}:
   get:
     operationId: getFeatureFlags
     summary: Флаги функциональности для текущего пользователя
@@ -105,7 +105,7 @@ FeatureFlags:
       description: 'Новый расчёт стоимости при запуске кампании. Спецификация: 004-campaign-launch'
 ```
 
-- Схема `FeatureFlags` — белый список: gateway отдаёт ровно её свойства, другие флаги наружу не уходят.
+- Схемы `LandingFeatureFlags`, `AppFeatureFlags`, `BackofficeFeatureFlags` — белые списки: gateway выбирает схему по идентификатору веб-приложения и отдаёт только её свойства.
 - Свойство — имя флага, тип `boolean`, свойства не обязательны: отсутствие значит «выключен». В `description` — что включает флаг и ссылка на фичу.
 - Свойство добавляет архитектор вместе с `design.md`, только для флагов, которые нужны этому web-приложению.
 
@@ -148,7 +148,7 @@ FeatureFlags:
 
 | Из чего | Что | Куда | Инструмент |
 |---|---|---|---|
-| `api/openapi/<app>.yaml` | типы web-приложения; клиент — openapi-fetch, один экземпляр на приложение в host | `web/packages/api-client/src/generated/<app>.ts` | openapi-typescript |
+| `api/openapi/platform.yaml` | общие типы web-приложений; клиент — openapi-fetch, один экземпляр на приложение в host | `web/packages/api-client/src/generated/platform.ts` | openapi-typescript |
 | `api/openapi/*.yaml` | типы для gateway | `server/apps/api-gateway/src/generated/` | openapi-typescript |
 | `api/proto/**/*.proto` | типы, клиенты и интерфейсы контроллеров NestJS | `server/shared/contracts/src/generated/` | Buf + ts-proto |
 

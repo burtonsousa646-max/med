@@ -188,12 +188,12 @@ afterAll(async () => {
 
 /** Выполняет публичный HTTP-запрос к Suggestions API выбранного приложения. */
 function search(
-  application: string,
+  _application: string,
   kind: string,
   query: string,
   extra: Record<string, unknown> = {},
 ): Promise<Response> {
-  return fetch(`${baseUrl}/api/${application}/v1/suggestions/${kind}`, {
+  return fetch(`${baseUrl}/api/v1/suggestions/${kind}`, {
     method: 'POST',
     headers: {
       ...jsonHeaders,
@@ -205,7 +205,7 @@ function search(
 }
 
 // Проверяет все операции из OpenAPI для публичного доступа каждого приложения.
-it('R1–R4/R6.1–R6.5: четыре вида работают во всех трёх API без сессии', async () => {
+it('R1–R4/R6.1–R6.5: четыре вида работают в общем API без сессии', async () => {
   for (const app of applicationNames) {
     for (const [kind, query] of suggestionRoutes) {
       const response = await search(app, kind, query)
@@ -215,7 +215,11 @@ it('R1–R4/R6.1–R6.5: четыре вида работают во всех т
       expect(JSON.stringify(body)).not.toContain('synthetic-forged')
       expect(response.headers.get('cache-control')).toBe('no-store')
     }
-    expect(await (await fetch(`${baseUrl}/api/${app}/v1/feature-flags`)).json()).toEqual({})
+    expect(
+      await (
+        await fetch(`${baseUrl}/api/v1/feature-flags/${app === 'cabinet' ? 'app' : app}`)
+      ).json(),
+    ).toEqual({})
   }
 })
 
@@ -296,7 +300,7 @@ it('R8.1–R8.8: общий HTTP-лимит 5 RPS действует между 
     const replies = await Promise.all(
       Array.from({ length: 6 }, (_, i) =>
         fetch(
-          `${origins[i % 2]}/api/${applicationNames[i % 3]}/v1/suggestions/${['parties', 'addresses', 'banks', 'emails'][i % 4]}`,
+          `${origins[i % 2]}/api/v1/suggestions/${['parties', 'addresses', 'banks', 'emails'][i % 4]}`,
           {
             method: 'POST',
             headers: {

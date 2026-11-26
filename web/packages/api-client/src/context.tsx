@@ -18,7 +18,7 @@ export function ApiProvider<Paths extends object>({ client, children }: ApiProvi
 
 /**
  * Клиент API web-приложения, созданный host. Типизируется путями OpenAPI приложения:
- * `useApi<paths>()`, где `paths` — из `@platform/api-client/generated/<app>`.
+ * `useApi<paths>()`, где `paths` — из `@platform/api-client/generated/platform`.
  */
 export function useApi<Paths extends object>(): Client<Paths> {
   const client = use(ApiContext)

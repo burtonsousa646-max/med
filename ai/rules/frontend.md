@@ -10,7 +10,7 @@ React, TypeScript, Vite, TanStack Router, TanStack Query, TanStack Store, Vanill
 
 | Термин | Что это |
 |---|---|
-| **web-приложение** | отдельный продукт для своих пользователей: кабинет партнёра, бэкофис. У каждого — свой файл OpenAPI `api/openapi/<app>.yaml` и свой экземпляр клиента API |
+| **web-приложение** | отдельный продукт для своих пользователей: кабинет партнёра, бэкофис. У приложений общий OpenAPI `api/openapi/platform.yaml` и свой экземпляр клиента API |
 | **host** | оболочка web-приложения в Module Federation. Открывается первым, инициализирует общие провайдеры приложения и загружает module |
 | **module** | функциональная часть web-приложения: отдельная сборка, которую host загружает через Module Federation. Например, кампании, баланс, документы |
 
@@ -43,7 +43,7 @@ web/apps/<app>/
 
 Host инициализирует всё общее для приложения, один раз на приложение:
 
-- **клиент API** — `src/api.ts`: `createApi<paths>()` с типами из `api/openapi/<app>.yaml`;
+- **клиент API** — `src/api.ts`: `createApi<paths>()` с типами из `api/openapi/platform.yaml`;
 - **провайдеры** в `src/providers/`: `QueryClientProvider` с единственным `QueryClient`, `ApiProvider` с клиентом API, общий store, провайдер feature toggles, граница ошибок приложения;
 - **оболочку** — вход, навигацию, общие компоненты и загрузку module.
 
@@ -94,7 +94,7 @@ Host инициализирует всё общее для приложения,
 
 | Слой | Что делает | Где |
 |---|---|---|
-| openapi-typescript | типы из `api/openapi/<app>.yaml` | `@platform/api-client/generated/<app>` — генерируется, руками не правится |
+| openapi-typescript | типы из `api/openapi/platform.yaml` | `@platform/api-client/generated/platform` — генерируется, руками не правится |
 | openapi-fetch | выполняет запрос, проверяет путь, параметры и ответ по типам | только внутри `queryFn` и `mutationFn` |
 | клиент API | один экземпляр на web-приложение | `src/api.ts` host, передаётся через `ApiProvider` |
 | TanStack Query | кеш, загрузка, ошибки, повторы, отмена, инвалидация | `src/api/` module |
@@ -114,7 +114,7 @@ Host инициализирует всё общее для приложения,
 ```ts
 // host: src/api.ts — единственный экземпляр клиента приложения
 import { createApi } from '@platform/api-client'
-import type { paths } from '@platform/api-client/generated/cabinet'
+import type { paths } from '@platform/api-client/generated/platform'
 export const api = createApi<paths>()
 // host: src/providers/AppProviders.tsx
 <ApiProvider client={api}>…</ApiProvider>
@@ -190,7 +190,7 @@ const { data: campaign } = useSuspenseQuery(campaignQuery(api, campaignId))
 
 Общие правила — `ai/rules/architecture.md`, раздел «Feature toggles», пример кода — `specs/architecture/structure.md`, раздел «`@platform/web-feature-flags` — web».
 
-- **Флаги приходят только от gateway** — операцией `getFeatureFlags` из OpenAPI приложения. SDK Unleash в браузере нет.
+- **Флаги приходят только от gateway** — операцией `getFeatureFlags` из общего OpenAPI по идентификатору приложения. SDK Unleash в браузере нет.
 - **Провайдер подключает host:** `FeatureFlagsProvider` в `src/providers/`, внутри `QueryClientProvider`. После входа и выхода host перезапрашивает флаги по `featureFlagsQueryKey`. Module своего провайдера не создаёт.
 - **Код размечается только флагами из `design.md` и задачи.** Флаг, нужный frontend, должен быть в схеме `FeatureFlags` контракта. Если его там нет или он не описан в `design.md`, разработчик останавливается и спрашивает.
 - **Реестр.** Флаг заводится в `src/model/featureFlags.ts` host или module, с JSDoc `@spec`, `@task`, `@remove`. Тип флагов — `components['schemas']['FeatureFlags']` из сгенерированных типов.

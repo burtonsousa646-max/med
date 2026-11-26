@@ -20,12 +20,9 @@ export class OpenApiRegistry {
     for (const app of apps) {
       if (!/^[a-z][a-z0-9-]*$/.test(app.id) || this.documents.has(app.id))
         throw new Error('Неоднозначное приложение')
+      const prefix = app.prefix ?? `/api/${app.id}`
       const doc = JSON.parse(readFileSync(app.documentFile, 'utf8')) as ApiDocument
-      if (
-        doc.openapi !== '3.1.0' ||
-        doc.servers.length !== 1 ||
-        doc.servers[0]?.url !== `/api/${app.id}`
-      )
+      if (doc.openapi !== '3.1.0' || doc.servers.length !== 1 || doc.servers[0]?.url !== prefix)
         throw new Error('Некорректный префикс приложения')
       this.documents.set(app.id, doc)
       const found = new Set<string>()
@@ -44,7 +41,7 @@ export class OpenApiRegistry {
           if ((operation['x-suggestion-rate-limit'] === true) !== (binding.rateLimit === true))
             throw new Error('Несоответствие политики ограничения')
           found.add(operation.operationId)
-          const route = `/api/${app.id}${path}`
+          const route = `${prefix}${path}`
           const signature = `${method}:${route.replace(/\{[^}]+\}/g, '{}')}`
           if (signatures.has(signature)) throw new Error('Неоднозначный маршрут')
           signatures.add(signature)
@@ -55,7 +52,10 @@ export class OpenApiRegistry {
             (metadata(PATH_METADATA, binding.controller) as string | undefined) ?? ''
           const methodPath = (metadata(PATH_METADATA, handler) as string | undefined) ?? ''
           const actual = `/${[classPath, methodPath].join('/').split('/').filter(Boolean).join('/')}`
-          const expected = route.replace(/\{([^}]+)\}/g, ':$1')
+          const expected = route.replace(
+            /\{([^}]+)\}/g,
+            (_, name: string) => `:${name.replaceAll('-', '_')}`,
+          )
           const verb = metadata(METHOD_METADATA, handler) as RequestMethod | undefined
           if (
             actual !== expected ||
@@ -102,6 +102,19 @@ export class OpenApiRegistry {
   /** Возвращает разрешённые контрактом имена флагов приложения. */
   getFeatureFlagNames(appId: string): string[] {
     return Object.keys(this.getDocument(appId).components?.schemas?.FeatureFlags?.properties ?? {})
+  }
+
+  /** Возвращает список флагов из схемы выбранного веб-приложения. */
+  getPlatformFeatureFlagNames(webApp: string): string[] | undefined {
+    const document = this.getDocument('platform')
+    const mapping =
+      document.paths['/v1/feature-flags/{web-app}']?.['get']?.['x-web-app-feature-flags']
+    if (!mapping || typeof mapping !== 'object' || !Object.hasOwn(mapping, webApp)) return undefined
+    const schema: unknown = (mapping as Record<string, unknown>)[webApp]
+    if (typeof schema !== 'string') throw new Error('Некорректная схема флагов')
+    const schemas = document.components?.schemas
+    if (!schemas || !Object.hasOwn(schemas, schema)) throw new Error('Схема флагов отсутствует')
+    return Object.keys(schemas[schema]?.properties ?? {})
   }
 
   /** Сверяет зарегистрированные контроллеры с маршрутами реестра. */

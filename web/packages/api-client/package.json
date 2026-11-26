@@ -2,7 +2,7 @@
   "name": "@platform/api-client",
   "version": "0.0.0",
   "private": true,
-  "description": "Клиент API для web-приложений: openapi-fetch с типами из api/openapi/<app>.yaml, ApiProvider и useApi",
+  "description": "Клиент API для web-приложений: openapi-fetch с типами из api/openapi/platform.yaml, ApiProvider и useApi",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",

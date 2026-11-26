@@ -100,7 +100,7 @@ sequenceDiagram
 <!--
 Флаги вводит только архитектор — ai/rules/architecture.md, раздел «Feature toggles». Разработчики размечают код только этими флагами.
 Тип: release — временный, по умолчанию; kill-switch, operational — постоянные, обоснование обязательно.
-Каждый флаг записывается ещё в deploy/unleash/flags.json, а если он нужен frontend, — в схему FeatureFlags в api/openapi/<app>.yaml.
+Каждый флаг записывается ещё в deploy/unleash/flags.json, а если он нужен frontend, — в схему соответствующего приложения в api/openapi/platform.yaml.
 Удаление флага release — отдельная задача в tasks.md.
 Если флаги не вводятся — «Не применимо» и почему.
 -->

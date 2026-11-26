@@ -1,0 +1,98 @@
+openapi: 3.1.0
+info:
+  title: Единый API платформы
+  version: 1.0.0
+  description: Общий контракт для веб-приложений платформы.
+servers:
+  - url: /api
+tags:
+  - name: suggestions
+    description: Справочные подсказки.
+  - name: feature-flags
+    description: Флаги приложения.
+paths:
+  /v1/suggestions/parties:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/parties
+  /v1/suggestions/addresses:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/addresses
+  /v1/suggestions/banks:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/banks
+  /v1/suggestions/emails:
+    $ref: ../openapi-shared/suggestions.yaml#/pathItems/emails
+  /v1/feature-flags/{web-app}:
+    get:
+      operationId: getFeatureFlags
+      parameters:
+        - name: web-app
+          in: path
+          required: true
+          description: Идентификатор веб-приложения. Поддерживаются landing, app и backoffice.
+          schema:
+            type: string
+            pattern: '^[a-z][a-z0-9-]*$'
+      x-web-app-feature-flags:
+        landing: LandingFeatureFlags
+        app: AppFeatureFlags
+        backoffice: BackofficeFeatureFlags
+      summary: Флаги функциональности приложения
+      tags:
+        - feature-flags
+      security: []
+      responses:
+        '200':
+          description: Флаги из белого списка запрошенного веб-приложения.
+          headers:
+            Cache-Control:
+              description: Ответ не хранится в HTTP-кешах.
+              schema:
+                type: string
+                const: no-store
+            X-Request-Id:
+              description: Идентификатор запроса, созданный Gateway.
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlags'
+        '400':
+          $ref: ../openapi-shared/suggestions.yaml#/components/responses/InvalidRequest
+        '404':
+          description: Веб-приложение с указанным идентификатором не зарегистрировано.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: ../openapi-shared/suggestions.yaml#/components/schemas/Error
+        '500':
+          $ref: ../openapi-shared/suggestions.yaml#/components/responses/InternalError
+        '503':
+          $ref: ../openapi-shared/suggestions.yaml#/components/responses/ServiceUnavailable
+components:
+  schemas:
+    FeatureFlags:
+      description: Набор флагов определяется значением web-app.
+      anyOf:
+        - $ref: '#/components/schemas/LandingFeatureFlags'
+        - $ref: '#/components/schemas/AppFeatureFlags'
+        - $ref: '#/components/schemas/BackofficeFeatureFlags'
+    LandingFeatureFlags:
+      type: object
+      description: Белый список флагов лендинга.
+      additionalProperties: false
+      properties: {}
+    AppFeatureFlags:
+      type: object
+      description: Белый список флагов личного кабинета.
+      additionalProperties: false
+      properties: {}
+    BackofficeFeatureFlags:
+      type: object
+      description: Белый список флагов бэкофиса.
+      additionalProperties: false
+      properties: {}

@@ -8,6 +8,7 @@ import { HealthState } from '@platform/health'
 import { createPlatformLogger } from '@platform/logger'
 import { RegisterProfile } from './application'
 import { AuthModule, SERVICE_NAME } from './auth.module.ts'
+import { EmailDeliveryWorker } from './infrastructure/prisma/email-delivery.ts'
 import { AUTH_DATABASE, probeDatabase, type AuthDatabase } from './infrastructure/prisma'
 
 /** Создаёт приложение и стандартные HTTP и gRPC проверки готовности. */
@@ -38,6 +39,23 @@ export async function createAuthApp(config: AuthConfig) {
   let timer: ReturnType<typeof setTimeout> | undefined
   let probe: Promise<void> | undefined
   let closing: Promise<void> | undefined
+
+  const deliveries = app.get(EmailDeliveryWorker)
+  let deliveryTimer: ReturnType<typeof setTimeout> | undefined
+  let deliveryRun: Promise<void> | undefined
+  function deliver(): void {
+    deliveryRun = deliveries
+      .runOne()
+      .catch(() => {
+        logger.event('failure', {}, 'warn')
+      })
+      .finally(() => {
+        if (!closing) {
+          deliveryTimer = setTimeout(deliver, 1000)
+          deliveryTimer.unref()
+        }
+      })
+  }
 
   const registrations = app.get(RegisterProfile)
   let recoveryTimer: ReturnType<typeof setTimeout> | undefined
@@ -85,6 +103,8 @@ export async function createAuthApp(config: AuthConfig) {
       health.beginShutdown()
       clearTimeout(timer)
       clearTimeout(recoveryTimer)
+      clearTimeout(deliveryTimer)
+      await deliveryRun
       await recovery
       try {
         await app.close()
@@ -103,6 +123,7 @@ export async function createAuthApp(config: AuthConfig) {
       await app.listen(config.http.port, config.http.host)
       checkReadiness()
       recover()
+      deliver()
     } catch (error) {
       await close()
       throw error

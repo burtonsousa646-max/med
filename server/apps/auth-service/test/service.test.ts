@@ -11,6 +11,21 @@ import { EncryptedCodes } from '../src/infrastructure'
 import { AUTH_DATABASE, type AuthDatabase, PrismaSessionStore } from '../src/infrastructure/prisma'
 import { createAuthApp } from '../src/app.ts'
 
+vi.mock('../src/infrastructure/prisma/email-delivery.ts', () => ({
+  EmailDeliveryWorker: class {
+    async runOne() {}
+  },
+}))
+
+vi.mock('../src/infrastructure/grpc/notifications.ts', () => ({
+  GrpcNotifications: class {
+    send() {
+      return Promise.reject(new Error('Транспорт отключён в тесте'))
+    }
+    onModuleDestroy() {}
+  },
+}))
+
 /** Выбирает свободный порт для настоящего клиента gRPC. */
 async function availablePort() {
   const server = createServer()
@@ -36,6 +51,9 @@ describe('Вход и сессия через gRPC', () => {
       LOG_LEVEL: 'error',
       AUTH_DATABASE_URL: process.env['TEST_AUTH_DATABASE_URL'],
       AUTH_CODE_KEY: randomBytes(32).toString('hex'),
+      AUTH_NOTIFICATIONS_TLS_CA_FILE: 'test-ca',
+      AUTH_NOTIFICATIONS_TLS_CERT_FILE: 'test-cert',
+      AUTH_NOTIFICATIONS_TLS_KEY_FILE: 'test-key',
     })
     const service = await createAuthApp({ ...config, http: { host: '127.0.0.1', port: 0 }, grpc })
     const client = new ClientGrpcProxy({

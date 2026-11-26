@@ -25,6 +25,9 @@ model EmailDelivery {
   challengeId String         @map("challenge_id") @db.Uuid
   challenge   EmailChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   sentAt      DateTime?      @map("sent_at") @db.Timestamptz(3)
+  retryAt     DateTime       @default(now()) @map("retry_at") @db.Timestamptz(3)
+  leaseId     String?        @map("lease_id") @db.Uuid
+  retryAttemptId String?     @map("retry_attempt_id") @db.Uuid
 
   @@index([challengeId])
   @@map("email_deliveries")

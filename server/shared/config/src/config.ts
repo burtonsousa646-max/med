@@ -474,12 +474,28 @@ export function readAuthConfig(env: Env) {
   )
     r.issues.push('AUTH_PARTNERS_GRPC_TARGET')
   const partnersTimeoutMs = r.int('AUTH_PARTNERS_TIMEOUT_MS', 3000)
+  const notificationsTarget = r.text('AUTH_NOTIFICATIONS_GRPC_TARGET', '127.0.0.1:50055')
+  if (
+    !/^(?:\[[0-9a-f:]+\]|[a-z0-9.-]+):[0-9]+$/i.test(notificationsTarget) ||
+    !Number(notificationsTarget.split(':').pop()) ||
+    Number(notificationsTarget.split(':').pop()) > 65535
+  )
+    r.issues.push('AUTH_NOTIFICATIONS_GRPC_TARGET')
+  const notificationsTimeoutMs = r.int('AUTH_NOTIFICATIONS_TIMEOUT_MS', 3000, 10000)
+  const notificationsTls = {
+    ca: r.text('AUTH_NOTIFICATIONS_TLS_CA_FILE'),
+    cert: r.text('AUTH_NOTIFICATIONS_TLS_CERT_FILE'),
+    key: r.text('AUTH_NOTIFICATIONS_TLS_KEY_FILE'),
+  }
   r.check()
   return Object.freeze({
     ...base,
     codeKey,
     partnersTarget,
     partnersTimeoutMs,
+    notificationsTarget,
+    notificationsTimeoutMs,
+    notificationsTls,
     databaseUrl,
     databaseTimeoutMs,
     http,

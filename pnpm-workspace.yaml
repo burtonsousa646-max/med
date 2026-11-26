@@ -10,11 +10,14 @@ allowBuilds:
   '@bufbuild/buf': true
   '@scarf/scarf': false
   '@swc/core': true
+  bufferutil: false
   core-js: false
   core-js-pure: false
+  es5-ext: false
   esbuild: true
   nx: false
   protobufjs: false
+  utf-8-validate: false
 # Дизайн-система — архивы .tgz в web/packages/design-system/.
 # Пакеты ссылаются друг на друга по версиям, которых нет в реестре npm, — подменяем их на архивы.
 overrides:

@@ -233,3 +233,271 @@ export function readSuggestionConfig(env: Env) {
   r.check()
   return Object.freeze(config)
 }
+
+/** Читает настройки внутреннего gRPC Notifications; в ошибках указываются только имена переменных. */
+export function readNotificationsConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const host = r.ip('GRPC_HOST', '0.0.0.0')
+  const port = r.int('GRPC_PORT', 50057, 65535)
+  const http = {
+    host: r.ip('NOTIFICATIONS_HTTP_HOST', '127.0.0.1'),
+    port: r.int('NOTIFICATIONS_HTTP_PORT', 3007, 65535),
+  }
+  if (port === http.port) r.issues.push('GRPC_PORT', 'NOTIFICATIONS_HTTP_PORT')
+  const timeoutMs = r.int('NOTIFICATIONS_CHANNEL_TIMEOUT_MS', 3000)
+  const resultReserveMs = r.int('NOTIFICATIONS_RESULT_RESERVE_MS', 150)
+  const databaseUrl = r.url('NOTIFICATIONS_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const current = r.text('NOTIFICATIONS_HMAC_CURRENT')
+  function entries(name: string) {
+    try {
+      const data: unknown = JSON.parse(r.text(name))
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error()
+      const pairs = Object.entries(data)
+      if (
+        !pairs.length ||
+        pairs.some(([key, v]) => !key.trim() || typeof v !== 'string' || !v.trim())
+      )
+        throw new Error()
+      return pairs as [string, string][]
+    } catch {
+      r.issues.push(name)
+      return []
+    }
+  }
+  const versions = new Map(
+    entries('NOTIFICATIONS_HMAC_KEYS').map(([key, hex]) => {
+      if (!/^(?:[a-f0-9]{2}){32,}$/i.test(hex)) r.issues.push('NOTIFICATIONS_HMAC_KEYS')
+      return [key, Buffer.from(hex, 'hex')] as const
+    }),
+  )
+  if (!versions.has(current)) r.issues.push('NOTIFICATIONS_HMAC_CURRENT')
+  const clients = new Map(
+    entries('NOTIFICATIONS_CLIENT_CERTIFICATES').map(([hash, identity]) => {
+      if (!/^[a-f0-9]{64}$/i.test(hash)) r.issues.push('NOTIFICATIONS_CLIENT_CERTIFICATES')
+      return [hash.toLowerCase(), identity] as const
+    }),
+  )
+  const tls = {
+    ca: r.text('NOTIFICATIONS_TLS_CA_FILE'),
+    cert: r.text('NOTIFICATIONS_TLS_CERT_FILE'),
+    key: r.text('NOTIFICATIONS_TLS_KEY_FILE'),
+  }
+  const smtp = readNotificationsSmtp(r)
+  const postbox = readNotificationsPostbox(r)
+  const postboxStream = readNotificationsPostboxStream(r)
+  const telegram = readNotificationsTelegram(r)
+  r.check()
+  return {
+    ...base,
+    host,
+    port,
+    http,
+    timeoutMs,
+    resultReserveMs,
+    databaseUrl,
+    keys: { current, versions },
+    clients,
+    tls,
+    smtp,
+    postbox,
+    postboxStream,
+    telegram,
+  }
+}
+
+/** Параметры отдельного потока подтверждений и его учётной записи только для чтения. */
+function readNotificationsPostboxStream(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_POSTBOX_STREAM_') && value?.trim(),
+    )
+  )
+    return undefined
+
+  const endpointKey = 'NOTIFICATIONS_POSTBOX_STREAM_ENDPOINT'
+  const endpoint = r.text(endpointKey).trim()
+  try {
+    const url = new URL(endpoint)
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash
+    ) {
+      r.issues.push(endpointKey)
+    }
+  } catch {
+    r.issues.push(endpointKey)
+  }
+  const name = r.text('NOTIFICATIONS_POSTBOX_STREAM_NAME').trim()
+  const region = r.text('NOTIFICATIONS_POSTBOX_STREAM_REGION').trim()
+  const identityId = r.text('NOTIFICATIONS_POSTBOX_STREAM_IDENTITY_ID').trim()
+  const accessKeyId = r.text('NOTIFICATIONS_POSTBOX_STREAM_ACCESS_KEY_ID').trim()
+  if (!/^\/[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$/iu.test(name)) {
+    r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_NAME')
+  }
+  if (!/^[a-z0-9-]+$/u.test(region)) r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_REGION')
+  if (!/^[a-z0-9_-]+$/iu.test(identityId)) r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_IDENTITY_ID')
+  if (!/^[a-z0-9]+$/iu.test(accessKeyId))
+    r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_ACCESS_KEY_ID')
+  return {
+    endpoint,
+    name,
+    region,
+    identityId,
+    accessKeyId,
+    secretAccessKey: r.text('NOTIFICATIONS_POSTBOX_STREAM_SECRET_ACCESS_KEY'),
+  }
+}
+
+/** Включает Telegram при наличии настроек выделенной пользовательской сессии. */
+function readNotificationsTelegram(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_TELEGRAM_') && value?.trim(),
+    )
+  ) {
+    return undefined
+  }
+  const accountId = r.text('NOTIFICATIONS_TELEGRAM_ACCOUNT_ID').trim()
+  if (!/^[1-9]\d{0,18}$/u.test(accountId) || BigInt(accountId) > 9_223_372_036_854_775_807n) {
+    r.issues.push('NOTIFICATIONS_TELEGRAM_ACCOUNT_ID')
+  }
+  const apiHash = r.text('NOTIFICATIONS_TELEGRAM_API_HASH').trim()
+  if (!/^[a-f0-9]{32}$/iu.test(apiHash)) r.issues.push('NOTIFICATIONS_TELEGRAM_API_HASH')
+  return {
+    accountId,
+    apiId: r.int('NOTIFICATIONS_TELEGRAM_API_ID', 0),
+    apiHash,
+    session: r.text('NOTIFICATIONS_TELEGRAM_SESSION').trim(),
+  }
+}
+
+/** Читает адрес и учётные данные Postbox только для настроенного адаптера. */
+function readNotificationsPostbox(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_POSTBOX_') && value?.trim(),
+    )
+  )
+    return undefined
+
+  const name = 'NOTIFICATIONS_POSTBOX_ENDPOINT'
+  const endpoint = r.text(name).trim()
+  try {
+    const url = new URL(endpoint)
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash
+    ) {
+      r.issues.push(name)
+    }
+  } catch {
+    r.issues.push(name)
+  }
+
+  return {
+    endpoint,
+    id: r.text('NOTIFICATIONS_POSTBOX_SENDER_CONFIG'),
+    from: r.text('NOTIFICATIONS_POSTBOX_FROM'),
+    subject: r.text('NOTIFICATIONS_POSTBOX_SUBJECT'),
+    configurationSet: r.text('NOTIFICATIONS_POSTBOX_CONFIGURATION_SET'),
+    iamToken: r.text('NOTIFICATIONS_POSTBOX_IAM_TOKEN'),
+  }
+}
+
+/** Читает настройки SMTP, если окружение подключает почтовый сервер. */
+function readNotificationsSmtp(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_SMTP_') && value?.trim(),
+    )
+  )
+    return undefined
+
+  const host = r.text('NOTIFICATIONS_SMTP_HOST').trim()
+  const senderConfig = r.text('NOTIFICATIONS_SMTP_SENDER_CONFIG').trim()
+  const from = r.text('NOTIFICATIONS_SMTP_FROM').trim()
+  const subject = r.text('NOTIFICATIONS_SMTP_SUBJECT')
+  const username = r.text('NOTIFICATIONS_SMTP_USERNAME')
+  const password = r.text('NOTIFICATIONS_SMTP_PASSWORD')
+  const tlsMode = r.text('NOTIFICATIONS_SMTP_TLS_MODE', 'starttls')
+  if (!isIP(host) && !/^[a-z0-9][a-z0-9.-]*$/i.test(host)) r.issues.push('NOTIFICATIONS_SMTP_HOST')
+  if (!/^[a-z0-9_-]{1,64}$/i.test(senderConfig)) r.issues.push('NOTIFICATIONS_SMTP_SENDER_CONFIG')
+  if (
+    from.length > 254 ||
+    !/^[^\s@<>,"\\\p{Cc}]+@[^\s@<>,"\\\p{Cc}]+\.[^\s@<>,"\\\p{Cc}]+$/u.test(from)
+  )
+    r.issues.push('NOTIFICATIONS_SMTP_FROM')
+  if (/[\r\n]/u.test(subject)) r.issues.push('NOTIFICATIONS_SMTP_SUBJECT')
+  if (username.includes('\0')) r.issues.push('NOTIFICATIONS_SMTP_USERNAME')
+  if (password.includes('\0')) r.issues.push('NOTIFICATIONS_SMTP_PASSWORD')
+  if (tlsMode !== 'starttls' && tlsMode !== 'implicit') r.issues.push('NOTIFICATIONS_SMTP_TLS_MODE')
+  return {
+    host,
+    port: r.int('NOTIFICATIONS_SMTP_PORT', tlsMode === 'implicit' ? 465 : 587, 65535),
+    implicitTls: tlsMode === 'implicit',
+    caFile: r.env['NOTIFICATIONS_SMTP_CA_FILE']?.trim() || undefined,
+    senderConfig,
+    from,
+    subject,
+    username,
+    password,
+  }
+}
+
+/** Проверяет ключ AES-256 и адреса транспортов до открытия сетевых портов. */
+export function readAuthConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const codeKey = r.text('AUTH_CODE_KEY')
+  if (!/^[a-f0-9]{64}$/i.test(codeKey)) r.issues.push('AUTH_CODE_KEY')
+  const databaseUrl = r.url('AUTH_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const databaseTimeoutMs = r.int('AUTH_DATABASE_TIMEOUT_MS', 3000)
+  const http = { host: r.ip('HTTP_HOST', '0.0.0.0'), port: r.int('HTTP_PORT', 3003, 65535) }
+  const grpc = {
+    host: r.ip('AUTH_GRPC_HOST', '127.0.0.1'),
+    port: r.int('AUTH_GRPC_PORT', 50053, 65535),
+  }
+  const partnersTarget = r.text('AUTH_PARTNERS_GRPC_TARGET', '127.0.0.1:50054')
+  if (
+    !/^(?:\[[0-9a-f:]+\]|[a-z0-9.-]+):[0-9]+$/i.test(partnersTarget) ||
+    !Number(partnersTarget.split(':').pop()) ||
+    Number(partnersTarget.split(':').pop()) > 65535
+  )
+    r.issues.push('AUTH_PARTNERS_GRPC_TARGET')
+  const partnersTimeoutMs = r.int('AUTH_PARTNERS_TIMEOUT_MS', 3000)
+  r.check()
+  return Object.freeze({
+    ...base,
+    codeKey,
+    partnersTarget,
+    partnersTimeoutMs,
+    databaseUrl,
+    databaseTimeoutMs,
+    http,
+    grpc,
+  })
+}
+
+/** Проверяет параметры подключений сервиса партнёров до начала приёма запросов. */
+export function readPartnersConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const databaseUrl = r.url('PARTNERS_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const databaseTimeoutMs = r.int('PARTNERS_DATABASE_TIMEOUT_MS', 3000)
+  const http = { host: r.ip('HTTP_HOST', '0.0.0.0'), port: r.int('HTTP_PORT', 3004, 65535) }
+  const grpc = {
+    host: r.ip('PARTNERS_GRPC_HOST', '127.0.0.1'),
+    port: r.int('PARTNERS_GRPC_PORT', 50054, 65535),
+  }
+  r.check()
+  return Object.freeze({ ...base, databaseUrl, databaseTimeoutMs, http, grpc })
+}

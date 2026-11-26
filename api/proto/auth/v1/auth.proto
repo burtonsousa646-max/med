@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package platform.auth.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Доверенный клиент — Gateway. Токены в ответах предназначены только ему.
+// INVALID_ARGUMENT — неверный формат, UNAUTHENTICATED — неверный код или токен,
+// RESOURCE_EXHAUSTED — лимит, UNAVAILABLE — временный сбой. При истечении
+// только access token машинный код access_expired допускает тихое обновление.
+service AuthService {
+  // Gateway проверил лимит посетителя. Для принятого запроса письмо поставлено на доставку.
+  rpc RequestEmailCode(RequestEmailCodeRequest) returns (RequestEmailCodeResponse);
+  // Проверяет код для адреса, завершает регистрацию и создаёт сессию.
+  rpc VerifyEmailCode(VerifyEmailCodeRequest) returns (VerifyEmailCodeResponse);
+  // Проверяет срок и отзыв. Признак активности выставляет Gateway по назначению операции.
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
+  // При живой сессии выдаёт новый токен доступа. Время пользовательской активности сохраняется.
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse);
+  // Завершает сессию вместе со всеми токенами доступа. Повтор безопасен.
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+}
+
+message SessionTokens {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp access_expires_at = 3;
+}
+
+message RequestEmailCodeRequest {
+  string email = 1;
+}
+
+message RequestEmailCodeResponse {}
+
+message VerifyEmailCodeRequest {
+  string email = 1;
+  string code = 2;
+}
+
+message VerifyEmailCodeResponse {
+  SessionTokens tokens = 1;
+}
+
+message ValidateSessionRequest {
+  string access_token = 1;
+  bool user_activity = 2;
+}
+
+message ValidateSessionResponse {
+  string user_id = 1;
+  string verified_email = 2;
+}
+
+message RefreshSessionRequest {
+  string refresh_token = 1;
+}
+
+message RefreshSessionResponse {
+  string access_token = 1;
+  google.protobuf.Timestamp access_expires_at = 2;
+}
+
+message RevokeSessionRequest {
+  string refresh_token = 1;
+}
+
+message RevokeSessionResponse {}

@@ -1,11 +1,90 @@
 // Проверяет значения по умолчанию, границы настроек и защиту секретов в ошибках.
 import { describe, expect, it } from 'vitest'
-import { ConfigurationError, readGatewayConfig, readSuggestionConfig } from './config.ts'
+import {
+  ConfigurationError,
+  readGatewayConfig,
+  readNotificationsConfig,
+  readSuggestionConfig,
+} from './config.ts'
 
 const valid = {
   UNLEASH_URL: 'http://127.0.0.1:4242/api',
   UNLEASH_API_TOKEN: 'synthetic-test-token',
 }
+
+describe('Настройки транспорта нотификаций', () => {
+  const notifications = {
+    NOTIFICATIONS_DATABASE_URL: 'postgresql://localhost/notifications_test',
+    NOTIFICATIONS_TLS_CA_FILE: 'ca.pem',
+    NOTIFICATIONS_TLS_CERT_FILE: 'server.pem',
+    NOTIFICATIONS_TLS_KEY_FILE: 'server.key',
+    NOTIFICATIONS_HMAC_CURRENT: 'v1',
+    NOTIFICATIONS_HMAC_KEYS: JSON.stringify({ v1: 'ff'.repeat(32) }),
+    NOTIFICATIONS_CLIENT_CERTIFICATES: JSON.stringify({ ['ff'.repeat(32)]: 'test-service' }),
+  }
+  const postbox = {
+    NOTIFICATIONS_POSTBOX_SENDER_CONFIG: 'test',
+    NOTIFICATIONS_POSTBOX_FROM: 'sender@example.test',
+    NOTIFICATIONS_POSTBOX_SUBJECT: 'Тест',
+    NOTIFICATIONS_POSTBOX_CONFIGURATION_SET: 'test',
+    NOTIFICATIONS_POSTBOX_IAM_TOKEN: 'synthetic-token',
+  }
+
+  const telegram = {
+    NOTIFICATIONS_TELEGRAM_ACCOUNT_ID: '10001',
+    NOTIFICATIONS_TELEGRAM_API_ID: '10002',
+    NOTIFICATIONS_TELEGRAM_API_HASH: 'ff'.repeat(16),
+    NOTIFICATIONS_TELEGRAM_SESSION: 'synthetic-session',
+  }
+
+  it('включает Telegram при наличии полного набора настроек', () => {
+    expect(readNotificationsConfig(notifications).telegram).toBeUndefined()
+    expect(readNotificationsConfig({ ...notifications, ...telegram }).telegram?.accountId).toBe(
+      '10001',
+    )
+    expect(readNotificationsConfig({ ...notifications, ...telegram }).telegram?.apiId).toBe(10002)
+  })
+
+  it('отклоняет неверные настройки Telegram без раскрытия секрета', () => {
+    const read = () =>
+      readNotificationsConfig({
+        ...notifications,
+        ...telegram,
+        NOTIFICATIONS_TELEGRAM_API_HASH: 'synthetic-secret',
+      })
+    expect(read).toThrow('NOTIFICATIONS_TELEGRAM_API_HASH')
+    expect(read).not.toThrow('synthetic-secret')
+  })
+
+  it('использует адрес из окружения и оставляет адаптер выключенным без настроек', () => {
+    expect(readNotificationsConfig(notifications).postbox).toBeUndefined()
+    const endpoint = 'https://postbox.example.test:8443'
+    expect(
+      readNotificationsConfig({
+        ...notifications,
+        ...postbox,
+        NOTIFICATIONS_POSTBOX_ENDPOINT: endpoint,
+      }).postbox?.endpoint,
+    ).toBe(endpoint)
+  })
+
+  it.each([
+    '',
+    'http://postbox.example.test',
+    'https://user:synthetic-secret@postbox.example.test',
+    'https://postbox.example.test/other',
+  ])('отклоняет некорректный адрес без раскрытия его значения', (endpoint) => {
+    const read = () =>
+      readNotificationsConfig({
+        ...notifications,
+        ...postbox,
+        NOTIFICATIONS_POSTBOX_ENDPOINT: endpoint,
+      })
+    expect(read).toThrow('NOTIFICATIONS_POSTBOX_ENDPOINT')
+    expect(read).not.toThrow('synthetic-secret')
+  })
+})
+
 describe('конфигурация gateway — K1', () => {
   it('проверяет значения по умолчанию и запрещает изменение результата', () => {
     const config = readGatewayConfig(valid)

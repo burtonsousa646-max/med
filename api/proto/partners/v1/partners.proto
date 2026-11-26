@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package platform.partners.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// UUID передаются строками. Неверные параметры — INVALID_ARGUMENT, чужой ресурс — NOT_FOUND,
+// отсутствие полномочия — PERMISSION_DENIED, конфликт членства, состояния или ключа —
+// ABORTED (409). Для занятого ИНН — ALREADY_EXISTS с кодом invitation_required.
+// Временная недоступность — UNAVAILABLE. Профиль и контакты выдаются доверенным потребителям.
+service PartnersService {
+  // Auth передаёт стабильный UUID регистрации. Повтор возвращает прежний user_id.
+  rpc EnsureUserProfile(EnsureUserProfileRequest) returns (EnsureUserProfileResponse);
+  // Возвращает профиль для подтверждённого пользователя. До членства организация отсутствует.
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+  // Для оформления кампании. Сначала используется текущее членство, иначе регистрируется свободный ИНН.
+  rpc ResolveCampaignOrganization(ResolveCampaignOrganizationRequest) returns (ResolveCampaignOrganizationResponse);
+  // Проверяет действующую пару. Для неподтверждённой пары NOT_FOUND без данных организации.
+  rpc GetRepresentative(GetRepresentativeRequest) returns (GetRepresentativeResponse);
+  // Новый ключ заменяет приглашение для той же организации и адреса. Повтор ключа возвращает тот же результат.
+  rpc CreateInvitation(CreateInvitationRequest) returns (CreateInvitationResponse);
+  // Подтверждённый адрес берётся из сессии Auth. Повтор тем же получателем идемпотентен.
+  rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse);
+  // Создатель отзывает ожидающее приглашение. Повтор отзыва им же идемпотентен.
+  rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse);
+}
+
+message Organization {
+  string organization_id = 1;
+  string inn = 2;
+  optional string customer_name = 3;
+}
+
+message UserProfile {
+  string user_id = 1;
+  optional string contact_email = 2;
+  optional string phone = 3;
+  Organization organization = 4;
+  bool can_invite = 5;
+}
+
+message Invitation {
+  string invitation_id = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message EnsureUserProfileRequest {
+  string registration_id = 1;
+  string verified_email = 2;
+}
+
+message EnsureUserProfileResponse {
+  string user_id = 1;
+}
+
+message GetUserProfileRequest {
+  string user_id = 1;
+}
+
+message GetUserProfileResponse {
+  UserProfile profile = 1;
+}
+
+message ResolveCampaignOrganizationRequest {
+  string user_id = 1;
+  string inn = 2;
+  optional string customer_name = 3;
+}
+
+message ResolveCampaignOrganizationResponse {
+  Organization organization = 1;
+}
+
+message GetRepresentativeRequest {
+  string user_id = 1;
+  string organization_id = 2;
+}
+
+message GetRepresentativeResponse {
+  UserProfile profile = 1;
+}
+
+message CreateInvitationRequest {
+  string actor_user_id = 1;
+  string recipient_email = 2;
+  string idempotency_key = 3;
+}
+
+message CreateInvitationResponse {
+  Invitation invitation = 1;
+}
+
+message AcceptInvitationRequest {
+  string actor_user_id = 1;
+  string verified_email = 2;
+  string invitation_id = 3;
+}
+
+message AcceptInvitationResponse {}
+
+message RevokeInvitationRequest {
+  string actor_user_id = 1;
+  string invitation_id = 2;
+}
+
+message RevokeInvitationResponse {}

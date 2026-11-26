@@ -1,0 +1,1080 @@
+---
+lockfileVersion: '9.0'
+
+importers:
+
+  .:
+    configDependencies: {}
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.16.1
+        version: 12.16.1
+
+packages:
+
+  '@pnpm/exe.android-arm64@12.16.1':
+    resolution: {integrity: sha512-PKf78Ew+i0CBYf0Xc+eMcqQiqyBT+u8XCVg1F5roc98/6wWfdYlWhrUMmEBiKWaJ3JqHxrtt8l1NwZ7qfJt2/Q==}
+    cpu: [arm64]
+    os: [android]
+
+  '@pnpm/exe.android-x64@12.16.1':
+    resolution: {integrity: sha512-xdu7gMbB98pdvhwMeA6612Of515FDlRUtfA/1f7nWPZfPLnEdSRBO2u+1N0XBtQ/ennhPH/lrxB1gC6gnR/cdg==}
+    cpu: [x64]
+    os: [android]
+
+  '@pnpm/exe.darwin-arm64@12.16.1':
+    resolution: {integrity: sha512-pVbmIIbhixiLvADLu1WA3TaW8FZy/D72R1De27WbbFx8/2mxvnsTyFVm4fO9kjpjMY7RzJd48CiQ96p8fO3ebQ==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@pnpm/exe.darwin-x64@12.16.1':
+    resolution: {integrity: sha512-xZvQBFqcZjO7vFKTK3XsJpqY6lnBL9EWSLCzVUPq3kZ94+D96gwJCa76xxGNK8Cj32f4eeM91Qg+yNRR4sRpDw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@pnpm/exe.freebsd-x64@12.16.1':
+    resolution: {integrity: sha512-zTtunfi9mBhRXiXEJYfwiJj0tk7MgTSfqDSRh+Az9FZ9THazVIiQiVNS8jpcsftDOqu7LKNffQdjmgwHDThfUg==}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@pnpm/exe.linux-arm64-musl@12.16.1':
+    resolution: {integrity: sha512-BJ3mOmcmQgcUo92Ee/WfEOt1pRiv3y2MMAkhEiYHd85UiPpHTfFhv+SpCbALmfExzXk3UlaRtMYwHlkQymc4VA==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@pnpm/exe.linux-arm64@12.16.1':
+    resolution: {integrity: sha512-JaRd5gNxwdNGBBkrZFt8bknrK4YmHVJBW0JMhUQ0fJ0dEYp6C2GT9ExaCqOO8EwYEyqM+jpKgJIK+8WFaJy3ew==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@pnpm/exe.linux-ppc64@12.16.1':
+    resolution: {integrity: sha512-FnSV0Jv40S1cMv7vFNWwvu0X567Lec4L4HCRead3CFcD6zQDNbGw81s8N5bcKPahtPD9ApVuhsbmFCx4rw6RMw==}
+    cpu: [ppc64]
+    os: [linux]
+    libc: [glibc]
+
+  '@pnpm/exe.linux-riscv64@12.16.1':
+    resolution: {integrity: sha512-C1Sww4FN5IttD4atRRhAKmQtSGWVp04ZAKNxO8pfu2bkRPwOW+7v+2DH1Xs1W+kZYYpO86BYDvUcadefF+AgaQ==}
+    cpu: [riscv64]
+    os: [linux]
+    libc: [glibc]
+
+  '@pnpm/exe.linux-s390x@12.16.1':
+    resolution: {integrity: sha512-kn2fautsTcxIMODoovQVqZyfpDRdNgGkoeVqNdrKqbeBBvrEl+fXLkmZiq5xDht1LMr4sYiCNcsMfNMT6JPFmg==}
+    cpu: [s390x]
+    os: [linux]
+    libc: [glibc]
+
+  '@pnpm/exe.linux-x64-musl@12.16.1':
+    resolution: {integrity: sha512-PM6ccHCOe/O9SsTflTJTYWfwogJZa6EmUvpnwZgiPguJBddh20wDQKgxUPXf48rDsPm9vMsIij0uHswwwbXL8g==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@pnpm/exe.linux-x64@12.16.1':
+    resolution: {integrity: sha512-RK//8ZLcXGW8A2k8bQOXZDBN1Qu92zN4dYnG1bzj1zoQ1fkZ6jNzZ1AvXtsfGVma795CJtvoaF5bLXf4l/FIUw==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@pnpm/exe.win32-arm64@12.16.1':
+    resolution: {integrity: sha512-Ox3kNNVxtGw6pK7SVejmeOUgHhUTZgAM7NQQ6cU7frPw3ix9+j7d2MGbRg3fyEFAaKWq8ZAZLTQGcDyLnAu+qA==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@pnpm/exe.win32-x64@12.16.1':
+    resolution: {integrity: sha512-k+FhRJ0ttphFoFIVB1Sk4v76YJAulafmA/Ly57cysesUhhIzVlApeOShUz0jXubKx317TThlEfpQrukldnqORA==}
+    cpu: [x64]
+    os: [win32]
+
+  pnpm@12.16.1:
+    resolution: {integrity: sha512-CR0d7nknV1Zhsl2rPCrjHK/BxU1rce1qZgDPDByxBDSkR+rhQBXxsj4ua+3u1535SpMuIWTSgyKA3OP7MvZW0Q==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+snapshots:
+
+  '@pnpm/exe.android-arm64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.android-x64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.darwin-arm64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.darwin-x64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.freebsd-x64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-arm64-musl@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-arm64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-ppc64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-riscv64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-s390x@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-x64-musl@12.16.1':
+    optional: true
+
+  '@pnpm/exe.linux-x64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.win32-arm64@12.16.1':
+    optional: true
+
+  '@pnpm/exe.win32-x64@12.16.1':
+    optional: true
+
+  pnpm@12.16.1:
+    optionalDependencies:
+      '@pnpm/exe.android-arm64': 12.16.1
+      '@pnpm/exe.android-x64': 12.16.1
+      '@pnpm/exe.darwin-arm64': 12.16.1
+      '@pnpm/exe.darwin-x64': 12.16.1
+      '@pnpm/exe.freebsd-x64': 12.16.1
+      '@pnpm/exe.linux-arm64': 12.16.1
+      '@pnpm/exe.linux-arm64-musl': 12.16.1
+      '@pnpm/exe.linux-ppc64': 12.16.1
+      '@pnpm/exe.linux-riscv64': 12.16.1
+      '@pnpm/exe.linux-s390x': 12.16.1
+      '@pnpm/exe.linux-x64': 12.16.1
+      '@pnpm/exe.linux-x64-musl': 12.16.1
+      '@pnpm/exe.win32-arm64': 12.16.1
+      '@pnpm/exe.win32-x64': 12.16.1
+
+---
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      haraka:
+        specifier: 3.4.2
+        version: 3.4.2
+
+packages:
+
+  '@haraka/email-address@3.1.7':
+    resolution: {integrity: sha512-AzKKiGpw6k9sEP6v210nGMkMKZ+DTEEBNLJDA24VyucbEuo4jF4BUf7wOxarx/iqhPp44YC4mt5Rc0GHbHFgKg==}
+    engines: {node: '>=22'}
+
+  '@haraka/ocsp@1.2.0':
+    resolution: {integrity: sha512-WP5zkFreAVk/p3fEFsa09h4QcQGf61I9M4/1md/UO/bxe1moFO3iAKaO9U81OsaANmb6qnQP4jgzx4znexetvw==}
+    engines: {node: '>=20'}
+
+  '@isaacs/fs-minipass@4.0.1':
+    resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
+    engines: {node: '>=18.0.0'}
+
+  '@msimerson/stun@3.2.1':
+    resolution: {integrity: sha512-y0+cPidpQPi+RLlXRDtUByeXenMHpsKSgbmLQuLneDSzlrLiHWfrZWWipjA11+0GGLWQEFYsp3JWh6wVzRZ5Eg==}
+    engines: {node: '>=20.0'}
+    hasBin: true
+
+  '@redis/bloom@6.4.0':
+    resolution: {integrity: sha512-haBv1OKeJoKxoAxwKEHPDKdoZaLIuWAKNr4VFRF2C3Rjjn7Ese5fijEW6295rMBIyddZfuIOcvH1aZ/yKzy8vQ==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.4.0
+
+  '@redis/client@6.4.0':
+    resolution: {integrity: sha512-XEFSX0W1BUVFwtWC41vk5P/U5CqvacBWypFbmYHdF1gJeIYWWmEzsM2R5mPb+65SdODFQk7xuuMPFP6s1t9nhw==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@node-rs/xxhash': ^1.1.0
+      '@opentelemetry/api': '>=1 <2'
+    peerDependenciesMeta:
+      '@node-rs/xxhash':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+
+  '@redis/json@6.4.0':
+    resolution: {integrity: sha512-Dtxn3c2u5H5r3MA6kMrFI6iSOo4BIwibwkep94BMBD5ba1Eik1UYIwInX9lZ10RdUT4+BD7ZS9lAoORBvXUEYg==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.4.0
+
+  '@redis/search@6.4.0':
+    resolution: {integrity: sha512-B4L2OD5BMwbOYewQ9KGJfukLUkRQz1gc91TEOxz76KLeJsLbHB0XXa7sKMNoB3JURPWvhuY0PE04fHQVYZPZKg==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.4.0
+
+  '@redis/time-series@6.4.0':
+    resolution: {integrity: sha512-5QpeIlX/r0h0//JfJ8h4/Il9i0SGHhnOkdcocOhFDp0pb8VgVCEkxeCkUx8IR3g3rlq+uiPIf4NCueveHS9Vbw==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.4.0
+
+  abbrev@5.0.0:
+    resolution: {integrity: sha512-/XrFJgzQQQHpti1raDJC6m4ws6aNktmjBlhk8Fdlk7LwCEuDoieEJJY9OFHjfiFJFFRM2tK+Ky/IsfbbmlMu1w==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+
+  asn1.js-rfc2560@5.0.1:
+    resolution: {integrity: sha512-1PrVg6kuBziDN3PGFmRk3QrjpKvP9h/Hv5yMrFZvC1kpzP6dQRzf5BpKstANqHBkaOUmTpakJWhicTATOA/SbA==}
+    peerDependencies:
+      asn1.js: ^5.0.0
+
+  asn1.js-rfc5280@3.0.0:
+    resolution: {integrity: sha512-Y2LZPOWeZ6qehv698ZgOGGCZXBQShObWnGthTrIFlIQjuV1gg2B8QOhWFRExq/MR1VnPpIIe7P9vX2vElxv+Pg==}
+
+  asn1.js@5.4.1:
+    resolution: {integrity: sha512-+I//4cYPccV8LdmBLiX8CYvf9Sp3vQsrqu2QNXRcrbiWvcx/UdlFiqUJJzxRQxgsZmvhXhn4cSKeSmoFjVdupA==}
+
+  binary-data@0.6.0:
+    resolution: {integrity: sha512-HGiT0ir03tS1u7iWdW5xjJfbPpvxH2qJbPFxXW0I3P5iOzkbjN/cJy5GlpAwmjHW5CiayGOxZ/ytLzXmYgdgqQ==}
+    engines: {node: '>=6'}
+
+  bn.js@4.12.5:
+    resolution: {integrity: sha512-3aRg6/JxfffFD+OlOjOFR3Vo79l39ooBTFucxx+MT3dhCtzn3EmiUPQo+6/OZuI2jbXi3YKgmiTFBgChQMwIRQ==}
+
+  chownr@3.0.0:
+    resolution: {integrity: sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==}
+    engines: {node: '>=18'}
+
+  encoding-japanese@2.5.0:
+    resolution: {integrity: sha512-5TKhaMWTUF777NQ16OrAkJFuEd1uOnEBw8ODeXFTc/Y9csZZQ6/jiIS5r4aFuzfowu9gLGrE51zqI2H0dLwlmg==}
+    engines: {node: '>=18.0.0'}
+
+  env-paths@2.2.1:
+    resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
+    engines: {node: '>=6'}
+
+  exponential-backoff@3.1.3:
+    resolution: {integrity: sha512-ZgEeZXj30q+I0EN+CbSSpIyPaJ5HVQD18Z1m+u1FXbAeT94mr1zw50q4q6jiiC447Nl/YTcIYSAftiGqetwXCA==}
+
+  fdir@6.5.0:
+    resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
+    engines: {node: '>=12.0.0'}
+    peerDependencies:
+      picomatch: ^3 || ^4
+    peerDependenciesMeta:
+      picomatch:
+        optional: true
+
+  generate-function@2.3.1:
+    resolution: {integrity: sha512-eeB5GfMNeevm/GRYq20ShmsaGcmI81kIX2K9XQx5miC8KdHaC6Jm0qQ8ZNeGOi7wYB8OsdxKs+Y2oVuTFuVwKQ==}
+
+  graceful-fs@4.2.12:
+    resolution: {integrity: sha512-iuyGF2E4oafQfPsRrG2wtY2ILupMhvtdrhzrxB+0VcjsPpSPttpfYdjnGFGsTi5MaJFjI1jOKHPQ6UTbTj9TAw==}
+
+  haraka-config@1.8.0:
+    resolution: {integrity: sha512-+W1fmsjqZCMigAoqie1Z/h2Bg9gg+RjVBi153u55BhthEi4hrw/M0JUJdPFmmfVaRHtk6yZSP8mx+XCkloizGA==}
+    engines: {node: '>=20'}
+
+  haraka-constants@1.0.8:
+    resolution: {integrity: sha512-KqVy59yZJ/z7l6UZsb+o6D8CDj3jLuWlpwsQvmrf+MpClAL6Bdxh4NiqzYHhqpXrDI0Vm731ofcTTtbANdLwSQ==}
+    engines: {node: '>= 18'}
+
+  haraka-dsn@1.2.1:
+    resolution: {integrity: sha512-DJfkPdjeKvcO0uHSVR6wR+6V9uu8NsVDfoe2StrBK2vut9GbkLFNCW/EKZ0bGDzG3szV4tmNwivS1PtmQdJK8A==}
+    engines: {node: '>= v14.0.0'}
+
+  haraka-email-message@1.4.5:
+    resolution: {integrity: sha512-U8ghLGMnBWG0vL1jFJ8eU3fOpo9bPN8xaguaPfflscoLuTj9L//81/4589F78moWORqyeRE/ZQBVyViKQx3QUg==}
+
+  haraka-message-stream@2.0.10:
+    resolution: {integrity: sha512-tTaLjpjpJa5yiXYdRWab/bdxxuIwhnnGcKX1GcpNMZqbBCSBez8/klVgJixH944Rf3tvwdgwv9We/iPcBgteow==}
+
+  haraka-net-utils@1.11.0:
+    resolution: {integrity: sha512-CdAFCRbHRETHz+w/mCVOyY6FftdMEFTxTAYd7ZsIgFlaV4oOVSn6f8/BTHIa6/O5nLJ+nSZEmeKbrEQV2JdTcQ==}
+    engines: {node: '>= v22.0.0'}
+
+  haraka-net-utils@1.9.4:
+    resolution: {integrity: sha512-3pny4HgC8H76EcyBAMicSavaGr8OyTJd2pcnMDqcMiDLZkNADaTkdaRFJixqmrFl2f7OmXEwOL83VH4Pk5qg6Q==}
+    engines: {node: '>= v18.0.0'}
+
+  haraka-notes@1.1.3:
+    resolution: {integrity: sha512-6BNPOW49G9IV9yC4gqW7FIsqM0PPsG9VG55/OtFBtG4SiJzzhowTSLk0LNxn6OUIQP7F+6Wy95dN5aIvL3ygVQ==}
+
+  haraka-plugin-access@1.4.0:
+    resolution: {integrity: sha512-KUUUql99ENBKkV3WVXLLtv3x0d89HrcU8cQWCBWvtX60lHYDlbhuHYf85czvj/ick/GIVKvBRnNZMNxi1C/LYw==}
+
+  haraka-plugin-aliases@1.1.0:
+    resolution: {integrity: sha512-/Z74x94nC5aP/JO2shQbZ05Wqmuudh496MXfuPnRflFAQXLIJcw4Y8H/x6oujcyeEpHP74mjHnQh787hvSZdsg==}
+
+  haraka-plugin-asn@2.2.0:
+    resolution: {integrity: sha512-/0eemivOAyYR1UFxLWBi1SY5U8/YEqxgsrhTMd75VG+hlKwX1LWUBeWPmpWj9ekmhed3u5tIDJLk0Y1MD4RAQg==}
+
+  haraka-plugin-attachment@1.2.1:
+    resolution: {integrity: sha512-J/0gDK0wHC98JxmpmqVF3PhV9nMReFyhjYNBoT5fKzicmRtYneHRTjIVTu8I2q8p3S+NuFiINJHFKX15MhEkLQ==}
+    engines: {node: '>= 16'}
+
+  haraka-plugin-bounce@2.2.1:
+    resolution: {integrity: sha512-cCajyyRLiAV3nN5DCDsBzxOLPev2nA1gzg3gvvP22Sdqr3564lFyrn4Tibre2ncG5V149sJCKe28ZzCq0AEIhg==}
+
+  haraka-plugin-clamd@1.0.6:
+    resolution: {integrity: sha512-zbPAVQyLKRHF1UtcEO8nm7xRAACN42hqYENQd48j/NxLjkIPQyIhk2LlzMOONq80ngi+QlzwL3zX7gm0cKY0YA==}
+
+  haraka-plugin-dcc@1.1.1:
+    resolution: {integrity: sha512-mZKYthRh2fA27+AHwgNus5lr9rKYXtk4p+twCyISjIrHTmGUex2KMLo6O1qFBTKutQujnhcL3iG3srrDrFkCug==}
+
+  haraka-plugin-dkim@1.3.2:
+    resolution: {integrity: sha512-D2rqkBqsbwh8wGQv7G3mIVguQSOKKBusQc0UFfvKlMvwFVRLYY2sGhQEm4FCxINF8bWCAzuPVBK74Hajk2DYxw==}
+    hasBin: true
+
+  haraka-plugin-dns-list@1.3.0:
+    resolution: {integrity: sha512-uEvY7kVs+eroeLZndRvp2RvMyOE0K57xXUUO6yL/reX+Q1k31gYwNRKeOldop9SQcghoToZfGd5EYk8jVbKyfw==}
+
+  haraka-plugin-early_talker@1.0.2:
+    resolution: {integrity: sha512-rQfsx4WisY3ba+0OJiLBvD7IeDl7x1vhjSOGRiN6PFZX0o2DWG3nM2n/x0Cb9oI5QV3G5taPzpt3MKPGIEiC0g==}
+
+  haraka-plugin-fcrdns@1.2.1:
+    resolution: {integrity: sha512-VfsMFcgr/gHpYeEWUgGvmoLbJ5jswK0d/6CRg9sxRqwl56Sw5NVbCKBY6ipO9fDyEJ4YfXSzOeVQnG4e7U1tcA==}
+
+  haraka-plugin-geoip@1.1.2:
+    resolution: {integrity: sha512-4+PmQRXD9V1WIYtle2k0Pb/ldfpSKvxc504r7kb5DwJEzwnABw1n177H9gz6oBfc16QihwRrX3mUwndIGapsRQ==}
+    engines: {node: '>=20'}
+
+  haraka-plugin-greylist@1.2.1:
+    resolution: {integrity: sha512-MizI8JUQ27OmNOreXe4BGb0bRzhfKpJIfsEvFd0ua5GBDS4Qq4EyqgwCWGFsMpyfZFdy3FdeNMG7VQ8WK7n3hg==}
+
+  haraka-plugin-headers@1.2.1:
+    resolution: {integrity: sha512-3VKDuwqfUGZyCDuIKq84yjem2qtxxvKRUZIHROIeANn9SFYduUImIS5Mh8GWl/i11Pb72hQru2DpwQgLD3wPIw==}
+
+  haraka-plugin-helo.checks@1.1.3:
+    resolution: {integrity: sha512-l4CfMMioJ/YU73rXmqnqZl+l3DVaquR5uLtD3HYiJpJddrMovDKoy8YzuN/mMmHXE/eOPnYeht1amuH4KkWv/A==}
+
+  haraka-plugin-karma@2.5.3:
+    resolution: {integrity: sha512-hwTRyE23ENCvHLWluSdvB7vLkLJGxtvqJEsKEL6n584A+7Ojiw5HhXeijVHNlwNXXXZdsyjqQH6kMbLnZbp2QA==}
+
+  haraka-plugin-known-senders@1.2.0:
+    resolution: {integrity: sha512-Ri+xVZ4Oos0XO1Raw0/bAHA3i2fpCgAohmNZ6uxiwbwk8j6CbQ6zFyHnGdSwE18iNynHvegSeGgqAF3yYf14OQ==}
+
+  haraka-plugin-limit@1.3.3:
+    resolution: {integrity: sha512-vw4/RhKukWcOVX0fq7sE1tlTdb3r8au2HKaCA7Vy9SZ6ue6do3sbt25zgCWjYH7Vvfv8yUsqZxR/xHkQp3MPoA==}
+
+  haraka-plugin-mail_from.is_resolvable@1.3.0:
+    resolution: {integrity: sha512-eE9H9x69HNmjxRZhTNmOHScwMwu3tUZVmRWmocL8S4itg5tWkRUC+7RTkhcMu6/B7YIC/uiYS49wixCgv8zu9w==}
+
+  haraka-plugin-messagesniffer@1.0.2:
+    resolution: {integrity: sha512-h3vFegccHKMyn1W3HIMv5ZjwGgGfsb9W4vXk86+N4DdTd7xkGcCylicx0gSI+caNZaMhiQ2VS7oJHyMxGCsXGg==}
+
+  haraka-plugin-qmail-deliverable@1.4.1:
+    resolution: {integrity: sha512-aeSe02vTZsXSlA5o2X5LuqDJG7qIURYGJMLPXycFGvVseTNnQzInLLwepOpNBzB0N9H3DrVAksblYcuwaqhPAg==}
+
+  haraka-plugin-redis@2.1.1:
+    resolution: {integrity: sha512-sw91SngRG8XKNyFdk1eCCOLMLqwhWuatT1FRDNPcFKNSDLavYnaQg+igzZ9SvdfU8iZ3esAZq8M2ipcz7hEL2Q==}
+
+  haraka-plugin-relay@1.0.3:
+    resolution: {integrity: sha512-EVDeKzomBUjUKhZKgBG8bc6TQSXY93QZDzEvYyLyDhv5NJm1ooFyoJZbRZOa+fvyeQLO+9YiY9dOsXOsSNOsIQ==}
+
+  haraka-plugin-rspamd@1.6.2:
+    resolution: {integrity: sha512-mKytVLn3lcfypVwx3LF1I7HDuvwXY4S7kFW3u3mKn9WPyLoCXbipsjiFLesT8ef1/Ck4ILGYX5erV66xp29cfg==}
+
+  haraka-plugin-spamassassin@1.1.2:
+    resolution: {integrity: sha512-FBzj4DLjQ9+rOoUU3/f///q9aSA2Mj6OaHX6h95yYe3suCQJ0wnyw82ysjbIFeNVI7iyXY7BwEsjV2FcuaT8Uw==}
+
+  haraka-plugin-spf@1.3.1:
+    resolution: {integrity: sha512-e4ynzAimABJqhJRBw9dLgGUj8RvuUnbDTKabRfkn1EeOUazsU+GqOyZh4XZUCwLMK/p4oE5vWRrJwl9tF3P5GQ==}
+    hasBin: true
+
+  haraka-plugin-syslog@1.1.2:
+    resolution: {integrity: sha512-HeRXXcxj/uZmNA+JW5OzCyFA6RCYVe+pqWkBMZbFhwoanYat9BrnB6N5EcOBB+YXhRlsQlbCo8EeXxbgLgTbQQ==}
+
+  haraka-plugin-uribl@2.0.0:
+    resolution: {integrity: sha512-xCtr6qMBGjYNnLbyCb6qgISk5FhxH8jZlb2SHTRGeNqIQYTZEoSWOKjziCXiiyxcGlTYFapuOFTJ8pKkh17hxw==}
+
+  haraka-results@2.4.0:
+    resolution: {integrity: sha512-5n9rVTzIp2lH5Vc7tkGIU9qJT4qGTgr+Hhw8kfWtQ8NrXXtSjEnuvZeiD3FOH0S65wLgjHLowwg5bADTsUto+A==}
+    engines: {node: '>=20'}
+
+  haraka-tld@1.3.7:
+    resolution: {integrity: sha512-ZurKEhi6DKd8HoZOHcPKoBOHAXKLBofQe8VOsxQVFlgX2UvcnYWHNbYllGiznhurGwBWbyNEKD4dMq2K/i714w==}
+
+  haraka-utils@2.1.1:
+    resolution: {integrity: sha512-gfCmsozf+LkFfcFfpraolXtR6JlzCuoIYFM4recwvMzb9ha4iURlP93pwT2QU4ERpsTCBGnq2zKsrulXxPDDQw==}
+
+  haraka-utils@2.2.1:
+    resolution: {integrity: sha512-fWo9V6tvDP82o8f/LQTDuZ+GlZpZC2heehn2yLQGESJj9el1WT3X+cBZWzGOL50eb1CKomCEOmIH7EFS9JFs/Q==}
+
+  haraka-utils@2.3.0:
+    resolution: {integrity: sha512-l3M2T6CuF7YEA8iwKEYv2nh4JxcqoAIG3izf20OS++kwOtQBzhaztiVegSMpzHP/Mzgtcp3Qwiq78XxrqCD/ew==}
+
+  haraka@3.4.2:
+    resolution: {integrity: sha512-gocHFik0/58TDHnoQbICxV1IYItZyZTb0cSlOoGbXoaSV63cS5q/tcbzdKJT3loF0rGP830UZkaT+FXWa3r2fw==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  hjson@3.2.2:
+    resolution: {integrity: sha512-MkUeB0cTIlppeSsndgESkfFD21T2nXPRaBStLtf3cAYA2bVEFdXlodZB0TukwZiobPD1Ksax5DK4RTZeaXCI3Q==}
+    hasBin: true
+
+  iconv-lite@0.7.3:
+    resolution: {integrity: sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==}
+    engines: {node: '>=0.10.0'}
+
+  inherits@2.0.4:
+    resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
+
+  ip2buf@2.0.0:
+    resolution: {integrity: sha512-ezW62UW6IPwpuS3mpsvOS3/3Jgx7aaNZT+uJo/+xVBxHCq7EA1ryuhzZw2MyC5GuGd1sAp3RDx7e4+nJCGt9vA==}
+    engines: {node: '>=6'}
+
+  ipaddr.js@2.5.0:
+    resolution: {integrity: sha512-aq+t5NAc+cS6rZQQVWC2x98CPqGtKKTMDd4Gaodv0wShnItdKg/51djkGJ1hqH+Oy0ivDftCbSLCQob8zso01w==}
+    engines: {node: '>= 10'}
+
+  is-plain-object@2.0.4:
+    resolution: {integrity: sha512-h5PpgXkWitc38BBMYawTYMWJHFZJVnBquFE57xFpjB8pJFiF6gZ+bU+WyI/yqXiFR5mdLsgYNaPe8uao6Uv9Og==}
+    engines: {node: '>=0.10.0'}
+
+  is-property@1.0.2:
+    resolution: {integrity: sha512-Ks/IoX00TtClbGQr4TWXemAnktAQvYB7HzcCxDGqEZU6oCmb2INHuOoKxbtR+HFkmYWBKv/dOZtGRiAjDhj92g==}
+
+  isexe@4.0.0:
+    resolution: {integrity: sha512-FFUtZMpoZ8RqHS3XeXEmHWLA4thH+ZxCv2lOiPIn1Xc7CxrqhWzNSDzD+/chS/zbYezmiwWLdQC09JdQKmthOw==}
+    engines: {node: '>=20'}
+
+  isobject@3.0.1:
+    resolution: {integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==}
+    engines: {node: '>=0.10.0'}
+
+  libbase64@1.4.1:
+    resolution: {integrity: sha512-Nyh3H90B3gRtrcxIe56Ayy7635J0jmh6AbxbQgQae8wrSPQMH5wFqJChiMTB13yKG512L3YspbA5DzumhFTITA==}
+    engines: {node: '>=20.0.0'}
+
+  libmime@5.6.5:
+    resolution: {integrity: sha512-2mbKYlwUP2mWys7kUE0MBHNdOndOe++8TIdmGXtt/hMYWSgbjHkSIXyC4jCpVSc/sAox3GSxWn1dSmyiQimLNA==}
+    engines: {node: '>=20.0.0'}
+
+  libqp@3.0.2:
+    resolution: {integrity: sha512-24oL5vCMpFd6lGLbD3vPrmcAEGFScDPX9eARY8TXsRVBSde93xP2iG7+8pg5M56Yiu9Uy14hCVN1E+yj5LMtyQ==}
+    engines: {node: '>=20.0.0'}
+
+  maxmind@5.1.0:
+    resolution: {integrity: sha512-4cNAMPKT/TJ1KvIzmzcNAkXUfQtH5+0tOcAFSCkrPx4TIJz9wCow3KZMGAaWONLll60DRYvInLhst6WW1lijfw==}
+    engines: {node: '>=12', npm: '>=6'}
+
+  minimalistic-assert@1.0.1:
+    resolution: {integrity: sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A==}
+
+  minipass@7.1.3:
+    resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
+    engines: {node: '>=16 || 14 >=14.17'}
+
+  minizlib@3.1.0:
+    resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
+    engines: {node: '>= 18'}
+
+  mmdb-lib@3.0.3:
+    resolution: {integrity: sha512-xQPoBXcNjjHiOvOraFBKtA++uNWF6aCVHL9dRKFXEov8eI3QJwtgiw3qApsonFT5SpoqsEVISUTg3HIDs2DiXw==}
+    engines: {node: '>=10', npm: '>=6'}
+
+  modern-syslog@1.2.0:
+    resolution: {integrity: sha512-dmFE23qpyZJf8MOdzuNKliW4j1PCqxaRtSzyNnv6QDUWjf1z8T4ZoQ7Qf0t6It2ewNv9/XJZSJoUgwpq3D0X7A==}
+    os: ['!win32']
+
+  nan@2.27.0:
+    resolution: {integrity: sha512-hC+0LidcL3XE4rp1C4H54KujgXKzbfyTngZTwBByQxsOxCEKZT0MPQ4hOKUH2jU1OYstqdDH4onyHPDzcV0XdQ==}
+
+  node-gyp@13.1.0:
+    resolution: {integrity: sha512-FpNzOLFACKG0oRBYbZ5WOeWD1EqRTIWX90MaRIWTO18lVYPx8fqIjrdS3pihjnCkSmgop6zVGkSqg1vXZLksuw==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+    hasBin: true
+
+  nopt@10.0.1:
+    resolution: {integrity: sha512-df3sBr/6ax9hSGuC3CspvLlbnX8cP5L5nZwXF8cGN8l0zSWR6BvzmQ6jPUKjvo6+/xdpkNvEcucBNUdBeeV13g==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+    hasBin: true
+
+  picomatch@4.0.7:
+    resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
+    engines: {node: '>=12'}
+
+  proc-log@7.0.0:
+    resolution: {integrity: sha512-FYgfaA69XZ93zaXLoMNQ+ViDXGGBgR8aLh03txzcFhV+9xOXx7+8DLCULrKKpR9+GsH9ZfHm82aSUPpozX0Ztg==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+
+  redis@6.4.0:
+    resolution: {integrity: sha512-8Xk9zRovBNDzIO3xRi036QFgijIZKeIPjQJ5VhgxV8nxkxDP5GlE5se71G1I4TnUTojbCtmfKzXpioxlDhHJvg==}
+    engines: {node: '>= 20.0.0'}
+
+  safer-buffer@2.1.2:
+    resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
+
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
+    engines: {node: '>=10'}
+    hasBin: true
+
+  tar@7.5.23:
+    resolution: {integrity: sha512-lkukzdoGngZHJZXxW4S/E4Fp9ghTDlyZXrQGRNoJ/LXvDKcXUTq2sg5yQe74po7Voea6n/IN09+wE/QvJMiifA==}
+    engines: {node: '>=18'}
+
+  tiny-lru@13.1.1:
+    resolution: {integrity: sha512-5yPLGQspKXPoVMbUj+o/JWV3FJA1WdQAtU7CWvHb+B+RSInhzGs+W2H6FOt3Z0uNnf2DC8BJExJa7AWPW1bzFw==}
+    engines: {node: '>=14'}
+
+  tinyglobby@0.2.17:
+    resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
+    engines: {node: '>=12.0.0'}
+
+  tmp@0.2.7:
+    resolution: {integrity: sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw==}
+    engines: {node: '>=14.14'}
+
+  turbo-crc32@1.0.1:
+    resolution: {integrity: sha512-8yyRd1ZdNp+AQLGqi3lTaA2k81JjlIZOyFQEsi7GQWBgirnQOxjqVtDEbYHM2Z4yFdJ5AQw0fxBLLnDCl6RXoQ==}
+    engines: {node: '>=6'}
+
+  undici@8.13.1:
+    resolution: {integrity: sha512-Kt7EaPjh0s93lJH/PmW3d5rhkcpUa6fS3jqZ7+YGxNd9L7Xy/i827xe4C2uhhq+pJebM4tQOl5AgHmW11G5Skg==}
+    engines: {node: '>=22.19.0'}
+
+  which@7.0.0:
+    resolution: {integrity: sha512-RancgH2dmbLdHl6LRhEqvklWMgl/Hdnun0Y90KhBOLkMefg8Qa7/Zel8Sm+8HEcP6DEjzsWzpkuBQEZok58isA==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+    hasBin: true
+
+  yallist@5.0.0:
+    resolution: {integrity: sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==}
+    engines: {node: '>=18'}
+
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
+snapshots:
+
+  '@haraka/email-address@3.1.7': {}
+
+  '@haraka/ocsp@1.2.0':
+    dependencies:
+      asn1.js: 5.4.1
+      asn1.js-rfc2560: 5.0.1(asn1.js@5.4.1)
+      asn1.js-rfc5280: 3.0.0
+    optional: true
+
+  '@isaacs/fs-minipass@4.0.1':
+    dependencies:
+      minipass: 7.1.3
+
+  '@msimerson/stun@3.2.1':
+    dependencies:
+      binary-data: 0.6.0
+      ip2buf: 2.0.0
+      ipaddr.js: 2.5.0
+      turbo-crc32: 1.0.1
+    optional: true
+
+  '@redis/bloom@6.4.0(@redis/client@6.4.0)':
+    dependencies:
+      '@redis/client': 6.4.0
+
+  '@redis/client@6.4.0': {}
+
+  '@redis/json@6.4.0(@redis/client@6.4.0)':
+    dependencies:
+      '@redis/client': 6.4.0
+
+  '@redis/search@6.4.0(@redis/client@6.4.0)':
+    dependencies:
+      '@redis/client': 6.4.0
+
+  '@redis/time-series@6.4.0(@redis/client@6.4.0)':
+    dependencies:
+      '@redis/client': 6.4.0
+
+  abbrev@5.0.0: {}
+
+  asn1.js-rfc2560@5.0.1(asn1.js@5.4.1):
+    dependencies:
+      asn1.js: 5.4.1
+      asn1.js-rfc5280: 3.0.0
+    optional: true
+
+  asn1.js-rfc5280@3.0.0:
+    dependencies:
+      asn1.js: 5.4.1
+    optional: true
+
+  asn1.js@5.4.1:
+    dependencies:
+      bn.js: 4.12.5
+      inherits: 2.0.4
+      minimalistic-assert: 1.0.1
+      safer-buffer: 2.1.2
+    optional: true
+
+  binary-data@0.6.0:
+    dependencies:
+      generate-function: 2.3.1
+      is-plain-object: 2.0.4
+    optional: true
+
+  bn.js@4.12.5:
+    optional: true
+
+  chownr@3.0.0: {}
+
+  encoding-japanese@2.5.0: {}
+
+  env-paths@2.2.1: {}
+
+  exponential-backoff@3.1.3: {}
+
+  fdir@6.5.0(picomatch@4.0.7):
+    optionalDependencies:
+      picomatch: 4.0.7
+
+  generate-function@2.3.1:
+    dependencies:
+      is-property: 1.0.2
+    optional: true
+
+  graceful-fs@4.2.12: {}
+
+  haraka-config@1.8.0:
+    dependencies:
+      yaml: 2.9.1
+    optionalDependencies:
+      hjson: 3.2.2
+
+  haraka-constants@1.0.8: {}
+
+  haraka-dsn@1.2.1:
+    dependencies:
+      haraka-utils: 2.3.0
+
+  haraka-email-message@1.4.5:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-config: 1.8.0
+      haraka-message-stream: 2.0.10
+      iconv-lite: 0.7.3
+      libmime: 5.6.5
+      libqp: 3.0.2
+
+  haraka-message-stream@2.0.10: {}
+
+  haraka-net-utils@1.11.0:
+    dependencies:
+      haraka-config: 1.8.0
+      haraka-tld: 1.3.7
+      ipaddr.js: 2.5.0
+    optionalDependencies:
+      '@msimerson/stun': 3.2.1
+
+  haraka-net-utils@1.9.4:
+    dependencies:
+      haraka-config: 1.8.0
+      haraka-tld: 1.3.7
+      ipaddr.js: 2.5.0
+    optionalDependencies:
+      '@msimerson/stun': 3.2.1
+    optional: true
+
+  haraka-notes@1.1.3: {}
+
+  haraka-plugin-access@1.4.0:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-net-utils: 1.9.4
+      haraka-tld: 1.3.7
+      haraka-utils: 2.1.1
+    optional: true
+
+  haraka-plugin-aliases@1.1.0:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+    optional: true
+
+  haraka-plugin-asn@2.2.0:
+    dependencies:
+      maxmind: 5.1.0
+    optional: true
+
+  haraka-plugin-attachment@1.2.1:
+    dependencies:
+      haraka-constants: 1.0.8
+      haraka-utils: 2.3.0
+      tmp: 0.2.7
+    optional: true
+
+  haraka-plugin-bounce@2.2.1:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-net-utils: 1.11.0
+      haraka-plugin-spf: 1.3.1
+    optional: true
+
+  haraka-plugin-clamd@1.0.6:
+    dependencies:
+      haraka-net-utils: 1.11.0
+      haraka-utils: 2.3.0
+    optional: true
+
+  haraka-plugin-dcc@1.1.1:
+    optional: true
+
+  haraka-plugin-dkim@1.3.2:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-email-message: 1.4.5
+      haraka-utils: 2.3.0
+      nopt: 10.0.1
+    optional: true
+
+  haraka-plugin-dns-list@1.3.0:
+    dependencies:
+      haraka-net-utils: 1.11.0
+    optional: true
+
+  haraka-plugin-early_talker@1.0.2:
+    dependencies:
+      ipaddr.js: 2.5.0
+    optional: true
+
+  haraka-plugin-fcrdns@1.2.1:
+    dependencies:
+      haraka-constants: 1.0.8
+      haraka-net-utils: 1.11.0
+      haraka-tld: 1.3.7
+    optional: true
+
+  haraka-plugin-geoip@1.1.2:
+    dependencies:
+      haraka-net-utils: 1.11.0
+      maxmind: 5.1.0
+    optional: true
+
+  haraka-plugin-greylist@1.2.1:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-dsn: 1.2.1
+      haraka-net-utils: 1.11.0
+      haraka-plugin-redis: 2.1.1
+      haraka-tld: 1.3.7
+      ipaddr.js: 2.5.0
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+    optional: true
+
+  haraka-plugin-headers@1.2.1:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-tld: 1.3.7
+      haraka-utils: 2.3.0
+    optional: true
+
+  haraka-plugin-helo.checks@1.1.3:
+    dependencies:
+      haraka-dsn: 1.2.1
+      haraka-net-utils: 1.11.0
+      haraka-tld: 1.3.7
+      haraka-utils: 2.3.0
+    optional: true
+
+  haraka-plugin-karma@2.5.3:
+    dependencies:
+      haraka-constants: 1.0.8
+      haraka-plugin-redis: 2.1.1
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+    optional: true
+
+  haraka-plugin-known-senders@1.2.0:
+    dependencies:
+      haraka-plugin-redis: 2.1.1
+      haraka-tld: 1.3.7
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+    optional: true
+
+  haraka-plugin-limit@1.3.3:
+    dependencies:
+      haraka-constants: 1.0.8
+      haraka-plugin-redis: 2.1.1
+      ipaddr.js: 2.5.0
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+    optional: true
+
+  haraka-plugin-mail_from.is_resolvable@1.3.0:
+    dependencies:
+      haraka-dsn: 1.2.1
+      haraka-net-utils: 1.11.0
+    optional: true
+
+  haraka-plugin-messagesniffer@1.0.2:
+    optional: true
+
+  haraka-plugin-qmail-deliverable@1.4.1:
+    optional: true
+
+  haraka-plugin-redis@2.1.1:
+    dependencies:
+      redis: 6.4.0
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+
+  haraka-plugin-relay@1.0.3:
+    dependencies:
+      ipaddr.js: 2.5.0
+    optional: true
+
+  haraka-plugin-rspamd@1.6.2:
+    dependencies:
+      haraka-dsn: 1.2.1
+    optional: true
+
+  haraka-plugin-spamassassin@1.1.2:
+    dependencies:
+      haraka-net-utils: 1.11.0
+      haraka-utils: 2.3.0
+    optional: true
+
+  haraka-plugin-spf@1.3.1:
+    dependencies:
+      haraka-dsn: 1.2.1
+      haraka-net-utils: 1.11.0
+      haraka-utils: 2.3.0
+      ipaddr.js: 2.5.0
+      nopt: 10.0.1
+    optional: true
+
+  haraka-plugin-syslog@1.1.2:
+    dependencies:
+      haraka-constants: 1.0.8
+      haraka-utils: 2.2.1
+      modern-syslog: 1.2.0
+      nan: 2.27.0
+    optional: true
+
+  haraka-plugin-uribl@2.0.0:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-net-utils: 1.11.0
+      haraka-tld: 1.3.7
+      haraka-utils: 2.3.0
+    optional: true
+
+  haraka-results@2.4.0:
+    dependencies:
+      haraka-config: 1.8.0
+    optionalDependencies:
+      redis: 6.4.0
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+
+  haraka-tld@1.3.7: {}
+
+  haraka-utils@2.1.1:
+    optional: true
+
+  haraka-utils@2.2.1:
+    optional: true
+
+  haraka-utils@2.3.0: {}
+
+  haraka@3.4.2:
+    dependencies:
+      '@haraka/email-address': 3.1.7
+      haraka-config: 1.8.0
+      haraka-constants: 1.0.8
+      haraka-dsn: 1.2.1
+      haraka-email-message: 1.4.5
+      haraka-net-utils: 1.11.0
+      haraka-notes: 1.1.3
+      haraka-plugin-redis: 2.1.1
+      haraka-results: 2.4.0
+      haraka-tld: 1.3.7
+      haraka-utils: 2.3.0
+      ipaddr.js: 2.5.0
+      libqp: 3.0.2
+      node-gyp: 13.1.0
+      nopt: 10.0.1
+      redis: 6.4.0
+      semver: 7.8.6
+    optionalDependencies:
+      '@haraka/ocsp': 1.2.0
+      haraka-plugin-access: 1.4.0
+      haraka-plugin-aliases: 1.1.0
+      haraka-plugin-asn: 2.2.0
+      haraka-plugin-attachment: 1.2.1
+      haraka-plugin-bounce: 2.2.1
+      haraka-plugin-clamd: 1.0.6
+      haraka-plugin-dcc: 1.1.1
+      haraka-plugin-dkim: 1.3.2
+      haraka-plugin-dns-list: 1.3.0
+      haraka-plugin-early_talker: 1.0.2
+      haraka-plugin-fcrdns: 1.2.1
+      haraka-plugin-geoip: 1.1.2
+      haraka-plugin-greylist: 1.2.1
+      haraka-plugin-headers: 1.2.1
+      haraka-plugin-helo.checks: 1.1.3
+      haraka-plugin-karma: 2.5.3
+      haraka-plugin-known-senders: 1.2.0
+      haraka-plugin-limit: 1.3.3
+      haraka-plugin-mail_from.is_resolvable: 1.3.0
+      haraka-plugin-messagesniffer: 1.0.2
+      haraka-plugin-qmail-deliverable: 1.4.1
+      haraka-plugin-relay: 1.0.3
+      haraka-plugin-rspamd: 1.6.2
+      haraka-plugin-spamassassin: 1.1.2
+      haraka-plugin-spf: 1.3.1
+      haraka-plugin-syslog: 1.1.2
+      haraka-plugin-uribl: 2.0.0
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+
+  hjson@3.2.2:
+    optional: true
+
+  iconv-lite@0.7.3:
+    dependencies:
+      safer-buffer: 2.1.2
+
+  inherits@2.0.4:
+    optional: true
+
+  ip2buf@2.0.0:
+    optional: true
+
+  ipaddr.js@2.5.0: {}
+
+  is-plain-object@2.0.4:
+    dependencies:
+      isobject: 3.0.1
+    optional: true
+
+  is-property@1.0.2:
+    optional: true
+
+  isexe@4.0.0: {}
+
+  isobject@3.0.1:
+    optional: true
+
+  libbase64@1.4.1: {}
+
+  libmime@5.6.5:
+    dependencies:
+      encoding-japanese: 2.5.0
+      iconv-lite: 0.7.3
+      libbase64: 1.4.1
+      libqp: 3.0.2
+
+  libqp@3.0.2: {}
+
+  maxmind@5.1.0:
+    dependencies:
+      mmdb-lib: 3.0.3
+      tiny-lru: 13.1.1
+    optional: true
+
+  minimalistic-assert@1.0.1:
+    optional: true
+
+  minipass@7.1.3: {}
+
+  minizlib@3.1.0:
+    dependencies:
+      minipass: 7.1.3
+
+  mmdb-lib@3.0.3:
+    optional: true
+
+  modern-syslog@1.2.0:
+    dependencies:
+      nan: 2.27.0
+    optional: true
+
+  nan@2.27.0:
+    optional: true
+
+  node-gyp@13.1.0:
+    dependencies:
+      env-paths: 2.2.1
+      exponential-backoff: 3.1.3
+      graceful-fs: 4.2.12
+      nopt: 10.0.1
+      proc-log: 7.0.0
+      semver: 7.8.6
+      tar: 7.5.23
+      tinyglobby: 0.2.17
+      undici: 8.13.1
+      which: 7.0.0
+
+  nopt@10.0.1:
+    dependencies:
+      abbrev: 5.0.0
+
+  picomatch@4.0.7: {}
+
+  proc-log@7.0.0: {}
+
+  redis@6.4.0:
+    dependencies:
+      '@redis/bloom': 6.4.0(@redis/client@6.4.0)
+      '@redis/client': 6.4.0
+      '@redis/json': 6.4.0(@redis/client@6.4.0)
+      '@redis/search': 6.4.0(@redis/client@6.4.0)
+      '@redis/time-series': 6.4.0(@redis/client@6.4.0)
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+
+  safer-buffer@2.1.2: {}
+
+  semver@7.8.6: {}
+
+  tar@7.5.23:
+    dependencies:
+      '@isaacs/fs-minipass': 4.0.1
+      chownr: 3.0.0
+      minipass: 7.1.3
+      minizlib: 3.1.0
+      yallist: 5.0.0
+
+  tiny-lru@13.1.1:
+    optional: true
+
+  tinyglobby@0.2.17:
+    dependencies:
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
+
+  tmp@0.2.7:
+    optional: true
+
+  turbo-crc32@1.0.1:
+    optional: true
+
+  undici@8.13.1: {}
+
+  which@7.0.0:
+    dependencies:
+      isexe: 4.0.0
+
+  yallist@5.0.0: {}
+
+  yaml@2.9.1: {}

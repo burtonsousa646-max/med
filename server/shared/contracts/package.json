@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./notifications/v1/notifications": {
+      "types": "./dist/notifications/v1/notifications.d.ts",
+      "default": "./dist/notifications/v1/notifications.js"
+    },
     "./*": {
       "types": "./dist/generated/*.d.ts",
       "default": "./dist/generated/*.js"

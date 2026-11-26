@@ -1,0 +1,156 @@
+{
+  "consumer": {
+    "name": "auth-service"
+  },
+  "interactions": [
+    {
+      "description": "получить профиль: ключ регистрации свободен",
+      "interactionMarkup": {
+        "markup": "```protobuf\nmessage EnsureUserProfileResponse {\n    string user_id = 1;\n}\n```\n",
+        "markupType": "COMMON_MARK"
+      },
+      "pending": false,
+      "pluginConfiguration": {
+        "protobuf": {
+          "descriptorKey": "2fabf8a86df37b2a42c0883c9a7e4d12",
+          "expectations": {
+            "request": {
+              "registration_id": "018f4ca0-f068-7762-8a00-000000000001",
+              "verified_email": "person@example.test"
+            },
+            "response": {
+              "user_id": "matching(regex, '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', '018f4ca0-f068-7762-8a00-000000000002')"
+            }
+          },
+          "service": ".platform.partners.v1.PartnersService/EnsureUserProfile"
+        }
+      },
+      "providerStates": [
+        {
+          "name": "ключ регистрации свободен"
+        }
+      ],
+      "request": {
+        "contents": {
+          "content": "CiQwMThmNGNhMC1mMDY4LTc3NjItOGEwMC0wMDAwMDAwMDAwMDESE3BlcnNvbkBleGFtcGxlLnRlc3Q=",
+          "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileRequest",
+          "contentTypeHint": "BINARY",
+          "encoded": "base64"
+        },
+        "metadata": {
+          "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileRequest"
+        }
+      },
+      "response": [
+        {
+          "contents": {
+            "content": "CiQwMThmNGNhMC1mMDY4LTc3NjItOGEwMC0wMDAwMDAwMDAwMDI=",
+            "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileResponse",
+            "contentTypeHint": "BINARY",
+            "encoded": "base64"
+          },
+          "matchingRules": {
+            "body": {
+              "$.user_id": {
+                "combine": "AND",
+                "matchers": [
+                  {
+                    "match": "regex",
+                    "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileResponse"
+          }
+        }
+      ],
+      "transport": "grpc",
+      "type": "Synchronous/Messages"
+    },
+    {
+      "description": "получить профиль: профиль уже создан для этого ключа",
+      "interactionMarkup": {
+        "markup": "```protobuf\nmessage EnsureUserProfileResponse {\n    string user_id = 1;\n}\n```\n",
+        "markupType": "COMMON_MARK"
+      },
+      "pending": false,
+      "pluginConfiguration": {
+        "protobuf": {
+          "descriptorKey": "2fabf8a86df37b2a42c0883c9a7e4d12",
+          "expectations": {
+            "request": {
+              "registration_id": "018f4ca0-f068-7762-8a00-000000000001",
+              "verified_email": "person@example.test"
+            },
+            "response": {
+              "user_id": "018f4ca0-f068-7762-8a00-000000000002"
+            }
+          },
+          "service": ".platform.partners.v1.PartnersService/EnsureUserProfile"
+        }
+      },
+      "providerStates": [
+        {
+          "name": "профиль уже создан для этого ключа"
+        }
+      ],
+      "request": {
+        "contents": {
+          "content": "CiQwMThmNGNhMC1mMDY4LTc3NjItOGEwMC0wMDAwMDAwMDAwMDESE3BlcnNvbkBleGFtcGxlLnRlc3Q=",
+          "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileRequest",
+          "contentTypeHint": "BINARY",
+          "encoded": "base64"
+        },
+        "metadata": {
+          "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileRequest"
+        }
+      },
+      "response": [
+        {
+          "contents": {
+            "content": "CiQwMThmNGNhMC1mMDY4LTc3NjItOGEwMC0wMDAwMDAwMDAwMDI=",
+            "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileResponse",
+            "contentTypeHint": "BINARY",
+            "encoded": "base64"
+          },
+          "metadata": {
+            "contentType": "application/protobuf;message=.platform.partners.v1.EnsureUserProfileResponse"
+          }
+        }
+      ],
+      "transport": "grpc",
+      "type": "Synchronous/Messages"
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "17.1.4"
+    },
+    "pactRust": {
+      "ffi": "0.5.8",
+      "mockserver": "0.5.8",
+      "models": "1.3.16"
+    },
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": [
+      {
+        "configuration": {
+          "2fabf8a86df37b2a42c0883c9a7e4d12": {
+            "protoDescriptors": "Cv8BCh9nb29nbGUvcHJvdG9idWYvdGltZXN0YW1wLnByb3RvEg9nb29nbGUucHJvdG9idWYiOwoJVGltZXN0YW1wEhgKB3NlY29uZHMYASABKANSB3NlY29uZHMSFAoFbmFub3MYAiABKAVSBW5hbm9zQoUBChNjb20uZ29vZ2xlLnByb3RvYnVmQg5UaW1lc3RhbXBQcm90b1ABWjJnb29nbGUuZ29sYW5nLm9yZy9wcm90b2J1Zi90eXBlcy9rbm93bi90aW1lc3RhbXBwYvgBAaICA0dQQqoCHkdvb2dsZS5Qcm90b2J1Zi5XZWxsS25vd25UeXBlc2IGcHJvdG8zCvg2Cg5wYXJ0bmVycy5wcm90bxIUcGxhdGZvcm0ucGFydG5lcnMudjEaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8ihQEKDE9yZ2FuaXphdGlvbhInCg9vcmdhbml6YXRpb25faWQYASABKAlSDm9yZ2FuaXphdGlvbklkEhAKA2lubhgCIAEoCVIDaW5uEigKDWN1c3RvbWVyX25hbWUYAyABKAlIAFIMY3VzdG9tZXJOYW1liAEBQhAKDl9jdXN0b21lcl9uYW1lIu4BCgtVc2VyUHJvZmlsZRIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSKAoNY29udGFjdF9lbWFpbBgCIAEoCUgAUgxjb250YWN0RW1haWyIAQESGQoFcGhvbmUYAyABKAlIAVIFcGhvbmWIAQESRgoMb3JnYW5pemF0aW9uGAQgASgLMiIucGxhdGZvcm0ucGFydG5lcnMudjEuT3JnYW5pemF0aW9uUgxvcmdhbml6YXRpb24SHQoKY2FuX2ludml0ZRgFIAEoCFIJY2FuSW52aXRlQhAKDl9jb250YWN0X2VtYWlsQggKBl9waG9uZSJsCgpJbnZpdGF0aW9uEiMKDWludml0YXRpb25faWQYASABKAlSDGludml0YXRpb25JZBI5CgpleHBpcmVzX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcFIJZXhwaXJlc0F0ImoKGEVuc3VyZVVzZXJQcm9maWxlUmVxdWVzdBInCg9yZWdpc3RyYXRpb25faWQYASABKAlSDnJlZ2lzdHJhdGlvbklkEiUKDnZlcmlmaWVkX2VtYWlsGAIgASgJUg12ZXJpZmllZEVtYWlsIjQKGUVuc3VyZVVzZXJQcm9maWxlUmVzcG9uc2USFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkIjAKFUdldFVzZXJQcm9maWxlUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQiVQoWR2V0VXNlclByb2ZpbGVSZXNwb25zZRI7Cgdwcm9maWxlGAEgASgLMiEucGxhdGZvcm0ucGFydG5lcnMudjEuVXNlclByb2ZpbGVSB3Byb2ZpbGUiiwEKIlJlc29sdmVDYW1wYWlnbk9yZ2FuaXphdGlvblJlcXVlc3QSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhAKA2lubhgCIAEoCVIDaW5uEigKDWN1c3RvbWVyX25hbWUYAyABKAlIAFIMY3VzdG9tZXJOYW1liAEBQhAKDl9jdXN0b21lcl9uYW1lIm0KI1Jlc29sdmVDYW1wYWlnbk9yZ2FuaXphdGlvblJlc3BvbnNlEkYKDG9yZ2FuaXphdGlvbhgBIAEoCzIiLnBsYXRmb3JtLnBhcnRuZXJzLnYxLk9yZ2FuaXphdGlvblIMb3JnYW5pemF0aW9uIlwKGEdldFJlcHJlc2VudGF0aXZlUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSJwoPb3JnYW5pemF0aW9uX2lkGAIgASgJUg5vcmdhbml6YXRpb25JZCJYChlHZXRSZXByZXNlbnRhdGl2ZVJlc3BvbnNlEjsKB3Byb2ZpbGUYASABKAsyIS5wbGF0Zm9ybS5wYXJ0bmVycy52MS5Vc2VyUHJvZmlsZVIHcHJvZmlsZSKPAQoXQ3JlYXRlSW52aXRhdGlvblJlcXVlc3QSIgoNYWN0b3JfdXNlcl9pZBgBIAEoCVILYWN0b3JVc2VySWQSJwoPcmVjaXBpZW50X2VtYWlsGAIgASgJUg5yZWNpcGllbnRFbWFpbBInCg9pZGVtcG90ZW5jeV9rZXkYAyABKAlSDmlkZW1wb3RlbmN5S2V5IlwKGENyZWF0ZUludml0YXRpb25SZXNwb25zZRJACgppbnZpdGF0aW9uGAEgASgLMiAucGxhdGZvcm0ucGFydG5lcnMudjEuSW52aXRhdGlvblIKaW52aXRhdGlvbiKJAQoXQWNjZXB0SW52aXRhdGlvblJlcXVlc3QSIgoNYWN0b3JfdXNlcl9pZBgBIAEoCVILYWN0b3JVc2VySWQSJQoOdmVyaWZpZWRfZW1haWwYAiABKAlSDXZlcmlmaWVkRW1haWwSIwoNaW52aXRhdGlvbl9pZBgDIAEoCVIMaW52aXRhdGlvbklkIhoKGEFjY2VwdEludml0YXRpb25SZXNwb25zZSJiChdSZXZva2VJbnZpdGF0aW9uUmVxdWVzdBIiCg1hY3Rvcl91c2VyX2lkGAEgASgJUgthY3RvclVzZXJJZBIjCg1pbnZpdGF0aW9uX2lkGAIgASgJUgxpbnZpdGF0aW9uSWQiGgoYUmV2b2tlSW52aXRhdGlvblJlc3BvbnNlMtgGCg9QYXJ0bmVyc1NlcnZpY2USdAoRRW5zdXJlVXNlclByb2ZpbGUSLi5wbGF0Zm9ybS5wYXJ0bmVycy52MS5FbnN1cmVVc2VyUHJvZmlsZVJlcXVlc3QaLy5wbGF0Zm9ybS5wYXJ0bmVycy52MS5FbnN1cmVVc2VyUHJvZmlsZVJlc3BvbnNlEmsKDkdldFVzZXJQcm9maWxlEisucGxhdGZvcm0ucGFydG5lcnMudjEuR2V0VXNlclByb2ZpbGVSZXF1ZXN0GiwucGxhdGZvcm0ucGFydG5lcnMudjEuR2V0VXNlclByb2ZpbGVSZXNwb25zZRKSAQobUmVzb2x2ZUNhbXBhaWduT3JnYW5pemF0aW9uEjgucGxhdGZvcm0ucGFydG5lcnMudjEuUmVzb2x2ZUNhbXBhaWduT3JnYW5pemF0aW9uUmVxdWVzdBo5LnBsYXRmb3JtLnBhcnRuZXJzLnYxLlJlc29sdmVDYW1wYWlnbk9yZ2FuaXphdGlvblJlc3BvbnNlEnQKEUdldFJlcHJlc2VudGF0aXZlEi4ucGxhdGZvcm0ucGFydG5lcnMudjEuR2V0UmVwcmVzZW50YXRpdmVSZXF1ZXN0Gi8ucGxhdGZvcm0ucGFydG5lcnMudjEuR2V0UmVwcmVzZW50YXRpdmVSZXNwb25zZRJxChBDcmVhdGVJbnZpdGF0aW9uEi0ucGxhdGZvcm0ucGFydG5lcnMudjEuQ3JlYXRlSW52aXRhdGlvblJlcXVlc3QaLi5wbGF0Zm9ybS5wYXJ0bmVycy52MS5DcmVh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",
+            "protoFile": "syntax = \"proto3\";\n\npackage platform.partners.v1;\n\nimport \"google/protobuf/timestamp.proto\";\n\n// UUID передаются строками. Неверные параметры — INVALID_ARGUMENT, чужой ресурс — NOT_FOUND,\n// отсутствие полномочия — PERMISSION_DENIED, конфликт членства, состояния или ключа —\n// ABORTED (409). Для занятого ИНН — ALREADY_EXISTS с кодом invitation_required.\n// Временная недоступность — UNAVAILABLE. Профиль и контакты выдаются доверенным потребителям.\nservice PartnersService {\n  // Auth передаёт стабильный UUID регистрации. Повтор возвращает прежний user_id.\n  rpc EnsureUserProfile(EnsureUserProfileRequest) returns (EnsureUserProfileResponse);\n  // Возвращает профиль для подтверждённого пользователя. До членства организация отсутствует.\n  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);\n  // Для оформления кампании. Сначала используется текущее членство, иначе регистрируется свободный ИНН.\n  rpc ResolveCampaignOrganization(ResolveCampaignOrganizationRequest) returns (ResolveCampaignOrganizationResponse);\n  // Проверяет действующую пару. Для неподтверждённой пары NOT_FOUND без данных организации.\n  rpc GetRepresentative(GetRepresentativeRequest) returns (GetRepresentativeResponse);\n  // Новый ключ заменяет приглашение для той же организации и адреса. Повтор ключа возвращает тот же результат.\n  rpc CreateInvitation(CreateInvitationRequest) returns (CreateInvitationResponse);\n  // Подтверждённый адрес берётся из сессии Auth. Повтор тем же получателем идемпотентен.\n  rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse);\n  // Создатель отзывает ожидающее приглашение. Повтор отзыва им же идемпотентен.\n  rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse);\n}\n\nmessage Organization {\n  string organization_id = 1;\n  string inn = 2;\n  optional string customer_name = 3;\n}\n\nmessage UserProfile {\n  string user_id = 1;\n  optional string contact_email = 2;\n  optional string phone = 3;\n  Organization organization = 4;\n  bool can_invite = 5;\n}\n\nmessage Invitation {\n  string invitation_id = 1;\n  google.protobuf.Timestamp expires_at = 2;\n}\n\nmessage EnsureUserProfileRequest {\n  string registration_id = 1;\n  string verified_email = 2;\n}\n\nmessage EnsureUserProfileResponse {\n  string user_id = 1;\n}\n\nmessage GetUserProfileRequest {\n  string user_id = 1;\n}\n\nmessage GetUserProfileResponse {\n  UserProfile profile = 1;\n}\n\nmessage ResolveCampaignOrganizationRequest {\n  string user_id = 1;\n  string inn = 2;\n  optional string customer_name = 3;\n}\n\nmessage ResolveCampaignOrganizationResponse {\n  Organization organization = 1;\n}\n\nmessage GetRepresentativeRequest {\n  string user_id = 1;\n  string organization_id = 2;\n}\n\nmessage GetRepresentativeResponse {\n  UserProfile profile = 1;\n}\n\nmessage CreateInvitationRequest {\n  string actor_user_id = 1;\n  string recipient_email = 2;\n  string idempotency_key = 3;\n}\n\nmessage CreateInvitationResponse {\n  Invitation invitation = 1;\n}\n\nmessage AcceptInvitationRequest {\n  string actor_user_id = 1;\n  string verified_email = 2;\n  string invitation_id = 3;\n}\n\nmessage AcceptInvitationResponse {}\n\nmessage RevokeInvitationRequest {\n  string actor_user_id = 1;\n  string invitation_id = 2;\n}\n\nmessage RevokeInvitationResponse {}\n"
+          }
+        },
+        "name": "protobuf",
+        "version": "0.8.1"
+      }
+    ]
+  },
+  "provider": {
+    "name": "partners-service"
+  }
+}

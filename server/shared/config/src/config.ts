@@ -452,3 +452,52 @@ function readNotificationsSmtp(r: Reader) {
     password,
   }
 }
+
+/** Проверяет ключ AES-256 и адреса транспортов до открытия сетевых портов. */
+export function readAuthConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const codeKey = r.text('AUTH_CODE_KEY')
+  if (!/^[a-f0-9]{64}$/i.test(codeKey)) r.issues.push('AUTH_CODE_KEY')
+  const databaseUrl = r.url('AUTH_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const databaseTimeoutMs = r.int('AUTH_DATABASE_TIMEOUT_MS', 3000)
+  const http = { host: r.ip('HTTP_HOST', '0.0.0.0'), port: r.int('HTTP_PORT', 3003, 65535) }
+  const grpc = {
+    host: r.ip('AUTH_GRPC_HOST', '127.0.0.1'),
+    port: r.int('AUTH_GRPC_PORT', 50053, 65535),
+  }
+  const partnersTarget = r.text('AUTH_PARTNERS_GRPC_TARGET', '127.0.0.1:50054')
+  if (
+    !/^(?:\[[0-9a-f:]+\]|[a-z0-9.-]+):[0-9]+$/i.test(partnersTarget) ||
+    !Number(partnersTarget.split(':').pop()) ||
+    Number(partnersTarget.split(':').pop()) > 65535
+  )
+    r.issues.push('AUTH_PARTNERS_GRPC_TARGET')
+  const partnersTimeoutMs = r.int('AUTH_PARTNERS_TIMEOUT_MS', 3000)
+  r.check()
+  return Object.freeze({
+    ...base,
+    codeKey,
+    partnersTarget,
+    partnersTimeoutMs,
+    databaseUrl,
+    databaseTimeoutMs,
+    http,
+    grpc,
+  })
+}
+
+/** Проверяет параметры подключений сервиса партнёров до начала приёма запросов. */
+export function readPartnersConfig(env: Env) {
+  const r = new Reader(env)
+  const base = common(r)
+  const databaseUrl = r.url('PARTNERS_DATABASE_URL', ['postgresql:', 'postgres:'])
+  const databaseTimeoutMs = r.int('PARTNERS_DATABASE_TIMEOUT_MS', 3000)
+  const http = { host: r.ip('HTTP_HOST', '0.0.0.0'), port: r.int('HTTP_PORT', 3004, 65535) }
+  const grpc = {
+    host: r.ip('PARTNERS_GRPC_HOST', '127.0.0.1'),
+    port: r.int('PARTNERS_GRPC_PORT', 50054, 65535),
+  }
+  r.check()
+  return Object.freeze({ ...base, databaseUrl, databaseTimeoutMs, http, grpc })
+}

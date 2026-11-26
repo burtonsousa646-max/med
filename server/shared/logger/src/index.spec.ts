@@ -26,3 +26,44 @@ it('K2: не записывает неизвестные поля и сырые 
   expect(lines.join('')).toContain('"service":"test"')
   expect(lines.join('')).toContain('"timestamp":')
 })
+
+it('K2: сохраняет обязательные поля и уровень безопасного события', () => {
+  const lines: string[] = []
+  const logger = createPlatformLogger(
+    { service: 'gateway', version: '1.2.3', env: 'test', level: 'info' },
+    {
+      write: (line: string) => {
+        lines.push(line)
+      },
+    },
+  )
+  logger.event(
+    'request',
+    {
+      requestId: 'request-1',
+      appId: 'cabinet',
+      operationId: 'read',
+      route: '/v1/items/{id}',
+      method: 'GET',
+      status: 200,
+      durationMs: 12,
+    },
+    'warn',
+  )
+  const record: unknown = JSON.parse(lines[0] ?? '')
+  expect(record).toMatchObject({
+    level: 40,
+    service: 'gateway',
+    version: '1.2.3',
+    env: 'test',
+    message: 'Запрос завершён',
+    requestId: 'request-1',
+    appId: 'cabinet',
+    operationId: 'read',
+    route: '/v1/items/{id}',
+    method: 'GET',
+    status: 200,
+    durationMs: 12,
+  })
+  expect(record).toHaveProperty('timestamp', expect.any(String))
+})

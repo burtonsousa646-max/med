@@ -17,6 +17,8 @@ lint:
     PACKAGE_DIRECTORY_MATCH:
       - proto/suggestion/v1/suggestion.proto
       - proto/notifications/v1/notifications.proto
+      - proto/auth/v1/auth.proto
+      - proto/partners/v1/partners.proto
 breaking:
   use:
     - FILE

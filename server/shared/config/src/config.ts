@@ -279,6 +279,7 @@ export function readNotificationsConfig(env: Env) {
     key: r.text('NOTIFICATIONS_TLS_KEY_FILE'),
   }
   const smtp = readNotificationsSmtp(r)
+  const postbox = readNotificationsPostbox(r)
   r.check()
   return {
     ...base,
@@ -291,6 +292,44 @@ export function readNotificationsConfig(env: Env) {
     clients,
     tls,
     smtp,
+    postbox,
+  }
+}
+
+/** Читает адрес и учётные данные Postbox только для настроенного адаптера. */
+function readNotificationsPostbox(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_POSTBOX_') && value?.trim(),
+    )
+  )
+    return undefined
+
+  const name = 'NOTIFICATIONS_POSTBOX_ENDPOINT'
+  const endpoint = r.text(name).trim()
+  try {
+    const url = new URL(endpoint)
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash
+    ) {
+      r.issues.push(name)
+    }
+  } catch {
+    r.issues.push(name)
+  }
+
+  return {
+    endpoint,
+    id: r.text('NOTIFICATIONS_POSTBOX_SENDER_CONFIG'),
+    from: r.text('NOTIFICATIONS_POSTBOX_FROM'),
+    subject: r.text('NOTIFICATIONS_POSTBOX_SUBJECT'),
+    configurationSet: r.text('NOTIFICATIONS_POSTBOX_CONFIGURATION_SET'),
+    iamToken: r.text('NOTIFICATIONS_POSTBOX_IAM_TOKEN'),
   }
 }
 

@@ -18,6 +18,8 @@ import { firstValueFrom } from 'rxjs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createNotificationsApp } from '../src/app.ts'
 import type { ChannelTransport } from '../src/application'
+import { PostboxEmailTransport } from '../src/infrastructure/postbox/postbox-email.transport.ts'
+import { NotificationsDatabase } from '../src/infrastructure/prisma'
 
 const databaseUrl = process.env['TEST_NOTIFICATIONS_DATABASE_URL']
 if (!databaseUrl || !new URL(databaseUrl).pathname.endsWith('_test'))
@@ -96,8 +98,9 @@ async function availablePort() {
 describe('SendNotification через gRPC с mTLS', () => {
   const mail = vi.fn<ChannelTransport['send']>()
   const message = vi.fn<ChannelTransport['send']>()
-  const transports = new Map([
-    [email, { transport: 'smtp', senderConfig: 'test', send: mail }],
+  const smtp = { transport: 'smtp', senderConfig: 'test', send: mail }
+  const transports = new Map<Channel, ChannelTransport>([
+    [email, smtp],
     [telegram, { transport: 'telegram', senderConfig: 'test', send: message }],
   ])
   let dir: string
@@ -164,6 +167,61 @@ describe('SendNotification через gRPC с mTLS', () => {
     }
   }
   const send = (command: SendNotificationRequest) => firstValueFrom(rpc.sendNotification(command))
+
+  it('R4.5 R4.7 сохраняет попытку Postbox при потере ответа и ведёт журнал без содержимого письма', async () => {
+    const command = { ...request(), text: 'synthetic-postbox-message' }
+    const token = 'synthetic-postbox-token'
+    const requestToPostbox = vi
+      .fn<typeof fetch>()
+      .mockRejectedValue(new Error(`${token} ${command.email ?? ''} ${command.text}`))
+    transports.set(
+      email,
+      new PostboxEmailTransport(
+        {
+          endpoint: 'https://postbox.example.test',
+          id: 'postbox-test',
+          from: 'sender@example.test',
+          subject: 'Тестовое письмо',
+          configurationSet: 'notifications-test',
+        },
+        () => token,
+        requestToPostbox,
+      ),
+    )
+
+    try {
+      const result = await send(command)
+      expect(result.results[0]).toMatchObject({
+        status: Status.SUBMISSION_STATUS_UNCONFIRMED,
+        reason: 'awaiting_confirmation',
+        retryable: false,
+      })
+      expect(await send(command)).toEqual(result)
+      expect(requestToPostbox).toHaveBeenCalledTimes(1)
+
+      const database = app.get(NotificationsDatabase)
+      const dispatch = await database.dispatch.findUniqueOrThrow({
+        where: {
+          initiator_dispatchId: { initiator: 'auth-service', dispatchId: command.dispatchId },
+        },
+        include: { audit: true, channels: { include: { attempts: true } } },
+      })
+      const attempt = dispatch.channels[0]?.attempts[0]
+      expect(attempt).toMatchObject({
+        id: result.results[0]?.attemptId,
+        transport: 'postbox',
+        senderConfig: 'postbox-test',
+        submission: 'unconfirmed',
+      })
+      expect(dispatch.audit.some(({ attemptId }) => attemptId === attempt?.id)).toBe(true)
+      const stored = JSON.stringify(dispatch)
+      for (const value of [token, command.email, command.text, 'sender@example.test']) {
+        expect(stored).not.toContain(value)
+      }
+    } finally {
+      transports.set(email, smtp)
+    }
+  })
 
   it('отвечает только доверенному инициатору и проверяет форму до попыток', async () => {
     const other = connect('other')

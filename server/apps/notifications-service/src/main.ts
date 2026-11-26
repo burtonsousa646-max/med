@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { readNotificationsConfig } from '@platform/config'
 import { NotificationChannel } from '@platform/contracts/notifications/v1/notifications'
 import { createNotificationsApp } from './app.ts'
+import { PostboxEmailTransport } from './infrastructure/postbox/postbox-email.transport.ts'
 import { SmtpEmailTransport } from './infrastructure/smtp/smtp-email.transport.ts'
 
 try {
@@ -14,7 +15,15 @@ try {
       new SmtpEmailTransport({ ...config.smtp, ca }),
     )
   }
-  const app = await createNotificationsApp(config, transports, { enableFeatureFlags: true })
+  let externalEmail: PostboxEmailTransport | undefined
+  if (config.postbox) {
+    const { iamToken, ...sender } = config.postbox
+    externalEmail = new PostboxEmailTransport(sender, () => iamToken)
+  }
+  const app = await createNotificationsApp(config, transports, {
+    enableFeatureFlags: true,
+    externalEmail,
+  })
   app.enableShutdownHooks()
   await app.listen()
 } catch {

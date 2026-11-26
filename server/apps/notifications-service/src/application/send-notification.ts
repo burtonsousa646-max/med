@@ -3,6 +3,8 @@ import {
   type SendNotificationRequest,
 } from '@platform/contracts/notifications/v1/notifications'
 import { channelKey } from './dispatch.ts'
+import { EXTERNAL_EMAIL_PROVIDER } from './feature-flags.ts'
+import type { FeatureFlagsPort } from './ports/feature-flags.port.ts'
 import type {
   ChannelTransport,
   DispatchContext,
@@ -20,6 +22,8 @@ export class SendNotification {
     private readonly transports: ReadonlyMap<Channel, ChannelTransport>,
     private readonly timeoutMs: number,
     private readonly resultReserveMs: number,
+    private readonly flags?: FeatureFlagsPort,
+    private readonly externalEmail?: ChannelTransport,
   ) {}
 
   /** Регистрирует поручение один раз и возвращает согласованный снимок всех каналов. */
@@ -49,14 +53,23 @@ export class SendNotification {
         ? contact.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(contact)
         : /^\+[1-9]\d{1,14}$/.test(contact)
     if (!valid) return this.store.skip(key, name, 'invalid_contact')
-    const transport = this.transports.get(channel)
+    const selection: { transport?: ChannelTransport | undefined } = {}
     const attempt = await this.store.reserve(
       key,
       name,
-      transport ?? { transport: 'unconfigured', senderConfig: 'none' },
+      () => {
+        // Хранилище спрашивает маршрут только после проверки, что нужна новая попытка.
+        if (channel === email && this.flags?.isEnabled(EXTERNAL_EMAIL_PROVIDER)) {
+          selection.transport = this.externalEmail
+          return selection.transport ?? { transport: 'external-unconfigured', senderConfig: 'none' }
+        }
+        selection.transport = this.transports.get(channel)
+        return selection.transport ?? { transport: 'unconfigured', senderConfig: 'none' }
+      },
       request.retryAttemptIds,
     )
     if (attempt.kind !== 'reserved') return
+    const { transport } = selection
     const time = request.expiresAt
     const expiresAt = time ? Number(time.seconds) * 1000 + time.nanos / 1_000_000 : Infinity
     let outcome: AttemptOutcome

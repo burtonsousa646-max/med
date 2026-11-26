@@ -12,12 +12,17 @@ import type { RpcOptions } from './rpc.types.ts'
 export async function createNotificationsApp(
   config: ReturnType<typeof readNotificationsConfig>,
   transports: RpcOptions['transports'] = new Map(),
+  routing: Pick<RpcOptions, 'externalEmail' | 'enableFeatureFlags'> = {},
 ) {
   const [ca, cert_chain, private_key] = (await Promise.all(
     [config.tls.ca, config.tls.cert, config.tls.key].map((path) => readFile(path)),
   )) as [Buffer, Buffer, Buffer]
   return NestFactory.createMicroservice<MicroserviceOptions>(
-    NotificationsModule.forRoot(config.databaseUrl, config.keys, { ...config, transports }),
+    NotificationsModule.forRoot(config.databaseUrl, config.keys, {
+      ...config,
+      transports,
+      ...routing,
+    }),
     {
       logger: false,
       abortOnError: false,

@@ -278,6 +278,7 @@ export function readNotificationsConfig(env: Env) {
     cert: r.text('NOTIFICATIONS_TLS_CERT_FILE'),
     key: r.text('NOTIFICATIONS_TLS_KEY_FILE'),
   }
+  const smtp = readNotificationsSmtp(r)
   r.check()
   return {
     ...base,
@@ -289,5 +290,46 @@ export function readNotificationsConfig(env: Env) {
     keys: { current, versions },
     clients,
     tls,
+    smtp,
+  }
+}
+
+/** Читает настройки SMTP, если окружение подключает почтовый сервер. */
+function readNotificationsSmtp(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_SMTP_') && value?.trim(),
+    )
+  )
+    return undefined
+
+  const host = r.text('NOTIFICATIONS_SMTP_HOST').trim()
+  const senderConfig = r.text('NOTIFICATIONS_SMTP_SENDER_CONFIG').trim()
+  const from = r.text('NOTIFICATIONS_SMTP_FROM').trim()
+  const subject = r.text('NOTIFICATIONS_SMTP_SUBJECT')
+  const username = r.text('NOTIFICATIONS_SMTP_USERNAME')
+  const password = r.text('NOTIFICATIONS_SMTP_PASSWORD')
+  const tlsMode = r.text('NOTIFICATIONS_SMTP_TLS_MODE', 'starttls')
+  if (!isIP(host) && !/^[a-z0-9][a-z0-9.-]*$/i.test(host)) r.issues.push('NOTIFICATIONS_SMTP_HOST')
+  if (!/^[a-z0-9_-]{1,64}$/i.test(senderConfig)) r.issues.push('NOTIFICATIONS_SMTP_SENDER_CONFIG')
+  if (
+    from.length > 254 ||
+    !/^[^\s@<>,"\\\p{Cc}]+@[^\s@<>,"\\\p{Cc}]+\.[^\s@<>,"\\\p{Cc}]+$/u.test(from)
+  )
+    r.issues.push('NOTIFICATIONS_SMTP_FROM')
+  if (/[\r\n]/u.test(subject)) r.issues.push('NOTIFICATIONS_SMTP_SUBJECT')
+  if (username.includes('\0')) r.issues.push('NOTIFICATIONS_SMTP_USERNAME')
+  if (password.includes('\0')) r.issues.push('NOTIFICATIONS_SMTP_PASSWORD')
+  if (tlsMode !== 'starttls' && tlsMode !== 'implicit') r.issues.push('NOTIFICATIONS_SMTP_TLS_MODE')
+  return {
+    host,
+    port: r.int('NOTIFICATIONS_SMTP_PORT', tlsMode === 'implicit' ? 465 : 587, 65535),
+    implicitTls: tlsMode === 'implicit',
+    caFile: r.env['NOTIFICATIONS_SMTP_CA_FILE']?.trim() || undefined,
+    senderConfig,
+    from,
+    subject,
+    username,
+    password,
   }
 }

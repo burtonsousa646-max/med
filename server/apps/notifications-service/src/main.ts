@@ -1,8 +1,20 @@
+import { readFile } from 'node:fs/promises'
 import { readNotificationsConfig } from '@platform/config'
+import { NotificationChannel } from '@platform/contracts/notifications/v1/notifications'
 import { createNotificationsApp } from './app.ts'
+import { SmtpEmailTransport } from './infrastructure/smtp/smtp-email.transport.ts'
 
 try {
-  const app = await createNotificationsApp(readNotificationsConfig(process.env))
+  const config = readNotificationsConfig(process.env)
+  const transports = new Map<NotificationChannel, SmtpEmailTransport>()
+  if (config.smtp) {
+    const ca = config.smtp.caFile ? await readFile(config.smtp.caFile) : undefined
+    transports.set(
+      NotificationChannel.NOTIFICATION_CHANNEL_EMAIL,
+      new SmtpEmailTransport({ ...config.smtp, ca }),
+    )
+  }
+  const app = await createNotificationsApp(config, transports, { enableFeatureFlags: true })
   app.enableShutdownHooks()
   await app.listen()
 } catch {

@@ -36,7 +36,7 @@ export interface SubmissionStore {
   reserve(
     key: string,
     channel: string,
-    route: TransportRoute,
+    route: () => TransportRoute,
     retries: readonly string[],
   ): Promise<Reservation>
   finish(key: string, channel: string, attemptId: string, outcome: AttemptOutcome): Promise<void>

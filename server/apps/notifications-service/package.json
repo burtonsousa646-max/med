@@ -22,7 +22,8 @@
     "@grpc/grpc-js": "^1.14.0",
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs/microservices": "^12.4.0",
-    "@platform/config": "workspace:*"
+    "@platform/config": "workspace:*",
+    "@platform/feature-flags": "workspace:*"
   },
   "devDependencies": {
     "@platform/server-tooling": "workspace:*",

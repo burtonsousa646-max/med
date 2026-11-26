@@ -4,6 +4,8 @@ import type { ChannelTransport } from './application'
 export interface RpcOptions {
   clients: ReadonlyMap<string, string>
   transports: ReadonlyMap<NotificationChannel, ChannelTransport>
+  externalEmail?: ChannelTransport | undefined
+  enableFeatureFlags?: boolean
   timeoutMs: number
   resultReserveMs: number
 }

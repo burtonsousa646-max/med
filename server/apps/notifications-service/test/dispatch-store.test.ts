@@ -1,7 +1,13 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { NestFactory } from '@nestjs/core'
-import { NotificationChannel } from '@platform/contracts/notifications/v1/notifications'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import {
+  NotificationChannel,
+  SubmissionStatus,
+} from '@platform/contracts/notifications/v1/notifications'
+import { InMemoryFeatureFlags } from '@platform/feature-flags'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { SendNotification, type ChannelTransport } from '../src/application'
+import { EXTERNAL_EMAIL_PROVIDER } from '../src/application/feature-flags.ts'
 import { DispatchStore, NotificationsDatabase } from '../src/infrastructure/prisma'
 import { NotificationsModule } from '../src/notifications.module.ts'
 
@@ -36,6 +42,45 @@ describe('Транзакции хранилища поручений', () => {
     store = app.get(DispatchStore)
   })
   afterAll(() => app.close())
+
+  it('R2.4 R4.5 использует SMTP без кеша и применяет смену флага только к новой попытке', async () => {
+    const smtp = vi.fn<ChannelTransport['send']>().mockResolvedValue({ submission: 'unconfirmed' })
+    const external = vi.fn<ChannelTransport['send']>().mockResolvedValue({ submission: 'sent' })
+    const flags = new InMemoryFeatureFlags()
+    const isEnabled = vi.spyOn(flags, 'isEnabled')
+    const scenario = new SendNotification(
+      store,
+      new Map([[channel, { ...route, send: smtp }]]),
+      3000,
+      150,
+      flags,
+      { transport: 'external', senderConfig: 'test', send: external },
+    )
+    const command = request()
+    const context = { deadline: Infinity, signal: new AbortController().signal }
+    const original = await scenario.execute('test', command, context)
+    expect(original.results[0]?.status).toBe(SubmissionStatus.SUBMISSION_STATUS_UNCONFIRMED)
+    expect(isEnabled).toHaveBeenCalledExactlyOnceWith(EXTERNAL_EMAIL_PROVIDER)
+
+    flags.set(EXTERNAL_EMAIL_PROVIDER, true)
+    expect(await scenario.execute('test', command, context)).toEqual(original)
+    expect(isEnabled).toHaveBeenCalledTimes(1)
+    expect(external).not.toHaveBeenCalled()
+    expect(smtp).toHaveBeenCalledTimes(1)
+
+    const next = await scenario.execute('test', request(), context)
+    expect(next.results[0]?.status).toBe(SubmissionStatus.SUBMISSION_STATUS_SENT)
+    expect(external).toHaveBeenCalledTimes(1)
+    expect(isEnabled).toHaveBeenCalledTimes(2)
+    await expect(
+      db.submissionAttempt.findUnique({ where: { id: next.results[0]!.attemptId! } }),
+    ).resolves.toMatchObject({ transport: 'external', senderConfig: 'test' })
+
+    flags.set(EXTERNAL_EMAIL_PROVIDER, false)
+    await scenario.execute('test', request(), context)
+    expect(smtp).toHaveBeenCalledTimes(2)
+    expect(external).toHaveBeenCalledTimes(1)
+  })
 
   it('одна попытка для конкурирующих регистраций и повторного обращения после перезапуска', async () => {
     const command = request()

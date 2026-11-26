@@ -81,7 +81,7 @@ export class DispatchStore {
   reserve(
     dispatchKey: string,
     channel: string,
-    route: TransportRoute,
+    route: TransportRoute | (() => TransportRoute),
     retries: readonly string[] = [],
   ): Promise<Reservation> {
     return this.db.$transaction(
@@ -115,6 +115,7 @@ export class DispatchStore {
           await tx.dispatchAudit.create({ data: { ...audit, event: 'expired' } })
           return { kind: 'expired' }
         }
+        const selected = typeof route === 'function' ? route() : route
         const attemptId = randomUUIDv7()
         await tx.submissionAttempt.create({
           data: {
@@ -122,8 +123,8 @@ export class DispatchStore {
             channelId: row.id,
             number: (previous?.number ?? 0) + 1,
             predecessorId: previous?.id,
-            transport: route.transport,
-            senderConfig: route.senderConfig,
+            transport: selected.transport,
+            senderConfig: selected.senderConfig,
           },
         })
         await tx.dispatchAudit.create({ data: { ...audit, event: 'started', attemptId } })

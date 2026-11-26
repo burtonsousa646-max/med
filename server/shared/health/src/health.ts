@@ -23,6 +23,7 @@ import { status } from '@grpc/grpc-js'
 @Injectable()
 export class HealthState {
   private phase: 'initializing' | 'ready' | 'shutdown' = 'initializing'
+  private dependencyProbe?: () => Promise<boolean>
   constructor(readonly serviceName: string) {}
 
   /** Отмечает готовность, если остановка ещё не началась. */
@@ -40,9 +41,27 @@ export class HealthState {
     this.phase = 'shutdown'
   }
 
+  onModuleDestroy() {
+    this.beginShutdown()
+  }
+
   /** Возвращает текущий признак готовности. */
   isReady(): boolean {
     return this.phase === 'ready'
+  }
+
+  /** Позволяет сервису проверять обязательную зависимость в общем HTTP/gRPC healthcheck. */
+  setDependencyProbe(probe: () => Promise<boolean>) {
+    this.dependencyProbe = probe
+  }
+
+  async checkReady(): Promise<boolean> {
+    if (!this.isReady()) return false
+    try {
+      return (!this.dependencyProbe || (await this.dependencyProbe())) && this.isReady()
+    } catch {
+      return false
+    }
   }
 }
 
@@ -77,7 +96,7 @@ export class HealthController {
     @Res({ passthrough: true }) response: { status(code: number): unknown },
   ) {
     this.validate(query)
-    if (!this.state.isReady()) {
+    if (!(await this.state.checkReady())) {
       response.status(503)
       return { code: 'not_ready', message: 'Сервис не готов принимать запросы' }
     }
@@ -93,11 +112,11 @@ export class GrpcHealthController implements HealthRpc {
 
   /** Возвращает состояние сервиса либо NOT_FOUND для неизвестного имени. */
   @GrpcMethod('Health', 'Check')
-  check(request: HealthCheckRequest): HealthCheckResponse {
+  async check(request: HealthCheckRequest): Promise<HealthCheckResponse> {
     if (request.service && request.service !== this.state.serviceName)
       throw new RpcException({ code: status.NOT_FOUND, message: 'Ресурс не найден' })
     return {
-      status: this.state.isReady()
+      status: (await this.state.checkReady())
         ? HealthCheckResponse_ServingStatus.SERVING
         : HealthCheckResponse_ServingStatus.NOT_SERVING,
     }

@@ -4,6 +4,27 @@
 name: platform
 
 services:
+  haraka:
+    profiles: [mail]
+    build: ./haraka
+    environment:
+      HARAKA_SMTP_PASSWORD: ${HARAKA_SMTP_PASSWORD:-}
+    ports:
+      - '127.0.0.1:${HARAKA_SMTP_PORT:-1587}:587'
+    volumes:
+      - haraka-queue:/opt/haraka/app/queue
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "const s = require('node:net').connect(587, '127.0.0.1'); s.on('data', b => process.exit(b.toString().startsWith('220 ') ? 0 : 1)); s.on('error', () => process.exit(1)); s.setTimeout(2000, () => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   postgres:
     image: postgres:18-alpine
     environment:
@@ -144,5 +165,6 @@ services:
         condition: service_started
 
 volumes:
+  haraka-queue:
   postgres-data:
   redis-data:

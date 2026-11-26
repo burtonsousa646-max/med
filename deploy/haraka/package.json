@@ -1,0 +1,8 @@
+{
+  "name": "platform-haraka",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "dependencies": {
+    "haraka": "3.4.2"
+  }
+}

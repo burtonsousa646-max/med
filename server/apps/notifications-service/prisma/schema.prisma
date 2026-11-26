@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/infrastructure/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Dispatch {
+  id          String            @id @db.Uuid
+  initiator   String
+  dispatchId  String            @map("dispatch_id") @db.Uuid
+  fingerprint String            @db.Char(64)
+  keyVersion  String            @map("key_version")
+  expiresAt   DateTime?         @map("expires_at") @db.Timestamptz(3)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  channels    DispatchChannel[]
+  audit       DispatchAudit[]
+
+  @@unique([initiator, dispatchId])
+  @@map("dispatches")
+}
+
+model DispatchChannel {
+  id          String              @id @db.Uuid
+  dispatchKey String              @map("dispatch_key") @db.Uuid
+  dispatch    Dispatch            @relation(fields: [dispatchKey], references: [id], onDelete: Restrict)
+  channel     String
+  reason      String?
+  attempts    SubmissionAttempt[]
+
+  @@unique([dispatchKey, channel])
+  @@map("dispatch_channels")
+}
+
+model SubmissionAttempt {
+  id            String             @id @db.Uuid
+  channelId     String             @map("channel_id") @db.Uuid
+  channel       DispatchChannel    @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  number        Int
+  predecessorId String?            @unique @map("predecessor_id") @db.Uuid
+  predecessor   SubmissionAttempt? @relation("Retry", fields: [predecessorId], references: [id], onDelete: Restrict)
+  successor     SubmissionAttempt? @relation("Retry")
+  transport     String
+  senderConfig  String             @map("sender_config")
+  startedAt     DateTime           @default(now()) @map("started_at") @db.Timestamptz(3)
+  submission    SubmissionOutcome  @default(unconfirmed)
+  reason        String?
+  providerId    String?            @map("provider_id")
+  delivery      String?
+
+  @@unique([channelId, number])
+  @@map("submission_attempts")
+}
+
+enum SubmissionOutcome {
+  unconfirmed
+  sent
+  not_sent
+
+  @@map("submission_outcome")
+}
+
+model DispatchAudit {
+  id          String   @id @db.Uuid
+  dispatchKey String   @map("dispatch_key") @db.Uuid
+  dispatch    Dispatch @relation(fields: [dispatchKey], references: [id], onDelete: Restrict)
+  recordedAt  DateTime @default(now()) @map("recorded_at") @db.Timestamptz(3)
+  event       String
+  channel     String?
+  attemptId   String?  @map("attempt_id") @db.Uuid
+
+  @@index([dispatchKey, recordedAt])
+  @@map("dispatch_audit")
+}
+
+model TelegramPhoneLookupWindow {
+  senderId     String   @id @map("sender_id")
+  nextLookupAt DateTime @map("next_lookup_at") @db.Timestamptz(6)
+
+  @@map("telegram_phone_lookup_windows")
+}
+
+model PostboxEvent {
+  source     String
+  eventId    String   @map("event_id")
+  attemptId  String   @map("attempt_id") @db.Uuid
+  messageId  String   @map("message_id")
+  kind       String
+  result     String
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(3)
+
+  @@id([source, eventId])
+  @@map("postbox_events")
+}
+
+model PostboxStreamPosition {
+  source         String
+  shard          String
+  sequenceNumber String @map("sequence_number")
+
+  @@id([source, shard])
+  @@map("postbox_stream_positions")
+}

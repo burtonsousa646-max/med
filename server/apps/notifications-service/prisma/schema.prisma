@@ -81,3 +81,25 @@ model TelegramPhoneLookupWindow {
 
   @@map("telegram_phone_lookup_windows")
 }
+
+model PostboxEvent {
+  source     String
+  eventId    String   @map("event_id")
+  attemptId  String   @map("attempt_id") @db.Uuid
+  messageId  String   @map("message_id")
+  kind       String
+  result     String
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(3)
+
+  @@id([source, eventId])
+  @@map("postbox_events")
+}
+
+model PostboxStreamPosition {
+  source         String
+  shard          String
+  sequenceNumber String @map("sequence_number")
+
+  @@id([source, shard])
+  @@map("postbox_stream_positions")
+}

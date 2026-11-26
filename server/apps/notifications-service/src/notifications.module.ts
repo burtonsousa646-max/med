@@ -4,7 +4,10 @@ import { NotificationChannel } from '@platform/contracts/notifications/v1/notifi
 import { FeatureFlagsClient, FeatureFlagsModule } from '@platform/feature-flags'
 import { SendNotification, type FingerprintKeys } from './application'
 import type { FeatureFlagsPort } from './application/ports/feature-flags.port.ts'
+import { PostboxEventReader } from './infrastructure/postbox/postbox-event-reader.ts'
+import { YdsEventStream } from './infrastructure/postbox/yds-event-stream.ts'
 import { DispatchStore, NotificationsDatabase } from './infrastructure/prisma'
+import { PrismaPostboxEventStore } from './infrastructure/prisma/postbox-event-store.ts'
 import { PrismaTelegramLookupWindow } from './infrastructure/prisma/telegram-lookup-window.ts'
 import { GramJsTelegramClient } from './infrastructure/telegram/gramjs-telegram.client.ts'
 import { TelegramTransport } from './infrastructure/telegram/telegram.transport.ts'
@@ -15,6 +18,7 @@ import type { RpcOptions } from './rpc.types.ts'
 @Module({})
 export class NotificationsModule {
   static forRoot(databaseUrl: string, keys: FingerprintKeys, rpc?: RpcOptions): DynamicModule {
+    const stream = rpc?.postboxStream
     return {
       module: NotificationsModule,
       imports: rpc
@@ -26,6 +30,21 @@ export class NotificationsModule {
         : [],
       controllers: rpc ? [NotificationController] : [],
       providers: [
+        ...(stream
+          ? [
+              {
+                provide: PostboxEventReader,
+                inject: [NotificationsDatabase],
+                useFactory: (db: NotificationsDatabase) =>
+                  new PostboxEventReader(
+                    stream.name,
+                    stream.identityId,
+                    new YdsEventStream(stream),
+                    new PrismaPostboxEventStore(db),
+                  ),
+              },
+            ]
+          : []),
         ...(rpc
           ? [
               { provide: CLIENT_IDENTITIES, useValue: rpc.clients },

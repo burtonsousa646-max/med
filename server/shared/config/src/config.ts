@@ -280,6 +280,7 @@ export function readNotificationsConfig(env: Env) {
   }
   const smtp = readNotificationsSmtp(r)
   const postbox = readNotificationsPostbox(r)
+  const postboxStream = readNotificationsPostboxStream(r)
   const telegram = readNotificationsTelegram(r)
   r.check()
   return {
@@ -294,7 +295,55 @@ export function readNotificationsConfig(env: Env) {
     tls,
     smtp,
     postbox,
+    postboxStream,
     telegram,
+  }
+}
+
+/** Параметры отдельного потока подтверждений и его учётной записи только для чтения. */
+function readNotificationsPostboxStream(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_POSTBOX_STREAM_') && value?.trim(),
+    )
+  )
+    return undefined
+
+  const endpointKey = 'NOTIFICATIONS_POSTBOX_STREAM_ENDPOINT'
+  const endpoint = r.text(endpointKey).trim()
+  try {
+    const url = new URL(endpoint)
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash
+    ) {
+      r.issues.push(endpointKey)
+    }
+  } catch {
+    r.issues.push(endpointKey)
+  }
+  const name = r.text('NOTIFICATIONS_POSTBOX_STREAM_NAME').trim()
+  const region = r.text('NOTIFICATIONS_POSTBOX_STREAM_REGION').trim()
+  const identityId = r.text('NOTIFICATIONS_POSTBOX_STREAM_IDENTITY_ID').trim()
+  const accessKeyId = r.text('NOTIFICATIONS_POSTBOX_STREAM_ACCESS_KEY_ID').trim()
+  if (!/^\/[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$/iu.test(name)) {
+    r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_NAME')
+  }
+  if (!/^[a-z0-9-]+$/u.test(region)) r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_REGION')
+  if (!/^[a-z0-9_-]+$/iu.test(identityId)) r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_IDENTITY_ID')
+  if (!/^[a-z0-9]+$/iu.test(accessKeyId))
+    r.issues.push('NOTIFICATIONS_POSTBOX_STREAM_ACCESS_KEY_ID')
+  return {
+    endpoint,
+    name,
+    region,
+    identityId,
+    accessKeyId,
+    secretAccessKey: r.text('NOTIFICATIONS_POSTBOX_STREAM_SECRET_ACCESS_KEY'),
   }
 }
 

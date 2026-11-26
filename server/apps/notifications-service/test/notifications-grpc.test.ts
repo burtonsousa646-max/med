@@ -19,7 +19,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { createNotificationsApp } from '../src/app.ts'
 import type { ChannelTransport } from '../src/application'
 import { PostboxEmailTransport } from '../src/infrastructure/postbox/postbox-email.transport.ts'
+import { PostboxEventReader } from '../src/infrastructure/postbox/postbox-event-reader.ts'
 import { NotificationsDatabase } from '../src/infrastructure/prisma'
+import { PrismaPostboxEventStore } from '../src/infrastructure/prisma/postbox-event-store.ts'
 import { TelegramTransport } from '../src/infrastructure/telegram/telegram.transport.ts'
 
 const databaseUrl = process.env['TEST_NOTIFICATIONS_DATABASE_URL']
@@ -216,7 +218,7 @@ describe('SendNotification через gRPC с mTLS', () => {
     }
   })
 
-  it('R4.5 R4.7 сохраняет попытку Postbox при потере ответа и ведёт журнал без содержимого письма', async () => {
+  it('R4.5 R4.6 R4.7 уточняет потерянный ответ Postbox после перезапуска без новой отправки', async () => {
     const command = { ...request(), text: 'synthetic-postbox-message' }
     const token = 'synthetic-postbox-token'
     const requestToPostbox = vi
@@ -266,6 +268,80 @@ describe('SendNotification через gRPC с mTLS', () => {
       for (const value of [token, command.email, command.text, 'sender@example.test']) {
         expect(stored).not.toContain(value)
       }
+
+      const attemptId = result.results[0]!.attemptId!
+      const source = randomUUID()
+      const identity = 'trusted-identity'
+      function record(
+        sequence: string,
+        eventType: string,
+        eventId: string,
+        tag = attemptId,
+        identityId = identity,
+      ) {
+        return {
+          sequence,
+          data: Buffer.from(
+            JSON.stringify({
+              eventType,
+              eventId,
+              mail: {
+                messageId: 'confirmed-message',
+                identityId,
+                tags: { attempt_id: [tag] },
+                commonHeaders: { to: [command.email], subject: command.text },
+              },
+            }),
+          ),
+        }
+      }
+      const bounce = record('1', 'Bounce', 'confirmed-message:1')
+      const records = [
+        bounce,
+        { ...bounce, sequence: '2' },
+        record('3', 'Send', 'confirmed-message:0'),
+        record('4', 'Delivery', 'other-identity:1', attemptId, 'other-identity'),
+        record('5', 'Send', 'other-attempt:1', randomUUID()),
+        record('6', 'Delivery', 'confirmed-message:2'),
+      ]
+      const stream = {
+        shards: () => Promise.resolve(['shard-0']),
+        iterator: vi.fn().mockResolvedValue('iterator'),
+        read: vi.fn().mockResolvedValue({ records, lagMs: 23, next: undefined }),
+      }
+      const store = new PrismaPostboxEventStore(database)
+      vi.spyOn(store, 'advance').mockRejectedValueOnce(new Error('Сбой до фиксации позиции'))
+      const signal = new AbortController().signal
+      await new PostboxEventReader(source, identity, stream, store).poll(signal)
+      await expect(store.position(source, 'shard-0')).resolves.toBeUndefined()
+      const restarted = new PostboxEventReader(source, identity, stream, store)
+      await restarted.poll(signal)
+
+      await expect(store.position(source, 'shard-0')).resolves.toBe('6')
+      const facts = await database.postboxEvent.findMany({
+        where: { source },
+        orderBy: { eventId: 'asc' },
+      })
+      expect(facts.map(({ eventId, result: outcome }) => [eventId, outcome])).toEqual([
+        ['confirmed-message:0', 'matched'],
+        ['confirmed-message:1', 'matched'],
+        ['confirmed-message:2', 'conflict'],
+        ['other-attempt:1', 'unmatched'],
+      ])
+      expect(JSON.stringify(facts)).not.toContain(command.text)
+      expect(JSON.stringify(facts)).not.toContain(command.email)
+      await expect(
+        database.submissionAttempt.findUnique({ where: { id: attemptId } }),
+      ).resolves.toMatchObject({
+        submission: 'sent',
+        providerId: 'confirmed-message',
+        delivery: 'bounced',
+      })
+      expect((await send(command)).results[0]).toMatchObject({
+        attemptId,
+        status: Status.SUBMISSION_STATUS_SENT,
+      })
+      expect(requestToPostbox).toHaveBeenCalledTimes(1)
     } finally {
       transports.set(email, smtp)
     }

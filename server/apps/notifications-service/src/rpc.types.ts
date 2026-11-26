@@ -8,6 +8,7 @@ export interface RpcOptions {
   externalEmail?: ChannelTransport | undefined
   enableFeatureFlags?: boolean
   telegram?: ReturnType<typeof readNotificationsConfig>['telegram']
+  postboxStream?: ReturnType<typeof readNotificationsConfig>['postboxStream']
   timeoutMs: number
   resultReserveMs: number
 }

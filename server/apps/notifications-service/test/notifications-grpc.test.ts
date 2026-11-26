@@ -4,10 +4,12 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { createServer, type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { inspect } from 'node:util'
 import { credentials, Metadata, status, type CallOptions } from '@grpc/grpc-js'
 import { ClientGrpcProxy } from '@nestjs/microservices'
 import { readNotificationsConfig } from '@platform/config'
 import { protoPath, PROTO_LOADER_OPTIONS } from '@platform/contracts'
+import type { HealthClient } from '@platform/contracts/grpc/health/v1/health'
 import {
   NotificationChannel as Channel,
   SubmissionStatus as Status,
@@ -18,6 +20,7 @@ import { firstValueFrom } from 'rxjs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createNotificationsApp } from '../src/app.ts'
 import type { ChannelTransport } from '../src/application'
+import { NotificationsMetrics } from '../src/infrastructure/metrics/notifications-metrics.ts'
 import { PostboxEmailTransport } from '../src/infrastructure/postbox/postbox-email.transport.ts'
 import { PostboxEventReader } from '../src/infrastructure/postbox/postbox-event-reader.ts'
 import { NotificationsDatabase } from '../src/infrastructure/prisma'
@@ -116,8 +119,11 @@ describe('SendNotification через gRPC с mTLS', () => {
     const read = (file: string) => readFileSync(join(dir, file))
     return new ClientGrpcProxy({
       url: 'localhost:' + String(config.port),
-      package: 'platform.notifications.v1',
-      protoPath: protoPath('notifications/v1/notifications.proto'),
+      package: ['platform.notifications.v1', 'grpc.health.v1'],
+      protoPath: [
+        protoPath('notifications/v1/notifications.proto'),
+        protoPath('grpc/health/v1/health.proto'),
+      ],
       loader: { ...PROTO_LOADER_OPTIONS, includeDirs: [...PROTO_LOADER_OPTIONS.includeDirs] },
       credentials: credentials.createSsl(read('ca.pem'), read(name + '.key'), read(name + '.pem')),
     })
@@ -137,6 +143,7 @@ describe('SendNotification через gRPC с mTLS', () => {
     config = readNotificationsConfig({
       GRPC_HOST: '127.0.0.1',
       GRPC_PORT: String(await availablePort()),
+      NOTIFICATIONS_HTTP_PORT: String(await availablePort()),
       NOTIFICATIONS_CHANNEL_TIMEOUT_MS: '100',
       NOTIFICATIONS_RESULT_RESERVE_MS: '5000',
       NOTIFICATIONS_DATABASE_URL: databaseUrl,
@@ -170,6 +177,26 @@ describe('SendNotification через gRPC с mTLS', () => {
     }
   }
   const send = (command: SendNotificationRequest) => firstValueFrom(rpc.sendNotification(command))
+  const operations = (path: string) =>
+    fetch(`http://${config.http.host}:${config.http.port}${path}`)
+
+  it('T7 проверяет PostgreSQL для readiness по HTTP и gRPC, сохраняя liveness', async () => {
+    const health = client.getService<HealthClient>('Health')
+    const check = () => firstValueFrom(health.check({ service: 'notifications-service' }))
+    expect((await operations('/health/ready')).status).toBe(200)
+    expect((await check()).status).toBe('SERVING')
+
+    const database = app.app.get(NotificationsDatabase)
+    const probe = vi.spyOn(database, '$queryRaw').mockRejectedValue(new Error('Тестовый сбой базы'))
+    try {
+      expect((await operations('/health/ready')).status).toBe(503)
+      expect((await check()).status).toBe('NOT_SERVING')
+      expect((await operations('/health/live')).status).toBe(200)
+    } finally {
+      probe.mockRestore()
+    }
+    expect((await check()).status).toBe('SERVING')
+  })
 
   it('R1.4 R3.1 сохраняет успех email, если срок ожидания Telegram истёк до отправки', async () => {
     const sendText = vi.fn()
@@ -221,6 +248,9 @@ describe('SendNotification через gRPC с mTLS', () => {
   it('R4.5 R4.6 R4.7 уточняет потерянный ответ Postbox после перезапуска без новой отправки', async () => {
     const command = { ...request(), text: 'synthetic-postbox-message' }
     const token = 'synthetic-postbox-token'
+    const log = vi.spyOn(console, 'log')
+    const warn = vi.spyOn(console, 'warn')
+    const error = vi.spyOn(console, 'error')
     const requestToPostbox = vi
       .fn<typeof fetch>()
       .mockRejectedValue(new Error(`${token} ${command.email ?? ''} ${command.text}`))
@@ -249,7 +279,7 @@ describe('SendNotification через gRPC с mTLS', () => {
       expect(await send(command)).toEqual(result)
       expect(requestToPostbox).toHaveBeenCalledTimes(1)
 
-      const database = app.get(NotificationsDatabase)
+      const database = app.app.get(NotificationsDatabase)
       const dispatch = await database.dispatch.findUniqueOrThrow({
         where: {
           initiator_dispatchId: { initiator: 'auth-service', dispatchId: command.dispatchId },
@@ -316,6 +346,7 @@ describe('SendNotification через gRPC с mTLS', () => {
       await expect(store.position(source, 'shard-0')).resolves.toBeUndefined()
       const restarted = new PostboxEventReader(source, identity, stream, store)
       await restarted.poll(signal)
+      expect(restarted.metrics()).toEqual({ healthy: true, ignored: 1, lagMs: 23 })
 
       await expect(store.position(source, 'shard-0')).resolves.toBe('6')
       const facts = await database.postboxEvent.findMany({
@@ -342,7 +373,37 @@ describe('SendNotification через gRPC с mTLS', () => {
         status: Status.SUBMISSION_STATUS_SENT,
       })
       expect(requestToPostbox).toHaveBeenCalledTimes(1)
+
+      const metricsResponse = await operations('/metrics')
+      expect(metricsResponse.status).toBe(200)
+      const metrics = await metricsResponse.text()
+      const streamMetrics = await app.app
+        .get(NotificationsMetrics)
+        .render(database, restarted.metrics())
+      expect(streamMetrics).toContain('notifications_postbox_stream_lag_seconds 0.023')
+      expect(streamMetrics).toContain('notifications_oldest_unconfirmed_seconds ')
+      expect(metrics).toContain('notifications_oldest_unconfirmed_seconds ')
+      expect(metrics).toContain(
+        'notifications_attempts{channel="email",transport="postbox",outcome="sent"}',
+      )
+      expect(metrics).toContain('notifications_replays_without_submission_total ')
+      const logs = inspect([log.mock.calls, warn.mock.calls, error.mock.calls], { depth: null })
+      for (const value of [
+        token,
+        command.email,
+        command.text,
+        command.dispatchId,
+        attemptId,
+        source,
+      ]) {
+        expect(metrics).not.toContain(value)
+        expect(streamMetrics).not.toContain(value)
+        expect(logs).not.toContain(value)
+      }
     } finally {
+      log.mockRestore()
+      warn.mockRestore()
+      error.mockRestore()
       transports.set(email, smtp)
     }
   })

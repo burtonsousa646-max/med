@@ -49,6 +49,7 @@ export function parsePostboxEvent(data: Uint8Array, identityId: string): Postbox
 interface ShardState {
   iterator: string | undefined
   position: string | undefined
+  lagMs: number
 }
 
 /** Обрабатывает записи по порядку сегмента. После сбоя чтение возобновляется с позиции в БД. */
@@ -56,6 +57,9 @@ export class PostboxEventReader implements OnApplicationBootstrap, OnModuleDestr
   private readonly controller = new AbortController()
   private readonly known = new Map<string, ShardState>()
   private running?: Promise<void>
+  private healthy = false
+  private lagMs: number | undefined
+  private ignored = 0
 
   constructor(
     private readonly source: string,
@@ -79,6 +83,7 @@ export class PostboxEventReader implements OnApplicationBootstrap, OnModuleDestr
     for (const shard of this.known.keys()) {
       if (!active.has(shard)) this.known.delete(shard)
     }
+    let healthy = true
     for (const shard of shards) {
       if (signal.aborted) return
       try {
@@ -86,15 +91,22 @@ export class PostboxEventReader implements OnApplicationBootstrap, OnModuleDestr
       } catch {
         // Истёкший итератор и сбой доставки возобновляются с сохранённой позиции.
         this.known.delete(shard)
+        healthy = false
       }
     }
+    this.healthy = healthy
+    if (healthy) this.lagMs = Math.max(0, ...[...this.known.values()].map((state) => state.lagMs))
+  }
+
+  metrics() {
+    return { healthy: this.healthy, lagMs: this.lagMs, ignored: this.ignored }
   }
 
   private async pollShard(shard: string, signal: AbortSignal) {
     let state = this.known.get(shard)
     if (!state) {
       const position = await this.store.position(this.source, shard)
-      state = { position, iterator: await this.stream.iterator(shard, position, signal) }
+      state = { position, iterator: await this.stream.iterator(shard, position, signal), lagMs: 0 }
       this.known.set(shard, state)
     }
     if (!state.iterator) return
@@ -103,6 +115,7 @@ export class PostboxEventReader implements OnApplicationBootstrap, OnModuleDestr
       signal.throwIfAborted()
       const event = parsePostboxEvent(record.data, this.identityId)
       if (event) await this.store.apply(this.source, event)
+      else this.ignored++
       signal.throwIfAborted()
       // Событие уже зафиксировано. При проигрыше другого экземпляра читаем новую позицию БД.
       if (!(await this.store.advance(this.source, shard, state.position, record.sequence))) {
@@ -112,6 +125,7 @@ export class PostboxEventReader implements OnApplicationBootstrap, OnModuleDestr
       state.position = record.sequence
     }
     state.iterator = batch.next
+    state.lagMs = batch.lagMs
   }
 
   private async run() {
@@ -121,6 +135,7 @@ export class PostboxEventReader implements OnApplicationBootstrap, OnModuleDestr
         await this.poll(signal)
       } catch {
         // Повторяем безопасное чтение. Ошибка провайдера может содержать данные запроса.
+        this.healthy = false
       }
       await pause(1000, undefined, { signal, ref: false }).catch(() => undefined)
     }

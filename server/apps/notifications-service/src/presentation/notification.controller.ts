@@ -7,6 +7,7 @@ import type {
   SendNotificationResponse,
 } from '@platform/contracts/notifications/v1/notifications'
 import { SendNotification } from '../application'
+import { NotificationsMetrics } from '../infrastructure/metrics/notifications-metrics.ts'
 
 export const CLIENT_IDENTITIES = Symbol('CLIENT_IDENTITIES')
 
@@ -16,6 +17,7 @@ export class NotificationController {
   constructor(
     @Inject(SendNotification) private readonly send: SendNotification,
     @Inject(CLIENT_IDENTITIES) private readonly clients: ReadonlyMap<string, string>,
+    @Inject(NotificationsMetrics) private readonly metrics: NotificationsMetrics,
   ) {}
 
   /** Обрабатывает RPC в пределах дедлайна вызова и скрывает внутреннюю диагностику. */
@@ -23,6 +25,21 @@ export class NotificationController {
   async sendNotification(
     request: SendNotificationRequest,
     _metadata: Metadata,
+    call: ServerUnaryCall<SendNotificationRequest, SendNotificationResponse>,
+  ) {
+    const startedAt = performance.now()
+    let succeeded = false
+    try {
+      const result = await this.dispatch(request, call)
+      succeeded = true
+      return result
+    } finally {
+      this.metrics.observe((performance.now() - startedAt) / 1000, succeeded)
+    }
+  }
+
+  private async dispatch(
+    request: SendNotificationRequest,
     call: ServerUnaryCall<SendNotificationRequest, SendNotificationResponse>,
   ) {
     const auth = call.getAuthContext()

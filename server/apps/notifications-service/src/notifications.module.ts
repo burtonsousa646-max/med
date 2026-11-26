@@ -2,8 +2,10 @@ import { createHash } from 'node:crypto'
 import { Module, type DynamicModule } from '@nestjs/common'
 import { NotificationChannel } from '@platform/contracts/notifications/v1/notifications'
 import { FeatureFlagsClient, FeatureFlagsModule } from '@platform/feature-flags'
+import { HealthModule } from '@platform/health'
 import { SendNotification, type FingerprintKeys } from './application'
 import type { FeatureFlagsPort } from './application/ports/feature-flags.port.ts'
+import { NotificationsMetrics } from './infrastructure/metrics/notifications-metrics.ts'
 import { PostboxEventReader } from './infrastructure/postbox/postbox-event-reader.ts'
 import { YdsEventStream } from './infrastructure/postbox/yds-event-stream.ts'
 import { DispatchStore, NotificationsDatabase } from './infrastructure/prisma'
@@ -12,6 +14,7 @@ import { PrismaTelegramLookupWindow } from './infrastructure/prisma/telegram-loo
 import { GramJsTelegramClient } from './infrastructure/telegram/gramjs-telegram.client.ts'
 import { TelegramTransport } from './infrastructure/telegram/telegram.transport.ts'
 import { CLIENT_IDENTITIES, NotificationController } from './presentation'
+import { MetricsController } from './presentation/metrics.controller.ts'
 import type { RpcOptions } from './rpc.types.ts'
 
 /** Предоставляет хранилище сценариям обработки внутренних поручений. */
@@ -23,12 +26,13 @@ export class NotificationsModule {
       module: NotificationsModule,
       imports: rpc
         ? [
+            HealthModule.register({ serviceName: 'notifications-service' }),
             rpc.enableFeatureFlags
               ? FeatureFlagsModule.forRoot({ appName: 'notifications-service' })
               : FeatureFlagsModule.forTesting(),
           ]
         : [],
-      controllers: rpc ? [NotificationController] : [],
+      controllers: rpc ? [NotificationController, MetricsController] : [],
       providers: [
         ...(stream
           ? [
@@ -47,6 +51,7 @@ export class NotificationsModule {
           : []),
         ...(rpc
           ? [
+              NotificationsMetrics,
               { provide: CLIENT_IDENTITIES, useValue: rpc.clients },
               {
                 provide: SendNotification,

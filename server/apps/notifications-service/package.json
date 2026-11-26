@@ -22,7 +22,9 @@
     "@grpc/grpc-js": "^1.14.0",
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs/microservices": "^12.4.0",
+    "@nestjs/platform-express": "^12.4.0",
     "@platform/config": "workspace:*",
+    "@platform/health": "workspace:*",
     "@platform/feature-flags": "workspace:*",
     "telegram": "2.26.22"
   },

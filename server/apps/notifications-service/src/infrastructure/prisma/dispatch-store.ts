@@ -127,7 +127,9 @@ export class DispatchStore {
             senderConfig: selected.senderConfig,
           },
         })
-        await tx.dispatchAudit.create({ data: { ...audit, event: 'started', attemptId } })
+        await tx.dispatchAudit.create({
+          data: { ...audit, event: retry ? 'retry_started' : 'started', attemptId },
+        })
         return { kind: 'reserved', attemptId }
       },
       { isolationLevel: 'ReadCommitted' },

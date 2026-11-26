@@ -240,6 +240,11 @@ export function readNotificationsConfig(env: Env) {
   const base = common(r)
   const host = r.ip('GRPC_HOST', '0.0.0.0')
   const port = r.int('GRPC_PORT', 50057, 65535)
+  const http = {
+    host: r.ip('NOTIFICATIONS_HTTP_HOST', '127.0.0.1'),
+    port: r.int('NOTIFICATIONS_HTTP_PORT', 3007, 65535),
+  }
+  if (port === http.port) r.issues.push('GRPC_PORT', 'NOTIFICATIONS_HTTP_PORT')
   const timeoutMs = r.int('NOTIFICATIONS_CHANNEL_TIMEOUT_MS', 3000)
   const resultReserveMs = r.int('NOTIFICATIONS_RESULT_RESERVE_MS', 150)
   const databaseUrl = r.url('NOTIFICATIONS_DATABASE_URL', ['postgresql:', 'postgres:'])
@@ -287,6 +292,7 @@ export function readNotificationsConfig(env: Env) {
     ...base,
     host,
     port,
+    http,
     timeoutMs,
     resultReserveMs,
     databaseUrl,

@@ -20,12 +20,12 @@ try {
     const { iamToken, ...sender } = config.postbox
     externalEmail = new PostboxEmailTransport(sender, () => iamToken)
   }
-  const app = await createNotificationsApp(config, transports, {
+  const runtime = await createNotificationsApp(config, transports, {
     enableFeatureFlags: true,
     externalEmail,
   })
-  app.enableShutdownHooks()
-  await app.listen()
+  runtime.app.enableShutdownHooks()
+  await runtime.listen()
 } catch {
   // Ошибка среды может содержать путь к ключу или строку подключения.
   process.stderr.write('Не удалось запустить сервис нотификаций\n')

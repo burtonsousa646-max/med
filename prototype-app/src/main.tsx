@@ -14,6 +14,7 @@ import { queryClient, useCampaigns } from './api'
 const Landing = lazy(() => import('./screens/Landing'))
 const LandingV2 = lazy(() => import('./screens/LandingV2'))
 const LandingV4 = lazy(() => import('./screens/LandingV4'))
+const LandingV5 = lazy(() => import('./screens/LandingV5'))
 const CampaignPage = lazy(() => import('./screens/CampaignPage'))
 const V4Staff = lazy(() => import('./screens/V4Staff'))
 const LandingV3 = lazy(() => import('./screens/LandingV3'))
@@ -79,6 +80,7 @@ function OnRoute() {
   }, [pathname, search])
   useEffect(() => {
     if (!/^\/market(?:\/|$)/.test(pathname)) scrollTo(0, 0)
+    if (/^\/v5\/?$/.test(pathname)) { document.title = `${platformName} · версия 5`; return }
     if (pathname.startsWith('/app/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
     const name = pathname === '/app/materials' ? 'Офлайн-материалы' : pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/' ? platformName : pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname.startsWith('/market') ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
@@ -133,6 +135,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v2" element={<LandingV2 />} />
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
+                <Route path="/v5" element={<LandingV5 />} />
                 <Route path="/v4/create/:stage?" element={<CampaignPage />} />
                 <Route path="/v4/offer" element={<PublicDocument />} />
                 <Route path="/v4/privacy" element={<PublicDocument privacy />} />

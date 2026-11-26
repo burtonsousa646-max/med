@@ -244,7 +244,7 @@ export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathn
 export function DemoMenu() {
   const [open, setOpen] = useState(false)
   const { pathname, search } = useLocation()
-  if (pathname === '/' || pathname.startsWith('/market') || pathname.startsWith('/app') || pathname === '/near' || pathname === '/v4' || pathname.startsWith('/v4/') || (pathname === '/login' && new URLSearchParams(search).get('from') === 'v4') || pathname === '/v3' || pathname.startsWith('/mvp')) return null
+  if (pathname === '/' || pathname.startsWith('/market') || pathname.startsWith('/app') || pathname === '/near' || /^\/v5\/?$/.test(pathname) || pathname === '/v4' || pathname.startsWith('/v4/') || (pathname === '/login' && new URLSearchParams(search).get('from') === 'v4') || pathname === '/v3' || pathname.startsWith('/mvp')) return null
   return (
     <>
       <button className="bl-pill-dark demo-fab" onClick={() => setOpen(true)} aria-haspopup="dialog">экраны прототипа</button>

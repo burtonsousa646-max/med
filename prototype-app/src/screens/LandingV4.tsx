@@ -1,5 +1,5 @@
 import { platformName } from '../../shared/brand'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { analytics, type EventParams } from '../analytics'
 import { Link, useLocation } from 'react-router'
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react'
@@ -118,7 +118,7 @@ function Final() {
   </section>
 }
 
-export default function LandingV4() {
+export default function LandingV4({ audience }: { audience?: ReactNode }) {
   const home = useLocation().pathname === '/'
   const showCta = useHeaderCta()
   const reduce = useReducedMotion()
@@ -166,7 +166,7 @@ export default function LandingV4() {
       <main id="v4-content" tabIndex={-1} className="bl-stack v4-content">
         <Hero phone={<AppScreenshotPhone kind="main"/>} motionPaused={false} actions={<StartCampaignLink className="bl-btn bl-btn--primary bl-btn--xl"/>}/>
         <PromoMarquee/>
-        <SketchMetrics calm pulse/><HowItWorks/>
+        {audience ?? <SketchMetrics calm pulse/>}<HowItWorks/>
         {/* Временно скрыто: <Clients calm/> */}
         <Placements/>
         {/* Временно скрыто: <ForEveryone calm/> */}

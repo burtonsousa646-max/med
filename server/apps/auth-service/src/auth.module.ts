@@ -1,4 +1,6 @@
 import { GrpcPartnerProfiles } from './infrastructure/grpc'
+import { GrpcNotifications } from './infrastructure/grpc/notifications.ts'
+import { EmailDeliveryWorker } from './infrastructure/prisma/email-delivery.ts'
 import { Module, type DynamicModule } from '@nestjs/common'
 import { type AuthConfig } from '@platform/config'
 import { HealthModule } from '@platform/health'
@@ -25,6 +27,13 @@ export class AuthModule {
       imports: [HealthModule.register({ serviceName: SERVICE_NAME })],
       controllers: [EmailCodeController, SessionController],
       providers: [
+        { provide: GrpcNotifications, useFactory: () => new GrpcNotifications(config) },
+        {
+          provide: EmailDeliveryWorker,
+          inject: [AUTH_DATABASE, EncryptedCodes, GrpcNotifications],
+          useFactory: (db: AuthDatabase, codes: EncryptedCodes, notifications: GrpcNotifications) =>
+            new EmailDeliveryWorker(db, codes, notifications),
+        },
         {
           provide: Sessions,
           inject: [AUTH_DATABASE],

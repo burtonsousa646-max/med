@@ -7,7 +7,8 @@ import { join } from 'node:path'
 import { inspect } from 'node:util'
 import { credentials, Metadata, status, type CallOptions } from '@grpc/grpc-js'
 import { ClientGrpcProxy } from '@nestjs/microservices'
-import { readNotificationsConfig } from '@platform/config'
+import { readNotificationsConfig, type AuthConfig } from '@platform/config'
+import { GrpcNotifications } from '../../auth-service/src/infrastructure/grpc/notifications.ts'
 import { protoPath, PROTO_LOADER_OPTIONS } from '@platform/contracts'
 import type { HealthClient } from '@platform/contracts/grpc/health/v1/health'
 import {
@@ -524,6 +525,37 @@ describe('SendNotification через gRPC с mTLS', () => {
       expect((await send(command)).results[0]?.status).toBe(Status.SUBMISSION_STATUS_SENT)
     })
     expect(mail).toHaveBeenCalledTimes(1)
+  })
+
+  it('005/R1.1 R1.5 принимает повтор Auth без второго письма и отклоняет просроченный код', async () => {
+    const auth = new GrpcNotifications({
+      notificationsTarget: 'localhost:' + String(config.port),
+      notificationsTimeoutMs: 3000,
+      notificationsTls: {
+        ca: join(dir, 'ca.pem'),
+        cert: join(dir, 'client.pem'),
+        key: join(dir, 'client.key'),
+      },
+    } as AuthConfig)
+    try {
+      const id = randomUUID()
+      const expiry = new Date(Date.now() + 60_000)
+      const first = await auth.send(id, 'mail@example.test', '123456', expiry, null)
+      const again = await auth.send(id, 'mail@example.test', '123456', expiry, null)
+      expect(again).toEqual(first)
+      expect(mail).toHaveBeenCalledTimes(1)
+      const expired = await auth.send(
+        randomUUID(),
+        'mail@example.test',
+        '123456',
+        new Date(0),
+        null,
+      )
+      expect(expired.results[0]?.reason).toBe('expired')
+      expect(mail).toHaveBeenCalledTimes(1)
+    } finally {
+      auth.onModuleDestroy()
+    }
   })
 
   it('после потери ответа и перезапуска не дублирует ни один из каналов', async () => {

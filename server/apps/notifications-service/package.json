@@ -23,7 +23,8 @@
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs/microservices": "^12.4.0",
     "@platform/config": "workspace:*",
-    "@platform/feature-flags": "workspace:*"
+    "@platform/feature-flags": "workspace:*",
+    "telegram": "2.26.22"
   },
   "devDependencies": {
     "@platform/server-tooling": "workspace:*",

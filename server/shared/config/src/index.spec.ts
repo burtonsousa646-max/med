@@ -12,7 +12,7 @@ const valid = {
   UNLEASH_API_TOKEN: 'synthetic-test-token',
 }
 
-describe('Адрес Postbox в конфигурации нотификаций', () => {
+describe('Настройки транспорта нотификаций', () => {
   const notifications = {
     NOTIFICATIONS_DATABASE_URL: 'postgresql://localhost/notifications_test',
     NOTIFICATIONS_TLS_CA_FILE: 'ca.pem',
@@ -29,6 +29,32 @@ describe('Адрес Postbox в конфигурации нотификаций'
     NOTIFICATIONS_POSTBOX_CONFIGURATION_SET: 'test',
     NOTIFICATIONS_POSTBOX_IAM_TOKEN: 'synthetic-token',
   }
+
+  const telegram = {
+    NOTIFICATIONS_TELEGRAM_ACCOUNT_ID: '10001',
+    NOTIFICATIONS_TELEGRAM_API_ID: '10002',
+    NOTIFICATIONS_TELEGRAM_API_HASH: 'ff'.repeat(16),
+    NOTIFICATIONS_TELEGRAM_SESSION: 'synthetic-session',
+  }
+
+  it('включает Telegram при наличии полного набора настроек', () => {
+    expect(readNotificationsConfig(notifications).telegram).toBeUndefined()
+    expect(readNotificationsConfig({ ...notifications, ...telegram }).telegram?.accountId).toBe(
+      '10001',
+    )
+    expect(readNotificationsConfig({ ...notifications, ...telegram }).telegram?.apiId).toBe(10002)
+  })
+
+  it('отклоняет неверные настройки Telegram без раскрытия секрета', () => {
+    const read = () =>
+      readNotificationsConfig({
+        ...notifications,
+        ...telegram,
+        NOTIFICATIONS_TELEGRAM_API_HASH: 'synthetic-secret',
+      })
+    expect(read).toThrow('NOTIFICATIONS_TELEGRAM_API_HASH')
+    expect(read).not.toThrow('synthetic-secret')
+  })
 
   it('использует адрес из окружения и оставляет адаптер выключенным без настроек', () => {
     expect(readNotificationsConfig(notifications).postbox).toBeUndefined()

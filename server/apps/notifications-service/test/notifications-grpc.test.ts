@@ -20,6 +20,7 @@ import { createNotificationsApp } from '../src/app.ts'
 import type { ChannelTransport } from '../src/application'
 import { PostboxEmailTransport } from '../src/infrastructure/postbox/postbox-email.transport.ts'
 import { NotificationsDatabase } from '../src/infrastructure/prisma'
+import { TelegramTransport } from '../src/infrastructure/telegram/telegram.transport.ts'
 
 const databaseUrl = process.env['TEST_NOTIFICATIONS_DATABASE_URL']
 if (!databaseUrl || !new URL(databaseUrl).pathname.endsWith('_test'))
@@ -167,6 +168,53 @@ describe('SendNotification через gRPC с mTLS', () => {
     }
   }
   const send = (command: SendNotificationRequest) => firstValueFrom(rpc.sendNotification(command))
+
+  it('R1.4 R3.1 сохраняет успех email, если срок ожидания Telegram истёк до отправки', async () => {
+    const sendText = vi.fn()
+    const resolvePhone = vi.fn(
+      (_phone: string, signal: AbortSignal) =>
+        new Promise<never>((_resolve, reject) => {
+          signal.addEventListener(
+            'abort',
+            () => {
+              reject(new Error('Срок поиска исчерпан'))
+            },
+            { once: true },
+          )
+        }),
+    )
+    transports.set(
+      telegram,
+      new TelegramTransport(
+        'telegram-test',
+        { reserve: () => Promise.resolve({ reserved: true }) },
+        {
+          connect: () =>
+            Promise.resolve({ resolvePhone, sendText, close: () => Promise.resolve() }),
+        },
+      ),
+    )
+    try {
+      const result = await send({
+        ...request(),
+        channels: [email, telegram],
+        phone: '+12025550101',
+      })
+      expect(result.results).toMatchObject([
+        { channel: email, status: Status.SUBMISSION_STATUS_SENT },
+        {
+          channel: telegram,
+          status: Status.SUBMISSION_STATUS_NOT_SENT,
+          reason: 'temporary_rejection',
+          retryable: true,
+        },
+      ])
+      expect(resolvePhone).toHaveBeenCalledTimes(1)
+      expect(sendText).not.toHaveBeenCalled()
+    } finally {
+      transports.set(telegram, { transport: 'telegram', senderConfig: 'test', send: message })
+    }
+  })
 
   it('R4.5 R4.7 сохраняет попытку Postbox при потере ответа и ведёт журнал без содержимого письма', async () => {
     const command = { ...request(), text: 'synthetic-postbox-message' }

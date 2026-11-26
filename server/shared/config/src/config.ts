@@ -280,6 +280,7 @@ export function readNotificationsConfig(env: Env) {
   }
   const smtp = readNotificationsSmtp(r)
   const postbox = readNotificationsPostbox(r)
+  const telegram = readNotificationsTelegram(r)
   r.check()
   return {
     ...base,
@@ -293,6 +294,30 @@ export function readNotificationsConfig(env: Env) {
     tls,
     smtp,
     postbox,
+    telegram,
+  }
+}
+
+/** Включает Telegram при наличии настроек выделенной пользовательской сессии. */
+function readNotificationsTelegram(r: Reader) {
+  if (
+    !Object.entries(r.env).some(
+      ([name, value]) => name.startsWith('NOTIFICATIONS_TELEGRAM_') && value?.trim(),
+    )
+  ) {
+    return undefined
+  }
+  const accountId = r.text('NOTIFICATIONS_TELEGRAM_ACCOUNT_ID').trim()
+  if (!/^[1-9]\d{0,18}$/u.test(accountId) || BigInt(accountId) > 9_223_372_036_854_775_807n) {
+    r.issues.push('NOTIFICATIONS_TELEGRAM_ACCOUNT_ID')
+  }
+  const apiHash = r.text('NOTIFICATIONS_TELEGRAM_API_HASH').trim()
+  if (!/^[a-f0-9]{32}$/iu.test(apiHash)) r.issues.push('NOTIFICATIONS_TELEGRAM_API_HASH')
+  return {
+    accountId,
+    apiId: r.int('NOTIFICATIONS_TELEGRAM_API_ID', 0),
+    apiHash,
+    session: r.text('NOTIFICATIONS_TELEGRAM_SESSION').trim(),
   }
 }
 

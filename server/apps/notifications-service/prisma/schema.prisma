@@ -74,3 +74,10 @@ model DispatchAudit {
   @@index([dispatchKey, recordedAt])
   @@map("dispatch_audit")
 }
+
+model TelegramPhoneLookupWindow {
+  senderId     String   @id @map("sender_id")
+  nextLookupAt DateTime @map("next_lookup_at") @db.Timestamptz(6)
+
+  @@map("telegram_phone_lookup_windows")
+}

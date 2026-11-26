@@ -84,6 +84,7 @@ export class SendNotification {
       outcome = { submission: 'not_sent', reason: 'temporary_rejection' }
     else {
       const signal = AbortSignal.any([context.signal, AbortSignal.timeout(budget)])
+      let submissionStarted = !transport.reportsSubmissionStart
       // Ответ RPC может опередить подтверждение. Сохраняем и поздний результат той же попытки.
       const interrupted = Promise.withResolvers<undefined>()
       const abort = () => {
@@ -99,7 +100,11 @@ export class SendNotification {
               contact,
               text: request.text,
               expiresAt,
+              deadline: now + budget,
               signal,
+              onSubmissionStarted: () => {
+                submissionStarted = true
+              },
             })
           } catch {
             observed = { submission: 'unconfirmed' }
@@ -111,7 +116,12 @@ export class SendNotification {
           interrupted.promise.then(() => false),
         ])
         if (finished) return
-        outcome = { submission: 'unconfirmed' }
+        outcome = submissionStarted
+          ? { submission: 'unconfirmed' }
+          : {
+              submission: 'not_sent',
+              reason: Date.now() >= expiresAt ? 'expired' : 'temporary_rejection',
+            }
       } finally {
         signal.removeEventListener('abort', abort)
       }

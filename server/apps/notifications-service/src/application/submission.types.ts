@@ -21,12 +21,16 @@ export type AttemptOutcome =
 
 /** Адаптер учитывает сигнал отмены и срок непосредственно перед фактической передачей. */
 export interface ChannelTransport extends TransportRoute {
+  /** Если задано, адаптер сообщает, когда внешний вызов может отправить сообщение. */
+  readonly reportsSubmissionStart?: true
   send(input: {
     attemptId: string
     contact: string
     text: string
     expiresAt: number
+    deadline?: number
     signal: AbortSignal
+    onSubmissionStarted?: () => void
   }): Promise<AttemptOutcome>
 }
 

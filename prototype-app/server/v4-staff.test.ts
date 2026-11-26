@@ -8,15 +8,16 @@ process.env.DB_PATH = ':memory:'
 const { app: productionRouter } = await import('./index.ts')
 const { db } = await import('./db.ts')
 const { createV4Staff } = await import('./v4-staff.ts')
+const { savePartnerRegistry } = await import('./partner-registry.ts')
 
 const allowed = 'staff@example.test'
 const attachment = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+yFYcAAAAASUVORK5CYII=', 'base64')
 const save = db.prepare('insert into v4_submissions (id, draft_id, digest, data, submitted_at, mail_next_at) values (?, ?, ?, ?, ?, ?)')
 
-function setup() {
+function setup(lookupRegistry?: (inn: string) => Promise<Response>) {
   let clock = Date.now()
   const messages: { email: string; code: string }[] = []
-  const app = new Hono().route('/api/v4/staff', createV4Staff({ addresses: [allowed, 'another@example.test'], administrators: ['admin@example.test'] }, async (email, code) => { messages.push({ email, code }) }, () => clock))
+  const app = new Hono().route('/api/v4/staff', createV4Staff({ addresses: [allowed, 'another@example.test'], administrators: ['admin@example.test'], lookupRegistry }, async (email, code) => { messages.push({ email, code }) }, () => clock))
   const call = (path: string, body?: object, cookie?: string) =>
     app.request('/api/v4/staff' + path, {
       method: body ? 'POST' : 'GET',
@@ -86,6 +87,40 @@ test('staff list, submission and assets require an allowlisted employee session'
   assert.equal((await productionRouter.request('/api/v4/staff/session', { headers: { Cookie: session } })).status, 401)
   assert.equal((await call('/logout', {}, session)).status, 200)
   assert.equal((await call('/submissions/search', {}, session)).status, 401)
+})
+
+test('staff can retry a missing registry snapshot and reuse it without changing the original application', async () => {
+  const inn = '7707083893'
+  const snapshot = {legalName:'Тестовая компания', kpp:'770701001', ogrn:'1027700132195', legalAddress:'Москва',
+    manager:'Руководитель', managerRole:'Директор', okved:'64.19', checkedAt:Date.now(), requiresReview:false}
+  const id = randomUUID(), second = randomUUID()
+  const original = {...emptyCampaignDraft(), business:{...emptyCampaignDraft().business, inn}, partnerDetails:{signer:'Подписант'}}
+  for (const uuid of [id, second]) save.run(uuid, randomUUID(), 'submission', JSON.stringify(original), Date.now(), Date.now())
+  let attempts = 0
+  const { call, messages } = setup(async query => {
+    assert.equal(query, inn)
+    if (++attempts === 1) return new Response(null, {status:502})
+    savePartnerRegistry(query, snapshot)
+    return new Response(null, {status:200})
+  })
+  const path = '/submissions/' + id
+  assert.equal((await call(path + '/registry', {})).status, 401)
+  const email = 'admin@example.test'
+  await call('/code', { email })
+  const login = await call('/verify', { email, code:messages[0].code })
+  const session = login.headers.get('set-cookie')!.split(';')[0]
+  assert.equal((await call(path + '/registry', {}, session)).status, 503)
+  assert.ok(!(await (await call(path, undefined, session)).json()).registryDetails)
+  const lookup = () => call(path + '/registry', { inn:'1234567894' }, session)
+  assert.deepEqual(await (await lookup()).json(), snapshot)
+  assert.deepEqual(await (await call('/submissions/' + second + '/registry', {}, session)).json(), snapshot)
+  savePartnerRegistry(inn, null)
+  assert.deepEqual(await (await lookup()).json(), snapshot)
+  assert.equal(attempts, 2)
+  const row = db.prepare('select data from v4_submissions where id = ?').get(id) as {data:string}
+  assert.deepEqual(JSON.parse(row.data), {...JSON.parse(JSON.stringify(original)), registryDetails:snapshot})
+  await call('/logout', {}, session)
+  db.prepare('delete from v4_staff_codes where email = ?').run(email)
 })
 
 test('staff codes expire and failed attempts exhaust the code', async () => {

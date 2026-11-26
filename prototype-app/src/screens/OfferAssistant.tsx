@@ -70,7 +70,7 @@ export function OfferAssistant({ context, initialClarification, active, onChange
         const { answer } = result
         removeBackground = answer.status === 'draft' && answer.visual.action === 'remove_background'
         removeImage = answer.status === 'draft' && answer.visual.action === 'text_only'
-        if (answer.status === 'draft' && Object.keys(answer.patch).length) next = { ...offer, ...answer.patch }
+        if (answer.status === 'draft' && Object.keys(answer.patch).length) next = { ...offer, ...(answer.patch.tone && { background: undefined }), ...answer.patch }
         const notes = offerAiNotes(answer)
         clarification.current = answer.question ? { request, question: answer.question, options: answer.options.map(option => option.headline) } : undefined
         reply = [...(next ? ['Правка в предпросмотре.'] : []), ...notes].join('\n') || 'Черновик оставлен без изменений'

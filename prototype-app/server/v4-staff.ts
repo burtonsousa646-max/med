@@ -1,3 +1,5 @@
+import { dashboardSearchParams } from '../shared/cabinet-dashboard.ts'
+import { campaignBoard, cabinetOverview, cabinetList } from './cabinet-dashboard.ts'
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
@@ -5,11 +7,15 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { normalizeCampaignEmail } from '../shared/campaign-draft.ts'
 import { v4StaffPageSize, type V4StaffMember, type V4StaffSession, type V4Submission, type V4SubmissionSummary } from '../shared/v4-staff.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
-import { readPartnerCampaign, readReview, updateReview } from './market.ts'
+import { contractRecord, contractForSubmission, contractDownload, emailContract, type ContractSender } from './campaign-contracts.ts'
+import { sendContractDocument } from './campaign-mail.ts'
+import { campaignCardCopy, moveCampaign, readPartnerCampaign, readReview, updateReview } from './market.ts'
 import { accountCookie, accountSession } from './mvp.ts'
 import { configuredRoles, roleForEmail } from './staff-role.ts'
 import { staffCatalog, staffCatalogRecord, editMarket } from './market-catalog.ts'
 import { db } from './db.ts'
+import { readPartnerRegistry } from './partner-registry.ts'
+import type { RegistryDetails } from '../shared/partner-details.ts'
 
 const minute = 60_000
 const sessionSeconds = 8 * 60 * 60
@@ -50,13 +56,26 @@ const list = db.prepare(`
 `)
 const count = db.prepare('select count(*) as total from v4_submissions ' + search)
 const details = db.prepare('select submitted_at as submittedAt, data from v4_submissions where id = ?')
+const submissionRegistry = db.prepare(`select json_extract(data, '$.business.inn') as inn,
+  json_extract(data, '$.registryDetails') as snapshot from v4_submissions where id = ?`)
+const attachRegistry = db.prepare(`update v4_submissions set data = json_set(data, '$.registryDetails', json(?))
+  where id = ? and json_extract(data, '$.registryDetails') is null`)
+
+function lookupCompany(inn: string) {
+  const url = new URL('/api/autocomplete/inn', process.env.AUTOCOMPLETE_URL || 'http://127.0.0.1:8788')
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inn }),
+    signal: AbortSignal.timeout(10_000), redirect: 'error' })
+}
 
 export function createV4Staff(
-  { addresses, administrators = [] }: { addresses: readonly string[]; administrators?: readonly string[] },
+  { addresses, administrators = [], lookupRegistry = lookupCompany, sendDocument=sendContractDocument }: {
+    addresses: readonly string[]; sendDocument?:ContractSender; administrators?: readonly string[]; lookupRegistry?: (inn: string) => Promise<Response>
+  },
   sendCode: (email: string, code: string) => Promise<void>,
   now = Date.now,
 ) {
   const configured = configuredRoles(addresses, administrators)
+  const staffEmails = [...configured.keys()]
   const roleFor = (email: string) => roleForEmail(email, configured)
   const routes = new Hono()
   const smallBody = bodyLimit({ maxSize: 1024, onError: c => c.json({ message: 'Слишком большой запрос' }, 413) })
@@ -135,6 +154,36 @@ export function createV4Staff(
     c.set('token', token)
     await next()
   })
+  protectedRoutes.get('/contracts/:id',c=>{
+    const record=contractRecord(c.req.param('id'))
+    return record?c.json(record):c.json({message:'Договор не найден.'},404)
+  })
+  protectedRoutes.post('/contracts/:id/email',c=>emailContract(c,c.req.param('id'),sendDocument))
+  protectedRoutes.get('/contracts/:id/pdf',c=>contractDownload(c.req.param('id'),undefined,c.req.query('view')==='inline'))
+  protectedRoutes.post('/contracts/:id/confirm',smallBody,async c=>{
+    const id=c.req.param('id'),body=await jsonBody(c.req.raw),employee=c.var.staff.email
+    db.exec('begin immediate')
+    try {
+      const record=contractRecord(id)
+      if(!record || record.version!==body?.version) {db.exec('rollback');return c.json({message:'Обновите версию договора перед подтверждением.'},409)}
+      if(!record.signedAt) {
+        db.prepare('update campaign_contracts set signed_at=?,signed_by=? where id=?').run(now(),employee,id)
+        if(record.submissionId && readPartnerCampaign(record.submissionId,'').status==='contract') {
+          const moved=moveCampaign(record.submissionId,employee,{status:'review',version:readReview(record.submissionId).version})
+          if(moved.error){db.exec('rollback');return c.json({message:moved.error},moved.status)}
+        }
+      }
+      db.exec('commit')
+      return c.json(contractRecord(id))
+    } catch(e){db.exec('rollback');throw e}
+  })
+  protectedRoutes.get('/board', c => c.json(campaignBoard(staffEmails)))
+  protectedRoutes.post('/submissions/:id/stage', smallBody, async c => {
+    const result = moveCampaign(c.req.param('id'),c.var.staff.email,await jsonBody(c.req.raw))
+    return result.error ? c.json({message:result.error},result.status) : c.json(result)
+  })
+  protectedRoutes.get('/dashboard', c => c.json(cabinetOverview(undefined,staffEmails)))
+  protectedRoutes.post('/dashboard/rows', smallBody, async c => c.json(cabinetList(dashboardSearchParams(await jsonBody(c.req.raw)),undefined,staffEmails)))
   protectedRoutes.get('/offers', c=>{
     const query=(c.req.query('q') ?? '').trim(), offset=Number(c.req.query('offset') ?? 0)
     if (query.length>200 || !Number.isSafeInteger(offset) || offset<0) return c.json({message:'Проверьте параметры поиска'},400)
@@ -195,15 +244,37 @@ export function createV4Staff(
   protectedRoutes.get('/submissions/:id', c => {
     const id = c.req.param('id')
     const row = details.get(id) as { submittedAt: number; data: string } | undefined
-    if (!row) return c.json({ message: 'Заявка не найдена' }, 404)
+    if (!row) return c.json({ message: 'Кампания не найдена' }, 404)
     const { mvp, mvpProfile, business, contactName, setupMode, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers, offerAccepted, offerImage, logoImage } = JSON.parse(row.data) as IntakeData
-    const result: V4Submission = { id, status:readPartnerCampaign(id,offer.until).status, review:readReview(id), mvp, mvpProfile, submittedAt: row.submittedAt, business, contactName, setupMode, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers,
+    const review=readReview(id)
+    const result: V4Submission = { id, marketCopy:mvp && campaignCardCopy(id,review.erid),contract:contractForSubmission(id),status:readPartnerCampaign(id,offer.until).status, review, mvp, mvpProfile, submittedAt: row.submittedAt, business, contactName, setupMode, partnerDetails, registryDetails, email, addresses, online, offer, audience, audienceCity, triggers,
       offerAccepted, offerImage: offerImage?.name ?? null, logoImage: logoImage?.name ?? null }
     return c.json(result)
   })
   protectedRoutes.post('/submissions/:id/review', smallBody, async c => {
     const result = updateReview(c.req.param('id'), c.var.staff.email, await jsonBody(c.req.raw))
     return result.error ? c.json({message:result.error},result.status) : c.json(result)
+  })
+  protectedRoutes.post('/submissions/:id/registry', async c => {
+    const id = c.req.param('id')
+    const row = submissionRegistry.get(id) as { inn: string; snapshot: string | null } | undefined
+    if (!row) return c.json({ message: 'Кампания не найдена' }, 404)
+    if (row.snapshot) return c.json(JSON.parse(row.snapshot) as RegistryDetails)
+    let registry = readPartnerRegistry(row.inn, now())
+    if (!registry) {
+      const response = await lookupRegistry(row.inn).catch(() => null)
+      switch (response?.status) {
+        case 200: registry = readPartnerRegistry(row.inn, now()); break
+        case 400: return c.json({ message: 'В кампании указан некорректный ИНН.' }, 400)
+        case 404: return c.json({ message: 'DaData не нашла организацию или ИП с этим ИНН.' }, 404)
+        case 409: return c.json({ message: 'По данным DaData бизнес не является действующим. Проверьте реквизиты.' }, 409)
+        case 429: return c.json({ message: 'Достигнут лимит запросов к DaData. Повторите через минуту.' }, 429)
+      }
+      if (!registry) return c.json({ message: 'Не удалось получить реквизиты из DaData. Попробуйте позже.' }, 503)
+    }
+    if (attachRegistry.run(JSON.stringify(registry), id).changes) return c.json(registry)
+    const saved = submissionRegistry.get(id) as { snapshot: string } | undefined
+    return saved ? c.json(JSON.parse(saved.snapshot) as RegistryDetails) : c.json({ message: 'Кампания не найдена' }, 404)
   })
   protectedRoutes.get('/submissions/:id/:asset', c => {
     const asset = c.req.param('asset')

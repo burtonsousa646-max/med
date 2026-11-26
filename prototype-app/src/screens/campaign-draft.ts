@@ -1,15 +1,20 @@
+import type { OfferDraft } from '../../shared/campaign-offer.ts'
 import { campaignAllowedStage, campaignStages, emptyCampaignDraft, isCampaignDraft, normalizeCampaignEmail, type CampaignDraft } from '../../shared/campaign-draft.ts'
 export { campaignAllowedStage, campaignStages, emptyCampaignDraft, isCampaignDraft, type CampaignDraft } from '../../shared/campaign-draft.ts'
 
 export type StoredCampaignDraft = CampaignDraft & {
+  manualSteps?: number[];
+  bySite?: boolean;
+  contactEmailInput?: string;
   emailCheck?: { email: string };
   syncId?: string; submitted?: boolean; registeredAddress?: string;
+  creativeVariant?: number; artworkImage?: File; editorImage?: File | null; editorLayout?: OfferDraft['layout'];
   offerCutout?: File; keepOriginalImage?: boolean; logoWebsite?: string; skippedLogoWebsite?: string;
 }
 
 export function campaignDraftForServer(draft: StoredCampaignDraft): CampaignDraft {
-  const { offerCutout, keepOriginalImage, logoWebsite, skippedLogoWebsite, emailCheck, ...fields } = draft
-  const offerImage = keepOriginalImage || draft.offer.layout === 'photo' ? draft.offerImage : offerCutout ?? draft.offerImage
+  const { bySite, manualSteps, contactEmailInput, creativeVariant, artworkImage, editorImage, editorLayout, offerCutout, keepOriginalImage, logoWebsite, skippedLogoWebsite, emailCheck, ...fields } = draft
+  const offerImage = keepOriginalImage || draft.offer.layout === 'photo' || draft.offer.layout === 'artwork' ? draft.offerImage : offerCutout ?? draft.offerImage
   return { ...fields, offerImage }
 }
 
@@ -47,9 +52,18 @@ export async function loadCampaignDraft(): Promise<StoredCampaignDraft> {
     request.onsuccess = () => {
       if (request.result !== undefined && !isCampaignDraft(request.result)) { reject(new Error('Invalid draft')); return }
       const draft = restoreCampaignDraft(request.result ?? emptyCampaignDraft())
+      if (!Array.isArray(draft.manualSteps) || !draft.manualSteps.every(step => Number.isInteger(step) && step >= 1 && step <= 3)) delete draft.manualSteps
+      if (typeof draft.bySite !== 'boolean') delete draft.bySite
+      if (typeof draft.contactEmailInput !== 'string' || draft.contactEmailInput.length > 254) delete draft.contactEmailInput
       if (draft.offerCutout && (!(draft.offerCutout instanceof File) || draft.offerCutout.type !== 'image/png' || draft.offerCutout.size > 5 * 1024 * 1024)) {
         delete draft.offerCutout
       }
+      for (const key of ['artworkImage', 'editorImage'] as const) {
+        const file = draft[key]
+        if (file != null && (!(file instanceof File) || file.size > 5 * 1024 * 1024 || !['image/png', 'image/jpeg', 'image/webp', 'image/avif'].includes(file.type))) delete draft[key]
+      }
+      if (!Number.isSafeInteger(draft.creativeVariant) || draft.creativeVariant! < 0 || draft.creativeVariant! >= 1_000_000) delete draft.creativeVariant
+      if (draft.editorLayout && !['split', 'photo', 'text'].includes(draft.editorLayout)) delete draft.editorLayout
       resolve(draft)
     }
     request.onerror = () => reject(request.error)

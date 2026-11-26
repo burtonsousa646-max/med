@@ -849,7 +849,7 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .mvp-group legend { margin-bottom: var(--space-m); padding: 0; }
 .mvp-terms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-m); }
 .mvp-terms .bl-field { min-width: 0; }
-.mvp-terms .bl-field.is-wide { grid-column: 1 / -1; }
+.mvp-terms > .is-wide { grid-column: 1 / -1; }
 .mvp-orders { margin-top: var(--space-m); }
 .mvp-sheet .bl-divider { align-self: stretch; margin: 0; }
 .mvp-go { align-self: stretch; display: flex; justify-content: space-between; align-items: center; gap: var(--space-m); flex-wrap: wrap; }
@@ -857,12 +857,6 @@ mark.stop { background: var(--color-background-error); color: var(--color-text-p
 .mvp-preview .cr { width: 100%; max-width: 360px; align-self: center; }
 .mvp-kv { align-self: stretch; }
 .mvp-ok { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: var(--color-brand-primary); color: var(--color-constant-01); }
-.mvp-steps { list-style: none; margin: 0 0 var(--space-s); padding: 0; display: flex; flex-direction: column; gap: var(--space-m); }
-.mvp-steps li { display: flex; gap: var(--space-s); align-items: flex-start; }
-.mvp-steps__dot { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--color-background-tertiary); color: var(--color-text-secondary); }
-.mvp-steps .is-done .mvp-steps__dot { background: var(--color-background-secondary-invert); color: var(--color-text-primary-invert); }
-.mvp-steps .is-now .mvp-steps__dot { background: var(--color-brand-primary); color: var(--color-constant-01); }
-.mvp-steps .is-next { color: var(--color-text-secondary); }
 @media (min-width: 1024px) and (max-height: 800px) { .mvp-sheet { padding: var(--space-xl); gap: var(--space-s); } .mvp-type { min-height: 150px; } .mvp-preview .cr { max-width: 280px; } }
 @media (max-width: 1023px) { .mvp-types { grid-template-columns: 1fr 1fr; } .mvp-type, .mvp-type:nth-child(-n+2) { grid-column: span 1; } .mvp-type:first-child { grid-column: 1 / -1; } .mvp-promo, .mvp-done { grid-template-columns: 1fr; } }
 @media (max-width: 767px) { .mvp-types { grid-template-columns: 1fr; } .mvp-sheet { padding: var(--space-l); } .mvp-me .bl-caption { display: none; } }

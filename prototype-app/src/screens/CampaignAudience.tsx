@@ -8,8 +8,8 @@ import './campaign-audience.css'
 export type AudienceSummary = { place: string; people: string; moment: string }
 type Group = { title: string; choices: string[] }
 
-export function AudienceSetup({ groups, values, onChange, city, onCityChange, online, addresses, triggers, onTriggers, onDictate, listening, voiceMessage, disabled, summary, preview }: {
-  groups: Group[]; values: number[]; onChange: (value: number[]) => void;
+export function AudienceSetup({ quick, groups, values, onChange, city, onCityChange, online, addresses, triggers, onTriggers, onDictate, listening, voiceMessage, disabled, summary, preview }: {
+  quick?: boolean; groups: Group[]; values: number[]; onChange: (value: number[]) => void;
   city: string; onCityChange: (city: string) => void; online: boolean; addresses: string[];
   triggers: string; onTriggers: (value: string) => void; onDictate: () => void;
   listening: boolean; voiceMessage: string; disabled: boolean; summary: AudienceSummary; preview: ReactNode;
@@ -24,14 +24,20 @@ export function AudienceSetup({ groups, values, onChange, city, onCityChange, on
   return <div className="campaign-audience-layout">
     <div className="campaign-audience-settings">
       <fieldset className="audience-geography" disabled={disabled}>
-        <legend>Где искать клиентов?</legend>
+        {quick ? <>
+          <label className="bl-field"><span>Откуда приходят ваши клиенты?</span>
+            <select className="bl-input" value={values[0]} onChange={e => select(0, Number(e.target.value))}>{geo.map((area, index) =>
+              <option key={area.title} value={index} disabled={online && index === 0}>{area.title}</option>)}</select>
+          </label><p>{geo[values[0]].detail}</p>
+        </> : <><legend>Где искать клиентов?</legend>
         <p>Выберите, где показывать предложение</p>
         <div className="audience-geo-options">{geo.map(({ title, detail, Icon }, index) => <label key={title} className="audience-geo-option" data-selected={values[0] === index} data-disabled={online && index === 0}>
           <input type="radio" name={id + '-geo'} checked={values[0] === index} disabled={online && index === 0} onChange={() => select(0, index)}/>
           <Icon size={22} aria-hidden="true"/><span><b>{title}</b><small>{detail}</small></span><span className="audience-radio-mark" aria-hidden="true">{values[0] === index && <Check size={14}/>}</span>
-        </label>)}</div>
+        </label>)}</div></>}
         {values[0] === 1 && <Field label="город показа" data-analytics-field="city" value={city} onChange={event => onCityChange(event.target.value)} autoComplete="address-level2" maxLength={80} required error={textError(city, 'Город')} placeholder="Укажите город"/>}
       </fieldset>
+      {!quick && <>
       <fieldset className="audience-moment" disabled={disabled}>
         <legend>Когда предложение будет кстати?</legend>
         <p>Выберите событие или оставьте «В любой момент»</p>
@@ -58,6 +64,7 @@ export function AudienceSetup({ groups, values, onChange, city, onCityChange, on
         </div>
         <p id={id + '-voice-status'} role="status">{listening ? 'Слушаю…' : voiceMessage}</p>
       </fieldset>
+      </>}
     </div>
     <aside className="audience-summary" aria-label="Итог выбора клиентов">
       {preview}

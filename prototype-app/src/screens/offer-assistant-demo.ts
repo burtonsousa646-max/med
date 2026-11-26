@@ -10,7 +10,7 @@ export function reviseOffer(request: string, current: OfferDraft): { offer: Offe
   const changes: string[] = []
   const colors: [RegExp, Tone][] = [[/фиолетов/, 'violet'], [/зел[её]н/, 'green'], [/син(?:ий|им|его)|голуб/, 'blue'], [/ж[её]лт/, 'light']]
   const color = colors.find(([pattern]) => pattern.test(text))
-  if (color) { next.tone = color[1]; changes.push('изменил фон') }
+  if (color) { next.tone = color[1]; delete next.background; changes.push('изменил фон') }
   if (/1\s*\+\s*1|второй.*(?:подар|бесплат)/.test(text)) {
     next = { ...withOfferDiscount(next, ''), gift: true }
     if (/второй кофе в подарок/.test(text)) next.title = 'Второй кофе в подарок'

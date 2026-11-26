@@ -1,0 +1,6 @@
+{
+  "coffee": {
+    "categories": ["кофей", "кофе", "coffee"],
+    "files": ["coffee-ivory.png", "coffee-teal.png", "coffee-takeaway.png"]
+  }
+}

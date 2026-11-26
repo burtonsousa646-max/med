@@ -18,6 +18,7 @@
 !prototype-app/public/**
 !prototype-app/docs/
 !prototype-app/docs/campaign-offer-rules.md
+!prototype-app/docs/offer-image-prompt.md
 !prototype-app/scripts/
 !prototype-app/scripts/**
 !prototype-app/deploy/

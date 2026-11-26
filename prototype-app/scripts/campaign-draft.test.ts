@@ -2,6 +2,15 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { campaignAllowedStage, campaignDraftForServer, campaignStage, emptyCampaignDraft, isCampaignDraft, restoreCampaignDraft } from '../src/screens/campaign-draft.ts'
 
+test('a custom offer background survives draft transport and rejects malformed colors', () => {
+  const draft = emptyCampaignDraft()
+  draft.offer.background = '#AbC123'
+  assert.ok(isCampaignDraft(draft))
+  assert.equal(campaignDraftForServer(draft).offer.background, '#AbC123')
+  draft.offer.background = 'transparent'
+  assert.equal(isCampaignDraft(draft), false)
+})
+
 function completedDraft() {
   const draft = { ...emptyCampaignDraft(), submitted: true }
   draft.business = { name: 'Кофейня', category: 'Кофе и завтраки', inn: '1234567894', phone: '+79000000001', city: 'Москва', website: '' }
@@ -113,4 +122,20 @@ test('server receives the photo shown in the offer while the draft keeps the ori
   assert.equal(draft.offerImage, original)
   assert.equal(campaignDraftForServer({ ...draft, keepOriginalImage: true }).offerImage, original)
   assert.equal(campaignDraftForServer({ ...draft, offer: { ...draft.offer, layout: 'photo' } }).offerImage, original)
+})
+
+test('ready artwork is required before continuing and reaches the server without photo processing or editor backups', () => {
+  const draft = completedDraft()
+  draft.offer.layout = 'artwork'
+  assert.equal(isCampaignDraft(draft), true)
+  assert.equal(campaignAllowedStage(draft), 2)
+  const artwork = new File(['artwork'], 'offer.png', { type: 'image/png' })
+  const photo = new File(['photo'], 'photo.png', { type: 'image/png' })
+  const stored = { ...draft, offerImage: artwork, artworkImage: artwork, editorImage: photo, offerCutout: photo }
+  assert.equal(campaignAllowedStage(stored), 4)
+  const payload = campaignDraftForServer(stored)
+  assert.equal(payload.offerImage, artwork)
+  assert.equal(payload.offer.layout, 'artwork')
+  for (const key of ['artworkImage', 'editorImage', 'offerCutout']) assert.equal(key in payload, false)
+  assert.equal(stored.editorImage, photo)
 })

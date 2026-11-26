@@ -208,3 +208,5 @@
 }
 
 .campaign-creative__advertiser { margin: 6px 0 0; padding-inline: 8px; font: var(--type-caption); color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.campaign-creative__identity {display:flex;align-items:center;gap:8px;min-width:0}
+.campaign-creative__identity .campaign-creative__logo {width:28px;height:28px;padding:0;object-fit:contain;flex:none;border-radius:6px}

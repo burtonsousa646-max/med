@@ -1,21 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { emptyOffer, offerErrors, reviseOffer } from '../src/screens/offer-assistant-demo.ts'
-import { nextOfferDesign, offerCreativeCopy, offerDisplayTitle, resolveOfferLayout, withOfferDiscount } from '../shared/campaign-offer.ts'
+import { offerCreativeCopy, offerDisplayTitle, resolveOfferLayout, withOfferDiscount } from '../shared/campaign-offer.ts'
 
 const draft = { ...emptyOffer, title: 'Мой текст', discount: '20', promo: 'ЗЕРНО', until: '2026-12-01' }
-test('another design visibly changes the card without changing agreed terms or restoring a removed image', () => {
-  for (const layout of [undefined, 'split', 'photo', 'text'] as const) {
-    const current = { ...draft, layout }
-    const next = nextOfferDesign(current, true)
-    assert.notEqual(next.tone, current.tone)
-    const { tone, layout: changedLayout, ...terms } = next
-    const { tone: originalTone, ...originalTerms } = draft
-    assert.deepEqual(terms, originalTerms)
-    if (layout === 'text') assert.equal(changedLayout, 'text')
-  }
-  assert.equal(nextOfferDesign(draft, false).layout, 'text')
-})
 test('color and size preserve manually entered offer fields', () => {
   const result = reviseOffer('Сделай фон синим и увеличь чашку', draft)!
   assert.deepEqual(result.offer, { ...draft, tone: 'blue', zoom: true })
@@ -62,6 +50,7 @@ test('automatic layout follows the reference and manual layout takes precedence'
   assert.equal(resolveOfferLayout('photo', true), 'photo')
   assert.equal(resolveOfferLayout('text', true), 'text')
   assert.equal(resolveOfferLayout('photo', false), 'text')
+  assert.equal(resolveOfferLayout('artwork', true), 'artwork')
 })
 
 test('leading prices and loyalty points have their own line', () => {

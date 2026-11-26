@@ -37,6 +37,13 @@ export function normalizeBusinessWebsite(value: string): string {
 
 export const websiteError = (value: string) => value.trim() && !normalizeBusinessWebsite(value) ? 'Укажите сайт, например example.ru' : ''
 
+export function offerSourceHint(page: URL) {
+  if (['ozon.ru', 'www.ozon.ru'].includes(page.hostname) && page.pathname === '/') {
+    return 'Это главная страница Ozon. Вставьте ссылку на товар, магазин продавца или акцию.'
+  }
+  return ''
+}
+
 export function offerTheme(value: string) {
   const category = value.trim().toLowerCase()
   if (/кофейн|^кофе$|кофе и завтрак/.test(category)) return { cat: 'food', title: 'Меню кофейни', illustration: 'own-0' } as const

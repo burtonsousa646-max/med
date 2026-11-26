@@ -15,17 +15,18 @@ const Landing = lazy(() => import('./screens/Landing'))
 const LandingV2 = lazy(() => import('./screens/LandingV2'))
 const LandingV4 = lazy(() => import('./screens/LandingV4'))
 const LandingV5 = lazy(() => import('./screens/LandingV5'))
-const CampaignPage = lazy(() => import('./screens/CampaignPage'))
 const V4Staff = lazy(() => import('./screens/V4Staff'))
 const LandingV3 = lazy(() => import('./screens/LandingV3'))
 const Build = lazy(() => import('./screens/Build'))
 const Market = lazy(() => import('./screens/Market'))
 const MarketOfferPage = lazy(() => import('./screens/MarketOfferPage'))
+const NearV2 = lazy(() => import('./screens/NearV2'))
 const mvp = () => import('./screens/Mvp')
 const mvpSession = () => import('./screens/MvpSession')
 const MvpShell = lazy(() => mvpSession().then(m => ({ default: m.MvpShell })))
 const MvpLogin = lazy(() => mvpSession().then(m => ({ default: m.MvpLogin }))), MvpNew = lazy(() => mvp().then(m => ({ default: m.MvpNew })))
 const MvpPromo = lazy(() => mvp().then(m => ({ default: m.MvpPromo }))), MvpDone = lazy(() => mvp().then(m => ({ default: m.MvpDone })))
+const PartnerStatistics = lazy(() => import('./screens/PartnerStatistics'))
 const PartnerCampaigns = lazy(() => mvp().then(m => ({ default: m.PartnerCampaigns })))
 const PartnerMaterials = lazy(() => import('./screens/PartnerMaterials'))
 const PartnerCompany = lazy(() => mvp().then(m => ({ default: m.PartnerCompany })))
@@ -80,9 +81,10 @@ function OnRoute() {
   }, [pathname, search])
   useEffect(() => {
     if (!/^\/market(?:\/|$)/.test(pathname)) scrollTo(0, 0)
+    if (pathname === '/near-v2') { document.title = 'Лучшее рядом · версия 2 · билайн'; return }
     if (/^\/v5\/?$/.test(pathname)) { document.title = `${platformName} · версия 5`; return }
     if (pathname.startsWith('/app/staff')) { document.title = `Кабинет сотрудника · ${platformName}`; return }
-    const name = pathname === '/app/materials' ? 'Офлайн-материалы' : pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
+    const name = pathname === '/app/statistics' ? 'Статистика' : pathname === '/app/materials' ? 'Офлайн-материалы' : pathname.startsWith('/v4/create') ? 'создание кампании' : pathname === '/v4/privacy' ? 'Обработка персональных данных' : pathname === '/v4/offer' ? 'Оферта' : screenName(pathname)?.replace(/^[\d.]+ · /, '')
     document.title = pathname === '/' ? platformName : pathname === '/v4' ? `${platformName} · версия 4` : pathname === '/v3' ? `${platformName} · версия 3` : pathname === '/v1' || pathname === '/v2' || pathname === '/mvp' ? platformName : pathname.startsWith('/market') ? 'Лучшее рядом · билайн' : `${name ?? (pathname.startsWith('/mvp/new') ? 'новая кампания' : pathname === '/mvp/login' ? 'вход' : pathname === '/mvp/done' ? 'кампания на проверке' : 'кабинет')} · ${platformName}`
   }, [pathname])
   return null
@@ -136,16 +138,18 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/v3" element={<LandingV3 />} />
                 <Route path="/v4" element={<LandingV4 />} />
                 <Route path="/v5" element={<LandingV5 />} />
-                <Route path="/v4/create/:stage?" element={<CampaignPage />} />
+                <Route path="/v4/create/:stage?" element={<Navigate to="/app/?start=campaign" replace/>} />
                 <Route path="/v4/offer" element={<PublicDocument />} />
                 <Route path="/v4/privacy" element={<PublicDocument privacy />} />
                 <Route path="/mvp" element={<LandingV2 />} />
                 <Route element={<MvpShell/>}>
+                <Route path="/app/staff/contract/:contractId" element={<V4Staff/>}/>
                 <Route path="/app/staff/offers/:offerKey?" element={<V4Staff/>}/>
                 <Route path="/app/staff/:id?" element={<V4Staff/>}/>
                 <Route path="/app/" element={<MvpLogin />} />
                 <Route path="/app/materials" element={<PartnerMaterials />} />
                 <Route path="/app/company" element={<PartnerCompany />} />
+                <Route path="/app/statistics" element={<PartnerStatistics />} />
                 <Route path="/app/campaigns" element={<PartnerCampaigns />} />
                 <Route path="/app/campaigns/formats" element={<MvpNew />} />
                 <Route path="/app/campaigns/new" element={<MvpPromo />} />
@@ -171,6 +175,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/market" element={<Market />}>
                   <Route path="offer/:id" element={<MarketOfferPage />}/>
                 </Route>
+                <Route path="/near-v2" element={<NearV2 />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <DemoMenu />

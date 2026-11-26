@@ -1,4 +1,4 @@
-import { innError, phoneError, textError, websiteError, type Business } from './campaign-business.ts'
+import { innError, phoneError, textError, websiteError, normalizeBusinessWebsite, type Business } from './campaign-business.ts'
 import { emptyOffer, offerErrors, offerLayouts, type OfferDraft } from './campaign-offer.ts'
 import type { PartnerDetails } from './partner-details.ts'
 
@@ -35,9 +35,12 @@ export function isCampaignDraft(value: unknown): value is CampaignDraft {
   const draft = value as CampaignDraft
   const sample = emptyCampaignDraft()
   return Boolean(draft.business && draft.offer)
+    && (draft.setupMode === undefined || draft.setupMode === 'quick' || draft.setupMode === 'manual')
+    && (draft.contactName === undefined || (typeof draft.contactName === 'string' && draft.contactName.length <= 100 && !/[\u0000-\u001f\u007f]/.test(draft.contactName)))
     && Object.keys(sample.business).every(key => typeof draft.business[key as keyof Business] === 'string')
     && Object.keys(emptyOffer).every(key => typeof draft.offer[key as keyof OfferDraft] === typeof emptyOffer[key as keyof OfferDraft])
     && (draft.offer.layout === undefined || (typeof draft.offer.layout === 'string' && Object.hasOwn(offerLayouts, draft.offer.layout)))
+    && (draft.offer.background === undefined || (typeof draft.offer.background === 'string' && /^#[a-f0-9]{6}$/i.test(draft.offer.background)))
     && ['red', 'green', 'blue', 'violet', 'magenta', 'teal', 'dark', 'light'].includes(draft.offer.tone)
     && Array.isArray(draft.addresses) && draft.addresses.length > 0 && draft.addresses.length <= 10 && draft.addresses.every(address => typeof address === 'string')
     && Array.isArray(draft.audience) && draft.audience.length === 5 && draft.audience.every(index => Number.isInteger(index) && index >= 0 && index <= 2)
@@ -50,12 +53,18 @@ export function isCampaignDraft(value: unknown): value is CampaignDraft {
     && Number.isInteger(draft.stage) && Number.isInteger(draft.reached) && draft.stage >= 0 && draft.stage <= draft.reached && draft.reached < campaignStages.length
 }
 
+export function hasApplicationContact(draft: CampaignDraft) {
+  return Boolean(draft.contactName?.trim() && !phoneError(draft.business.phone) && !innError(draft.business.inn))
+}
+
 export function campaignAllowedStage(draft: CampaignDraft) {
   const { business, addresses, online, offer, audience } = draft
-  if (!draft.offerAccepted || draft.confirmedInn !== business.inn || innError(business.inn) || phoneError(business.phone)) return 0
+  if (draft.setupMode) {
+    if (!normalizeBusinessWebsite(business.website) && textError(business.category, '', 3)) return 0
+  } else if (!draft.offerAccepted || draft.confirmedInn !== business.inn || innError(business.inn) || phoneError(business.phone)) return 0
   if (websiteError(business.website) || textError(business.name) || business.name.length > 80 || textError(business.category, '', 3) || business.category.length > 100
     || (!online && (textError(business.city) || business.city.length > 80 || !addresses.length || addresses.some((address, index) => textError(address, '', 5) || address.length > 200 || addresses.some((other, i) => i !== index && other.trim().toLowerCase() === address.trim().toLowerCase()))))) return 1
-  if (!draft.filled || Object.values(offerErrors(offer)).some(Boolean)) return 2
+  if (!draft.filled || (offer.layout === 'artwork' && !draft.offerImage) || Object.values(offerErrors(offer)).some(Boolean)) return 2
   const city = draft.audienceCity ?? business.city
   if (audience[0] === 1 && (textError(city) || city.length > 80)) return 3
   return 4

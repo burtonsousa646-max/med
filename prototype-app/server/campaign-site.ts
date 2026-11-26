@@ -4,11 +4,13 @@ import { request as https } from 'node:https'
 import { BlockList, isIP } from 'node:net'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { normalizeBusinessWebsite } from '../shared/campaign-business.ts'
+import { normalizeBusinessWebsite, offerSourceHint } from '../shared/campaign-business.ts'
+import { siteOfferFields } from '../shared/partner-campaign-draft.ts'
 
 type Resource = { url: URL; mime: string; body: Buffer }
+class SiteAccessDenied extends Error {}
 const maxBytes = 1024 * 1024
-const imageTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/svg+xml'])
+const imageTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/svg+xml', 'image/x-icon'])
 const blocked = new BlockList()
 for (const [network, bits] of [
   ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16],
@@ -47,11 +49,16 @@ async function readSite(url: URL, kind: 'html' | 'image', signal: AbortSignal, r
 
 async function collect(res: import('node:http').IncomingMessage, kind: 'html' | 'image') {
   const status = res.statusCode ?? 0
+  if (status === 401 || status === 403) {
+    res.destroy()
+    throw new SiteAccessDenied()
+  }
   if ([301, 302, 303, 307, 308].includes(status) && res.headers.location) {
     res.destroy()
     return { location: res.headers.location } as const
   }
-  const mime = res.headers['content-type']?.split(';')[0].trim().toLowerCase() || ''
+  const type = res.headers['content-type']?.split(';')[0].trim().toLowerCase() || ''
+  const mime = /^(image\/(vnd\.microsoft\.icon|ico)|application\/octet-stream)$/.test(type) && kind==='image' ? 'image/x-icon' : type
   if (status !== 200 || Number(res.headers['content-length']) > maxBytes
     || (kind === 'html' ? mime !== 'text/html' : !imageTypes.has(mime))) {
     res.destroy()
@@ -64,13 +71,15 @@ async function collect(res: import('node:http').IncomingMessage, kind: 'html' | 
     if (size > maxBytes) throw new Error('Response too large')
     chunks.push(chunk)
   }
-  return { mime, body: Buffer.concat(chunks) }
+  const body=Buffer.concat(chunks)
+  if(mime==='image/x-icon' && (body.length<6 || body.readUInt32LE(0)!==65536 || !body.readUInt16LE(4))) throw new Error('Invalid icon')
+  return { mime, body }
 }
 
 function decodeAttribute(value: string) {
-  return value.replace(/&(?:amp|quot|apos|lt|gt|#\d{1,7}|#x[\da-f]{1,6});/gi, entity => {
+  return value.replace(/&(?:amp|quot|apos|lt|gt|nbsp|laquo|raquo|ndash|mdash|#\d{1,7}|#x[\da-f]{1,6});/gi, entity => {
     const name = entity.slice(1, -1).toLowerCase()
-    if (!name.startsWith('#')) return ({ amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' })[name] ?? entity
+    if (!name.startsWith('#')) return ({ amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp:' ', laquo:'«', raquo:'»', ndash:'–', mdash:'—' })[name] ?? entity
     const code = name.startsWith('#x') ? parseInt(name.slice(2), 16) : Number(name.slice(1))
     return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entity
   })
@@ -108,11 +117,15 @@ export function siteCandidates(html: string, page: URL) {
     }
     return ''
   })
+  const meta = new Map<string, string>()
+  const clean = (value = '') => value.replace(/\s+/g, ' ').trim()
+  const text = (value?: string) => clean(decodeAttribute((value || '').replace(/<[^>]+>/g, ' ')))
   for (const tag of markup.matchAll(/<(meta|link|img)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi)) {
     const attrs = Object.fromEntries([...tag[0].slice(tag[1].length + 1).matchAll(/([^\s=<>/]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g)]
       .map(([, name, double, single, bare]) => [name.toLowerCase(), decodeAttribute(double ?? single ?? bare)]))
     switch (tag[1].toLowerCase()) {
       case 'meta':
+        if (attrs.content) meta.set((attrs.property || attrs.name || '').toLowerCase(), clean(attrs.content))
         if (/^logo$/i.test(attrs.itemprop ?? '') || /^(?:og:logo|logo)$/i.test(attrs.property ?? attrs.name ?? '')) add(logos, attrs.content)
         if (/^(?:og:image(?::(?:url|secure_url))?|twitter:image(?::src)?)$/i.test(attrs.property ?? attrs.name ?? '')) add(covers, attrs.content)
         break
@@ -142,14 +155,37 @@ export function siteCandidates(html: string, page: URL) {
     }))
   const unique = (urls: string[]) => [...new Set(urls)]
   const logo = unique([...logos, ...icons])
-  return { logo, brand: logos, embeddedLogos, creative: unique([...covers, ...photos]).filter(url => !logo.includes(url)) }
+  const title = text(markup.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+  const heading = text(markup.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  const content = markup.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? markup
+  const paragraphs = content.replace(/<(head|nav|footer|aside|template|noscript|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
+    .split(/<\/?(?:h[1-6]|p|div|li|section|article|br)\b[^>]*>/i)
+  const offers = new Map<string,string>()
+  for (const paragraph of paragraphs) {
+    const line=text(paragraph).replace(/^[«“„"]|[»”"]$/g,'').trim()
+    if (line.length > 300 || !/промокод/i.test(line) || !line.includes('%')) continue
+    const {off,code}=siteOfferFields({subject:line,name:'',description:''})
+    if (!off || !code) continue
+    const key=off+'/'+code
+    if (!offers.has(key)) offers.set(key,line)
+    if (offers.size>1) break
+  }
+  const profile = {
+    name: (meta.get('og:site_name') || title).slice(0, 80),
+    subject: (heading || meta.get('og:title') || title).slice(0, 100),
+    description: (meta.get('description') || meta.get('og:description') || '').slice(0, 300),
+    ...(offers.size===1 && {offerText:[...offers.values()][0]}),
+  }
+  return { profile, logo, brand: logos, embeddedLogos, creative: unique([...covers, ...photos]).filter(url => !logo.includes(url)) }
 }
 
-export async function discoverSiteAssets(website: string, read = readSite) {
+export async function discoverSiteAssets(website: string, read = readSite, profileOnly = false, brandOnly = false) {
   const signal = AbortSignal.timeout(8500)
   const page = await read(new URL(website), 'html', signal)
   const candidates = siteCandidates(page.body.toString('utf8'), page.url)
-  const assets = await Promise.all((['logo', 'creative'] as const).flatMap(kind =>
+  if (profileOnly) return { profile: candidates.profile, assets: [] }
+  const kinds:('logo'|'creative')[]=brandOnly?['logo']:['logo','creative']
+  const assets = await Promise.all(kinds.flatMap(kind =>
     candidates[kind].slice(0, kind === 'logo' ? 3 : 5).map(async url => {
       try {
         const image = await read(new URL(url), 'image', signal)
@@ -158,8 +194,17 @@ export async function discoverSiteAssets(website: string, read = readSite) {
       } catch { return null }
     })))
   const logoAssets = assets.filter(asset => asset?.kind === 'logo')
+  const logos=[...logoAssets.filter(asset=>asset?.source==='brand'),...candidates.embeddedLogos,...logoAssets.filter(asset=>asset?.source==='icon')]
+  const conventionalIcon=new URL('/favicon.ico',page.url)
+  if(brandOnly && !logos.length && !candidates.logo.includes(conventionalIcon.href)){
+    try{
+      const icon=await read(conventionalIcon,'image',signal)
+      logos.push({kind:'logo',source:'icon',type:icon.mime,base64:icon.body.toString('base64')})
+    }catch{ /* A logo is optional. */ }
+  }
   return {
-    assets: [...logoAssets.filter(asset => asset?.source === 'brand'), ...candidates.embeddedLogos, ...logoAssets.filter(asset => asset?.source === 'icon')].slice(0, 2)
+    profile: candidates.profile,
+    assets: logos.slice(0, 2)
       .concat(assets.filter(asset => asset?.kind === 'creative').slice(0, 3)).filter(asset => asset !== null),
   }
 }
@@ -174,17 +219,26 @@ export const campaignSite = new Hono().post('/site-assets', bodyLimit({
   if (c.req.header('content-type')?.split(';')[0].trim() !== 'application/json') {
     return c.json({ message: 'Укажите адрес сайта компании' }, 400)
   }
-  const body = await c.req.json<{ website?: unknown }>().catch(() => null)
+  const body = await c.req.json<{ website?: unknown; profileOnly?: unknown; brandOnly?:unknown }>().catch(() => null)
   const website = typeof body?.website === 'string' ? normalizeBusinessWebsite(body.website) : ''
   if (!website) return c.json({ message: 'Укажите адрес сайта компании' }, 400)
+  const profileOnly = body?.profileOnly === true
+  const brandOnly=body?.brandOnly===true
+  const hint = (profileOnly || brandOnly) && offerSourceHint(new URL(website))
+  if (hint) return c.json({ message: hint }, 422)
   if (Date.now() - windowStart >= 60_000) { windowStart = Date.now(); requests = 0 }
   if (active >= 3 || requests >= 30) return c.json({ message: 'Импорт занят. Попробуйте через минуту' }, 429)
   requests++
   active++
   try {
-    return c.json(await discoverSiteAssets(website))
-  } catch {
-    return c.json({ message: 'Не удалось открыть сайт. Проверьте адрес или загрузите файлы вручную' }, 422)
+    return c.json(await discoverSiteAssets(website, readSite, profileOnly, brandOnly))
+  } catch (error) {
+    if ((profileOnly||brandOnly) && error instanceof SiteAccessDenied) {
+      return c.json({ message: 'Сайт отклонил запрос на чтение. Вставьте текст предложения или укажите другую ссылку.' }, 422)
+    }
+    return c.json({ message: profileOnly||brandOnly
+      ? 'Страница недоступна для автоматического чтения. Попробуйте другую ссылку или вставьте текст предложения.'
+      : 'Не удалось открыть сайт. Проверьте адрес или загрузите файлы вручную' }, 422)
   } finally {
     active--
   }

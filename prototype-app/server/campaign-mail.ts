@@ -1,3 +1,4 @@
+import { contractMailbox } from '../shared/partner-campaign-draft.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
@@ -5,12 +6,13 @@ import { platformName } from '../shared/brand.ts'
 import { audienceGroups } from '../shared/campaign-draft.ts'
 import { offerLayouts } from '../shared/campaign-offer.ts'
 import { imageExtension, type IntakeData } from './campaign-intake.ts'
+import { deliverStatusMail } from './campaign-status-mail.ts'
 import { db } from './db.ts'
 import { emailFont, emailHeading, emailLayout, emailLogo, escapeMailText } from './email-layout.ts'
 import { partnerDetailsRows } from '../shared/partner-details.ts'
 
 type MailRow = { id: string; data: string; submitted_at: number; mail_attempts: number }
-const recipient = 'beepartners@beeline.ru'
+const recipient = contractMailbox
 
 const credentialName = 'ads-proto-smtp-password'
 const acceptedPart = db.prepare('select 1 from v4_mail_parts where submission_id = ? and part = ?')
@@ -46,7 +48,8 @@ function campaignMessage(row: MailRow, from: string) {
       `Пожелания: ${triggers || '—'}`,
     ] },
   ]
-  const acceptedTerms = 'Условия оферты приняты.'
+  const contract=db.prepare('select signed_at from campaign_contracts where submission_id=?').get(row.id)
+  const acceptedTerms = contract ? (contract.signed_at?'Менеджер подтвердил получение подписанного договора.':'Договор ожидает подписи.') : 'Условия оферты приняты.'
   const plainDetails = [submission, ...sections.map(({ lines }) => lines)].map(lines => lines.join('\n')).join('\n\n')
   const text = `${plainDetails}\n${acceptedTerms}\n\n${platformName}`
   const details = sections.map(({ title, lines }) => `
@@ -168,6 +171,15 @@ ${platformName}`,
   }
 }
 
+export async function sendContractDocument(email:string,pdf:Uint8Array,id:string) {
+  const smtp=campaignSmtp()
+  if(!smtp)throw new Error('Campaign SMTP unavailable')
+  await smtp.send({from:{name:platformName,address:smtp.from},to:[{name:'',address:email}],
+    subject:'Договор для подписания · '+platformName,
+    replyTo:contractMailbox,
+    text:'Во вложении заполненный договор. Подпишите его и пришлите подписанный экземпляр в ответ на это письмо или на '+contractMailbox+'. Менеджер подтвердит получение в кабинете.',
+    attachments:[{filename:'Договор-'+id+'.pdf',content:Buffer.from(pdf),contentType:'application/pdf'}]})
+}
 export async function sendCampaignCode(email: string, code: string) {
   const smtp = campaignSmtp()
   if (!smtp) throw new Error('Campaign SMTP unavailable')
@@ -188,7 +200,7 @@ export function startCampaignMail() {
     if (running) return
     running = true
     try {
-      await deliverCampaignMail(row => sendCampaignMail(row, smtp.from, smtp.send))
+      await Promise.all([deliverCampaignMail(row => sendCampaignMail(row, smtp.from, smtp.send)), deliverStatusMail(smtp.from,smtp.send)])
     } catch { console.error('V4 campaign mail queue error') }
     finally { running = false }
   }

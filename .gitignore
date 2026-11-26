@@ -10,3 +10,4 @@ dist/
 prototype-app/backups/
 .impeccable/
 .playwright-mcp/
+platform/

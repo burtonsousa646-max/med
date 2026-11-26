@@ -43,10 +43,11 @@ export function initializeMarketCatalog() {
     db.exec(`create temp view staff_market_base as
       select public_id entry_key, 'beeline' origin, public_id,published_at,until_day,card from market_imports
       union all select s.id,'partner',p.public_id,p.published_at,coalesce(p.until_day,json_extract(s.data,'$.offer.until'),''),
-        coalesce(p.card,json_object('name',json_extract(s.data,'$.business.name'),'offer',json_extract(s.data,'$.offer'),
+        coalesce(p.card,json_object('name',coalesce(nullif(c.company,''),json_extract(s.data,'$.business.name')),'offer',json_extract(s.data,'$.offer'),
+          'catalog',json_object('brand',nullif(trim(json_extract(s.data,'$.mvp.brandName')),'')),'description',json_extract(s.data,'$.mvp.activity'),
           'group',market_group(json_extract(s.data,'$.business.category')), 'category',json_extract(s.data,'$.business.category'),
           'online',json_extract(s.data,'$.online'),'addresses',coalesce(json_extract(s.data,'$.addresses'),json('[]'))))
-      from v4_submissions s left join market_publications p on p.submission_id=s.id;
+      from v4_submissions s left join market_publications p on p.submission_id=s.id left join campaign_contracts c on c.submission_id=s.id;
     create temp view staff_market_catalogue as select b.*,coalesce(e.version,0) version,
       case when e.patch is null then b.card else json_patch(b.card,e.patch) end effective
       from staff_market_base b left join market_edits e on e.entry_key=b.entry_key;`)

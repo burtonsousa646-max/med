@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Материалы для оффера · партнерская платформа билайн</title>
+<style>
+  :root { font-family: system-ui, sans-serif; color: #222936; background: #f4f5f7; }
+  body { max-width: 760px; margin: auto; padding: 40px 24px; font-size: 16px; line-height: 1.5; }
+  h1 { font-size: 36px; line-height: 40px; text-wrap: balance; }
+  h2 { margin-top: 32px; font-size: 24px; line-height: 32px; }
+  p { max-width: 70ch; }
+  .frame { aspect-ratio: 2; display: grid; padding: 5% 10%; border: 1px solid #647084; border-radius: 8px; background: #fff; }
+  .safe { display: grid; place-content: center; padding: 12px; border: 2px dashed #6840cb; text-align: center; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 12px 8px; text-align: left; border: 1px solid #c7ced9; }
+  th { background: #fff; }
+  .note { padding: 16px; border-radius: 8px; background: #fff; }
+  button { padding: 8px 12px; min-height: 44px; border: 1px solid #647084; border-radius: 8px; background: #fff; font: inherit; cursor: pointer; color: #5030a5; text-underline-offset: 4px; }
+  @media (max-width: 500px) { h1 { font-size: 30px; line-height: 36px; } body { padding: 24px 16px; } }
+  @media print { :root { background: #fff; } body { padding: 0; } button { display: none; } }
+</style>
+<main>
+  <h1>Подготовьте материалы для оффера</h1>
+  <p class="note">Окончательные форматы и требования площадок согласуем перед запуском кампании.</p>
+  <h2>Готовый макет</h2>
+  <p>PNG, JPG, WebP или AVIF, до 5 МБ. Минимальный размер 1200 × 600 px, соотношение сторон 2:1. Если пропорции другие, выберите нужную область в редакторе. Увеличивать маленький файл не нужно: он потеряет чёткость.</p>
+  <div class="frame" aria-label="Макет 2 к 1, безопасная область с отступами 10%"><div class="safe">Бренд и главная выгода<br>в центральных 80% макета</div></div>
+  <p>Оставьте отступы по 10% от каждого края для логотипа, текста и важных деталей. Сформулируйте одну главную выгоду и проверьте читаемость при ширине карточки около 280 px. Макет показывается целиком, на узких поверхностях он уменьшается.</p>
+  <p>Не рисуйте кнопку и маркировку «реклама» внутри изображения. Их добавит площадка. Промокод, срок и заголовок укажите также в полях редактора: они нужны для открытия предложения и модерации. Проверьте, что условия в файле и полях совпадают.</p>
+  <h2>Фото и логотип</h2>
+  <table><thead><tr><th scope="col">Материал</th><th scope="col">Размер</th><th scope="col">Подготовка</th></tr></thead><tbody>
+    <tr><th scope="row">Фото</th><td>От 600 × 400 px</td><td>Предмет целиком, без текста и водяных знаков. Для предмета подходит квадрат, для интерьера — широкий кадр.</td></tr>
+    <tr><th scope="row">Логотип</th><td>От 128 × 128 px</td><td>Лучше PNG с прозрачным фоном. Не обрезайте знак, не меняйте его пропорции и цвета.</td></tr>
+  </tbody></table>
+  <p>Те же форматы, до 5 МБ на файл, до 40 мегапикселей. Кадрирование сохраняет отдельную копию. В текущей сессии можно заново открыть исходный файл; после перезагрузки доступен сохранённый кадр.</p>
+  <h2>Перед продолжением</h2>
+  <ul><li>Проверьте выгоду, промокод и срок акции.</li><li>Посмотрите оффер на всех четырёх примерах поверхностей.</li><li>Убедитесь, что материалы принадлежат вам или у вас есть разрешение на использование.</li></ul>
+  <p>SVG и анимация не поддерживаются. Готовый макет загружается как единое изображение: отдельные надписи внутри него меняются в исходном файле дизайнера.</p>
+  <button type="button" onclick="window.print()">Распечатать или сохранить в PDF</button>
+</main>
+</html>

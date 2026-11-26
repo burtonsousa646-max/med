@@ -1,0 +1,20 @@
+.cabinet-entry { --color-text-error: var(--color-static-orange-600); }
+.cabinet-entry .login__body { overflow-wrap: anywhere; }
+:is(.cabinet-entry,.crm-shell) :is(input,textarea)::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+.cabinet-entry .mvp-code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .22em;
+}
+.cabinet-entry .bl-input[aria-invalid=true],
+.crm-shell .bl-input[aria-invalid=true] { border-color: var(--color-error-primary); }
+.cabinet-entry .mvp-dots li.is-on { background: var(--color-text-primary); }
+.cabinet-entry .mvp-dots li:last-child.is-on { background: var(--color-brand-primary); }
+@media (prefers-reduced-motion: no-preference) {
+  .cabinet-entry [data-step=code] { animation: cabinet-code-in 160ms ease-out; }
+}
+@keyframes cabinet-code-in {
+  from { opacity: .4; transform: translateY(4px); }
+}

@@ -82,7 +82,16 @@ paths:
       operationId: confirmMvpCompany
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/MvpProfile' } } }
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '#/components/schemas/MvpProfile' }
+                - type: object
+                  dependentRequired: { draftId: [draftVersion] }
+                  properties:
+                    draftId: { type: string, format: uuid }
+                    draftVersion: { type: integer, minimum: 1 }
       responses:
         '200':
           description: Профиль сохранён
@@ -147,6 +156,271 @@ paths:
           description: Текст и изображения для печатного макета
           content: { application/json: { schema: { $ref: '#/components/schemas/PartnerPosterSource' } } }
         default: { $ref: '#/components/responses/Error' }
+  /mvp/site-search:
+    post:
+      operationId: findIndexedCompany
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [website], properties: { website: { type: string, maxLength: 250 } } }
+      responses:
+        '200':
+          description: Название и описание по указанной странице из поиска Яндекса
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [company]
+                properties:
+                  company:
+                    type: object
+                    nullable: true
+                    properties:
+                      brandName: { type: string, maxLength: 80 }
+                      activity: { type: string, maxLength: 100 }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/dashboard:
+    get:
+      operationId: getPartnerDashboardOverview
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Дневные показатели и последние отправленные заявки в пределах доступа
+          content: { application/json: { schema: { $ref: '#/components/schemas/CabinetDashboardOverview' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/statistics/responses:
+    get:
+      operationId: getPartnerMarketResponses
+      security: [{ mvpSession: [] }]
+      parameters: [{ name: days, in: query, schema: { type: integer, enum: [7, 30, 90], default: 7 } }]
+      responses:
+        '200':
+          description: Действия на витрине по кампаниям партнёра за выбранный период
+          content: { application/json: { schema: { $ref: '#/components/schemas/MarketResponseReport' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/dashboard/rows:
+    post:
+      operationId: getPartnerDashboardRows
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CabinetDashboardSearch' } } }
+      responses:
+        '200':
+          description: Страница реестра с учётом поиска и статуса в пределах доступа
+          content: { application/json: { schema: { $ref: '#/components/schemas/CabinetDashboardList' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/dashboard:
+    get:
+      operationId: getStaffDashboardOverview
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Дневные показатели и последние отправленные заявки в пределах доступа
+          content: { application/json: { schema: { $ref: '#/components/schemas/CabinetDashboardOverview' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/dashboard/rows:
+    post:
+      operationId: getStaffDashboardRows
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CabinetDashboardSearch' } } }
+      responses:
+        '200':
+          description: Страница реестра с учётом поиска и статуса в пределах доступа
+          content: { application/json: { schema: { $ref: '#/components/schemas/CabinetDashboardList' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/contracts/read-file:
+    post:
+      operationId: readPartnerRequisitesFile
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ContractPreparation/properties/attachment' } } }
+      responses:
+        '200':
+          description: Распознанные реквизиты для проверки партнёром
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [inn, details]
+                properties:
+                  inn: {type: string}
+                  details: { $ref: '#/components/schemas/ContractDetails' }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/contracts/defaults:
+    get:
+      operationId: getContractDefaults
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Реквизиты текущей компании
+          content: { application/json: { schema: { $ref: '#/components/schemas/ContractDetails' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/contracts/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getPartnerContract
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Текущая версия договора
+          content: { application/json: { schema: { anyOf: [{ $ref: '#/components/schemas/CampaignContract' }, {type: 'null'}] } } }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: preparePartnerContract
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ContractPreparation' } } }
+      responses:
+        '200':
+          description: Договор сформирован
+          content: { application/json: { schema: { $ref: '#/components/schemas/CampaignContract' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/contracts/{id}/pdf:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: downloadPartnerContract
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Заполненная версия для подписания
+          content: { application/pdf: { schema: { type: string, format: binary } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/contracts/{id}/email:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: sendPartnerContract
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Письмо с PDF передано почтовому сервису
+          content: { application/json: { schema: { type: object, properties: { sent: { type: boolean } } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/contracts/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getStaffContract
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Текущая версия договора
+          content: { application/json: { schema: { $ref: '#/components/schemas/CampaignContract' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/contracts/{id}/pdf:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: downloadStaffContract
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Заполненная версия для подписания
+          content: { application/pdf: { schema: { type: string, format: binary } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/contracts/{id}/email:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: sendStaffContract
+      security: [{ mvpSession: [] }]
+      responses:
+        '200':
+          description: Письмо с PDF передано почтовому сервису
+          content: { application/json: { schema: { type: object, properties: { sent: { type: boolean } } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/contracts/{id}/confirm:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: confirmSignedContract
+      security: [{ mvpSession: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [version], properties: { version: { type: integer } } } } }
+      responses:
+        '200':
+          description: Менеджер подтвердил получение подписанной версии
+          content: { application/json: { schema: { $ref: '#/components/schemas/CampaignContract' } } }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/drafts:
+    get:
+      security: [{ mvpSession: [] }]
+      operationId: listPartnerDrafts
+      responses:
+        '200':
+          description: Черновики партнёра для текущей компании в порядке обновления
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, code, title, step, updatedAt]
+                  properties:
+                    id: { type: string, format: uuid }
+                    code: { type: string }
+                    title: { type: string }
+                    step: { type: integer, minimum: 1, maximum: 3 }
+                    updatedAt: { type: integer }
+        default: { $ref: '#/components/responses/Error' }
+  /mvp/drafts/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      security: [{ mvpSession: [] }]
+      operationId: getPartnerDraft
+      responses:
+        '200':
+          description: Сохранённые данные либо null для нового черновика
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - { type: 'null' }
+                  - type: object
+                    required: [data, version, updatedAt]
+                    properties:
+                      data: { $ref: '#/components/schemas/PartnerDraftData' }
+                      version: { type: integer }
+                      updatedAt: { type: integer }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      security: [{ mvpSession: [] }]
+      operationId: savePartnerDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data, version]
+              properties:
+                data: { $ref: '#/components/schemas/PartnerDraftData' }
+                version: { type: integer, minimum: 0, description: 0 для нового черновика }
+                keepAttachment: { type: boolean, description: Сохранить прежнее приложение к договору }
+      responses:
+        '200':
+          description: Сохранённая версия
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, updatedAt]
+                properties:
+                  version: { type: integer }
+                  updatedAt: { type: integer }
+        '409': { $ref: '#/components/responses/Error' }
+        default: { $ref: '#/components/responses/Error' }
   /mvp/campaigns:
     get:
       security: [{ mvpSession: [] }]
@@ -178,17 +452,19 @@ paths:
     post:
       security: [{ mvpSession: [] }]
       operationId: submitMvpCampaign
+      description: Отправка на модерацию. Сервер проверяет подписанный договор, привязанный к ключу кампании, компании и партнёру.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [inn, key, accepted, promo]
+              required: [inn, key, promo]
               properties:
                 inn: { type: string }
                 key: { type: string, format: uuid }
-                accepted: { type: boolean, const: true }
+                draftVersion: { type: integer, minimum: 1, description: Версия сохранённого черновика при отправке }
+                awaitSignature: { type: boolean, description: Передать готовые материалы менеджеру на этапе договора до подтверждения подписи }
                 promo: { $ref: '#/components/schemas/MvpPromo' }
       responses:
         '200': { $ref: '#/components/responses/MvpAccepted' }
@@ -214,6 +490,7 @@ paths:
                   status: { $ref: '#/components/schemas/PartnerCampaignStatus' }
                   profile: { $ref: '#/components/schemas/MvpProfile' }
                   promo: { $ref: '#/components/schemas/MvpPromo' }
+                  marketCopy: { $ref: '#/components/schemas/MarketCardCopy' }
                   submittedAt: { type: integer }
         default: { $ref: '#/components/responses/Error' }
   /market/offers:
@@ -258,6 +535,53 @@ paths:
           description: Изображение действующего предложения
           content: { 'image/*': { schema: { type: string, format: binary } } }
         '404': { description: Изображение недоступно }
+  /market/offers/{id}/exposure:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: recordOfferExposure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [exposureId, placement, clicked], properties: { exposureId: { type: string, format: uuid }, placement: { type: string, enum: [market] }, clicked: { type: boolean } } }
+      responses:
+        '200': { description: Показ или переход учтён один раз }
+        default: { $ref: '#/components/responses/Error' }
+  /market/offers/{id}/actions:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: recordMarketAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventId, kind]
+              properties:
+                eventId: { type: string, format: uuid }
+                kind: { $ref: '#/components/schemas/MarketAction' }
+      responses:
+        '200': { description: Событие принято }
+        default: { $ref: '#/components/responses/Error' }
+  /market/offers/{id}/selection:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: selectMarketOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [selectionKey]
+              properties:
+                selectionKey: { type: string, format: uuid, description: Случайный ключ для одного предложения в этом браузере }
+      responses:
+        '200':
+          description: Число выборов после учёта действия
+          content: { application/json: { schema: { type: object, required: [selectionCount], properties: { selectionCount: { type: integer, minimum: 0 } } } } }
+        default: { $ref: '#/components/responses/Error' }
   /market/search:
     post:
       operationId: searchMarketOffers
@@ -326,6 +650,55 @@ paths:
           description: Сохранённая версия
           content: { application/json: { schema: { $ref: '#/components/schemas/CatalogRecord' } } }
         default: { $ref: '#/components/responses/Error' }
+  /mvp/notifications:
+    get:
+      security: [{ mvpSession: [] }]
+      operationId: campaignNotifications
+      parameters: [{ name: before, in: query, schema: { type: integer, minimum: 0 } }]
+      responses:
+        '200':
+          description: Изменения статуса кампаний владельца
+          content: { application/json: { schema: { $ref: '#/components/schemas/CampaignNotifications' } } }
+  /mvp/notifications/read:
+    post:
+      security: [{ mvpSession: [] }]
+      operationId: readCampaignNotifications
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [through], properties: { through: {type: integer, minimum: 1} } } } }
+      responses:
+        '200': { description: Уведомления отмечены прочитанными }
+  /v4/staff/board:
+    get:
+      security: [{ mvpSession: [] }]
+      operationId: staffCampaignBoard
+      responses:
+        '200':
+          description: Кампании во всех этапах
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CampaignBoardCard' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/submissions/{id}/stage:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      security: [{ mvpSession: [] }]
+      operationId: moveCampaign
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CampaignStageChange' } } }
+      responses:
+        '200': { description: Этап сохранён }
+        default: { $ref: '#/components/responses/Error' }
+  /v4/staff/submissions/{id}/registry:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      security: [{ mvpSession: [] }]
+      operationId: resolveSubmissionRegistry
+      summary: Получить сохранённые реквизиты заявки или загрузить их по ИНН
+      responses:
+        '200':
+          description: Реквизиты из DaData и время проверки
+          content: { application/json: { schema: { $ref: '#/components/schemas/RegistryDetails' } } }
+        default: { $ref: '#/components/responses/Error' }
   /v4/staff/submissions/{id}/review:
     parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
     post:
@@ -363,6 +736,25 @@ paths:
                 properties:
                   status: { type: string, enum: [ok] }
         '500': { $ref: '#/components/responses/Error' }
+  /autocomplete/party:
+    post:
+      operationId: suggestPartnerCompany
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [query], properties: { query: {type: string, minLength: 2, maxLength: 120} } } } }
+      responses:
+        '200':
+          description: Действующие компании для выбора по названию
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [companies]
+                properties:
+                  companies:
+                    type: array
+                    items: {type: object, required: [inn, name, address], properties: {inn: {type: string}, name: {type: string}, address: {type: string}}}
+        default: { $ref: '#/components/responses/Error' }
   /autocomplete/inn:
     post:
       tags: [компания]
@@ -416,6 +808,38 @@ paths:
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
         '503': { $ref: '#/components/responses/Error' }
+  /v4/offer-image:
+    post:
+      tags: [кампании]
+      summary: Создать новое изображение внутри текущего оффера
+      description: Локальное демо возвращает подготовленные варианты. В production нужен OFFER_IMAGE_PROVIDER=openai и серверный ключ. Поля оффера не меняются.
+      operationId: generateV4OfferImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [input]
+              properties:
+                input: { type: string, description: 'JSON: category (3–100 символов), title (5–90 символов), variant (целое 0–999999)' }
+                image: { type: string, format: binary, description: Необязательное исходное фото в PNG до 5 МБ }
+      responses:
+        '200':
+          description: Новый PNG с прозрачным фоном
+          headers:
+            X-Offer-Image-Source:
+              schema: { type: string, enum: [demo, api] }
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '415': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
   /v4/offer-ai:
     post:
       tags: [кампании]
@@ -450,6 +874,8 @@ paths:
               type: object
               required: [website]
               properties:
+                profileOnly: { type: boolean }
+                brandOnly: { type: boolean, description: Найти профиль и логотип или иконку без фотографий }
                 website: { type: string, maxLength: 250 }
       responses:
         '200':
@@ -458,8 +884,16 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [assets]
+                required: [assets, profile]
                 properties:
+                  profile:
+                    type: object
+                    required: [name, subject, description]
+                    properties:
+                      name: { type: string }
+                      subject: { type: string }
+                      offerText: { type: string, maxLength: 300, description: Явно указанные в тексте страницы условия со скидкой и промокодом }
+                      description: { type: string }
                   assets:
                     type: array
                     items:
@@ -925,7 +1359,7 @@ components:
             type: object
             required: [draft]
             properties:
-              draft: { type: string, description: 'JSON с полями бизнеса, оффера и аудитории, без файлов' }
+              draft: { type: string, description: 'JSON с данными бизнеса, оффера и аудитории. При отправке обязательны contactName, business.phone и business.inn. Режим настройки — setupMode.' }
               offerImage: { type: string, format: binary, description: 'Изображение оффера, до 5 МиБ' }
               logoImage: { type: string, format: binary, description: 'Логотип, до 5 МиБ' }
               emailCode: { type: string, pattern: '^[0-9]{6}$', description: 'Одноразовый код из письма. Обязателен при POST.' }
@@ -958,6 +1392,19 @@ components:
     Conversion: { description: ok, content: { application/json: { schema: { $ref: '#/components/schemas/Conversion' } } } }
 
   schemas:
+    RegistryDetails:
+      type: object
+      required: [legalName, kpp, ogrn, legalAddress, manager, managerRole, okved, checkedAt, requiresReview]
+      properties:
+        legalName: { type: string }
+        kpp: { type: string }
+        ogrn: { type: string }
+        legalAddress: { type: string }
+        manager: { type: string }
+        managerRole: { type: string }
+        okved: { type: string }
+        checkedAt: { type: integer, description: Время проверки в миллисекундах Unix }
+        requiresReview: { type: boolean }
     MvpProfile:
       type: object
       required: [inn, company, addr]
@@ -967,17 +1414,56 @@ components:
         addr: { type: string, maxLength: 200 }
         category: { type: string, maxLength: 100 }
         website: { type: string, maxLength: 250 }
+    PartnerDraftData:
+      type: object
+      required: [promo, step, adReviewed, audienceReviewed, sourceReady]
+      properties:
+        step: { type: integer, minimum: 1, maximum: 3, description: Оффер → Аудитория → Договор }
+        adReviewed: { type: boolean }
+        audienceReviewed: { type: boolean }
+        sourceReady: { type: boolean }
+        imported:
+          type: object
+          required: [website, values]
+          properties:
+            website: { type: string, maxLength: 250 }
+            values: { type: object, additionalProperties: { type: string, maxLength: 100 } }
+        promo:
+          type: object
+          required: [code, off, cond, site, till]
+          additionalProperties: true
+          description: Редактируемые поля промокампании, допускающие частичное заполнение
+        contractInput:
+          type: object
+          properties:
+            method: { type: string, enum: [inn, file, manual] }
+            editing: { type: boolean }
+            inn: { type: string, pattern: '^[0-9]{0,12}$' }
+            confirmedInn: { type: string, pattern: '^(\d{10}|\d{12})$' }
+            companyName: { type: string, maxLength: 80 }
+            fields: { type: object, additionalProperties: { type: string } }
+            fileFields: { $ref: '#/components/schemas/ContractDetails' }
+            attachment:
+              type: object
+              required: [name, type, base64]
+              properties:
+                name: { type: string }
+                type: { type: string, enum: [application/pdf, image/png, image/jpeg] }
+                base64: { type: string, maxLength: 4194304 }
     MvpSession:
       type: object
       required: [email, profile]
       properties:
         email: { type: string, format: email }
+        hasDrafts: { type: boolean }
         role: { type: string, enum: [staff, admin] }
         profile: { anyOf: [{ $ref: '#/components/schemas/MvpProfile' }, { type: 'null' }] }
     MvpPromo:
       type: object
       required: [code, off, cond, site, till, design, addresses, online, mode, area]
       properties:
+        brandName: { type: string, maxLength: 80 }
+        activity: { type: string, maxLength: 100 }
         code: { type: string, pattern: '^[A-ZА-ЯЁ0-9]{4,20}$' }
         off: { type: string, description: Скидка от 1 до 90 процентов }
         cond: { type: string, maxLength: 60 }
@@ -997,6 +1483,13 @@ components:
         income: { type: string, enum: [любой, средний, выше среднего] }
         moment: { type: string, enum: [любые, недавно переехали, день зарплаты] }
         wishes: { type: string, maxLength: 400 }
+        logo:
+          type: object
+          required: [name, src]
+          properties:
+            name: { type: string, maxLength: 255 }
+            src: { type: string, maxLength: 80000 }
+            website: { type: string, maxLength: 250 }
         photo:
           type: object
           required: [name, src]
@@ -1027,7 +1520,183 @@ components:
         terms: { type: string }
         image: { type: string }
         logo: { type: string }
-    PartnerCampaignStatus: { type: string, enum: [review, awaiting_payment, published, expired, stopped] }
+    ContractDetails:
+      type: object
+      additionalProperties: { type: string }
+    ContractPreparation:
+      type: object
+      required: [inn, details, version]
+      properties:
+        inn: { type: string }
+        version: { type: integer, minimum: 0 }
+        details: { $ref: '#/components/schemas/ContractDetails' }
+        attachment:
+          type: object
+          required: [name, type, base64]
+          properties:
+            name: { type: string }
+            type: { type: string, enum: [application/pdf, image/png, image/jpeg] }
+            base64: { type: string, contentEncoding: base64 }
+    CampaignContract:
+      type: object
+      required: [id, email, inn, company, details, createdAt, version, signedAt, signedBy, sentAt, attachmentName, submissionId]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        inn: { type: string }
+        company: { type: string }
+        details: { $ref: '#/components/schemas/ContractDetails' }
+        createdAt: { type: integer }
+        version: { type: integer }
+        signedAt: { type: [integer, 'null'] }
+        signedBy: { type: [string, 'null'] }
+        sentAt: { type: [integer, 'null'] }
+        attachmentName: { type: [string, 'null'] }
+        submissionId: { type: [string, 'null'] }
+    MarketAction: { type: string, enum: [open, reveal, site, route] }
+    MarketResponseReport:
+      type: object
+      required: [since, impressionSince, today, hasCampaigns, daily, items]
+      properties:
+        since: { type: integer, description: Начало сбора событий витрины в миллисекундах Unix }
+        impressionSince: { type: integer, description: Начало учёта показов на витрине }
+        today: { type: integer, description: Текущий календарный день по Москве }
+        hasCampaigns: { type: boolean }
+        daily:
+          type: array
+          items:
+            type: object
+            required: [day, opens, clicks]
+            properties:
+              day: { type: integer }
+              opens: { type: integer }
+              clicks: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, title, code, online, opens, reveals, sites, routes, marketShows, marketClicks, landingShows, landingClicks]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              code: { type: string }
+              online: { type: boolean }
+              marketShows: { type: integer }
+              marketClicks: { type: integer }
+              landingShows: { type: integer, deprecated: true, enum: [0] }
+              landingClicks: { type: integer, deprecated: true, enum: [0] }
+              opens: { type: integer }
+              reveals: { type: integer }
+              sites: { type: integer }
+              routes: { type: integer }
+    CabinetDashboardSearch:
+      type: object
+      properties:
+        q: { type: string, maxLength: 120 }
+        days: { type: string, enum: ['0', '7', '30', '90'] }
+        status: { type: string, enum: ['', authorization, contract, review, published, stopped, archived] }
+        sort: { type: string, enum: [newest, oldest, name] }
+        page: { type: string, pattern: '^[1-9][0-9]*$' }
+    CabinetChannel: { type: string, enum: [online, places, unspecified] }
+    CabinetEvent:
+      type: object
+      required: [id, name, code, submittedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        code: { type: string }
+        submittedAt: { type: integer }
+    CampaignNotifications:
+      type: object
+      required: [items, more, unread]
+      properties:
+        more: { type: boolean }
+        unread: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            required: [eventId, id, title, fromStage, toStage, createdAt]
+            properties:
+              eventId: { type: integer }
+              id: { type: string }
+              title: { type: string }
+              fromStage: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+              toStage: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+              createdAt: { type: integer }
+    CampaignStageChange:
+      type: object
+      required: [status, version]
+      properties:
+        status: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+        version: { type: integer, minimum: 0 }
+    CampaignBoardCard:
+      type: object
+      required: [id, kind, name, title, code, inn, email, status, version, submittedAt]
+      properties:
+        kind: { type: string, enum: [client, contract, campaign] }
+        inn: { type: string }
+        email: { type: string }
+        id: { type: string }
+        name: { type: string }
+        title: { type: string }
+        code: { type: string }
+        status: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+        version: { type: integer }
+        submittedAt: { type: integer }
+    CabinetDashboardOverview:
+      type: object
+      required: [today, groups, recent]
+      properties:
+        today: { type: integer, description: Номер календарного дня по Москве от начала Unix-эпохи }
+        groups:
+          type: array
+          items:
+            type: object
+            required: [day, status, channel, count, verified]
+            properties:
+              day: { type: integer }
+              status: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+              channel: { $ref: '#/components/schemas/CabinetChannel' }
+              count: { type: integer }
+              verified: { type: integer, description: Число заявок с отметкой проверки и erid }
+        funnel:
+          type: array
+          description: Только в кабинете сотрудника. Для авторизации — уникальные клиенты по дате первого входа. Для остальных этапов — уникальные кампании по дате отправки.
+          items:
+            type: object
+            required: [day, status, count]
+            properties:
+              day: { type: integer }
+              status: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+              count: { type: integer, minimum: 0 }
+        recent: { type: array, items: { $ref: '#/components/schemas/CabinetEvent' } }
+    CabinetDashboardList:
+      type: object
+      required: [items, page, total]
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        items:
+          type: array
+          items:
+            allOf:
+              - { $ref: '#/components/schemas/CabinetEvent' }
+              - type: object
+                required: [title, inn, email, city, phone, contactName, status, channel, version, kind]
+                properties:
+                  kind: { type: string, enum: [client, contract, campaign] }
+                  publicId: { type: string, nullable: true }
+                  version: { type: integer }
+                  title: { type: string }
+                  inn: { type: string }
+                  email: { type: string }
+                  city: { type: string }
+                  phone: { type: string }
+                  contactName: { type: string }
+                  status: { $ref: '#/components/schemas/PartnerCampaignStatus' }
+                  channel: { $ref: '#/components/schemas/CabinetChannel' }
+    PartnerCampaignStatus: { type: string, enum: [authorization, contract, review, published, stopped, archived] }
     ReviewInput:
       type: object
       required: [reviewed, paid, erid, version]
@@ -1063,12 +1732,19 @@ components:
         version: { type: integer, minimum: 0 }
         publicId: { type: [string, 'null'], format: uuid }
         fields: { $ref: '#/components/schemas/CatalogFields' }
+    MarketCardCopy:
+      type: object
+      required: [catalog, erid]
+      properties:
+        catalog: { $ref: '#/components/schemas/MarketOffer/properties/catalog' }
+        erid: { type: string }
     MarketOffer:
       type: object
       required: [id, name, offer, erid, category, group, online, addresses, website, image, logo]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
+        selectionCount: { type: integer, minimum: 0, description: Число уникальных выборов предложения на витрине }
         offer:
           type: object
           required: [title, promo, discount, until, tone, gift, zoom]
@@ -1185,7 +1861,7 @@ components:
       properties:
         kind: { type: string, enum: [logo, creative] }
         source: { type: string, enum: [brand, icon, photo] }
-        type: { type: string, enum: [image/png, image/jpeg, image/webp, image/avif, image/svg+xml] }
+        type: { type: string, enum: [image/png, image/jpeg, image/webp, image/avif, image/svg+xml, image/x-icon] }
         base64: { type: string }
     BusinessProfile:
       type: object

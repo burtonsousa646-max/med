@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { matchesRasterType } from '../shared/offer-assets.ts'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { campaignAllowedStage, emptyCampaignDraft, isCampaignDraft, normalizeCampaignEmail, type CampaignDraft } from '../shared/campaign-draft.ts'
+import { hasApplicationContact, campaignAllowedStage, emptyCampaignDraft, isCampaignDraft, normalizeCampaignEmail, type CampaignDraft } from '../shared/campaign-draft.ts'
 import { db } from './db.ts'
 import { consumeCampaignCode, draftKeyPattern } from './campaign-email.ts'
 import { parsePartnerDetails, type RegistryDetails } from '../shared/partner-details.ts'
@@ -37,12 +37,13 @@ async function parseDraft(form: FormData, submit: boolean): Promise<IntakeData> 
   const fields: unknown = JSON.parse(raw)
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) throw new Error('Invalid draft')
   const value = { ...fields, offerImage: form.get('offerImage'), logoImage: form.get('logoImage') }
-  if (!isCampaignDraft(value) || !value.offerAccepted || (submit && campaignAllowedStage(value) < 4)) throw new Error('Invalid draft')
-  const stage = submit ? 5 : Math.min(value.stage, campaignAllowedStage(value))
+  if (!isCampaignDraft(value) || !value.offerAccepted || (submit && (campaignAllowedStage(value) < 4 || !hasApplicationContact(value)))) throw new Error('Invalid draft')
+  const stage = submit ? 5 : Math.min(value.stage, campaignAllowedStage(value), hasApplicationContact(value) ? 4 : 3)
   return {
     ...pick(value, sample), email: submit && value.email ? normalizeCampaignEmail(value.email) : undefined, business: pick(value.business, sample.business),
+    contactName: value.contactName?.trim(), setupMode: value.setupMode, audienceCity: value.audienceCity,
     partnerDetails: submit ? parsePartnerDetails(value.partnerDetails, value.business.inn) : undefined,
-    offer: { ...pick(value.offer, sample.offer), ...(value.offer.layout && { layout: value.offer.layout }) },
+    offer: { ...pick(value.offer, sample.offer), ...(value.offer.background && { background: value.offer.background }), ...(value.offer.layout && { layout: value.offer.layout }) },
     stage, reached: submit ? 5 : Math.min(4, value.reached),
     offerImage: await packImage(value.offerImage), logoImage: await packImage(value.logoImage),
   }
@@ -107,6 +108,7 @@ for (const method of ['PUT', 'POST'] as const) {
       saveDraft.run(key, revision, JSON.stringify({ ...draft, partnerDetails: undefined }), now)
       const registryDetails = readPartnerRegistry(draft.business.inn, now)
       insertSubmission.run(id, key, digest, JSON.stringify({ ...draft, registryDetails }), now, now)
+      db.prepare("insert into campaign_workflow values (?,'review')").run(id)
       db.exec('commit')
       return c.json({ id, status: 'accepted' }, 201)
     } catch (error) {

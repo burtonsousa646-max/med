@@ -10,15 +10,6 @@ export function resolveOfferLayout(layout: OfferLayout | undefined, hasImage: bo
   return hasImage ? layout ?? 'split' : 'text'
 }
 
-export function nextOfferDesign(offer: OfferDraft, hasImage: boolean): OfferDraft {
-  const tones: Tone[] = ['violet', 'blue', 'green', 'magenta', 'teal', 'dark', 'red', 'light']
-  return {
-    ...offer,
-    tone: tones[(tones.indexOf(offer.tone) + 1) % tones.length],
-    layout: !hasImage || offer.layout === 'text' ? 'text' : offer.layout === 'photo' ? 'split' : 'photo',
-  }
-}
-
 export function offerTextColor(background: string) {
   const [r, g, b] = [1, 3, 5].map(offset => {
     const channel = parseInt(background.slice(offset, offset + 2), 16) / 255

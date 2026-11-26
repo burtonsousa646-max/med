@@ -238,6 +238,7 @@ export const SCREENS: [string, string, string][] = [
   ['кампания и рост', '/cab/campaigns', 'кабинет · кампании'], ['кампания и рост', '/cab/connections', 'кабинет · подключения'], ['кампания и рост', '/cab/balance', 'кабинет · баланс'],
   ['кампания и рост', '/cab/docs', 'кабинет · документы и ЭДО'], ['кампания и рост', '/cab/company', 'кабинет · компания'], ['кампания и рост', '/cab/help', 'кабинет · помощь'],
   ['что видит абонент', '/market/', '7 · витрина «лучшее рядом»'],
+  ['что видит абонент', '/near-v2', '8 · витрина «лучшее рядом», версия 2'],
 ]
 export const screenName = (pathname: string) => SCREENS.find(s => s[1] === pathname.replace(/^\/c\/\d+/, '/c/:id').replace(/^\/approve\/.+/, '/approve/:token'))?.[2]
 

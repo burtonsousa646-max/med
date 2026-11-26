@@ -2,7 +2,7 @@
 .v3-validated-field { display: grid; gap: 7px; align-content: start; }
 .v3-input-wrap { position: relative; display: block; min-width: 0; }
 .v3-input-wrap > .bl-input { width: 100%; padding-right: 38px; }
-.v3-field-mark { position: absolute; right: 13px; top: 15px; display: flex; color: #38734b; pointer-events: none; }
+.v3-field-mark { position: absolute; right: 13px; inset-block: 0; display: flex; align-items: center; color: #38734b; pointer-events: none; }
 .v3-field-feedback { display: block; min-height: 17px; font: 12px/1.4 var(--font-primary); color: var(--v3-muted); }
 .v3-field-feedback > span { display: block; }
 .v3-validated-field[data-invalid=true] .bl-input { border-color: #b44032; box-shadow: 0 0 0 2px #b4403210; }
@@ -12,7 +12,6 @@
 .v3-business-start { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px,6vw,80px); }
 .v3-business-inputs { padding-block: 16px; gap: 24px; align-content: start; }
 .v3-business-inputs .bl-input { min-height: 56px; font-size: 20px; font-variant-numeric: tabular-nums; letter-spacing: .015em; }
-.v3-business-inputs .v3-field-mark { top: 19px; }
 .v3-business-inputs .v3-field-feedback { min-height: 34px; }
 .v3-business-explainer { position: relative; padding: 28px; border-radius: 18px; background: #efeee7; overflow: hidden; }
 .v3-business-emblem { display: grid; place-items: center; width: 55px; height: 55px; border-radius: 50%; background: var(--v3-accent); margin-bottom: 22px; }
@@ -42,7 +41,7 @@
 .v3-source-note > span { display: flex; gap: 7px; align-items: center; color: #38734b; font-size: 13px; }
 .v3-source-note small { font-size: 11px; color: var(--v3-muted); overflow-wrap: anywhere; }
 .v3-partner-details { grid-column: 1 / -1; }
-.v3-partner-details summary { cursor: pointer; font-weight: 600; }
+.v3-partner-details summary { min-height: 44px; padding-block: 10px; cursor: pointer; font-weight: 600; }
 .v3-partner-details .v3-fields { margin-top: 16px; }
 .v3-business-locations { background: #efeee7; border-radius: 16px; padding: 24px; min-width: 0; }
 .v3-location-title { display: flex; gap: 12px; align-items: start; }
@@ -94,3 +93,5 @@
   .v3-business-explainer li > span { width: 28px; height: 28px; }
   .v3-business-explainer li b { font-size: 14px; }
 }
+
+.campaign-business-fields-wrap { display: contents; }

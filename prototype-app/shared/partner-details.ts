@@ -9,6 +9,7 @@ export const registryFields = {
 } as const
 
 export type RegistryDetails = Record<keyof typeof registryFields, string> & {
+  taxSystem?:string
   checkedAt: number
   requiresReview: boolean
 }
@@ -25,6 +26,7 @@ export const partnerFields = {
   bik: { label: 'БИК', length: 9, digits: true },
   account: { label: 'Расчётный счёт', length: 20, digits: true },
   correspondentAccount: { label: 'Корреспондентский счёт', length: 20, digits: true },
+  taxSystem: { label: 'Система налогообложения', length: 100 },
 } as const
 
 export type PartnerDetails = Partial<Record<keyof typeof partnerFields, string>>
@@ -50,6 +52,13 @@ export function parsePartnerDetails(value: unknown, inn: string): PartnerDetails
   return Object.keys(details).length ? details : undefined
 }
 
+export function providedDetailsRows(inn: string, registry?: RegistryDetails | null, provided?: PartnerDetails): [string, string][] {
+  return partnerFieldKeys.filter(key => {
+    if (key === 'kpp' && inn.length === 12) return false
+    return !Object.hasOwn(registryFields, key) || Boolean(provided?.[key]) || !registry?.[key as keyof typeof registryFields]
+  }).map(key => [`Со слов партнёра · ${partnerFields[key].label}`, provided?.[key] || 'Не указано'])
+}
+
 export function partnerDetailsRows(inn: string, registry?: RegistryDetails | null, provided?: PartnerDetails): [string, string][] {
   const entrepreneur = inn.length === 12
   return [
@@ -59,9 +68,6 @@ export function partnerDetailsRows(inn: string, registry?: RegistryDetails | nul
       : 'Нет снимка реестра. Требуется проверка'],
     ...Object.entries(registryFields).filter(([key]) => !entrepreneur || !['kpp', 'manager', 'managerRole'].includes(key))
       .map(([key, label]): [string, string] => [label, registry?.[key as keyof typeof registryFields] || 'Нет данных']),
-    ...partnerFieldKeys.filter(key => {
-      if (key === 'kpp' && entrepreneur) return false
-      return !Object.hasOwn(registryFields, key) || Boolean(provided?.[key]) || !registry?.[key as keyof typeof registryFields]
-    }).map((key): [string, string] => [`Со слов партнёра · ${partnerFields[key].label}`, provided?.[key] || 'Не указано']),
+    ...providedDetailsRows(inn, registry, provided),
   ]
 }

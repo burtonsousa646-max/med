@@ -35,12 +35,12 @@ export function CrImg({ o }: { o: CreativeData }) {
     : <picture><source srcSet={`${base}.avif`} type="image/avif" /><img className="cr__img" src={`${base}.png`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} /></picture>
 }
 
-export function Creative({ o, erid, wide, image }: { o: CreativeData; erid: string; wide?: boolean; image?: string }) {
+export function Creative({ o, erid, wide, image, logo }: { o: CreativeData; erid: string; wide?: boolean; image?: string; logo?: string }) {
   return (
     <div className={`cr cr--${o.tone}${wide ? ' cr--wide' : ''}${image ? ' cr--photo' : ''}${o.mark.length > 30 || o.small.length > 60 || o.big.length > 60 ? ' cr--dense' : ''}`}>
       {image ? <img className="cr__photo" src={image} alt="" decoding="async"/> : <CrImg o={o} />}
       <span className="cr__text">
-        <span className="cr__mark">{o.mark}</span>
+        <span className="cr__mark">{logo && <img src={logo} alt="" className="cr__brand-logo"/>}{o.mark}</span>
         {/* условие без цифры, например «второй кофе в подарок», переносится строками */}
         <span className={`cr__big${!/^[−\d]/.test(o.big) ? ' cr__big--text' : o.big.length > 6 ? ' cr__big--long' : ''}`}>{o.big}</span>
         {o.small && <span className="cr__small">{o.small}</span>}

@@ -1,13 +1,15 @@
 import { audienceGroups } from './campaign-draft.ts'
 import { normalizeBusinessWebsite } from './campaign-business.ts'
 import type { Tone } from './campaign-offer.ts'
+import type { SiteCompany } from './site-company.ts'
 
 export type Profile = { inn: string; company: string; addr: string; category?:string; website?: string }
-export type MvpSession = { role?: 'staff' | 'admin'; email: string; profile: Profile | null }
+export type MvpSession = { hasDrafts?:boolean; role?: 'staff' | 'admin'; email: string; profile: Profile | null }
 export type PromoPhoto = { name: string; src: string }
-export type Promo = MvpTargeting & { code: string; off: string; cond: string; site: string; till: string; fee?: string; check?: string; via?: string; design?: string; photo?: PromoPhoto; usePhoto?: boolean }
+export type PromoLogo = PromoPhoto & {website?:string}
+export type Promo = MvpTargeting & SiteCompany & { code: string; off: string; cond: string; site: string; till: string; fee?: string; check?: string; via?: string; design?: string; photo?: PromoPhoto; logo?:PromoLogo; usePhoto?: boolean }
 export type PartnerCampaignStatus = import('../src/api.gen.ts').components['schemas']['PartnerCampaignStatus']
-export type Receipt = { status: PartnerCampaignStatus; publicId: string | null; id: string; profile: Profile; promo: Promo; submittedAt: number }
+export type Receipt = { marketCopy?:import('./market.ts').MarketCardCopy; contract?:import('./campaign-contract.ts').ContractRecord|null; status: PartnerCampaignStatus; publicId: string | null; id: string; profile: Profile; promo: Promo; submittedAt: number }
 export type ReceiptSummary = { status: PartnerCampaignStatus; id: string; code: string; company: string; submittedAt: number }
 export const VIA = ['файл раз в неделю', 'постбэк', 'коннектор 1С']
 
@@ -72,7 +74,7 @@ export const promoErrors = (p: Promo) => ({
   code: /^[A-ZА-ЯЁ0-9]{4,20}$/.test(p.code) ? '' : 'от 4 до 20 букв и цифр, без пробелов',
   off: /^\d{1,2}$/.test(p.off) && +p.off >= 1 && +p.off <= 90 ? '' : 'от 1 до 90 %',
   cond: p.cond.length <= 60 ? '' : 'до 60 символов',
-  site: normalizeBusinessWebsite(p.site) ? '' : 'укажите сайт, где сработает код',
+  site: !p.site.trim() || normalizeBusinessWebsite(p.site) ? '' : 'проверьте адрес сайта',
   till: /^\d{4}-\d{2}-\d{2}$/.test(p.till) && p.till > promoDay() && new Date(p.till).toJSON()?.slice(0, 10) === p.till ? '' : 'дата в будущем',
   fee: p.fee === undefined || typeof p.fee === 'string' && /^\d{1,2}$/.test(p.fee) && +p.fee >= 3 && +p.fee <= 50 ? '' : 'от 3 до 50 %',
   check: p.check === undefined || typeof p.check === 'string' && /^\d{1,7}$/.test(p.check) && +p.check > 0 ? '' : 'сумма в рублях',
@@ -83,6 +85,8 @@ export function validPromo(value: unknown): value is Promo {
   if (!value || typeof value !== 'object') return false
   const p = value as Promo
   return [p.code, p.off, p.cond, p.site, p.till].every(v => typeof v === 'string')
+    && validPromoCompany(p)
+    && validPromoLogo(p.logo)
     && (p.via === undefined || VIA.includes(p.via)) && (p.design === 'plain' || designs.some(d => d.file === p.design))
     && typeof p.online === 'boolean' && ['auto', 'manual'].includes(p.mode ?? '')
     && Array.isArray(p.addresses) && p.addresses.length <= 10 && p.addresses.every(a => typeof a === 'string' && a.length <= 200)
@@ -91,4 +95,15 @@ export function validPromo(value: unknown): value is Promo {
     && (p.wishes === undefined || (typeof p.wishes === 'string' && p.wishes.length <= 400))
     && filters.every(({key, group}) => p[key] === undefined || group.choices.includes(p[key]!))
     && Object.values(promoErrors(p)).every(message => !message)
+}
+
+export function validPromoCompany(p: SiteCompany) {
+  return (p.brandName === undefined || typeof p.brandName === 'string' && p.brandName.length <= 80)
+    && (p.activity === undefined || typeof p.activity === 'string' && p.activity.length <= 100)
+}
+
+export function validPromoLogo(logo:PromoLogo|undefined) {
+  return logo===undefined || !!logo && typeof logo.name==='string' && logo.name.length>0 && logo.name.length<=255
+    && typeof logo.src==='string' && logo.src.length<=80_000 && /^data:image\/(?:webp|png);base64,[a-z0-9+/]+=*$/i.test(logo.src)
+    && (logo.website===undefined || typeof logo.website==='string' && !!normalizeBusinessWebsite(logo.website))
 }

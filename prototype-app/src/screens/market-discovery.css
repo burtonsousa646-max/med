@@ -1,0 +1,19 @@
+.market-sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.market-thinking { display:grid; grid-template-columns: minmax(180px,.7fr) 2fr; gap:clamp(12px,3vw,40px); align-items:center; }
+.market-thinking .near-think { gap:12px; }
+.market-thinking__places { min-width:0; display:grid; grid-auto-columns:minmax(0,1fr); grid-auto-flow:column; gap:10px; }
+.market-thinking .market-thinking__place { width:auto; aspect-ratio:auto; min-height:116px; border-radius:16px; overflow:hidden; }
+.market-thinking__match { height:100%; display:grid; align-content:center; justify-items:center; gap:6px; padding:10px; background:var(--color-background-secondary); font:var(--type-caption); text-align:center; animation:market-find-match .8s cubic-bezier(.22,1,.36,1) both; }
+.market-thinking__match img { display:block; width:68px; height:68px; border-radius:10px; object-fit:contain; }
+@keyframes market-find-match { from { opacity:0; transform:translateY(5px); filter:blur(7px); } to { opacity:1; transform:none; filter:none; } }
+@media(max-width:700px) { .market-thinking { grid-template-columns:1fr; } .market-thinking__match {padding:6px;} .market-thinking__match img {width:44px;height:44px;} }
+@media(prefers-reduced-motion:reduce) { .market-thinking__match {animation:none;} }
+.market-map-pin { display:grid; place-items:center; text-decoration:none; }
+.market-map-pin:focus-visible { outline:3px solid currentColor; z-index:3; }
+.near-box > .bl-caption { margin: 4px 0 16px; }
+.market-map-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+.market-answer-word { animation:market-answer-in .25s both; }
+.market-result { min-width:0; display:grid; animation:market-card-in .44s cubic-bezier(.2,.85,.32,1.15) both; }
+@keyframes market-answer-in { from { opacity:0; filter:blur(4px); } to { opacity:1; filter:blur(0); } }
+@keyframes market-card-in { from { opacity:0; transform:translateY(24px) scale(.96); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce) { .market-answer-word,.market-result,.near-skel { animation:none; } }

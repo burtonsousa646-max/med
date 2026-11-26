@@ -10,6 +10,6 @@ export function offerAiNotes(answer: OfferAiAnswer): string[] {
     ...answer.options.map(option => option.headline + (option.missingFacts.length ? ' · Уточнить ' + option.missingFacts.join(', ') : '')),
     ...(answer.question ? [answer.question] : []),
     ...(answer.visual.action === 'generate'
-      ? ['Для генерации нового изображения нужен отдельный инструмент. Можно загрузить готовый файл вручную.'] : []),
+      ? ['Чтобы создать новое изображение, нажмите «Другие креативы» под карточкой, затем «Создать ещё». Текст и условия сохранятся.'] : []),
   ]
 }

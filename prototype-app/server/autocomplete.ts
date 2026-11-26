@@ -25,22 +25,33 @@ export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, r
     let input: unknown
     try { input = await c.req.json() } catch { return c.json({ message: 'Не удалось прочитать ИНН.' }, 400) }
     const inn = typeof input === 'object' && input !== null && 'inn' in input && typeof input.inn === 'string' ? input.inn : ''
-    if (innError(inn)) return c.json({ message: innError(inn) }, 400)
+    const byName=c.req.path.endsWith('/party')
+    const query=byName&&input&&typeof input==='object'&&'query' in input&&typeof input.query==='string'?input.query.trim():''
+    if(byName && (query.length<2||query.length>120))return c.json({message:'Введите от 2 до 120 символов названия.'},400)
+    if (!byName && innError(inn)) return c.json({ message: innError(inn) }, 400)
     const key = token()
     if (!key) return c.json({ message: 'Поиск сейчас недоступен. Попробуйте позже или заполните данные вручную.' }, 503)
     recent = recent.filter(at => Date.now() - at < 60_000)
     if (recent.length >= 30) return c.json({ message: 'Слишком много запросов. Попробуйте через минуту.' }, 429)
     recent.push(Date.now())
     try {
-      // Only the INN goes to the provider. The contact phone never leaves this form.
-      const response = await request('https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party', {
+      const operation=byName?'suggest':'findById'
+      const response = await request('https://suggestions.dadata.ru/suggestions/api/4_1/rs/'+operation+'/party', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Token ${key}` },
-        body: JSON.stringify({ query: inn, ...(inn.length === 10 ? { branch_type: 'MAIN' } : { type: 'INDIVIDUAL' }), count: 1 }),
+        body: JSON.stringify(byName?{query,status:['ACTIVE'],branch_type:'MAIN',count:6}:{ query: inn, ...(inn.length === 10 ? { branch_type: 'MAIN' } : { type: 'INDIVIDUAL' }), count: 1 }),
         signal: AbortSignal.any([c.req.raw.signal, AbortSignal.timeout(8000)]), redirect: 'error',
       })
       if (!response.ok) return c.json({ message: 'Не удалось загрузить бизнес. Повторите поиск или заполните данные вручную.' }, 502)
       const result = await response.json()
       if (!Array.isArray(result.suggestions)) throw new Error('Invalid provider response')
+      if(byName){
+        const companies: {inn:string;name:string;address:string}[]=[]
+        for(const {data,value} of result.suggestions.slice(0,6)){
+          if(typeof data?.inn!=='string'||innError(data.inn)||data.state?.status!=='ACTIVE'||typeof value!=='string'||companies.some(c=>c.inn===data.inn))continue
+          companies.push({inn:data.inn,name:value.slice(0,200),address:String(data.address?.value??'').slice(0,200)})
+        }
+        return c.json({companies})
+      }
       const suggestion = result.suggestions[0]
       const item = suggestion?.data
       if (!item) {
@@ -68,6 +79,7 @@ export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, r
         registeredAddress: text(item.address?.value).slice(0,200), source: 'dadata',
       }
       saveRegistry?.(inn, {
+        ...(typeof item.finance?.tax_system==='string' && {taxSystem:item.finance.tax_system.slice(0,100)}),
         legalName: (text(item.name?.full_with_opf) || (inn.length === 12 ? name : '')).slice(0, 500),
         kpp: inn.length === 10 && /^\d{9}$/.test(text(item.kpp)) ? text(item.kpp) : '',
         ogrn: (inn.length === 10 ? /^\d{13}$/ : /^\d{15}$/).test(text(item.ogrn)) ? text(item.ogrn) : '',
@@ -85,6 +97,7 @@ export function createAutocomplete({ token = () => process.env.DADATA_API_KEY, r
   }
   const limit = bodyLimit({ maxSize: 1024, onError: c => c.json({ message: 'Слишком большой запрос' }, 413) })
   router.post('/autocomplete/inn', limit, lookup)
+  router.post('/autocomplete/party', limit, lookup)
   router.post('/business/lookup', limit, lookup)
   return router
 }

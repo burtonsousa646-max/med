@@ -8,10 +8,8 @@ export function assertMvpPromo(expectedCode) {
     const box = field.getBoundingClientRect()
     assert(box.right <= innerWidth && box.left >= 0, 'Inputs fit the viewport')
   }
-  if (expectedCode !== undefined) assert(form.querySelector('input').value === expectedCode, 'Promo code survives navigation and reload')
+  if (expectedCode !== undefined) assert(form.querySelector('#promo-code').value === expectedCode, 'Promo code survives navigation and reload')
   const submit = form.querySelector('button[type="submit"]')
-  const consent = form.querySelector('.mvp-go input[type="checkbox"]')
-  assert(submit.textContent === 'отправить на проверку', 'Submission matches the next screen')
-  assert(submit.disabled === (!consent.checked || !!form.querySelector('.is-error, input[type=file]:disabled')), 'Submission requires valid fields and consent')
+  assert(submit.textContent === 'Далее', 'Ad settings advance to targeting')
   return 'MVP promo checks passed'
 }

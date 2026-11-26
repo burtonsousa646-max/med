@@ -90,7 +90,7 @@ export function useOfferCutout(file: File | null, active: boolean, initialCutout
   return {
     cutout, keepOriginal, failed: Boolean(active && current?.failed && !keepOriginal),
     processing: Boolean(active && file && !cutout && !current?.failed && !keepOriginal),
-    setKeepOriginal: (keep: boolean) => setKept(keep ? file : null),
+    setKeepOriginal: (keep: boolean, image = file) => setKept(keep ? image : null),
     retry: () => retry(value => value + 1),
   }
 }

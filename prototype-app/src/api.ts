@@ -7,6 +7,7 @@ import { QueryClient } from '@tanstack/react-query'
 import type { components, paths } from './api.gen'
 import type { CampaignDraft } from '../shared/campaign-draft'
 import type { OfferAiInput, OfferAiResponse } from '../shared/offer-ai'
+import type { OfferImageInput } from '../shared/offer-image'
 import { toast } from './ui'
 
 export type S = components['schemas']
@@ -17,6 +18,16 @@ export async function autocompleteInn(inn: string, signal: AbortSignal) {
   const { data, error, response } = await client.POST('/autocomplete/inn', { body: { inn }, signal })
   if (!data || data.profile.inn !== inn) throw Object.assign(new Error(error?.message || 'Не удалось найти бизнес. Попробуйте ещё раз'), {status:response.status})
   return data.profile
+}
+
+export async function fetchCampaignSiteProfile(website: string, signal: AbortSignal) {
+  return (await readSiteInfo(website,signal,{profileOnly:true})).profile
+}
+export async function readSiteInfo(website:string, signal:AbortSignal, mode:{brandOnly:true}|{profileOnly:true}){
+  const { data, error } = await client.POST('/v4/site-assets', { body: { website, ...mode }, signal })
+    .catch(() => { throw new Error('Сервис импорта не ответил. Попробуйте ещё раз или вставьте текст предложения.') })
+  if (!data?.profile) throw new Error(error?.message || 'Не удалось прочитать страницу. Проверьте ссылку или вставьте текст предложения.')
+  return data
 }
 
 export async function fetchCampaignSiteAssets(website: string, signal: AbortSignal) {
@@ -37,12 +48,45 @@ export async function requestOfferCutout(image: Blob, signal: AbortSignal) {
 
 let offerConversation: string | undefined
 export async function requestOfferAi(input: OfferAiInput, signal: AbortSignal): Promise<OfferAiResponse> {
+  const { background: _background, ...offer } = input.offer as CampaignDraft['offer']
   const { data } = await client.POST('/v4/offer-ai', {
     headers: { 'X-Offer-Session': offerConversation ??= crypto.randomUUID?.() },
-    body: input, signal: AbortSignal.any([signal, AbortSignal.timeout(28_000)]),
+    body: { ...input, offer }, signal: AbortSignal.any([signal, AbortSignal.timeout(28_000)]),
   })
   if (!data) throw new Error('Offer assistant unavailable')
   return data
+}
+
+export async function requestOfferImage(input: OfferImageInput, reference: File | null, signal: AbortSignal) {
+  const form = new FormData()
+  form.set('input', JSON.stringify(input))
+  if (reference) {
+    const image = await createImageBitmap(reference)
+    try {
+      const scale = Math.min(1, 1024 / Math.max(image.width, image.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale))
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Не удалось подготовить исходное фото')
+      context.drawImage(image, 0, 0, canvas.width, canvas.height)
+      const png = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Не удалось подготовить исходное фото')), 'image/png'))
+      form.set('image', png, 'reference.png')
+    } finally { image.close() }
+  }
+  signal.throwIfAborted()
+  const base = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
+  const response = await fetch(base + '/v4/offer-image', { method: 'POST', body: form, signal: AbortSignal.any([signal, AbortSignal.timeout(125_000)]) })
+  if (!response.ok) {
+    const error = await response.json().catch(() => null)
+    throw new Error(typeof error?.message === 'string' ? error.message : 'Не удалось создать креатив. Попробуйте ещё раз')
+  }
+  const blob = await response.blob()
+  if (blob.type !== 'image/png' || blob.size > 5 * 1024 * 1024) throw new Error('Получено неподходящее изображение. Попробуйте ещё раз')
+  const bitmap = await createImageBitmap(blob)
+  try {
+    if (bitmap.width < 128 || bitmap.height < 128 || bitmap.width > 2048 || bitmap.height > 2048) throw new Error('Получено неподходящее изображение. Попробуйте ещё раз')
+  } finally { bitmap.close() }
+  return { file: new File([blob], `креатив-${input.variant + 1}.png`, { type: 'image/png' }), demo: response.headers.get('X-Offer-Image-Source') === 'demo' }
 }
 
 export async function sendCampaignEmailCode(key: string, email: string) {

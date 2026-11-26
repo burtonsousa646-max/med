@@ -22,16 +22,15 @@ const SURFACES = BASE_SURFACES.map(surface => ({ ...surface, ...{
   rest: { short: 'Витрины партнёров', t: 'на витринах партнёров', d: 'В личном кабинете клиента, среди привилегий партнёра' },
 }[surface.k] }))
 const STEPS = [
-  { kind: 'business', title: 'Информация о компании', text: 'Введите ИНН и телефон, затем добавьте адреса ваших точек' },
-  { kind: 'offer', title: 'соберите оффер', text: 'Подготовим предложение по данным компании. Вы сможете изменить фото, скидку и промокод' },
-  { kind: 'audience', title: 'выберите клиентов', text: 'Выберите клиентов, город и подходящий момент для показа' },
+  { kind: 'offer', title: 'соберите оффер', text: 'Укажите сайт для предзаполнения или заполните предложение вручную. Проверьте скидку и промокод' },
+  { kind: 'audience', title: 'выберите аудиторию', text: 'Укажите точки продаж или онлайн-формат и выберите, кому показать предложение' },
+  { kind: 'business', title: 'подпишите договор', text: 'Скачайте договор с реквизитами и верните подписанный экземпляр менеджеру. После подтверждения готовая кампания перейдёт на модерацию' },
   { kind: 'guests', title: 'встречайте новых гостей', text: 'После запуска кампании гости смогут воспользоваться вашей акцией' },
 ] as const
 
 
 function StartCampaignLink({ className, arrow, label = 'запустить сейчас' }: { className: string; arrow?: number; label?: string }) {
-  const home = useLocation().pathname === '/'
-  return <Link data-campaign-start className={className} to={home ? '/app/?start=campaign' : '/v4/create'}>{label}{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
+  return <Link data-campaign-start className={className} to="/app/?start=campaign">{label}{arrow && <ArrowRight size={arrow} aria-hidden="true"/>}</Link>
 }
 
 function PromoMarquee() {
@@ -158,8 +157,8 @@ export default function LandingV4({ audience }: { audience?: ReactNode }) {
         <nav className="bl-header__side bl-header__side--end" aria-label="Разделы лендинга">
           {NAV.map(([id, title]) => <button type="button" className="bl-hide-mobile bl-btn" key={id} onClick={() => navigate(id)}>{title}</button>)}
           <details className="v2-mobile-nav" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.removeAttribute('open'); event.currentTarget.querySelector('summary')?.focus() } }}><summary className="bl-btn">разделы</summary><div>{NAV.map(([id, title]) => <button key={id} type="button" className="bl-btn" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); navigate(id) }}>{title}</button>)}</div></details>
-           {home && <Link to="/market/" className="bl-btn" onClick={() => analytics.event('market_link_click')}>Витрина</Link>}
-          {home && <Link to="/app/" className="bl-btn">Войти</Link>}
+          {home && <Link to="/market/" className="bl-btn" onClick={() => analytics.event('market_link_click')}>витрина</Link>}
+          {home && <Link to="/app/" className="bl-btn">войти</Link>}
           <StartCampaignLink className={`bl-btn ${showCta ? 'bl-btn--primary' : 'bl-btn--dark'}`}/>
         </nav>
       </header>

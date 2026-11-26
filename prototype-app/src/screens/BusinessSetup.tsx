@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { type ReactNode, useId, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, Building2, Check, MapPin, Plus, X } from 'lucide-react'
 import { Field } from './CampaignField'
@@ -10,13 +10,13 @@ import { DEMO_AD } from '../mock'
 
 export type BusinessPhase = 'identify' | 'review'
 type Props = {
-  phase: BusinessPhase; business: Business; onChange: (value: Business) => void;
+  quickPreview?: ReactNode; websiteFirst?: boolean; phase: BusinessPhase; business: Business; onChange: (value: Business) => void;
   partnerDetails?: PartnerDetails; onPartnerDetails: (value: PartnerDetails) => void;
   hasProfile: boolean; registeredAddress: string; suggestionName?: string; lookupError: string; searching: boolean; onCancel: () => void; onManual: () => void;
   addresses: string[]; onAddresses: (value: string[]) => void; online: boolean; onOnline: (value: boolean) => void;
   offerAccepted: boolean; onOfferAccepted?: (value: boolean) => void;
 }
-export function BusinessSetup({phase,business,onChange,partnerDetails,onPartnerDetails,hasProfile,registeredAddress,suggestionName,lookupError,searching,onCancel,onManual,addresses,onAddresses,online,onOnline,offerAccepted,onOfferAccepted}: Props) {
+export function BusinessSetup({quickPreview,websiteFirst,phase,business,onChange,partnerDetails,onPartnerDetails,hasProfile,registeredAddress,suggestionName,lookupError,searching,onCancel,onManual,addresses,onAddresses,online,onOnline,offerAccepted,onOfferAccepted}: Props) {
   const reduce = useReducedMotion()
   const consentId = useId()
   const [consentError, setConsentError] = useState(false)
@@ -49,16 +49,17 @@ export function BusinessSetup({phase,business,onChange,partnerDetails,onPartnerD
         <div><span>{DEMO_AD.brand}</span><small>так будет выглядеть предложение</small></div>
       </motion.div>
     </aside>
-  </div> : <div className="v3-business-review">
+  </div> : <div className={quickPreview ? "campaign-simple-grid" : "v3-business-review"}>
+    <div className={quickPreview ? "v3-fields" : "campaign-business-fields-wrap"}>
     <div className="v3-fields">
-      <div className="v3-source-note"><span>{hasProfile ? <Check size={14}/> : <Building2 size={14}/>} данные бизнеса</span><small>ИНН {business.inn} · {business.phone}</small></div>
-      <Field label="название для клиентов" data-analytics-field="name" value={business.name} maxLength={80} onChange={e=>update('name',e.target.value)} required error={textError(business.name,'Название')} hint="Можно указать название на вывеске"/>
-      <Field label="чем занимаетесь" data-analytics-field="category" value={business.category} maxLength={100} onChange={e=>update('category',e.target.value)} required error={textError(business.category,'Сфера бизнеса',3)} placeholder="например, кофе и завтраки" hint="По этим данным подготовим текст предложения"/>
-      <Field label="город" data-analytics-field="city" value={business.city} maxLength={80} autoComplete="address-level2" onChange={e=>update('city',e.target.value)} required={!online} error={!online ? textError(business.city,'Город') : ''} placeholder="Город, где работает ваш бизнес"/>
-      <Field label="сайт (необязательно)" data-analytics-field="website" value={business.website} maxLength={250} inputMode="url" autoComplete="url" onChange={e=>update('website',e.target.value)} onBlur={e=>{ const url = normalizeBusinessWebsite(e.target.value); if (url) update('website',url) }} error={websiteError(business.website)} placeholder="example.ru"/>
+      {!quickPreview && <div className="v3-source-note"><span>{hasProfile ? <Check size={14}/> : <Building2 size={14}/>} данные бизнеса</span>{!websiteFirst && <small>ИНН {business.inn} · {business.phone}</small>}</div>}
+      <Field label="название для клиентов" data-analytics-field="name" value={business.name} maxLength={80} onChange={e=>update('name',e.target.value)} required error={textError(business.name,'Название')} hint={quickPreview ? undefined : 'Можно указать название на вывеске'}/>
+      <Field label="чем занимаетесь" data-analytics-field="category" value={business.category} maxLength={100} onChange={e=>update('category',e.target.value)} required error={textError(business.category,'Сфера бизнеса',3)} placeholder="например, кофе и завтраки" hint={quickPreview ? undefined : 'По этим данным подготовим текст предложения'}/>
+      {(!quickPreview || !online) && <Field label="город" data-analytics-field="city" value={business.city} maxLength={80} autoComplete="address-level2" onChange={e=>update('city',e.target.value)} required={!online} error={!online ? textError(business.city,'Город') : ''} placeholder="Город, где работает ваш бизнес"/>}
+      {!quickPreview && <Field label="сайт (необязательно)" data-analytics-field="website" value={business.website} maxLength={250} inputMode="url" autoComplete="url" onChange={e=>update('website',e.target.value)} onBlur={e=>{ const url = normalizeBusinessWebsite(e.target.value); if (url) update('website',url) }} error={websiteError(business.website)} placeholder="example.ru"/>}
     </div>
     <section className="v3-business-locations">
-      <div className="v3-location-title"><MapPin size={22}/><div><h4>куда пригласим клиентов?</h4><p>Добавьте адреса, по которым будете принимать клиентов</p></div></div>
+      {!quickPreview && <div className="v3-location-title"><MapPin size={22}/><div><h4>куда пригласим клиентов?</h4><p>Добавьте адреса, по которым будете принимать клиентов</p></div></div>}
       <label className="v3-online-check"><input type="checkbox" checked={online} onChange={e=>onOnline(e.target.checked)}/><span>работаю только онлайн</span></label>
       {!online && <>
         {registeredAddress && !addresses.includes(registeredAddress) && <div className="v3-registered-address"><span>юридический адрес</span><p>{registeredAddress}</p><small>Здесь можно принять клиентов?</small><button type="button" className="v3-text-button" onClick={()=>onAddresses([...addresses.filter(a=>a.trim()),registeredAddress].slice(0,10))}><Plus size={15}/> добавить эту точку</button></div>}
@@ -67,18 +68,26 @@ export function BusinessSetup({phase,business,onChange,partnerDetails,onPartnerD
           {addresses.length>1&&<button type="button" className="bl-icon-btn" aria-label={'Удалить точку '+(index+1)} onClick={()=>onAddresses(addresses.filter((_,i)=>i!==index))}><X size={16}/></button>}
         </motion.div>)}</div>
         {addresses.length<10&&<button type="button" className="v3-text-button" onClick={()=>onAddresses([...addresses,''])}><Plus size={16}/> ещё точка</button>}
-        <p className="v3-location-hint">Выберите адреса, по которым сможете принять клиентов</p>
+        {!quickPreview && <p className="v3-location-hint">Выберите адреса, по которым сможете принять клиентов</p>}
       </>}
       {online&&<motion.p className="v3-online-note" initial={reduce ? false : {opacity:0}} animate={{opacity:1}}>Город или всю Россию можно выбрать на шаге «Выбор клиентов»</motion.p>}
     </section>
-    <details className="v3-business-locations v3-partner-details">
+    </div>
+    {quickPreview}
+    {!websiteFirst && <PartnerFields inn={business.inn} partnerDetails={partnerDetails} onPartnerDetails={onPartnerDetails}/>}
+
+  </div>
+}
+
+export function PartnerFields({ inn, partnerDetails, onPartnerDetails }: Pick<Props, 'partnerDetails' | 'onPartnerDetails'> & { inn: string }) {
+  return <details className="v3-business-locations v3-partner-details">
       <summary>Реквизиты для партнёрского договора</summary>
       <div className="v3-fields">
         <p className="bl-caption">Заполните, если реквизиты под рукой. Сотрудник билайна свяжется с вами, чтобы уточнить недостающие данные.</p>
-        {partnerFieldKeys.filter(key => key !== 'kpp' || business.inn.length === 10).map(key => {
+        {partnerFieldKeys.filter(key => key !== 'kpp' || inn.length === 10).map(key => {
           const field = partnerFields[key]
           const digits = 'digits' in field
-          const length = key === 'ogrn' && business.inn.length === 10 ? 13 : field.length
+          const length = key === 'ogrn' && inn.length === 10 ? 13 : field.length
           const value = partnerDetails?.[key] ?? ''
           return <Field key={key} label={field.label} value={value} maxLength={length}
             inputMode={digits ? 'numeric' : undefined}
@@ -87,5 +96,4 @@ export function BusinessSetup({phase,business,onChange,partnerDetails,onPartnerD
         })}
       </div>
     </details>
-  </div>
 }

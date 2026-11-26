@@ -18,10 +18,14 @@ COPY prototype-app/package.json prototype-app/package-lock.json prototype-app/.n
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --no-audit --no-fund
 
 FROM api-dependencies AS api
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-rus && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production API_HOST=0.0.0.0 API_PORT=8787 DB_PATH=/data/demo.sqlite
 COPY --chown=node:node prototype-app/server ./server
 COPY --chown=node:node prototype-app/shared ./shared
-COPY --chown=node:node prototype-app/docs/campaign-offer-rules.md ./docs/campaign-offer-rules.md
+COPY --chown=node:node prototype-app/public/docs ./public/docs
+COPY --chown=node:node design-system/fonts/beelinesans-regular.ttf /app/design-system/fonts/beelinesans-regular.ttf
+COPY --chown=node:node prototype-app/docs/campaign-offer-rules.md prototype-app/docs/offer-image-prompt.md ./docs/
+COPY --chown=node:node prototype-app/public/img/offer-variants ./public/img/offer-variants
 RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 8787

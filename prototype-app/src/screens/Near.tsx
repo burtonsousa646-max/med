@@ -4,60 +4,15 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowUp, CircleCheck, LayoutGrid, Map as MapIcon, MapPin, Sparkles, X } from 'lucide-react'
 import logoUrl from '../../../design-system/assets/beeline-logo.svg'
 import { $api, act, useCampaigns, useCompany, type Campaign, type S } from '../api'
-import { CATS, Creative, CrImg, creativeOf, type Cat, type CreativeData } from '../creative'
+import { CATS, Creative, CrImg, creativeOf, type Cat } from '../creative'
 import { Check, Chip, Modal, Qr, Segmented, SubscriberBadge, copy, toast } from '../ui'
 
 /* Витрина «лучшее рядом»: предложения партнёров вокруг абонента, по мотивам раздела «Город» в Т-Банке.
    Демо: рядом с выдуманными партнёрами показываются запущенные кампании демо-компании из кабинета,
    а кнопки абонента по ним уходят в кабинет через POST /showcase/{id}/act. */
 
-type Offer = CreativeData & {
-  id: string; type: S['OfferType']; partner: string; title: string; cond: string
-  dist: number; a: number; code?: string; price?: number; campaign?: Campaign
-  till: string | number // число — сколько дней осталось от сегодня, чтобы срочные акции в прототипе не устаревали
-  wide?: boolean // партнёр купил широкую карточку: первое место в разделе
-  addr?: string; where?: string // where — вместо адреса, когда идти никуда не нужно: доставка, мастер на дом
-  was?: number // цена без купона: абонент видит экономию
-  site?: boolean // промокод вводят на сайте, а не называют на кассе
-  bee?: boolean // только для клиентов билайна
-}
-
-// Партнёры выдуманы, кроме X5: «Пятёрочка» и «Перекрёсток» настоящие, условия их акций придуманы для примера.
-// dist — метры от абонента, a — угол точки на карте, img — предмет для креатива в public/img/near
-export const OFFERS: Offer[] = [
-  { id: 'p5-new', cat: 'grocery', type: 'promo', partner: '«Пятёрочка» на Плющихе', mark: 'Пятёрочка', big: '300', small: 'баллов X5 Клуба за первую покупку', title: '300 баллов за первую покупку в новом магазине', cond: 'магазин открылся на этой неделе, покупка от 500 ₽', dist: 240, a: 40, tone: 'red', img: 'p5-new', till: '30 ноября', addr: 'ул. Плющиха, 22', code: 'NOVAYA300', wide: true },
-  { id: 'p5-delivery', cat: 'grocery', type: 'click', partner: '«Пятёрочка» Доставка', mark: 'Пятёрочка', big: '0 ₽', small: 'доставка первого заказа', title: 'бесплатная доставка из магазина у дома за 30 минут', cond: 'заказ от 1 000 ₽ в приложении «Пятёрочки»', dist: 250, a: 58, tone: 'green', img: 'p5-delivery', till: '31 декабря', where: 'привезут из магазина на Плющихе' },
-  { id: 'p5-job', cat: 'grocery', type: 'lead', partner: '«Пятёрочка» ищет сотрудников', mark: 'Пятёрочка', big: '72 000 ₽', small: 'продавец-кассир рядом с домом', title: 'работа в семи минутах от дома: продавец-кассир', cond: 'график 2/2, оформление по ТК, перезвонят сегодня', dist: 600, a: 300, tone: 'dark', img: 'p5-job', till: '15 декабря' },
-  { id: 'perek', cat: 'grocery', type: 'promo', partner: '«Перекрёсток»', mark: 'Перекрёсток', big: '−10%', small: 'на овощи и фрукты', title: '−10% на овощи и фрукты по промокоду', cond: 'в магазине и в доставке, чек от 700 ₽', dist: 1300, a: 200, tone: 'green', img: 'perek', till: '30 ноября', code: 'FRESH10', site: true },
-  { id: 'kolos', bee: true, cat: 'food', type: 'coupon', partner: 'пекарня «Колос»', mark: 'Колос', big: '199 ₽', small: 'круассан и капучино вместо 320 ₽', title: 'завтрак: круассан и капучино за 199 ₽', cond: 'купон оплачивается со счёта телефона', dist: 350, a: 210, tone: 'light', img: 'kolos', till: 2, price: 199, was: 320 },
-  { id: 'apteka', cat: 'health', type: 'click', partner: 'аптека «Плюс»', mark: 'Аптека Плюс', big: '−10%', small: 'на заказ с самовывозом', title: '−10% на заказ на сайте с самовывозом из аптеки', cond: 'скидка применится сама', dist: 260, a: 320, tone: 'teal', img: 'apteka', till: '31 декабря' },
-  { id: 'britva', cat: 'beauty', type: 'click', partner: 'барбершоп «Бритва»', mark: 'Бритва', big: '−30%', small: 'на первую стрижку', title: 'первая стрижка со скидкой 30%', cond: 'запись на сайте барбершопа', dist: 420, a: 120, tone: 'dark', img: 'britva', till: '30 ноября' },
-  { id: 'buket', cat: 'grocery', type: 'promo', partner: 'цветы «Букет»', mark: 'Букет', big: '−15%', small: 'на букеты с доставкой', title: '−15% на букеты с доставкой за час', cond: 'заказ от 2 500 ₽', dist: 510, a: 250, tone: 'magenta', img: 'buket', till: 1, code: 'BEE15', site: true },
-  { id: 'puls', bee: true, cat: 'sport', type: 'sub', partner: 'фитнес «Пульс»', mark: 'Пульс', big: '7 дней', small: 'безлимит в зале бесплатно', title: 'неделя фитнеса бесплатно, дальше 2 900 ₽ в месяц', cond: 'оплата со счёта билайна, отключить можно в любой момент', dist: 650, a: 340, tone: 'violet', img: 'puls', till: '31 декабря', price: 2900 },
-  { id: 'nogti', bee: true, cat: 'beauty', type: 'coupon', partner: 'студия «Ноготок»', mark: 'Ноготок', big: '1 490 ₽', small: 'маникюр с покрытием вместо 2 200 ₽', title: 'маникюр с покрытием за 1 490 ₽', cond: 'купон оплачивается со счёта телефона', dist: 900, a: 70, tone: 'magenta', img: 'nogti', till: '30 ноября', price: 1490, was: 2200 },
-  { id: 'sova', cat: 'kids', type: 'lead', partner: 'детский центр «Сова»', mark: 'Сова', big: '0 ₽', small: 'пробное занятие для детей 4–10 лет', title: 'пробное занятие в детском центре бесплатно', cond: 'перезвонят и подберут группу', dist: 750, a: 280, tone: 'blue', img: 'sova', till: '31 декабря' },
-  { id: 'pena', bee: true, cat: 'auto', type: 'promo', partner: 'автомойка «Пена»', mark: 'Пена', big: '−25%', small: 'на комплексную мойку в будни', title: 'комплексная мойка −25% по будням', cond: 'назови код администратору', dist: 850, a: 20, tone: 'blue', img: 'pena', till: '30 ноября', code: 'PENA25' },
-  { id: 'clinic', cat: 'health', type: 'lead', partner: 'клиника «Здоровье рядом»', mark: 'Здоровье рядом', big: '990 ₽', small: 'приём терапевта', title: 'приём терапевта за 990 ₽', cond: 'перезвонят за 15 минут', dist: 1400, a: 230, tone: 'teal', img: 'clinic', till: '31 декабря' },
-  { id: 'chisto', cat: 'home', type: 'promo', partner: 'клининг «Чисто»', mark: 'Чисто', big: '−40%', small: 'на первую уборку квартиры', title: 'первая уборка после переезда −40%', cond: 'выезжают в твой район', dist: 900, a: 130, tone: 'violet', img: 'chisto', till: '31 декабря', where: 'мастер приедет к тебе', code: 'NEWHOME40' },
-  { id: 'koleso', cat: 'auto', type: 'lead', partner: 'шиномонтаж «Колесо 24»', mark: 'Колесо 24', big: '2 000 ₽', small: 'переобувка к зиме без очереди', title: 'переобувка к зиме от 2 000 ₽ по записи', cond: 'перезвонят и подберут время', dist: 1800, a: 335, tone: 'dark', img: 'koleso', till: '15 декабря' },
-  { id: 'oktyabr', bee: true, cat: 'fun', type: 'coupon', partner: 'кинотеатр «Октябрь»', mark: 'Октябрь', big: '2 = 1', small: 'билеты на дневные сеансы', title: 'два билета по цене одного в будни до 17:00', cond: 'купон оплачивается со счёта телефона', dist: 2100, a: 100, tone: 'red', img: 'oktyabr', till: '30 ноября', price: 450, was: 900 },
-  { id: 'lavash', bee: true, cat: 'food', type: 'promo', partner: 'шаурмичная «Лаваш»', mark: 'Лаваш', big: '−20%', small: 'на шаурму после 21:00', title: '−20% на шаурму по вечерам', cond: 'назови код на кассе', dist: 450, a: 262, tone: 'red', img: 'lavash', till: 4, code: 'NIGHT20' },
-  { id: 'schi', bee: true, cat: 'food', type: 'coupon', partner: 'столовая «Щи да каша»', mark: 'Щи да каша', big: '290 ₽', small: 'бизнес-ланч из трёх блюд', title: 'бизнес-ланч за 290 ₽ вместо 420 ₽', cond: 'купон оплачивается со счёта телефона, с 12 до 16', dist: 550, a: 32, tone: 'green', img: 'schi', till: '31 декабря', price: 290, was: 420 },
-  { id: 'testo', cat: 'food', type: 'click', partner: 'пиццерия «Тесто»', mark: 'Тесто', big: '1 + 1', small: 'вторая пицца в подарок', title: 'вторая пицца в подарок к заказу от 1 500 ₽', cond: 'на сайте пиццерии, доставка 40 минут', dist: 700, a: 150, tone: 'magenta', img: 'testo', till: '30 ноября', where: 'привезут за 40 минут' },
-  { id: 'optika', cat: 'health', type: 'promo', partner: 'оптика «Линза»', mark: 'Линза', big: '−50%', small: 'на вторые очки', title: 'вторые очки за полцены и проверка зрения бесплатно', cond: 'промокод назови консультанту', dist: 800, a: 192, tone: 'blue', img: 'optika', till: '31 декабря', code: 'LINZA50', wide: true },
-  { id: 'stomat', cat: 'health', type: 'lead', partner: 'стоматология «Улыбка»', mark: 'Улыбка', big: '2 490 ₽', small: 'профессиональная чистка зубов', title: 'профессиональная чистка зубов за 2 490 ₽', cond: 'перезвонят и запишут на удобное время', dist: 1500, a: 60, tone: 'teal', img: 'stomat', till: '31 декабря' },
-  { id: 'azs', cat: 'auto', type: 'promo', partner: 'АЗС «Заправка 24»', mark: 'Заправка 24', big: '−3 ₽', small: 'на литр топлива', title: '−3 ₽ на каждый литр топлива', cond: 'покажи код кассиру, до 50 литров', dist: 700, a: 248, tone: 'green', img: 'azs', till: '31 декабря', code: 'FUEL3' },
-  { id: 'motor', cat: 'auto', type: 'lead', partner: 'автосервис «Мотор»', mark: 'Мотор', big: '0 ₽', small: 'диагностика ходовой', title: 'бесплатная диагностика ходовой перед зимой', cond: 'перезвонят и запишут', dist: 950, a: 292, tone: 'dark', img: 'motor', till: '15 декабря' },
-  { id: 'remont', cat: 'home', type: 'lead', partner: 'сервис «Мастер на час»', mark: 'Мастер на час', big: '−30%', small: 'на первый выезд мастера', title: 'повесить полки, собрать шкаф: первый выезд −30%', cond: 'перезвонят за 10 минут', dist: 500, a: 352, tone: 'blue', img: 'remont', till: '31 декабря', where: 'мастер приедет к тебе' },
-  { id: 'zamki', cat: 'home', type: 'promo', partner: 'служба «Ключник»', mark: 'Ключник', big: '−20%', small: 'на замену замков после переезда', title: 'замена замков в новой квартире −20%', cond: 'приедут в день заявки', dist: 820, a: 112, tone: 'dark', img: 'zamki', till: '31 декабря', where: 'мастер приедет к тебе', code: 'NEWKEY20' },
-  { id: 'toys', cat: 'kids', type: 'click', partner: 'магазин «Кубик»', mark: 'Кубик', big: '−15%', small: 'на конструкторы', title: '−15% на конструкторы в магазине у дома', cond: 'заказ на сайте, самовывоз через час', dist: 650, a: 202, tone: 'violet', img: 'toys', till: '20 декабря' },
-  { id: 'quest', bee: true, cat: 'fun', type: 'promo', partner: 'квесты «Ключ»', mark: 'Ключ', big: '−20%', small: 'на квест для компании до 6 человек', title: 'квест для компании со скидкой 20%', cond: 'бронь на сайте по промокоду', dist: 600, a: 82, tone: 'violet', img: 'quest', till: '31 декабря', code: 'KEY20', site: true, wide: true },
-  { id: 'bowling', bee: true, cat: 'fun', type: 'coupon', partner: 'боулинг «Страйк»', mark: 'Страйк', big: '990 ₽', small: 'час игры вместо 1 800 ₽', title: 'час боулинга за 990 ₽ по будням', cond: 'купон оплачивается со счёта телефона', dist: 950, a: 232, tone: 'red', img: 'bowling', till: '31 декабря', price: 990, was: 1800 },
-]
-
-// «1 800 ₽» не разрывается переносом строки
-const nb = (t: string) => t.replace(/(\d) (?=\d|₽)/g, '$1\u00a0')
-for (const o of OFFERS) Object.assign(o, { title: nb(o.title), small: nb(o.small), cond: nb(o.cond) })
+import { OFFERS, nb, type Offer } from './near-offers'
+export { OFFERS, type Offer } from './near-offers'
 
 // Разделы каталога, пока фильтры не выбраны. Все одного вида — ряд с прокруткой, как в «Городе» Т-Банка:
 // ритм даёт только широкая карточка, которую купил партнёр
@@ -78,17 +33,17 @@ const TYPES: Record<S['OfferType'], { t: string; tag: string }> = {
 }
 const cta = (o: Offer) => ({ click: 'перейти на сайт', coupon: `купить за ${o.price ?? 0} ₽`, promo: 'показать промокод', lead: 'оставить заявку', sub: 'попробовать бесплатно' })[o.type]
 
-const RADII = [500, 1000, 3000]
+export const RADII = [500, 1000, 3000]
 // ponytail: номер и баланс демо-абонента, в бою — из профиля и биллинга
 const PHONE = '+7 903 ••• 45 67', BALANCE = 640
 type Filter = { cats: Cat[] | null; radius: number } // cats: null — все категории
 // Персональные по сигналам билайна; причину абонент видит
 const FOR_YOU: [string, string][] = [['p5-new', 'рядом открылся магазин'], ['chisto', 'ты недавно переехал'], ['nogti', 'сегодня зарплата']]
 
-const km = (m: number) => (m < 1000 ? `${m} м` : `${+(m / 1000).toFixed(1)} км`.replace('.', ','))
+export const km = (m: number) => (m < 1000 ? `${m} м` : `${+(m / 1000).toFixed(1)} км`.replace('.', ','))
 const walk = (m: number) => `${Math.max(1, Math.round(m / 80))} мин пешком`
 const days = (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'день' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'дня' : 'дней'}`
-const tillDate = (o: Offer) => typeof o.till === 'number' ? new Date(Date.now() + o.till * 864e5).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : o.till
+export const tillDate = (o: Offer) => typeof o.till === 'number' ? new Date(Date.now() + o.till * 864e5).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : o.till
 // срок в окне оффера: срочные выделены, у кампании из кабинета срока нет
 const Till = ({ o }: { o: Offer }) => o.campaign ? null
   : typeof o.till === 'number' ? <span className="bl-tag bl-tag--accent">{o.till ? `ещё ${days(o.till)}` : 'последний день'}</span>
@@ -103,12 +58,12 @@ const addrOf = (o: Offer) => {
   const h = [...o.id].reduce((x, c) => x + c.charCodeAt(0), 0)
   return o.addr ?? `${STREETS[h % STREETS.length]}, ${(h % 40) + 1}`
 }
-const erid = (o: Offer) => (o.campaign ? '2SDnjc7Xy3M' : `2VSb5${o.id.replace('-', '').slice(0, 6)}`) // у кампании — erid со шага маркировки
+export const erid = (o: Offer) => (o.campaign ? '2SDnjc7Xy3M' : `2VSb5${o.id.replace('-', '').slice(0, 6)}`) // у кампании — erid со шага маркировки
 // плашка «для клиентов» с логотипом билайна: логотип читается скринридером как «билайн»
 const Bee = ({ o }: { o: Offer }) => o.bee ? <SubscriberBadge/> : null
 const Tag = ({ o }: { o: Offer }) => <span className={`bl-tag ${TYPES[o.type].tag}`}>{TYPES[o.type].t}</span>
 
-function fromCampaign(c: Campaign, i: number, brand: string, addr?: string): Offer {
+export function fromCampaign(c: Campaign, i: number, brand: string, addr?: string): Offer {
   return {
     ...creativeOf(brand, c.deal.offer, c.img), id: `c${c.id}`, type: c.type, partner: brand, title: c.adText, cond: 'подробности расскажет партнёр', addr,
     dist: 300 + i * 40, a: 160 + i * 30, till: 'пока идёт кампания', code: c.terms.code, price: +c.terms.price || undefined, campaign: c, wide: c.wideCard,
@@ -162,19 +117,21 @@ export default function Near() {
       </header>
 
       <main className="near-main">
-        <section className="near-intro">
-          <div className="bl-stack" style={{ ['--bl-gap' as string]: '4px' }}>
-            <h1 className="bl-h1">лучшее рядом</h1>
-            <p className="bl-body bl-secondary">скидки, купоны и промокоды от мест вокруг тебя — для абонентов билайна</p>
-            <span className="demo-note">{own.length
-              ? <>ваших предложений здесь: {own.length} · <Link to="/cab/campaigns">кабинет партнёра</Link></>
-              : <>ваших запущенных кампаний здесь пока нет · <Link to="/cab/campaigns">запустить в кабинете</Link></>}</span>
+        <section className="near-hero" aria-labelledby="near-title">
+          <div className="bl-stack" style={{ ['--bl-gap' as string]: '8px' }}>
+            <h1 className="bl-h1" id="near-title">Лучшее рядом</h1>
+            <p className="bl-h4">Скидки, купоны и промокоды в твоём районе</p>
           </div>
+          <Ask all={all} viewed={viewed} onOpen={show} />
         </section>
 
-        <Ask all={all} viewed={viewed} onOpen={show} />
+        <div className="near-scroller" role="group" aria-label="Категории">
+          <Chip on={!f.cats} onClick={() => set({ cats: null })}><LayoutGrid size={18} />всё</Chip>
+          {(Object.entries(CATS) as [Cat, (typeof CATS)[Cat]][]).map(([k, [t, Icon]]) => (
+            <Chip key={k} on={f.cats?.length === 1 && f.cats[0] === k} onClick={() => set({ cats: [k] })}><Icon size={18} />{t}</Chip>
+          ))}
+        </div>
 
-        {/* выгода — первое, что видно: три баннера по сигналам билайна */}
         {!filtered && (
           <section className="bl-stack" style={{ ['--bl-gap' as string]: '12px' }} aria-labelledby="fy-h">
             <h2 className="bl-h3" id="fy-h">для тебя сегодня</h2>
@@ -193,14 +150,6 @@ export default function Near() {
             </div>
           </section>
         )}
-
-        {/* одна навигация — категории чипами с иконками */}
-        <div className="near-scroller" role="toolbar" aria-label="Категории">
-          <Chip on={!f.cats} onClick={() => set({ cats: null })}><LayoutGrid size={18} />всё</Chip>
-          {(Object.entries(CATS) as [Cat, (typeof CATS)[Cat]][]).map(([k, [t, Icon]]) => (
-            <Chip key={k} on={f.cats?.length === 1 && f.cats[0] === k} onClick={() => set({ cats: [k] })}><Icon size={18} />{t}</Chip>
-          ))}
-        </div>
 
         {/* одна строка фильтров: что выбрано — видно и снимается крестиком */}
         <div id="near-results" className="near-toolbar">
@@ -419,12 +368,6 @@ function Ask({ all, viewed, onOpen }: { all: Offer[]; viewed: string[]; onOpen: 
         <button className="bl-btn bl-btn--primary near-ask__send" disabled={!text.trim() || busy} aria-label="Спросить"><ArrowUp size={20} /></button>
       </form>
 
-      {!turns.length && (
-        <div className="near-scroller near-ask__chips" role="group" aria-label="Например">
-          {starters().map(t => <Chip key={t} onClick={() => send(t)}>{t}</Chip>)}
-        </div>
-      )}
-
       {turns.length > 0 && (
         <div className={`bl-section near-ask__panel${busy ? ' is-busy' : ''}`} aria-live="polite">
           <div className="near-ask__head">
@@ -475,7 +418,6 @@ function Card({ o, wide, onOpen, why }: { o: Offer; wide?: boolean; onOpen: (id:
       <span className="near-card__body">
         {why && <span className="near-why"><Sparkles size={12} aria-hidden="true" />{why}</span>}
         <span className="near-card__line"><Where o={o} /><Bee o={o} /></span>
-        {o.campaign && <span className="demo-note">ваша кампания из кабинета</span>}
       </span>
     </button>
   )
@@ -594,7 +536,7 @@ function Sheet({ o }: { o: Offer }) {
 
       {o.campaign && done && res?.clickId && (
         <div className="bl-card bl-surface-primary near-sheet__demo">
-          <span className="demo-note">что увидит партнёр</span>
+          <span className="bl-caption">что увидит партнёр</span>
           <span className="bl-caption">{res.conversion
             ? <>в кабинете появилась {res.conversion.kind === 'lead' ? 'заявка из формы билайна' : 'оплата со счёта телефона'}{res.conversion.status === 'pending' ? ', её можно оспорить' : ', засчитана сразу'}</>
             : <>переход по ссылке с меткой, результат пришлёт сервер партнёра</>}</span>

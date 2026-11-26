@@ -115,11 +115,11 @@ function PosterEditor({source}:{source:PosterSource}) {
   const [art,setArt]=useState<PosterArt|null>(null), [assetError,setAssetError]=useState(''), [attempt,retry]=useState(0)
   const [ready,setReady]=useState<{data:PosterSource;template:PosterTemplate;art:PosterArt}|null>(null)
   const [layoutError,setLayoutError]=useState(''), [downloadError,setDownloadError]=useState(''), [saving,setSaving]=useState(false)
-  const [saved,setSaved]=useState('')
+  const [saved,setSaved]=useState<string|null>(null)
   const [uploads,setUploads]=useState(0)
   const canvas=useRef<HTMLCanvasElement>(null)
   function update(key:keyof PosterSource,value:string) {
-    setData(previous=>({...previous,[key]:value}));setDownloadError('')
+    setData(previous=>({...previous,[key]:value}));setDownloadError('');setSaved(null)
   }
   useEffect(()=>{
     let active=true
@@ -143,10 +143,11 @@ function PosterEditor({source}:{source:PosterSource}) {
   },[data,template,art])
   const missing=[!data.image && 'фото',!data.headline.trim() && 'заголовок',!data.benefit.trim() && 'выгоду',
     !data.logo && !data.brand.trim() && 'название партнёра или логотип'].filter(Boolean)
-  const canDownload=!missing.length && !uploads && ready?.data===data && ready.template===template && ready.art===art && !saving
+  const previewReady=ready?.data===data && ready.template===template && ready.art===art
+  const canDownload=!missing.length && !uploads && previewReady && !saving
   async function download() {
     if (!canDownload || !art) return
-    setSaving(true);setDownloadError('');setSaved('')
+    setSaving(true);setDownloadError('');setSaved(null)
     try {setSaved(await downloadPoster(data,template,art))} catch(e) {setDownloadError(errorMessage(e))}
     finally {setSaving(false)}
   }
@@ -163,18 +164,19 @@ function PosterEditor({source}:{source:PosterSource}) {
       <div className="poster-proof-head"><h2 className="bl-h4">Предпросмотр</h2><span className="bl-caption">A4 · 210 × 297 мм</span></div>
       <div className="poster-desk"><canvas ref={canvas} className="poster-paper" role="img" aria-label={'Постер A4. '+data.brand+'. '+data.headline}/></div>
       <div className="poster-download">
-        <button className="bl-btn bl-btn--primary" disabled={!canDownload} onClick={()=>void download()}><Download size={18}/>{saving ? 'Готовим PDF…' : 'Скачать PDF'}</button>
-        <span className="bl-caption" role="status">{missing.length ? 'Для скачивания добавьте '+missing.join(', ')+'.' : 'Одна страница · 300 dpi'}</span>
+        <button className="bl-btn bl-btn--primary" disabled={!canDownload} aria-describedby="poster-download-status" onClick={()=>void download()}><Download size={18} aria-hidden="true"/>{saving ? 'Готовим PDF…' : 'Скачать PDF'}</button>
+        <span className="bl-caption" id="poster-download-status" role="status">{missing.length ? 'Для скачивания добавьте '+missing.join(', ')+'.'
+          : uploads ? 'Проверяем файл…' : !previewReady && !assetError && !layoutError ? 'Обновляем предпросмотр…' : 'Одна страница · 300 dpi'}</span>
       </div>
-      {saved && <p className="poster-saved" role="status">Файл «{saved}» сохранён в «Загрузки → Постеры партнёра».{' '}
-        <button type="button" className="poster-remove" onClick={()=>void openFolder()}>Открыть папку</button></p>}
+      {saved!==null && <div className="poster-saved"><span role="status">{saved ? 'Файл «'+saved+'» сохранён в «Загрузки → Постеры партнёра».' : 'PDF отправлен в загрузки браузера.'}</span>
+        {saved && <> <button type="button" className="poster-remove" onClick={()=>void openFolder()}>Открыть папку</button></>}</div>}
       {assetError && <p className="bl-error" role="alert">{assetError} <button className="bl-btn bl-btn--s" onClick={()=>retry(n=>n+1)}>Повторить</button></p>}
       {(layoutError || downloadError) && <p className="bl-error" role="alert">{layoutError || downloadError}</p>}
     </section>
     <section className="bl-section pad poster-controls" aria-label="Оформление постера">
       <fieldset className="poster-templates"><legend className="bl-h4">Макет</legend>
         <div>{templates.map(t=><label key={t.id} data-chosen={template.id===t.id}>
-          <input type="radio" name="poster-template" value={t.id} checked={template.id===t.id} onChange={()=>setTemplate(t)}/>
+          <input type="radio" name="poster-template" value={t.id} checked={template.id===t.id} onChange={()=>{setTemplate(t);setSaved(null);setDownloadError('')}}/>
           <span className={'poster-mini '+t.id} aria-hidden="true"><i/><b/><em/></span><span>{t.label}</span>
         </label>)}</div>
       </fieldset>
@@ -217,6 +219,7 @@ export default function PartnerMaterials() {
       </select></label>
       {list.hasNextPage && <button className="bl-btn bl-btn--s" disabled={list.isFetchingNextPage} onClick={()=>void list.fetchNextPage()}>Ещё кампании</button>}
     </div>
+    {list.isSuccess && !items.length && <p className="crm-muted" role="status">Кампаний для постера пока нет. Заполните предложение вручную в редакторе ниже.</p>}
     {list.error && <p role="alert">{errorMessage(list.error)} <button className="bl-btn bl-btn--s" onClick={()=>void list.refetch()}>Повторить загрузку списка</button></p>}
     {!manual && detail.error && <p role="alert">{errorMessage(detail.error)} <button className="bl-btn bl-btn--s" onClick={()=>void detail.refetch()}>Повторить</button></p>}
     {!source && !list.error && !detail.error && <p role="status">Загружаем данные для постера…</p>}

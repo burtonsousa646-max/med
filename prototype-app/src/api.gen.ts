@@ -161,6 +161,294 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mvp/site-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["findIndexedCompany"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPartnerDashboardOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/statistics/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPartnerMarketResponses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/dashboard/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["getPartnerDashboardRows"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getStaffDashboardOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/dashboard/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["getStaffDashboardRows"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/contracts/read-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["readPartnerRequisitesFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/contracts/defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getContractDefaults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/contracts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getPartnerContract"];
+        put?: never;
+        post: operations["preparePartnerContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/contracts/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["downloadPartnerContract"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/contracts/{id}/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sendPartnerContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/contracts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getStaffContract"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/contracts/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["downloadStaffContract"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/contracts/{id}/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sendStaffContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/contracts/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmSignedContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPartnerDrafts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/drafts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getPartnerDraft"];
+        put?: never;
+        post: operations["savePartnerDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mvp/campaigns": {
         parameters: {
             query?: never;
@@ -170,6 +458,7 @@ export interface paths {
         };
         get: operations["listMvpCampaigns"];
         put?: never;
+        /** @description Отправка на модерацию. Сервер проверяет подписанный договор, привязанный к ключу кампании, компании и партнёру. */
         post: operations["submitMvpCampaign"];
         delete?: never;
         options?: never;
@@ -246,6 +535,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market/offers/{id}/exposure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordOfferExposure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/offers/{id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordMarketAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/offers/{id}/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["selectMarketOffer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market/search": {
         parameters: {
             query?: never;
@@ -296,6 +639,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mvp/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["campaignNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mvp/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["readCampaignNotifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["staffCampaignBoard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/submissions/{id}/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["moveCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/staff/submissions/{id}/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Получить сохранённые реквизиты заявки или загрузить их по ИНН */
+        post: operations["resolveSubmissionRegistry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v4/staff/submissions/{id}/review": {
         parameters: {
             query?: never;
@@ -325,6 +753,22 @@ export interface paths {
         get: operations["getHealth"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/autocomplete/party": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["suggestPartnerCompany"];
         delete?: never;
         options?: never;
         head?: never;
@@ -362,6 +806,26 @@ export interface paths {
         put?: never;
         /** Удалить фон изображения оффера */
         post: operations["cutOutV4OfferImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v4/offer-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Создать новое изображение внутри текущего оффера
+         * @description Локальное демо возвращает подготовленные варианты. В production нужен OFFER_IMAGE_PROVIDER=openai и серверный ключ. Поля оффера не меняются.
+         */
+        post: operations["generateV4OfferImage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -985,6 +1449,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RegistryDetails: {
+            legalName: string;
+            kpp: string;
+            ogrn: string;
+            legalAddress: string;
+            manager: string;
+            managerRole: string;
+            okved: string;
+            /** @description Время проверки в миллисекундах Unix */
+            checkedAt: number;
+            requiresReview: boolean;
+        };
         MvpProfile: {
             inn: string;
             company: string;
@@ -992,14 +1468,52 @@ export interface components {
             category?: string;
             website?: string;
         };
+        PartnerDraftData: {
+            /** @description Оффер → Аудитория → Договор */
+            step: number;
+            adReviewed: boolean;
+            audienceReviewed: boolean;
+            sourceReady: boolean;
+            imported?: {
+                website: string;
+                values: {
+                    [key: string]: string;
+                };
+            };
+            /** @description Редактируемые поля промокампании, допускающие частичное заполнение */
+            promo: {
+                [key: string]: unknown;
+            };
+            contractInput?: {
+                /** @enum {string} */
+                method?: "inn" | "file" | "manual";
+                editing?: boolean;
+                inn?: string;
+                confirmedInn?: string;
+                companyName?: string;
+                fields?: {
+                    [key: string]: string;
+                };
+                fileFields?: components["schemas"]["ContractDetails"];
+                attachment?: {
+                    name: string;
+                    /** @enum {string} */
+                    type: "application/pdf" | "image/png" | "image/jpeg";
+                    base64: string;
+                };
+            };
+        };
         MvpSession: {
             /** Format: email */
             email: string;
+            hasDrafts?: boolean;
             /** @enum {string} */
             role?: "staff" | "admin";
             profile: components["schemas"]["MvpProfile"] | null;
         };
         MvpPromo: {
+            brandName?: string;
+            activity?: string;
             code: string;
             /** @description Скидка от 1 до 90 процентов */
             off: string;
@@ -1031,6 +1545,11 @@ export interface components {
             /** @enum {string} */
             moment?: "любые" | "недавно переехали" | "день зарплаты";
             wishes?: string;
+            logo?: {
+                name: string;
+                src: string;
+                website?: string;
+            };
             photo?: {
                 name: string;
                 /** @description Сжатое изображение PNG или WebP в формате data URL */
@@ -1060,8 +1579,160 @@ export interface components {
             image: string;
             logo: string;
         };
+        ContractDetails: {
+            [key: string]: string;
+        };
+        ContractPreparation: {
+            inn: string;
+            version: number;
+            details: components["schemas"]["ContractDetails"];
+            attachment?: {
+                name: string;
+                /** @enum {string} */
+                type: "application/pdf" | "image/png" | "image/jpeg";
+                base64: string;
+            };
+        };
+        CampaignContract: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            inn: string;
+            company: string;
+            details: components["schemas"]["ContractDetails"];
+            createdAt: number;
+            version: number;
+            signedAt: number | null;
+            signedBy: string | null;
+            sentAt: number | null;
+            attachmentName: string | null;
+            submissionId: string | null;
+        };
         /** @enum {string} */
-        PartnerCampaignStatus: "review" | "awaiting_payment" | "published" | "expired" | "stopped";
+        MarketAction: "open" | "reveal" | "site" | "route";
+        MarketResponseReport: {
+            /** @description Начало сбора событий витрины в миллисекундах Unix */
+            since: number;
+            /** @description Начало учёта показов на витрине */
+            impressionSince: number;
+            /** @description Текущий календарный день по Москве */
+            today: number;
+            hasCampaigns: boolean;
+            daily: {
+                day: number;
+                opens: number;
+                clicks: number;
+            }[];
+            items: {
+                id: string;
+                title: string;
+                code: string;
+                online: boolean;
+                marketShows: number;
+                marketClicks: number;
+                /**
+                 * @deprecated
+                 * @enum {integer}
+                 */
+                landingShows: 0;
+                /**
+                 * @deprecated
+                 * @enum {integer}
+                 */
+                landingClicks: 0;
+                opens: number;
+                reveals: number;
+                sites: number;
+                routes: number;
+            }[];
+        };
+        CabinetDashboardSearch: {
+            q?: string;
+            /** @enum {string} */
+            days?: "0" | "7" | "30" | "90";
+            /** @enum {string} */
+            status?: "" | "authorization" | "contract" | "review" | "published" | "stopped" | "archived";
+            /** @enum {string} */
+            sort?: "newest" | "oldest" | "name";
+            page?: string;
+        };
+        /** @enum {string} */
+        CabinetChannel: "online" | "places" | "unspecified";
+        CabinetEvent: {
+            id: string;
+            name: string;
+            code: string;
+            submittedAt: number;
+        };
+        CampaignNotifications: {
+            more: boolean;
+            unread: number;
+            items: {
+                eventId: number;
+                id: string;
+                title: string;
+                fromStage: components["schemas"]["PartnerCampaignStatus"];
+                toStage: components["schemas"]["PartnerCampaignStatus"];
+                createdAt: number;
+            }[];
+        };
+        CampaignStageChange: {
+            status: components["schemas"]["PartnerCampaignStatus"];
+            version: number;
+        };
+        CampaignBoardCard: {
+            /** @enum {string} */
+            kind: "client" | "contract" | "campaign";
+            inn: string;
+            email: string;
+            id: string;
+            name: string;
+            title: string;
+            code: string;
+            status: components["schemas"]["PartnerCampaignStatus"];
+            version: number;
+            submittedAt: number;
+        };
+        CabinetDashboardOverview: {
+            /** @description Номер календарного дня по Москве от начала Unix-эпохи */
+            today: number;
+            groups: {
+                day: number;
+                status: components["schemas"]["PartnerCampaignStatus"];
+                channel: components["schemas"]["CabinetChannel"];
+                count: number;
+                /** @description Число заявок с отметкой проверки и erid */
+                verified: number;
+            }[];
+            /** @description Только в кабинете сотрудника. Для авторизации — уникальные клиенты по дате первого входа. Для остальных этапов — уникальные кампании по дате отправки. */
+            funnel?: {
+                day: number;
+                status: components["schemas"]["PartnerCampaignStatus"];
+                count: number;
+            }[];
+            recent: components["schemas"]["CabinetEvent"][];
+        };
+        CabinetDashboardList: {
+            total: number;
+            page: number;
+            items: (components["schemas"]["CabinetEvent"] & {
+                /** @enum {string} */
+                kind: "client" | "contract" | "campaign";
+                publicId?: string | null;
+                version: number;
+                title: string;
+                inn: string;
+                email: string;
+                city: string;
+                phone: string;
+                contactName: string;
+                status: components["schemas"]["PartnerCampaignStatus"];
+                channel: components["schemas"]["CabinetChannel"];
+            })[];
+        };
+        /** @enum {string} */
+        PartnerCampaignStatus: "authorization" | "contract" | "review" | "published" | "stopped" | "archived";
         ReviewInput: {
             reviewed: boolean;
             paid: boolean;
@@ -1092,10 +1763,16 @@ export interface components {
             publicId: string | null;
             fields: components["schemas"]["CatalogFields"];
         };
+        MarketCardCopy: {
+            catalog: components["schemas"]["MarketOffer"]["catalog"];
+            erid: string;
+        };
         MarketOffer: {
             /** Format: uuid */
             id: string;
             name: string;
+            /** @description Число уникальных выборов предложения на витрине */
+            selectionCount?: number;
             offer: {
                 title: string;
                 promo: string;
@@ -1201,7 +1878,7 @@ export interface components {
             /** @enum {string} */
             source?: "brand" | "icon" | "photo";
             /** @enum {string} */
-            type: "image/png" | "image/jpeg" | "image/webp" | "image/avif" | "image/svg+xml";
+            type: "image/png" | "image/jpeg" | "image/webp" | "image/avif" | "image/svg+xml" | "image/x-icon";
             base64: string;
         };
         BusinessProfile: {
@@ -1807,7 +2484,7 @@ export interface components {
         V4Draft: {
             content: {
                 "multipart/form-data": {
-                    /** @description JSON с полями бизнеса, оффера и аудитории, без файлов */
+                    /** @description JSON с данными бизнеса, оффера и аудитории. При отправке обязательны contactName, business.phone и business.inn. Режим настройки — setupMode. */
                     draft: string;
                     /**
                      * Format: binary
@@ -1920,7 +2597,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MvpProfile"];
+                "application/json": components["schemas"]["MvpProfile"] & {
+                    /** Format: uuid */
+                    draftId?: string;
+                    draftVersion?: number;
+                };
             };
         };
         responses: {
@@ -2012,6 +2693,492 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    findIndexedCompany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    website: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Название и описание по указанной странице из поиска Яндекса */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        company: {
+                            brandName?: string;
+                            activity?: string;
+                        } | null;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPartnerDashboardOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Дневные показатели и последние отправленные заявки в пределах доступа */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CabinetDashboardOverview"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPartnerMarketResponses: {
+        parameters: {
+            query?: {
+                days?: 7 | 30 | 90;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Действия на витрине по кампаниям партнёра за выбранный период */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketResponseReport"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPartnerDashboardRows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CabinetDashboardSearch"];
+            };
+        };
+        responses: {
+            /** @description Страница реестра с учётом поиска и статуса в пределах доступа */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CabinetDashboardList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getStaffDashboardOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Дневные показатели и последние отправленные заявки в пределах доступа */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CabinetDashboardOverview"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getStaffDashboardRows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CabinetDashboardSearch"];
+            };
+        };
+        responses: {
+            /** @description Страница реестра с учётом поиска и статуса в пределах доступа */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CabinetDashboardList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readPartnerRequisitesFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractPreparation"]["attachment"];
+            };
+        };
+        responses: {
+            /** @description Распознанные реквизиты для проверки партнёром */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        inn: string;
+                        details: components["schemas"]["ContractDetails"];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getContractDefaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Реквизиты текущей компании */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetails"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPartnerContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Текущая версия договора */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignContract"] | null;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    preparePartnerContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractPreparation"];
+            };
+        };
+        responses: {
+            /** @description Договор сформирован */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignContract"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    downloadPartnerContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Заполненная версия для подписания */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    sendPartnerContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Письмо с PDF передано почтовому сервису */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sent?: boolean;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getStaffContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Текущая версия договора */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignContract"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    downloadStaffContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Заполненная версия для подписания */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    sendStaffContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Письмо с PDF передано почтовому сервису */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sent?: boolean;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    confirmSignedContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Менеджер подтвердил получение подписанной версии */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignContract"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listPartnerDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Черновики партнёра для текущей компании в порядке обновления */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        code: string;
+                        title: string;
+                        step: number;
+                        updatedAt: number;
+                    }[];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPartnerDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Сохранённые данные либо null для нового черновика */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null | {
+                        data: components["schemas"]["PartnerDraftData"];
+                        version: number;
+                        updatedAt: number;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    savePartnerDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    data: components["schemas"]["PartnerDraftData"];
+                    /** @description 0 для нового черновика */
+                    version: number;
+                    /** @description Сохранить прежнее приложение к договору */
+                    keepAttachment?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Сохранённая версия */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        version: number;
+                        updatedAt: number;
+                    };
+                };
+            };
+            409: components["responses"]["Error"];
+            default: components["responses"]["Error"];
+        };
+    };
     listMvpCampaigns: {
         parameters: {
             query?: {
@@ -2059,8 +3226,10 @@ export interface operations {
                     inn: string;
                     /** Format: uuid */
                     key: string;
-                    /** @constant */
-                    accepted: true;
+                    /** @description Версия сохранённого черновика при отправке */
+                    draftVersion?: number;
+                    /** @description Передать готовые материалы менеджеру на этапе договора до подтверждения подписи */
+                    awaitSignature?: boolean;
                     promo: components["schemas"]["MvpPromo"];
                 };
             };
@@ -2096,6 +3265,7 @@ export interface operations {
                         status: components["schemas"]["PartnerCampaignStatus"];
                         profile: components["schemas"]["MvpProfile"];
                         promo: components["schemas"]["MvpPromo"];
+                        marketCopy?: components["schemas"]["MarketCardCopy"];
                         submittedAt: number;
                     };
                 };
@@ -2185,6 +3355,101 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    recordOfferExposure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    exposureId: string;
+                    /** @enum {string} */
+                    placement: "market";
+                    clicked: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Показ или переход учтён один раз */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    recordMarketAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    eventId: string;
+                    kind: components["schemas"]["MarketAction"];
+                };
+            };
+        };
+        responses: {
+            /** @description Событие принято */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    selectMarketOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: uuid
+                     * @description Случайный ключ для одного предложения в этом браузере
+                     */
+                    selectionKey: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Число выборов после учёта действия */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        selectionCount: number;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
         };
     };
     searchMarketOffers: {
@@ -2301,6 +3566,121 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    campaignNotifications: {
+        parameters: {
+            query?: {
+                before?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Изменения статуса кампаний владельца */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignNotifications"];
+                };
+            };
+        };
+    };
+    readCampaignNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    through: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Уведомления отмечены прочитанными */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    staffCampaignBoard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Кампании во всех этапах */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignBoardCard"][];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    moveCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignStageChange"];
+            };
+        };
+        responses: {
+            /** @description Этап сохранён */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    resolveSubmissionRegistry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Реквизиты из DaData и время проверки */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryDetails"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     updateSubmissionReview: {
         parameters: {
             query?: never;
@@ -2360,6 +3740,39 @@ export interface operations {
                 };
             };
             500: components["responses"]["Error"];
+        };
+    };
+    suggestPartnerCompany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    query: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Действующие компании для выбора по названию */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        companies: {
+                            inn: string;
+                            name: string;
+                            address: string;
+                        }[];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
         };
     };
     autocompleteInn: {
@@ -2426,6 +3839,46 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    generateV4OfferImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @description JSON: category (3–100 символов), title (5–90 символов), variant (целое 0–999999) */
+                    input: string;
+                    /**
+                     * Format: binary
+                     * @description Необязательное исходное фото в PNG до 5 МБ
+                     */
+                    image?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Новый PNG с прозрачным фоном */
+            200: {
+                headers: {
+                    "X-Offer-Image-Source"?: "demo" | "api";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            415: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     generateV4Offer: {
         parameters: {
             query?: never;
@@ -2465,6 +3918,9 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    profileOnly?: boolean;
+                    /** @description Найти профиль и логотип или иконку без фотографий */
+                    brandOnly?: boolean;
                     website: string;
                 };
             };
@@ -2477,6 +3933,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        profile: {
+                            name: string;
+                            subject: string;
+                            /** @description Явно указанные в тексте страницы условия со скидкой и промокодом */
+                            offerText?: string;
+                            description: string;
+                        };
                         assets: components["schemas"]["SiteAsset"][];
                     };
                 };

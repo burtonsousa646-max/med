@@ -76,3 +76,57 @@
 
 .staff-offer-fields { display: grid; gap: var(--space-m); min-width: 0; border: 0; margin: 0; padding: 0; }
 .staff-offer-fields textarea { resize: vertical; }
+
+.staff-case-status { margin-top: 8px; }
+.staff-case-links { gap: 8px; }
+.staff-case-links .bl-btn { min-height: 40px; }
+:is(.staff-review, .staff-contract, .staff-case)[id] { scroll-margin-block-start: 88px; }
+.staff-panel-head { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.staff-panel-head h2, .staff-panel-head h1 { margin: 0; }
+.staff-form { gap: 16px; }
+.staff-form p { margin: 0; }
+.staff-form-actions { gap: 8px; flex-wrap: wrap; }
+.staff-form-actions .bl-btn, .staff-contract .bl-btn { min-height: 44px; }
+.staff-review-legend { color: var(--crm-muted); font-size: .875rem; margin-bottom: 12px; padding: 0; }
+.staff-review-legend span { color: var(--crm-ink); font-variant-numeric: tabular-nums; margin-inline-start: 8px; }
+.staff-check { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.staff-check input { width: 18px; height: 18px; margin: 3px 0 0; flex: none; accent-color: var(--color-static-grey-800); }
+.staff-check small, .staff-field-hint { color: var(--crm-muted); display: block; margin-top: 3px; line-height: 1.45; font-weight: 400; }
+.staff-review input[aria-invalid=true] { border-color: var(--color-border-error); }
+.staff-review input[aria-invalid=true] + small { color: var(--color-text-error); }
+.staff-catalog-editor .staff-page-title { margin-bottom: 20px; }
+.staff-catalog-editor .staff-page-title h2 { margin: 0; overflow-wrap: anywhere; }
+.staff-catalog-editor .staff-page-title p { margin: 8px 0 0; }
+.staff-field-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: var(--crm-muted); line-height: 1.45; }
+.staff-field-meta small:last-child { font-variant-numeric: tabular-nums; }
+.staff-catalog-filters { display: grid; align-items: end; grid-template-columns: minmax(0, 390px) minmax(140px, 210px); gap: 12px; margin-bottom: 16px; }
+.staff-catalog-filters .staff-search-field { width: 100%; }
+.staff-mobile-label { display: none; }
+.staff-catalog-table td { vertical-align: top; }
+.staff-catalog-table td:first-child { width: 50%; }
+.staff-catalog-table .staff-subline { color: var(--crm-muted); font-size: .875rem; font-weight: 400; }
+.staff-catalog-empty { display: grid; justify-items: center; align-content: center; gap: 8px; min-height: 190px; text-align: center; }
+.staff-catalog-empty svg, .staff-catalog-empty p { color: var(--crm-muted); margin: 0; }
+.staff-contract .bl-stack > .bl-row { gap: 8px; }
+.staff-contract p, .staff-contract small { overflow-wrap: anywhere; }
+.staff-contract .bl-stack > small { color: var(--crm-muted); }
+.staff-contract .bl-stack > :is(p, small) { margin: 0; }
+.staff-retry > :is(span, button) { min-width: 0; }
+
+@media (max-width: 640px) {
+  .staff-catalog-editor .staff-page-title { flex-wrap: wrap; }
+  .staff-catalog-filters { grid-template-columns: minmax(0, 1fr); }
+  .staff-catalog-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .staff-catalog-table, .staff-catalog-table tbody { display: block; }
+  .staff-catalog-table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-block: 12px; gap: 6px 12px; border-bottom: 1px solid var(--crm-edge); }
+  .staff-catalog-table td, .staff-catalog-table td:first-child { display: block; width: auto; min-width: 0; white-space: normal; border: 0; padding: 0; overflow-wrap: anywhere; }
+  .staff-catalog-table td:first-child { grid-column: 1 / -1; }
+  .staff-catalog-table td:last-child { grid-column: 1 / -1; }
+  .staff-catalog-table .staff-row-link { display: block; min-height: 44px; }
+  .staff-catalog-table .staff-mobile-label { display: block; font-size: .75rem; color: var(--crm-muted); margin-block-end: 2px; }
+  .staff-case-links .bl-btn, .staff-back { min-height: 44px; }
+  .staff-contract .bl-stack > .bl-row { flex-direction: column; align-items: stretch; }
+  .staff-contract .bl-btn { white-space: normal; text-align: center; }
+  .staff-review input:not([type=checkbox]), .staff-catalog-filters :is(input, select),
+  .staff-catalog-editor :is(input, select, textarea), .staff-member-form input { font-size: 16px; }
+}

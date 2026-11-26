@@ -1,7 +1,9 @@
 import { test, after } from 'node:test'
 import assert from 'node:assert/strict'
+import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { beelineOffers, activeBeelineOffers, benefitText } from '../shared/beeline-benefits.ts'
+import { promoDay } from '../shared/mvp-promo.ts'
 
 process.env.DB_PATH = ':memory:'
 process.env.ANTHROPIC_API_KEY = ''
@@ -51,9 +53,28 @@ test('category, offset and offer detail use the same imported catalogue', async 
   assert.ok(health.every((o:{group:string})=>o.group==='health'))
   assert.deepEqual((await (await market.request('/offers?offset=1')).json()).items,all.slice(1))
   const card = all.find((o:{offer:{title:string}})=>o.offer.title.includes('Флаувау'))
-  assert.deepEqual(await (await market.request('/offers/'+card.id)).json(),card)
+  assert.deepEqual(await (await market.request('/offers/'+card.id)).json(),{...card,selectionCount:0})
   assert.ok(card.source.sections.some((s:{text:string})=>s.text.includes('2 500 ₽')))
   assert.ok(beelineOffers.some(o=>o.source!.sections.some(s=>s.links.length>0)))
+})
+
+test('selection totals are per live offer and retries count once',async()=>{
+  const cards = activeBeelineOffers(promoDay()).slice(0,2)
+  const [first,second] = cards.map(card=>'/offers/'+card.id)
+  const choose = (path:string,selectionKey:string) => market.request(path+'/selection',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({selectionKey}),
+  })
+  const key = randomUUID()
+  const repeated = await Promise.all([choose(first,key),choose(first,key)])
+  for (const result of repeated) assert.deepEqual(await result.json(),{selectionCount:1})
+  assert.equal((await choose(first,'invalid')).status,400)
+  assert.deepEqual(await (await choose(first,randomUUID())).json(),{selectionCount:2})
+  assert.equal((await (await market.request(first)).json()).selectionCount,2)
+  assert.equal((await (await market.request(second)).json()).selectionCount,0)
+  assert.deepEqual(await (await choose(second,key)).json(),{selectionCount:1})
+  const expired = beelineOffers.find(o=>o.id.endsWith('2781'))!
+  assert.equal((await choose('/offers/'+expired.id,key)).status,404)
+  assert.equal((await choose('/offers/missing',key)).status,404)
 })
 
 test('full text finds words across fields, amounts, aliases, misspellings and keyboard layouts',async()=>{

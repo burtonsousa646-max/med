@@ -4,9 +4,11 @@ import { test } from 'node:test'
 import nodemailer, { type SendMailOptions } from 'nodemailer'
 import { emptyCampaignDraft, type CampaignDraft } from '../shared/campaign-draft.ts'
 import { createAutocomplete } from './autocomplete.ts'
+import { campaignModerationMail } from './campaign-moderation-mail.ts'
 
 process.env.DB_PATH = ':memory:'
 const { app } = await import('./index.ts')
+const { campaignIntake } = await import('./campaign-intake.ts')
 const { db } = await import('./db.ts')
 const { savePartnerRegistry } = await import('./partner-registry.ts')
 const { createV4Staff } = await import('./v4-staff.ts')
@@ -23,7 +25,7 @@ async function send(method: string, revision: number, value: CampaignDraft, draf
   if (code) body.set('emailCode', code)
   if (offerImage) body.set('offerImage', offerImage)
   if (logoImage) body.set('logoImage', logoImage)
-  return app.request('/api/v4/draft', { method, headers: { 'x-draft-key': draftKey, 'x-draft-revision': String(revision) }, body })
+  return campaignIntake.request('/draft', { method, headers: { 'x-draft-key': draftKey, 'x-draft-revision': String(revision) }, body })
 }
 
 async function requestCode(draftKey: string, email: string, sendMail: (email: string, code: string) => Promise<void>) {
@@ -47,8 +49,28 @@ async function confirmable(draft: CampaignDraft, draftKey: string, address: stri
   return code
 }
 
+test('the public legacy submit URL directs new campaigns to the signed cabinet flow',async()=>{
+  const result=await app.request('/api/v4/draft',{method:'POST'})
+  assert.equal(result.status,410)
+  assert.match((await result.json()).message,/подпишите договор/)
+})
+
+test('ready artwork layout and the original asset survive server intake', async () => {
+  const draft = emptyCampaignDraft()
+  draft.offerAccepted = true
+  draft.offer.layout = 'artwork'
+  draft.offerImage = new File([new Uint8Array(png)], 'ready.png', { type: 'image/png' })
+  const draftKey = randomUUID()
+  assert.equal((await send('PUT', 1, draft, draftKey)).status, 200)
+  const row = db.prepare('select data from v4_drafts where id = ?').get(draftKey) as { data: string }
+  const saved = JSON.parse(row.data)
+  assert.equal(saved.offer.layout, 'artwork')
+  assert.equal(saved.offerImage.base64, png.toString('base64'))
+})
+
 test('V4 stores partial drafts and files, accepts complete submissions once, and retries failed mail', async t => {
   const draft = emptyCampaignDraft()
+  draft.contactName = 'Анна'
   draft.business = { name: 'Тестовая кофейня', category: 'Кофе и завтраки', inn: '1234567894', phone: '+79000000001', city: 'Москва', website: 'https://example.test' }
   assert.equal((await send('PUT', 1, draft)).status, 400, 'No remote storage before acceptance')
   draft.offerAccepted = true
@@ -72,10 +94,13 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   draft.offer = { ...draft.offer, title: 'Загляните на завтрак', discount: '20' }
   draft.filled = true
   draft.stage = draft.reached = 3
-  draft.triggers = 'Показывать утром'
+  draft.triggers = 'Показывать утром <тест>'
   draft.audience[0] = 1
   draft.audienceCity = 'Казань'
   assert.equal((await send('POST', 4, draft)).status, 422, 'Completed application needs a confirmed email')
+  assert.equal((await send('POST', 4, { ...draft, contactName: ' ' })).status, 400)
+  assert.equal((await send('POST', 4, { ...draft, business: { ...draft.business, phone: '' } })).status, 400)
+  draft.setupMode = 'quick'
   const code = await confirmable(draft, key, 'partner@example.test')
   const provider = createAutocomplete({ token: () => 'fake', saveRegistry: savePartnerRegistry, request: async () => Response.json({
     suggestions: [{ data: {
@@ -128,6 +153,14 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   const detail = await result.json()
   assert.deepEqual(detail.registryDetails, record.registryDetails)
   assert.deepEqual(detail.partnerDetails, draft.partnerDetails)
+  assert.equal(detail.contactName, 'Анна')
+  assert.equal(detail.business.phone, draft.business.phone)
+  assert.equal(detail.audienceCity, 'Казань')
+  assert.equal(detail.setupMode, 'quick')
+  const inbox = await staff.request('/submissions/search', { method: 'POST', headers: { Cookie: login.headers.get('set-cookie')!.split(';')[0], 'Content-Type': 'application/json' }, body: '{}' })
+  const item = (await inbox.json()).items.find((entry: { id: string }) => entry.id === first.id)
+  assert.equal(item.contactName, detail.contactName)
+  assert.equal(item.phone, detail.business.phone)
 
   const now = Date.now()
   const transport = nodemailer.createTransport({ streamTransport: true, buffer: true })
@@ -145,18 +178,25 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
   const [message] = retried.arguments
   assert.equal(message.subject, 'Новая заявка на рекламную кампанию · партнерская платформа билайн')
   assert.match(String(message.text), /партнерская платформа билайн$/)
+  assert.match(String(message.text), /Представитель: Анна/)
+  assert.match(String(message.text), /Телефон: \+79000000001/)
   assert.match(String(message.text), /ИНН: 1234567894/)
   assert.match(String(message.text), /КПП: 770101001/)
   assert.match(String(message.text), /Руководитель по реестру: Иванов Иван Иванович/)
   assert.match(String(message.text), /Расчётный счёт: 40702810000000000001/)
   assert.match(String(message.text), /Корреспондентский счёт: Не указано/)
+  assert.match(String(message.html), /Общество &lt;Пример&gt;/)
   assert.match(String(message.text), /Подтверждённый email: partner@example.test/)
   assert.match(String(message.text), /Показывать утром/)
   assert.match(String(message.text), /Город бизнеса: Москва/)
   assert.match(String(message.text), /Город показа: Казань/)
+  assert.match(String(message.html), /Показывать утром &lt;тест&gt;/)
+  assert.match(String(message.html), />Бизнес<\/h2>[\s\S]*>Предложение<\/h2>[\s\S]*>Аудитория<\/h2>/)
   const email = await retried.result
   assert.equal(email?.messageId, `<v4-campaign-${first.id}@example.test>`)
   assert.deepEqual(email?.envelope, { from: 'sender@example.test', to: ['beepartners@beeline.ru'] })
+  assert.match(String(email?.message), /multipart\/alternative/)
+  assert.match(String(email?.message), /Content-ID: <partner-platform-logo@beeline\.ru>/)
   assert.match(String(email?.message), /Content-Disposition: attachment; filename=offer\.png/)
   assert.ok(String(email?.message).replaceAll('\r\n', '').includes(png.toString('base64')))
   assert.equal(typeof db.prepare('select mail_sent_at from v4_submissions').get()?.mail_sent_at, 'number')
@@ -169,6 +209,7 @@ test('V4 stores partial drafts and files, accepts complete submissions once, and
 
 test('V4 sends two large attachments together and completes older partially sent submissions', async t => {
   const draft = emptyCampaignDraft()
+  draft.contactName = 'Анна'
   draft.business = { name: 'Тестовая кофейня', category: 'Кофе', inn: '1234567894', phone: '+79000000001', city: '', website: '' }
   draft.online = true
   draft.offerAccepted = true
@@ -211,6 +252,7 @@ test('V4 sends two large attachments together and completes older partially sent
 
 test('V4 email code expires and is blocked after five wrong attempts', async () => {
   const draft = emptyCampaignDraft()
+  draft.contactName = 'Анна'
   draft.business = { name: 'Кофейня', category: 'Кофе', inn: '1234567894', phone: '+79000000001', city: '', website: '' }
   draft.online = true
   draft.offerAccepted = true
@@ -229,9 +271,29 @@ test('V4 email code expires and is blocked after five wrong attempts', async () 
   assert.equal((await send('POST', 4, draft, expiredKey, expired)).status, 422)
 })
 
-test('V4 verification email uses the public partner platform name', () => {
-  const message = campaignCodeMessage('partner@example.test', '012345', 'sender@example.test')
-  assert.equal(message.from.name, 'партнерская платформа билайн')
-  assert.equal(message.subject, 'Код подтверждения почты · партнерская платформа билайн')
-  assert.match(message.text, /партнерская платформа билайн$/)
+test('V4 code and moderation emails include branded HTML, inline images and a text alternative', async () => {
+  const transport = nodemailer.createTransport({ streamTransport: true, buffer: true })
+  const from = 'sender@example.test'
+  const to = 'partner@example.test'
+  for (const [purpose, label] of [
+    ['confirmation', 'Код подтверждения почты'],
+    ['staff', 'Код входа для сотрудника'],
+  ] as const) {
+    const message = campaignCodeMessage(to, '012345', from, purpose)
+    assert.equal(message.from.name, 'партнерская платформа билайн')
+    assert.equal(message.subject, `${label} · партнерская платформа билайн`)
+    assert.match(message.text, /012345/)
+    assert.match(message.html, /012345/)
+    assert.match(message.html, /font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto/)
+    const email = await transport.sendMail(message)
+    assert.match(String(email.message), /multipart\/alternative/)
+    assert.match(String(email.message), /Content-ID: <partner-platform-logo@beeline\.ru>/)
+  }
+
+  const moderation = campaignModerationMail('Скидка <20%>')
+  assert.match(moderation.html, /Скидка &lt;20%&gt;/)
+  assert.match(moderation.text, /Скидка <20%>/)
+  const email = await transport.sendMail({ ...moderation, from, to })
+  assert.match(String(email.message), /Content-ID: <partner-platform-logo@beeline\.ru>/)
+  assert.match(String(email.message), /Content-ID: <beegpt-promo@beeline\.ru>/)
 })

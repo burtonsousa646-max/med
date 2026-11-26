@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronDown, FileText, Globe, MapPin } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronDown, FileText, Globe, MapPin, Navigation, UserRound, UserRoundPlus, Zap } from 'lucide-react'
 import type { MarketOffer } from '../../shared/market'
 import { analytics } from '../analytics'
 import { SubscriberBadge } from '../ui'
 import { priceText, summaryFor } from './BenefitCard'
-import { marketRequest } from './market-request'
+import { useMarketReferral } from './OfferExposure'
+import { marketRequest, recordMarketAction, selectMarketOffer } from './market-request'
 
 const dateLabel = (iso:string) => new Date(iso.slice(0,10)+'T12:00:00Z').toLocaleDateString('ru-RU', {
   day:'numeric', month:'long', year:'numeric', timeZone:'UTC',
@@ -14,6 +15,23 @@ const dateLabel = (iso:string) => new Date(iso.slice(0,10)+'T12:00:00Z').toLocal
 const capitalize = (value:string) => value.charAt(0).toUpperCase() + value.slice(1)
 type Source = NonNullable<MarketOffer['source']>
 type Term = Source['sections'][number]
+
+const peopleRules = new Intl.PluralRules('ru-RU')
+const numberFormat = new Intl.NumberFormat('ru-RU')
+
+function OfferSelections({count}:{count:number}) {
+  if (!Number.isSafeInteger(count) || count < 1) return null
+  const form = peopleRules.select(count)
+  return <p className="market-selections">
+    <span className="market-selections__people" aria-hidden="true">
+      <span><UserRound size={15}/></span><span><UserRound size={15}/></span><span><UserRoundPlus size={17}/></span>
+    </span>
+    <span><Zap className="market-selections__bolt" size={15} aria-hidden="true"/>{' '}
+      Это предложение уже {form === 'one' ? 'выбрал' : 'выбрали'}{' '}
+      <strong>{numberFormat.format(count)} {form === 'few' ? 'человека' : 'человек'}</strong>
+    </span>
+  </p>
+}
 
 function TermText({section}:{section:Term}) {
   return <div className="market-terms__text">
@@ -37,10 +55,12 @@ function OfferContent({offer}:{offer:MarketOffer}) {
   const [revealed,setRevealed] = useState(false)
   const [copied,setCopied] = useState('')
   const recorded = useRef('')
+  const queryClient = useQueryClient()
   const {brand,benefit,condition} = summaryFor(offer)
   useEffect(()=>{
     document.title = brand+' — '+benefit+' · Лучшее рядом'
     if (recorded.current !== offer.id) {
+      void recordMarketAction(offer.id,'open')
       analytics.event('market_offer_open')
       recorded.current = offer.id
     }
@@ -51,6 +71,17 @@ function OfferContent({offer}:{offer:MarketOffer}) {
   const {until,promo} = offer.offer
   const validity = until ? 'До '+dateLabel(until) : capitalize(source?.validity ?? '')
   const summaryCondition = !source && (condition==='Онлайн' || addresses.includes(condition)) ? '' : condition
+  function recordSelection(event?:'market_partner_visit'|'market_code_reveal') {
+    void recordMarketAction(offer.id,event==='market_code_reveal'?'reveal':event==='market_partner_visit'?'site':'route')
+    if (event) analytics.event(event)
+    void selectMarketOffer(offer.id).then(({selectionCount}) => {
+      queryClient.setQueryData<MarketOffer>(['market-detail',offer.id],current =>
+        current && {...current,selectionCount:Math.max(current.selectionCount ?? 0,selectionCount)})
+    }).catch(() => { /* A statistics failure must not interrupt the offer action. */ })
+  }
+  function recordLink(event:MouseEvent<HTMLAnchorElement>, goal?:'market_partner_visit') {
+    if (event.button===0 || event.button===1) recordSelection(goal)
+  }
   async function copyCode() {
     try {
       await navigator.clipboard.writeText(promo)
@@ -73,6 +104,7 @@ function OfferContent({offer}:{offer:MarketOffer}) {
       </div>
       {offer.image && <img className="market-page__art" src={offer.image} alt=""/>}
     </header>
+    <OfferSelections count={offer.selectionCount ?? 0}/>
     <div className="market-page__body">
       {(intro || (offer.description===undefined && description) || !!description?.links.length) && <section className="market-page__description">
         <h2>Описание</h2>
@@ -81,18 +113,25 @@ function OfferContent({offer}:{offer:MarketOffer}) {
       </section>}
         {!source && !online && addresses.length>0 && <section className="market-page__addresses">
           <h2>Где воспользоваться</h2>
-          <ul>{addresses.map(address=><li key={address}><MapPin size={16} aria-hidden="true"/>{address}</li>)}</ul>
+          <ul>{addresses.map(address=><li key={address}>
+            <span className="market-page__place"><MapPin size={16} aria-hidden="true"/>{address}</span>
+            <a className="bl-btn bl-btn--s" href={'https://yandex.ru/maps/?'+new URLSearchParams({rtext:'~'+address,rtt:'pd'})}
+              target="_blank" rel="noopener noreferrer" aria-label={'Проложить маршрут — '+address}
+              onClick={event=>recordLink(event)} onAuxClick={event=>recordLink(event)}>
+              <Navigation size={16} aria-hidden="true"/>Проложить маршрут
+            </a>
+          </li>)}</ul>
         </section>}
       {(source || website || promo) && <div className="market-page__actions">
         {source && <SubscriberBadge id="market-subscriber-badge"/>}
         {promo && revealed && <div className="market-page__code" aria-live="polite">{promo}</div>}
         {promo && <button className="bl-btn bl-btn--primary" onClick={revealed ? copyCode : ()=>{
-          setRevealed(true); analytics.event('market_code_reveal')
+          setRevealed(true); recordSelection('market_code_reveal')
         }}>{revealed ? 'Скопировать промокод' : 'Показать промокод'}</button>}
         {source && <a className="bl-btn bl-btn--primary" href={source.url} target="_blank" rel="noopener noreferrer sponsored" aria-describedby="market-subscriber-badge market-login-hint"
-          onClick={()=>analytics.event('market_partner_visit')}>Получить на сайте билайна<ArrowUpRight size={18} aria-hidden="true"/></a>}
+          onClick={event=>recordLink(event,'market_partner_visit')} onAuxClick={event=>recordLink(event,'market_partner_visit')}>Получить на сайте билайна<ArrowUpRight size={18} aria-hidden="true"/></a>}
         {website && <a className={'bl-btn '+(promo ? '' : 'bl-btn--primary')} href={website} target="_blank" rel="noopener noreferrer sponsored"
-          onClick={()=>analytics.event('market_partner_visit')}>На сайт партнёра<ArrowUpRight size={18} aria-hidden="true"/></a>}
+          onClick={event=>recordLink(event,'market_partner_visit')} onAuxClick={event=>recordLink(event,'market_partner_visit')}>На сайт партнёра<ArrowUpRight size={18} aria-hidden="true"/></a>}
         {source && <p className="bl-caption" id="market-login-hint">Для получения понадобится вход на сайте билайна.</p>}
         {copied && <span className="bl-caption" role="status">{copied}</span>}
       </div>}
@@ -107,6 +146,7 @@ function OfferContent({offer}:{offer:MarketOffer}) {
 
 export default function MarketOfferPage() {
   const {id=''} = useParams()
+  useMarketReferral(id)
   const {state} = useLocation()
   const navigate = useNavigate()
   const main = useRef<HTMLElement>(null)

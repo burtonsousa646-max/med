@@ -28,6 +28,9 @@ db.exec(`
   create index if not exists v4_submissions_partner_print on v4_submissions (lower(json_extract(data, '$.email')), json_extract(data, '$.business.inn'), submitted_at desc, id desc);
   create index if not exists v4_submissions_pending on v4_submissions (mail_next_at) where mail_sent_at is null;
   create table if not exists mvp_accounts (email text primary key, profile text);
+  create table if not exists partner_authorizations (
+    email text primary key references mvp_accounts(email) on delete cascade, authorized_at integer not null
+  );
   create table if not exists mvp_sessions (
     token_hash text primary key, email text not null references mvp_accounts, expires_at integer not null
   );
@@ -35,6 +38,31 @@ db.exec(`
     id text primary key references v4_submissions on delete cascade, email text not null references mvp_accounts
   );
   create index if not exists mvp_receipts_owner on mvp_receipts(email);
+  create table if not exists partner_campaign_drafts (
+    id text primary key, email text not null references mvp_accounts(email) on delete cascade,
+    inn text, data text not null, version integer not null, updated_at integer not null
+  );
+  create index if not exists partner_draft_owner on partner_campaign_drafts(email, updated_at desc);
+  create table if not exists campaign_contracts (
+    id text primary key, email text not null references mvp_accounts(email), inn text not null, company text not null,
+    created_at integer not null, signed_at integer, submission_id text unique references v4_submissions(id),
+    details text not null default '{}', document blob, attachment_name text, version integer not null default 1,
+    signed_by text, sent_at integer, mailing_at integer
+  );
+  create index if not exists campaign_contract_owner on campaign_contracts(email,inn,created_at desc);
+  create table if not exists campaign_workflow (
+    id text primary key references v4_submissions on delete cascade, stage text not null
+  );
+  create view if not exists campaign_owners as
+    select s.id, coalesce(r.email,lower(json_extract(s.data,'$.email'))) email from v4_submissions s left join mvp_receipts r using(id);
+  create table if not exists campaign_stage_events (
+    event_id integer primary key, submission_id text not null references v4_submissions(id) on delete cascade,
+    version integer not null, previous text not null, stage text not null, employee text not null, recipient text,
+    title text not null, created_at integer not null, next_at integer not null, attempts integer not null default 0,
+    sent_at integer, read_at integer, unique(submission_id,version)
+  );
+  create index if not exists campaign_event_mail on campaign_stage_events(next_at,event_id) where sent_at is null and recipient is not null;
+  create index if not exists campaign_event_recipient on campaign_stage_events(recipient,event_id desc);
   create table if not exists v4_email_codes (
     id integer primary key, draft_id text not null, email text not null, code_hash text not null,
     sent_at integer not null, attempts integer not null default 0, accepted_digest text

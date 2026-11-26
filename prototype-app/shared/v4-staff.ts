@@ -18,6 +18,8 @@ export type V4SubmissionList = {
 }
 
 export type V4Submission = {
+  marketCopy?:import('./market.ts').MarketCardCopy
+  contract?:import('./campaign-contract.ts').ContractRecord|null
   status: import('./mvp-promo.ts').PartnerCampaignStatus
   review: import('./market.ts').Review
   mvp?: import('./mvp-promo.ts').Promo

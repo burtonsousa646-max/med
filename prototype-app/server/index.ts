@@ -14,6 +14,7 @@ import { campaignIntake } from './campaign-intake.ts'
 import { campaignSite } from './campaign-site.ts'
 import { offerAi } from './offer-ai.ts'
 import { offerCutout } from './offer-cutout.ts'
+import { offerImage } from './offer-image.ts'
 import { sendCampaignCode, sendV4StaffCode, startCampaignMail } from './campaign-mail.ts'
 import { createCampaignEmail } from './campaign-email.ts'
 import { CO, DEFAULT_TERMS, DISPUTE_DAYS, KIND, OFFER_TYPES, SLOTS, catalog, clickCampaign, deal, launched, newClickId, payAmount, payout, spent, stats, trackingUrl, view, type CampaignRow, type OfferType } from './domain.ts'
@@ -39,12 +40,15 @@ app.use('/v4/staff/*', async (c,next) => {
 })
 app.route('/v4/staff', createV4Staff({ addresses: v4StaffAddresses, administrators: v4StaffAdministrators }, sendV4StaffCode))
 app.use('*', async (c,next) => process.env.PARTNERS_ONLY === 'true' ? c.notFound() : next())
+// Old launch links now use the signed partner flow. Unsigned draft submissions cannot enter moderation.
+app.post('/v4/draft', c=>c.json({message:'Для запуска кампании войдите в кабинет и подпишите договор.'},410))
 app.route('/v4', campaignIntake)
 app.route('/v4', createCampaignEmail(sendCampaignCode))
 app.route('/v4', campaignSite)
 if (process.env.OFFER_AI_PROVIDER === 'opencode-go') app.post('/v4/offer-ai', c => c.redirect('/api/mvp/offer-ai',307))
 else app.route('/v4', offerAi)
 app.route('/v4', offerCutout)
+app.route('/v4', offerImage)
 
 /* ───────── демо-копия компании по cookie. Справочники и подтверждение по ссылке её не требуют ───────── */
 const COOKIE = 'demo'
@@ -159,7 +163,7 @@ app.patch('/campaigns/:id', async c => {
 app.post('/campaigns/:id/submit', async c => {
   const cid = c.var.cid, row = find(c)
   if (!row) return fail(c, 404, 'кампания не найдена')
-  if (!['draft', 'approval'].includes(row.status)) return fail(c, 409, 'кампания уже отправлена')
+  if (!['draft', 'approval'].includes(row.status)) return fail(c, 409, 'кампания уже запущена')
   const T = OFFER_TYPES[row.type], v = show(cid, row)
   if (row.mode === 'manual' && v.forecast.audienceEmpty) return fail(c, 400, 'добавьте хотя бы один сигнал')
   if (T.fields.some(f => f.num && !(+row.terms[f.k] > 0))) return fail(c, 400, 'заполните условия оффера')
